@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>First Earth</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+		#blocker{
+			display:none;
+		}
+    </style>
+    <style>
+			#blocker {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0,0,0,0.5);
+			}
+
+			#instructions {
+				width: 100%;
+				height: 100%;
+
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+
+				text-align: center;
+				font-size: 14px;
+				cursor: pointer;
+			}
+			#log {
+				position: absolute;
+				top: 10px;
+				right: 20px;
+				width: 100%;
+				text-align: right;
+				z-index: 100;
+				display:block;
+				font-size: 30px;
+			}
+			#discord {
+				position: absolute;
+				text-align:right;
+				bottom: 40px;
+				right: 10px;
+				font-size: 18px;
+			}
+			#built {
+				position:absolute;
+				bottom: 10px;
+				right: 10px;
+				text-align: right;
+				font-size: 18px;
+			}
+		</style>
+  </head>
+  <body>
+    <!-- touch-action="none" -->
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+	<div id="blocker">
+		<div id="instructions">
+			<p style="font-size:36px">
+				Click to play
+			</p>
+			<p>
+				Move: WASD<br/>
+				Jump: SPACE<br/>
+				Look: MOUSE
+			</p>
+		</div>
+	</div>
+	<div id="log"></div>
+	<div id="discord">
+		Keys: WASD/Arrows=move, F=campfire, ESC=mouse<br/>
+		Follow development on Discord!<br/>
+		<a target="_new" href="https://discord.gg/f2nbKVzgwm">https://discord.gg/f2nbKVzgwm</a><br/>
+	</div>
+	<div id="built">Built on build_time (build_info)</div>
+	
+	<script type="x-shader/x-vertex" id="vertexShader">
+
+		varying vec3 vWorldPosition;
+
+		void main() {
+
+			vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+			vWorldPosition = worldPosition.xyz;
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}
+
+	</script>
+	<script type="x-shader/x-fragment" id="fragmentShader">
+
+		uniform vec3 topColor;
+		uniform vec3 bottomColor;
+		uniform float offset;
+		uniform float exponent;
+
+		varying vec3 vWorldPosition;
+
+		void main() {
+
+			float h = normalize( vWorldPosition + offset ).y;
+			gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h , 0.0), exponent ), 0.0 ) ), 1.0 );
+
+		}
+
+	</script>
+
+    <script type="module" src="/client.js"></script>
+  </body>
+</html>

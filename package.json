@@ -1,0 +1,34 @@
+{
+  "name": "babs",
+  "version": "0.3.0",
+  "engines": {
+    "node": "v16"
+  },
+  "scripts": {
+    "preshared": "cp ./../proxima/src/shared/* ./src/shared",
+    "shared": "cp ./src/shared/* ./../expressa/src/shared",
+    "postshared": "rm ./src/shared/FeDb.ts ./src/shared/knexfile.ts",
+
+    "dev": "snowpack dev",
+    
+    "prebuild": "npm run shared",
+    "build": "snowpack build && echo Size: && du -sh build",
+    "postbuild": "sh buildtime.sh",
+
+    "predeploy": "npm run build",
+    "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
+  },
+  "devDependencies": {
+    "@types/ndarray": "^1.0.9",
+    "@types/ndarray-ops": "^1.2.1",
+    "@types/three": "^0.129.1",
+    "bicubic-interpolate": "^1.0.4",
+    "ndarray": "^1.0.19",
+    "ndarray-linear-interpolate": "^1.0.0",
+    "ndarray-ops": "^1.2.2",
+    "snowpack": "^3.5.9"
+  },
+  "dependencies": {
+    "three": "^0.129.0"
+  }
+}
