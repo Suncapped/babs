@@ -15,15 +15,15 @@ export function clamp(n:number, min:number, max:number){
 }
 
 export function rand(min:number, max:number):number { // Returns a random number between min (inclusive) and max (exclusive)
-    return Math.random() * (max - min) + min;
+    return Math.random() * (max - min) + min
 }
 
 export const sleep = (ms:number) => new Promise(r => setTimeout(r, ms))
 
 export function lerp (value1:number, value2:number, amount:number) {
-	amount = amount < 0 ? 0 : amount;
-	amount = amount > 1 ? 1 : amount;
-	return value1 + (value2 - value1) * amount;
+	amount = amount < 0 ? 0 : amount
+	amount = amount > 1 ? 1 : amount
+	return value1 + (value2 - value1) * amount
 }
 
 export const doAroundDistance = (dist:number, z:number, x:number, min:number, max:number, f:(zj:number, xk:number)=>void):void => {
@@ -39,28 +39,28 @@ export const doAroundDistance = (dist:number, z:number, x:number, min:number, ma
 export class EnumHelpers {
 
     static getNamesAndValues<T extends number>(e: any) {
-        return EnumHelpers.getNames(e).map(n => ({ name: n, value: e[n] as T }));
+        return EnumHelpers.getNames(e).map(n => ({ name: n, value: e[n] as T }))
     }
 
     static getNames(e: any) {
-        return EnumHelpers.getObjValues(e).filter(v => typeof v === 'string') as string[];
+        return EnumHelpers.getObjValues(e).filter(v => typeof v === 'string') as string[]
     }
 
     static getValues<T extends number>(e: any) {
-        return EnumHelpers.getObjValues(e).filter(v => typeof v === 'number') as T[];
+        return EnumHelpers.getObjValues(e).filter(v => typeof v === 'number') as T[]
     }
 
     static getSelectList<T extends number, U>(e: any, stringConverter: (arg: U) => string) {
-        const selectList = new Map<T, string>();
-        this.getValues(e).forEach(val => selectList.set(val as T, stringConverter(val as unknown as U)));
-        return selectList;
+        const selectList = new Map<T, string>()
+        this.getValues(e).forEach(val => selectList.set(val as T, stringConverter(val as unknown as U)))
+        return selectList
     }
 
     static getSelectListAsArray<T extends number, U>(e: any, stringConverter: (arg: U) => string) {
-        return Array.from(this.getSelectList(e, stringConverter), value => ({ value: value[0] as T, presentation: value[1] }));
+        return Array.from(this.getSelectList(e, stringConverter), value => ({ value: value[0] as T, presentation: value[1] }))
     }
 
     private static getObjValues(e: any): (number | string)[] {
-        return Object.keys(e).map(k => e[k]);
+        return Object.keys(e).map(k => e[k])
     }
 }

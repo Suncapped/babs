@@ -41,96 +41,96 @@ export class World {
     public worldMesh
     constructor (scene) {
 
-        let renderer = new WebGLRenderer();
+        let renderer = new WebGLRenderer()
 
-        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.enabled = true
         renderer.shadowMap.type = PCFSoftShadowMap; // or any other type of shadowmap
 
-        scene.background = new Color().setHSL( 0.6, 0, 1 );
-        scene.fog = new Fog( scene.background, 1, 5000 );
+        scene.background = new Color().setHSL( 0.6, 0, 1 )
+        scene.fog = new Fog( scene.background, 1, 5000 )
 
         // LIGHTS
-        const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.2 );
-        hemiLight.color.setHSL( 0.6, 1, 0.6 );
-        hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
-        hemiLight.position.set( 0, 50, 0 );
-        scene.add( hemiLight );
-        const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 );
-        scene.add( hemiLightHelper );
+        const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.2 )
+        hemiLight.color.setHSL( 0.6, 1, 0.6 )
+        hemiLight.groundColor.setHSL( 0.095, 1, 0.75 )
+        hemiLight.position.set( 0, 50, 0 )
+        scene.add( hemiLight )
+        const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
+        scene.add( hemiLightHelper )
 
-        this.dirLight = new DirectionalLight( 0xffffff, 1 );
-        this.dirLight.color.setHSL( 0.1, 1, 0.95 );
-        this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z);
-        this.dirLight.position.multiplyScalar( 30 );
+        this.dirLight = new DirectionalLight( 0xffffff, 1 )
+        this.dirLight.color.setHSL( 0.1, 1, 0.95 )
+        this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z)
+        this.dirLight.position.multiplyScalar( 30 )
         this.dirLight.target
-        scene.add(this.dirLight);
-        this.dirLight.castShadow = true;
-        this.dirLight.shadow.mapSize.width = 2048;
-        this.dirLight.shadow.mapSize.height = 2048;
-        const d = 50;
-        this.dirLight.shadow.camera.left = - d;
-        this.dirLight.shadow.camera.right = d;
-        this.dirLight.shadow.camera.top = d;
-        this.dirLight.shadow.camera.bottom = - d;
-        this.dirLight.shadow.camera.far = 3500;
-        this.dirLight.shadow.bias = - 0.0001;
-        this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 );
-        scene.add( this.dirLightHelper );
+        scene.add(this.dirLight)
+        this.dirLight.castShadow = true
+        this.dirLight.shadow.mapSize.width = 2048
+        this.dirLight.shadow.mapSize.height = 2048
+        const d = 50
+        this.dirLight.shadow.camera.left = - d
+        this.dirLight.shadow.camera.right = d
+        this.dirLight.shadow.camera.top = d
+        this.dirLight.shadow.camera.bottom = - d
+        this.dirLight.shadow.camera.far = 3500
+        this.dirLight.shadow.bias = - 0.0001
+        this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
+        scene.add( this.dirLightHelper )
 
         this.dirLight.visible = true
         hemiLight.visible = true
 
         // SKYDOME
-        const vertexShader = document.getElementById( 'vertexShader' ).textContent;
-        const fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+        const vertexShader = document.getElementById( 'vertexShader' ).textContent
+        const fragmentShader = document.getElementById( 'fragmentShader' ).textContent
         const uniforms = {
             "topColor": { value: new Color( 0x0077ff ) },
             "bottomColor": { value: new Color( 0xffffff ) },
             "offset": { value: 33 },
             "exponent": { value: 0.6 }
-        };
-        uniforms.topColor.value.copy( hemiLight.color );
-        scene.fog.color.copy( uniforms[ "bottomColor" ].value );
-        const skyGeo = new SphereGeometry( 4000, 32, 15 );
+        }
+        uniforms.topColor.value.copy( hemiLight.color )
+        scene.fog.color.copy( uniforms[ "bottomColor" ].value )
+        const skyGeo = new SphereGeometry( 4000, 32, 15 )
         const skyMat = new ShaderMaterial( {
             uniforms: uniforms,
             vertexShader: vertexShader,
             fragmentShader: fragmentShader,
             side: BackSide
-        } );
-        const sky = new Mesh( skyGeo, skyMat );
-        scene.add( sky );
+        } )
+        const sky = new Mesh( skyGeo, skyMat )
+        scene.add( sky )
 
     }
 
     animate(delta, camera, player) {
 
-        // csm.update(camera.matrix);
+        // csm.update(camera.matrix)
 
         // console.log(playerPosition)
 
 
-        // this.dirLight.position.set( - 1, 1.75, 1 );
+        // this.dirLight.position.set( - 1, 1.75, 1 )
         // let temp = new Vector3()
         // temp.addScaledVector(new Vector3(- 1, 1.75, 1), 30)
         // temp.add(playerPosition)
 
-        // this.dirLight.position.copy(camera.position);
+        // this.dirLight.position.copy(camera.position)
         const rounded = camera.position.clone().round()
         document.getElementById('log').innerText = `${rounded.x}, ${rounded.y}, ${rounded.z}`
 
 
         this.dirLight.target.position.set( camera.position.x, camera.position.y + 50, camera.position.z ); // Set cube to camera
-        this.dirLight.position.copy( this.dirLight.target.position ).add( this.lightShift );
+        this.dirLight.position.copy( this.dirLight.target.position ).add( this.lightShift )
 
 
-        // this.dirLight.position.x = camera.position.x - player.cameraStartPosition.x + 20 ;
-        // this.dirLight.position.z = camera.position.z - player.cameraStartPosition.z + 20;
-        // this.dirLight.target.position.set(( camera.position.x - player.cameraStartPosition.x),0,(camera.position.z - player.cameraStartPosition.z));
+        // this.dirLight.position.x = camera.position.x - player.cameraStartPosition.x + 20 
+        // this.dirLight.position.z = camera.position.z - player.cameraStartPosition.z + 20
+        // this.dirLight.target.position.set(( camera.position.x - player.cameraStartPosition.x),0,(camera.position.z - player.cameraStartPosition.z))
 
 
-        // this.dirLight.position.addScaledVector(new Vector3(- 1, 1.75, 1), 30);
-        // this.dirLight.position.multiplyScalar( 30 );
+        // this.dirLight.position.addScaledVector(new Vector3(- 1, 1.75, 1), 30)
+        // this.dirLight.position.multiplyScalar( 30 )
 
         // let newpos = new Vector3(-1, 1.75, 1)
         // newpos = newpos.multiplyScalar(30)
@@ -140,22 +140,22 @@ export class World {
 
 
     async loadStatics(urlFiles, scene) {
-        const geometry = new PlaneGeometry( 1000, 1000, 25, 25 );
+        const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(ZONE.ZONE_LENGTH /2, 0, ZONE.ZONE_LENGTH /2)
 
-        const material = new MeshPhongMaterial( {side: FrontSide} );
-        material.color.setHSL( 0.095, 1, 0.75 );
-        const ground = new Mesh( geometry, material );
+        const material = new MeshPhongMaterial( {side: FrontSide} )
+        material.color.setHSL( 0.095, 1, 0.75 )
+        const ground = new Mesh( geometry, material )
         ground.name = 'ground'
-        ground.castShadow = true;
-        ground.receiveShadow = true;
+        ground.castShadow = true
+        ground.receiveShadow = true
 
 
         await this.updateTerrain(urlFiles, geometry)
-        geometry.computeVertexNormals();
+        geometry.computeVertexNormals()
 
-        scene.add( ground );
+        scene.add( ground )
     }
 
     terrainData:Uint8Array|null = null
@@ -204,7 +204,7 @@ export class World {
     //     this.groundMesh.setParent(this.worldMesh)
     //     this.groundMesh.material = mixMaterial
 
-    //     this.waterMesh = new Mesh(`Waters`, scene);
+    //     this.waterMesh = new Mesh(`Waters`, scene)
     //     this.waterMesh.setParent(this.worldMesh)
     //     this.waterMesh.position = new Vector3(0,0,0) 
     //     this.waterMesh.scaling = new Vector3(1,1,1)
@@ -249,10 +249,10 @@ export class World {
         // this.groundMesh = await BabsUtils.terrainGenerate(this.terrainData, this.groundMesh)
 
 
-        const vertices = geometry.getAttribute('position').array;
+        const vertices = geometry.getAttribute('position').array
         for ( let i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
             // j + 1 because it is the y component that we modify
-            vertices[ j + 1 ] = this.terrainData[ i ];
+            vertices[ j + 1 ] = this.terrainData[ i ]
 
         }
 

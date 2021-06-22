@@ -1,6 +1,6 @@
 export class Zone {
-    public terrainFile: string;
-    public landcoverFile: string;
+    public terrainFile: string
+    public landcoverFile: string
 
     constructor () {
     }

@@ -8,7 +8,7 @@ Gamedev chat at https://discord.gg/f2nbKVzgwm
 
 This is the web client for First Earth.  It's very messy code.  It can be compiled and run locally, but won't be able to connect to the server at https://earth.suncapped.com.  
 
-That ability will be added after player login is added to the server; connecting your local dev Babs client to earth.suncapped.com will be based on your player account.
+That ability will be added after player login is added to the server.  Connecting your local dev Babs client to earth.suncapped.com will be based on your player account.
 
 ### Install Nodejs
 

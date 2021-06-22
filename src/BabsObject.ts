@@ -1,6 +1,6 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial } from "three";
-import { BabsSocket } from "./BabsSocket";
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial } from "three"
+import { BabsSocket } from "./BabsSocket"
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as BabsUtils from './BabsUtils'
 export class BabsObject {
 
@@ -9,8 +9,8 @@ export class BabsObject {
     async init(path, scene) {
         const group = await BabsUtils.loadFbx(path)
 
-        // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } );
-        // const object = new Mesh( geometry, material );
+        // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
+        // const object = new Mesh( geometry, material )
         this.mesh = group.children[0]
         console.log(this.mesh)
 
@@ -21,11 +21,11 @@ export class BabsObject {
         this.mesh.material[2].emissive = new Color(102, 0, 0) // 
 
 
-        scene.add( this.mesh );
+        scene.add( this.mesh )
         if(group.children.length > 1) {
             console.error("Loading FBX with more than one child!", group)
         }
-        return this;
+        return this
     }
 }
 

@@ -101,11 +101,11 @@ export function loadFbx(path) : Promise<Group> {
                 resolve(group)
             },
             (xhr) => { // onProgress callback
-                console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+                console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
             },
             (err) => { // onError callback
-                console.log( 'An error happened', err );
+                console.log( 'An error happened', err )
             }
-        );
+        )
     }); 
 }

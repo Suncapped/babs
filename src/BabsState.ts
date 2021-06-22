@@ -1,10 +1,10 @@
-// import { Schema, type, ArraySchema, MapSchema, DataChange } from "@colyseus/schema";
+// import { Schema, type, ArraySchema, MapSchema, DataChange } from "@colyseus/schema"
 import { Zone } from "./BabsZone"
 import type { Player } from "./BabsPlayer"
 
 export class MyState {
-    public zone: Zone = new Zone();
-    public players: Array<Player> = new Array<Player>();
+    public zone: Zone = new Zone()
+    public players: Array<Player> = new Array<Player>()
 
     constructor () {
     }

@@ -53,16 +53,16 @@ async function init() {
 	camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
     // camera.useQuaternion = true
-    // var y_axis = new Vector3( 0, 1, 0 );
-    // var quaternion = new Quaternion;
-    // camera.position.applyQuaternion(quaternion.setFromAxisAngle(y_axis, 100));
-    // var qm = new Quaternion();
-    // Quaternion.slerp(camera.quaternion, destRotation, qm, 0.07);
-    // camera.quaternion = qm;
-    // camera.quaternion.normalize();
+    // var y_axis = new Vector3( 0, 1, 0 )
+    // var quaternion = new Quaternion
+    // camera.position.applyQuaternion(quaternion.setFromAxisAngle(y_axis, 100))
+    // var qm = new Quaternion()
+    // Quaternion.slerp(camera.quaternion, destRotation, qm, 0.07)
+    // camera.quaternion = qm
+    // camera.quaternion.normalize()
     // camera.rotation.y = 2
-    // camera.rotateY( - Math.PI / 2 );
-    camera.rotateY(BabsUtils.radians(-135));
+    // camera.rotateY( - Math.PI / 2 )
+    camera.rotateY(BabsUtils.radians(-135))
     
     world = new World(scene)
     player = await new Player().init(scene, camera)
@@ -94,11 +94,11 @@ async function init() {
 
     // add an AxesHelper to each node
     scene.children.forEach((node) => {
-        const axes = new AxesHelper(10);
-        axes.renderOrder = 1;
+        const axes = new AxesHelper(10)
+        axes.renderOrder = 1
         axes.position.add(new Vector3(-0.2,0.2,-0.2))
         node.add(axes)
-    });
+    })
 
 
 
