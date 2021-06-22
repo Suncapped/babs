@@ -33,8 +33,8 @@ export class Player {
         camera.position.copy(this.cameraStartPosition)
 
         this.controls = new PointerLockControls( camera, document.body )
-        const blocker = window.document.getElementById( 'blocker' )
-        const instructions = window.document.getElementById( 'instructions' )
+        // const blocker = window.document.getElementById( 'blocker' )
+        // const instructions = window.document.getElementById( 'instructions' )
         
         this.controls.isLocked = true // Don't require pointer lock to move around, but still allow it too, below
         window.document.addEventListener( 'click', () => {
@@ -48,9 +48,6 @@ export class Player {
         //     blocker.style.display = 'block'
         //     instructions.style.display = ''
         // } )
-        // Don't display overlay when unfocused!
-        instructions.style.display = 'none'
-        blocker.style.display = 'none'
         // document.addEventListener("DOMContentLoaded", function(event) {
         // })
 
