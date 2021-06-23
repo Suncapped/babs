@@ -4,7 +4,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as BabsUtils from './BabsUtils'
 export class BabsObject {
 
-    public mesh
+    mesh
 
     async init(path, scene) {
         const group = await BabsUtils.loadFbx(path)

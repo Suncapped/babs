@@ -1,8 +1,8 @@
+
 export class BabsSocket {
-    public static urlFiles
-    public static urlSocket
-    session
-    ws:WebSocket
+    static urlFiles
+    static urlSocket
+    ws
     constructor () {
         // if(import.meta.env.SNOWPACK_PUBLIC_DEVONLIVE === 'true') {
         //     this.serverHost = 'new.firstearthgame.com'
@@ -20,6 +20,7 @@ export class BabsSocket {
     }
 
     connect(){
+
         this.ws = new WebSocket(BabsSocket.urlSocket)
         this.ws.onerror = (event) => {
             console.log('socket error', event)

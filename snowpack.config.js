@@ -17,6 +17,7 @@ module.exports = {
   buildOptions: {
     // out: '../expressa/public', // Instead, I'll copy it manually in package.json.
     // Because this wipes target dir and I don't want unwiped cruft remaining either.
+    // And anyway I switched to rsync for deploys to remote!
   },
   plugins: [
   ],

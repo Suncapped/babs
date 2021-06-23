@@ -1,5 +1,5 @@
 import ndarray from 'ndarray'
-import type { Group } from 'three'
+import { Group } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { BabsSocket } from './BabsSocket'
 // import unpack from 'ndarray-unpack' // @ts-ignore
@@ -30,6 +30,8 @@ export function* createTimeReporter() {
         marker = yield null
     }
 }
+
+
 /* Use like:
 let timeReporter = createTimeReporter(); timeReporter.next()
 timeReporter.next('blue')
@@ -92,7 +94,13 @@ timeReporter.next('end')
     // return mixMaterial
 // }
 
-export function loadFbx(path) : Promise<Group> {
+/**
+ * @constructor
+ * @param {string} path
+ * @param {string} author
+ * @returns {Promise<Group>}
+ */
+export function loadFbx(path) {
     const loader = new FBXLoader()
     return new Promise( (resolve, reject) => {
         loader.load(

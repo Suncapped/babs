@@ -38,7 +38,7 @@ export class World {
 
     lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30); // for re-use
 
-    public worldMesh
+    worldMesh
     constructor (scene) {
 
         let renderer = new WebGLRenderer()
@@ -158,7 +158,7 @@ export class World {
         scene.add( ground )
     }
 
-    terrainData:Uint8Array|null = null
+    terrainData = null
     // rawTexture1
     // rawTexture2
     // public groundMesh

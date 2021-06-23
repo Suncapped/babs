@@ -30,7 +30,7 @@ import ndinterpolate from 'ndarray-linear-interpolate'
 
 import { clamp, rand, sleep, ZONE } from './shared/FeShared'
 import * as BabsUtils from './BabsUtils'
-import { Player } from './BabsPlayer'
+// import { BbPlayer } from './BabsPlayer'
 import { World } from './BabsWorld'
 import { BabsSocket } from './BabsSocket'
 
@@ -38,15 +38,59 @@ import { BabsSocket } from './BabsSocket'
 import Stats from 'three/examples/jsm/libs/stats.module'
 
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'
+import { Ui, Uic } from './Ui'
+import { CompControllable } from './CompControllable'
+import { Comp } from './Comp'
+import { Ent } from './Ent'
 
 
 
 let camera, scene, renderer
-let stats
-let world, player
+let fps, mem
+let world
+let ePlayer
 let cube
 let prevTime = performance.now()
+let uic
 
+class EntManager{
+    /** @type {Object.<number, Ent>} ents */
+    static ents = {}
+
+    static Create(id) {
+        return EntManager.ents[id] = Ent.Create(id)
+    }
+    static Get(id) {
+        return ents[id]
+    }
+    // todo add Destroy
+}
+
+class CompManager{
+    /** @type {Object.<string, Comp[]>} typesComps */
+    static typesComps = {}
+
+    /** 
+     * @param {Comp} clComp class of component
+     * */
+     static Add(idEnt, clComp, props) {
+         console.log("ENTID", idEnt)
+        CompManager.typesComps[clComp.sType] = CompManager.typesComps[clComp.sType] || [] // Create if needed
+        CompManager.typesComps[clComp.sType].push(clComp.Create(idEnt, props))
+        return [CompManager.typesComps[clComp.sType]].length -1
+    }
+
+    /** 
+     * @method Get get component type from supplied entity id
+     * @return {null|Comp} component instance
+     * @param {Comp} clComp class of component
+     * */
+    static Get(idEnt, clComp) {
+        if(!EntManager.ents[idEnt]) return null
+        return CompManager.typesComps[clComp.sType].find(comp => comp.idEnt === idEnt)
+    }
+    // todo add Remove
+}
 
 async function init() {
 	scene = new Scene()
@@ -65,9 +109,17 @@ async function init() {
     camera.rotateY(BabsUtils.radians(-135))
     
     world = new World(scene)
-    player = await new Player().init(scene, camera)
     
-    
+    ePlayer = EntManager.Create(1)
+    CompManager.Add(ePlayer.id, CompControllable)
+
+    // Call CompControllable inits
+    console.log('typesComps', CompManager.typesComps)
+    CompManager.typesComps[CompControllable.sType].forEach(async comp => {
+        await comp.init(scene, camera)
+    })
+
+
     cube = makeCube(scene)
     world.dirLight.target = cube
     scene.add( world.dirLight.target )
@@ -79,10 +131,11 @@ async function init() {
         renderer.render( scene, camera )
     })
 
-    stats = Stats()
-    document.body.appendChild( stats.dom )
+    // let ui = new Ui(document)
+    // ui.createStats('fps').createStats('mem')
+    uic = new Uic(document)
+    uic.createStats('fps').createStats('mem')
 
-    
     renderer = new WebGLRenderer( { antialias: true } )
     renderer.setPixelRatio( window.devicePixelRatio )
 	renderer.setSize( window.innerWidth, window.innerHeight )
@@ -101,8 +154,8 @@ async function init() {
     })
 
 
-
-    const canvas = renderer.domElement as HTMLCanvasElement
+    /** @type {HTMLCanvasElement} */
+    const canvas = renderer.domElement
 
 // var outlineMaterial1 = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.BackSide } )
 // 	var outlineMesh1 = new THREE.Mesh( geometry, outlineMaterial1 )
@@ -111,21 +164,28 @@ async function init() {
 // 	scene.add( outlineMesh1 )
 }
 
+
 let delta
 function animation( time ) {
-    stats.begin()
+    uic['fps'].begin()
+    uic['mem'].begin()
     delta = (time -prevTime) /1000
 
 	cube.rotation.x = time /4000
 	cube.rotation.y = time /1000
+    
+    CompManager.typesComps[CompControllable.sType].forEach(comp => {
+        comp.animControls(delta, scene)
+    })
 
-    player?.animControls(delta, scene)
-    world.animate(delta, camera, player)
-
+    world.animate(delta, camera, ePlayer)
     
     prevTime = time
 	renderer.render( scene, camera )
-    stats.end()
+
+
+    uic['fps'].end()
+    uic['mem'].end()
 }
 
 
@@ -203,7 +263,12 @@ socket.ws.onopen = (event) => {
     console.log('socket onopen', event)
     socket.send(`Login:adam/test`)
 }
-socket.ws.onmessage = async (event:MessageEvent<any>) => {
+/**
+ * Represents a book.
+ * @constructor
+ * @param {MessageEvent} event - The title of the book.
+ */
+socket.ws.onmessage = async (event) => {
     console.log('Rec:', event.data)
     if(typeof event.data === 'string') {
         const parts = event.data.split(/\:(.+)/) // split on first ':'
