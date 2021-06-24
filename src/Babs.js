@@ -28,69 +28,78 @@ import ops from 'ndarray-ops'
 import bicubic from 'bicubic-interpolate'
 import ndinterpolate from 'ndarray-linear-interpolate'
 
-import { clamp, rand, sleep, ZONE } from './shared/FeShared'
-import * as BabsUtils from './BabsUtils'
+import * as BabsUtils from './Utils'
 // import { BbPlayer } from './BabsPlayer'
-import { World } from './BabsWorld'
-import { BabsSocket } from './BabsSocket'
+import { World } from './World'
+import { BabsSocket } from './Socket'
 
 // import Stats from 'three/examples/jsm/libs/stats.module.js'
 import Stats from 'three/examples/jsm/libs/stats.module'
 
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'
 import { Ui, Uic } from './Ui'
-import { CompControllable } from './CompControllable'
-import { Comp } from './Comp'
-import { Ent } from './Ent'
+import { ComControllable } from './ComControllable'
+import { Com } from './Com'
+// import { Ent } from './Ent'
 
 
 
 let camera, scene, renderer
 let fps, mem
 let world
-let ePlayer
+let idPlayer
 let cube
 let prevTime = performance.now()
 let uic
 
-class EntManager{
-    /** @type {Object.<number, Ent>} ents */
-    static ents = {}
 
-    static Create(id) {
-        return EntManager.ents[id] = Ent.Create(id)
-    }
-    static Get(id) {
-        return ents[id]
-    }
-    // todo add Destroy
-}
-
-class CompManager{
-    /** @type {Object.<string, Comp[]>} typesComps */
-    static typesComps = {}
-
+class ECS {
+    /** @type {Set} ents */
+    static ents = new Set()
+    
     /** 
-     * @param {Comp} clComp class of component
+     * @return {number} entity id
      * */
-     static Add(idEnt, clComp, props) {
-         console.log("ENTID", idEnt)
-        CompManager.typesComps[clComp.sType] = CompManager.typesComps[clComp.sType] || [] // Create if needed
-        CompManager.typesComps[clComp.sType].push(clComp.Create(idEnt, props))
-        return [CompManager.typesComps[clComp.sType]].length -1
+     static CreateEnt(idEnt) {
+        ECS.ents.add(idEnt)
+        return idEnt
+    }
+
+    /** @type {Object.<string, Com[]>} coms - object of types, each type has array of coms */
+    static coms = {}
+    
+    /** 
+     * @param {Com|null} clCom class to get, or null for all
+     * @return {Com[]} all components of given class
+     * */
+    static GetComsAll(clCom) {
+        return clCom ? ECS.coms[clCom.sType] : ECS.coms
     }
 
     /** 
-     * @method Get get component type from supplied entity id
-     * @return {null|Comp} component instance
-     * @param {Comp} clComp class of component
+     * @return {null|Com} component of given class on entity, if exists
      * */
-    static Get(idEnt, clComp) {
-        if(!EntManager.ents[idEnt]) return null
-        return CompManager.typesComps[clComp.sType].find(comp => comp.idEnt === idEnt)
+    static GetCom(clCom, idEnt) {
+        if(!ECS.ents.has(idEnt)) return null
+        return ECS.coms[clCom.sType].find(com => com.idEnt === idEnt)
     }
-    // todo add Remove
+
+    /** 
+     * @return {null|Com} component of given class on entity, if exists
+     * */
+    static AddCom(clCom, idEnt, props) {
+        console.log('wut', ECS.ents[idEnt])
+        if(!ECS.ents.has(idEnt)) return null
+        ECS.coms[clCom.sType] = ECS.coms[clCom.sType] || [] // Create if needed
+        console.log('welp', ECS.coms[clCom.sType])
+        const length = ECS.coms[clCom.sType].push(clCom.Create(idEnt, props))
+        return ECS.coms[clCom.sType][length -1]
+    }
+
 }
+
+
+
 
 async function init() {
 	scene = new Scene()
@@ -110,14 +119,16 @@ async function init() {
     
     world = new World(scene)
     
-    ePlayer = EntManager.Create(1)
-    CompManager.Add(ePlayer.id, CompControllable)
+    idPlayer = ECS.CreateEnt(1)
+    console.log('idPlayer', idPlayer)
 
-    // Call CompControllable inits
-    console.log('typesComps', CompManager.typesComps)
-    CompManager.typesComps[CompControllable.sType].forEach(async comp => {
-        await comp.init(scene, camera)
+    ECS.AddCom(ComControllable, idPlayer)
+    console.log('coms', ECS.coms)
+
+    ECS.GetComsAll(ComControllable).forEach(async com => {
+        await com.init(scene, camera) // make 'em wait!
     })
+    console.log("init done")
 
 
     cube = makeCube(scene)
@@ -166,7 +177,7 @@ async function init() {
 
 
 let delta
-function animation( time ) {
+function animation(time) {
     uic['fps'].begin()
     uic['mem'].begin()
     delta = (time -prevTime) /1000
@@ -174,11 +185,11 @@ function animation( time ) {
 	cube.rotation.x = time /4000
 	cube.rotation.y = time /1000
     
-    CompManager.typesComps[CompControllable.sType].forEach(comp => {
-        comp.animControls(delta, scene)
+    ECS.GetComsAll(ComControllable).forEach(com => {
+        com.animControls(delta, scene)
     })
 
-    world.animate(delta, camera, ePlayer)
+    world.animate(delta, camera, idPlayer)
     
     prevTime = time
 	renderer.render( scene, camera )
@@ -284,7 +295,7 @@ socket.ws.onmessage = async (event) => {
                 // TODO do joining stuff then
 
 
-                await sleep(1000)
+                // await sleep(1000)
 
                 socket.send('Join:'+joinZone)
             }

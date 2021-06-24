@@ -9,7 +9,7 @@ export class BabsSocket {
         //     this.urlFiles = `https://${this.serverHost}/files`
         //     this.urlSocket = `wss://${this.serverHost}/proxima`
         // }  else
-        if(window.location.href === 'https://earth.suncapped.com/') {
+        if(window.location.href.startsWith('https://earth.suncapped.com')) {
             BabsSocket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
             BabsSocket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
         } 

@@ -1,9 +1,9 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
-import { BabsObject } from "./BabsObject"
-import { Comp } from "./Comp"
+import { BabsObject } from "./Object"
+import { Com } from "./Com"
 
-export class CompControllable extends Comp {
+export class ComControllable extends Com {
     static sType = 'controllable'
     idEnt
 
@@ -21,14 +21,14 @@ export class CompControllable extends Comp {
     raycaster
 
     static Create(idEnt, props) {
-        const c = new CompControllable
+        const c = new ComControllable
         c.idEnt = idEnt
         Object.assign(c, props) // Overrides of defaults // todo reenable
         return c
     }
 
     async init(scene, camera) {
-        console.log('init CompControllable on ' + this.idEnt, this.cameraStartPosition)
+        console.log('init ComControllable on ' + this.idEnt, this.cameraStartPosition)
         camera.name = 'player'
 
         camera.position.set(0, this.ftHeightHead, 0)

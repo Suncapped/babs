@@ -1,6 +1,5 @@
 
-import * as BabsUtils from './BabsUtils'
-import { clamp, rand, sleep, ZONE } from './shared/FeShared'
+import * as BabsUtils from './Utils'
 import ndarray from 'ndarray'
 import { 
     PlaneGeometry, 
@@ -32,6 +31,8 @@ import {
 } from 'three'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 export class World {
+
+    static ZoneLength = 1000
 
     dirLight
     dirLightHelper
@@ -142,7 +143,7 @@ export class World {
     async loadStatics(urlFiles, scene) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
-        geometry.translate(ZONE.ZONE_LENGTH /2, 0, ZONE.ZONE_LENGTH /2)
+        geometry.translate(World.ZoneLength /2, 0, World.ZoneLength /2)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
         material.color.setHSL( 0.095, 1, 0.75 )

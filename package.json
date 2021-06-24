@@ -5,13 +5,8 @@
     "node": "v16"
   },
   "scripts": {
-    "preshared": "cp ./../proxima/src/shared/* ./src/shared",
-    "shared": "cp ./src/shared/* ./../expressa/src/shared",
-    "postshared": "rm ./src/shared/FeDb.ts ./src/shared/knexfile.ts",
-
     "dev": "snowpack dev",
     
-    "prebuild": "npm run shared",
     "build": "snowpack build && echo Size: && du -sh build",
     "postbuild": "sh buildtime.sh",
 

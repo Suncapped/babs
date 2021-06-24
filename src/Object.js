@@ -1,7 +1,7 @@
 import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial } from "three"
-import { BabsSocket } from "./BabsSocket"
+import { BabsSocket } from "./Socket"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as BabsUtils from './BabsUtils'
+import * as BabsUtils from './Utils'
 export class BabsObject {
 
     mesh

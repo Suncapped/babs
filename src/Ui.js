@@ -1,5 +1,5 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
-import { BabsSocket } from './BabsSocket'
+import { BabsSocket } from './Socket'
 
 export const Ui = function(document) {
     this.document = document

@@ -1,12 +1,10 @@
-import { Comp } from "./Comp"
-import { CompControllable } from "./CompControllable"
-
-export class Ent{
-    /** @type {number} */ 
-    id
-    static Create(id) {
-        const ent = new Ent
-        ent.id = id
-        return ent
-    }
-}
+// Removed because entities are now just an integer!
+// export class Ent{
+//     /** @type {number} */ 
+//     id
+//     static Create(id) {
+//         const ent = new Ent
+//         ent.id = id
+//         return ent
+//     }
+// }

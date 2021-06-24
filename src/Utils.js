@@ -1,10 +1,8 @@
 import ndarray from 'ndarray'
 import { Group } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { BabsSocket } from './BabsSocket'
+import { BabsSocket } from './Socket'
 // import unpack from 'ndarray-unpack' // @ts-ignore
-
-import { clamp, rand, sleep, ZONE, doAroundDistance } from './shared/FeShared'
 
 
 export const ZONE_TEXTURE_GEN_MIPMAPS = false  // gen mipmaps - maybe should be true in the future?
@@ -42,13 +40,13 @@ timeReporter.next('end')
 // export async function terrainGenerate(terrainData:Uint8Array, ground:Mesh) {
     // const terrainDataFloat = Array.from(terrainData).map((ele:number) => ele /ZONE.TR_MULT)
     // console.log(terrainDataFloat)
-    // ground.position = new Vector3(ZONE.ZONE_LENGTH/2, 0, ZONE.ZONE_LENGTH/2)
-    // let vertexData = CreateGroundFromArray(ZONE.ZONE_LENGTH, ZONE.ZONE_LENGTH, ZONE.ZONE_DATUMS, terrainDataFloat)
+    // ground.position = new Vector3(World.ZoneLength/2, 0, World.ZoneLength/2)
+    // let vertexData = CreateGroundFromArray(World.ZoneLength, World.ZoneLength, ZONE.ZONE_DATUMS, terrainDataFloat)
     // vertexData.applyToMesh(ground, true)
 
     // if(ground2) {
     //     ground2 = Mesh.CreateGround(`GROUNDGRID ${room.state.zone.terrainFile}`, 1, 1, 1)
-    //     ground2.position = new Vector3(ZONE.ZONE_LENGTH/2, -9000 +1, ZONE.ZONE_LENGTH/2)
+    //     ground2.position = new Vector3(World.ZoneLength/2, -9000 +1, World.ZoneLength/2)
     //     vertexData.applyToMesh(ground2, true)
     //     gridmaterial.alpha = 0.5
     //     ground2.material = gridmaterial
