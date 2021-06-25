@@ -97,11 +97,11 @@ timeReporter.next('end')
  * @param {string} author
  * @returns {Promise<Group>}
  */
-export function loadFbx(path) {
+export function loadFbx(socket, path) {
     const loader = new FBXLoader()
     return new Promise( (resolve, reject) => {
         loader.load(
-            `${Socket.urlFiles}${path}`, // resource URL
+            `${socket.urlFiles}${path}`, // resource URL
             (group) => { // onLoad callback
                 resolve(group)
             },

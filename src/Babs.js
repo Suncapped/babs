@@ -98,30 +98,26 @@ class ECS {
 
 
 
-
+let socket
 async function init() {
 	scene = new Scene()
 	camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
-    // camera.useQuaternion = true
-    // var y_axis = new Vector3( 0, 1, 0 )
-    // var quaternion = new Quaternion
-    // camera.position.applyQuaternion(quaternion.setFromAxisAngle(y_axis, 100))
-    // var qm = new Quaternion()
-    // Quaternion.slerp(camera.quaternion, destRotation, qm, 0.07)
-    // camera.quaternion = qm
-    // camera.quaternion.normalize()
-    // camera.rotation.y = 2
-    // camera.rotateY( - Math.PI / 2 )
-    
     world = new World(scene)
-    
-    idPlayer = ECS.CreateEnt(1)
 
+    socket = Socket.Create(scene, world)
+    document.getElementById('enterbutton').addEventListener('click', (ev) => {
+        ev.preventDefault()
+        console.log(socket)
+        socket.connect()
+    })
+
+    idPlayer = ECS.CreateEnt(1)
     ECS.AddCom(ComControllable, idPlayer)
 
+    // Components init
     ECS.GetComsAll(ComControllable).forEach(async com => {
-        await com.init(scene, camera) // make 'em wait!
+        await com.init(scene, camera, socket) // make 'em wait! // Should I have to pass to each?
     })
 
     cube = makeCube(scene)
@@ -161,6 +157,7 @@ async function init() {
     /** @type {HTMLCanvasElement} */
     const canvas = renderer.domElement
     canvas.id = 'canvas'
+
 
 // var outlineMaterial1 = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.BackSide } )
 // 	var outlineMesh1 = new THREE.Mesh( geometry, outlineMaterial1 )
@@ -260,45 +257,6 @@ function makeCube(scene) {
 // PERSONS
 // var spheres = new Array<Mesh>()
 // var texts = new Array<TextBlock>()
-
-
-let socket = new Socket()
-socket.connect()
-socket.ws.onopen = (event) => {
-    console.log('socket onopen', event)
-    socket.send(`Login:adam/test`)
-}
-/**
- * Represents a book.
- * @constructor
- * @param {MessageEvent} event - The title of the book.
- */
-socket.ws.onmessage = async (event) => {
-    console.log('Rec:', event.data)
-    if(typeof event.data === 'string') {
-        const parts = event.data.split(/\:(.+)/) // split on first ':'
-        if(parts.length > 1) {
-            if('Session' === parts[0]) {
-                socket.session = parts[1]
-                localStorage.setItem('session', socket.session)
-                socket.send('Session:'+socket.session)
-            }
-            else if('Join' === parts[0]) {
-                const joinZone = parts[1]
-                await world.loadStatics(Socket.urlFiles, scene)
-                // TODO do joining stuff then
-
-
-                // await sleep(1000)
-
-                socket.send('Join:'+joinZone)
-            }
-            else {
-                console.log('Unknown event.data value')
-            }
-        }
-    }
-}
 
 
 // ENGINE

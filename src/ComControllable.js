@@ -1,6 +1,6 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
-import { BabsObject } from "./Object"
+import { Gob } from "./Gob"
 import { Com } from "./Com"
 import * as Utils from "./Utils"
 
@@ -28,7 +28,7 @@ export class ComControllable extends Com {
         return c
     }
 
-    async init(scene, camera) {
+    async init(scene, camera, socket) {
         console.log('ComControllable init on idEnt ' + this.idEnt)
         camera.name = 'player'
         camera.rotateY(Utils.radians(-135))
@@ -82,7 +82,7 @@ export class ComControllable extends Com {
                     this.bCanJump = false
                     break
                 case 'KeyF':
-                    let obj = await new BabsObject().init('/mesh/fireplace.fbx', scene)
+                    let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
                     obj.mesh.scale.multiplyScalar(0.01 * 3.3)
                     console.log(scene.children)
                     const player = scene.children.find(o=>o.name=='player')
@@ -131,10 +131,10 @@ export class ComControllable extends Com {
                 switch(ev.type) {
                     case 'keydown':
                         onKeyDown(ev)
-                    break;
+                    break
                     case 'keyup':
                         onKeyUp(ev)
-                    break;
+                    break
                 }
             }
         }
@@ -146,23 +146,23 @@ export class ComControllable extends Com {
                     case 'click':
                         this.controls.lock()
                         this.bPressingForward = false // In case of a previous click
-                    break;
+                    break
                 }
             }
             if(this.controls.isLocked === true){
                 switch(ev.type) {
                     case 'mousedown':
                         onMouseDown(ev)
-                    break;
+                    break
                     case 'mouseup':
                         onMouseUp(ev)
-                    break;
+                    break
                     case 'keydown':
                         onKeyDown(ev)
-                    break;
+                    break
                     case 'keyup':
                         onKeyUp(ev)
-                    break;
+                    break
                 }
             }
 
