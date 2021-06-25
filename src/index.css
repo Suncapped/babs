@@ -16,6 +16,15 @@ body {
 #charsave form{
     display: inline;
 }
+#charsave{
+    width: 100%;
+}
+#charsave input[type="email"]{
+    width: 25%;
+}
+#charsave input[type="password"]{
+    width: 15%;
+}
 #fps, #mem {
     position: absolute;
     bottom: 10px;
