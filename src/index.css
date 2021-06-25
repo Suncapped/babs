@@ -1,0 +1,35 @@
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 24px;
+}
+#charsave input, #charsave button {
+    font-size: 20px;
+    padding: 3px;
+    margin: 2px;
+}
+#fps, #mem {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}
+#mem {
+    bottom: 64px;
+}
+#info {
+    position: absolute;
+    bottom: 10px;
+    left: 100px;
+    text-align:left;
+}
+.topitem {
+    background-color: rgb(245, 236, 158);
+    /* width: 100%; */
+    padding: 10px;
+}
+

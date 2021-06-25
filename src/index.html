@@ -4,45 +4,24 @@
     <meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>First Earth</title>
-    <style>
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
-            overflow: hidden;
-			font-size: 22px;
-        }
-		#fps, #mem {
-			position: absolute;
-			bottom: 10px;
-			left: 10px;
-		}
-		#mem {
-			bottom: 64px;
-		}
-		#info {
-			position: absolute;
-			bottom: 10px;
-			left: 100px;
-			text-align:left;
-		}
-		#apple {
-			position: absolute;
-			bottom: 10px;
-			right: 10px;
-			text-align: right;
-			z-index: 100;
-		}
-	</style>
+	<link rel="stylesheet" href="index.css">
   </head>
   <body>
     <!-- touch-action="none" -->
     <noscript>You need to enable JavaScript to run this app.</noscript>
+	<div class="topitem">
+		<div id="charsave" style="float:left;">
+			<span>Character Save:</span>
+			<input name="email" type="email" placeholder="Email - no spam" />
+			<input name="password" type="password" placeholder="Password" />
+			<button type="submit">Enter</button>
+		</div>
+		<div style="float:right; position:absolulte; right:0px; margin-top: 5px;">Designed for laptops and desktops</div>
+		<div style="clear:both"></div>
+	</div>
+	</div>
 	<div id="info">
 		XYZ: <span id="log"></span><br/>
-		WASD/Arrows=move, F=campfire, ESC=mouse<br/>
 		Gamedev discord: <a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a><br/>
 		Built on build_time (build_info)
 	</div>

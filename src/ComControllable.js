@@ -40,6 +40,7 @@ export class ComControllable extends Com {
         this.controls.isLocked = true // Don't require pointer lock to move around, but still allow it too, below
         window.document.addEventListener( 'click', () => {
             this.controls.lock()
+            this.bPressingForward = false // In case of a previous click
         })
         // controls.addEventListener( 'lock', function () {
         //     instructions.style.display = 'none'
@@ -52,7 +53,10 @@ export class ComControllable extends Com {
         // document.addEventListener("DOMContentLoaded", function(event) {
         // })
 
-        scene.add( this.controls.getObject() )
+        // scene.add( this.controls.getObject() ) // Camera is already added isn't it?
+
+        
+
         const onKeyDown = async ( event ) => {
             switch ( event.code ) {
                 case 'ArrowUp':
@@ -107,9 +111,21 @@ export class ComControllable extends Com {
                     break
             }
         }
+        const onMouseDown = (event) => {
+            if(event.button === 2) {
+                this.bPressingForward = true
+            }
+        }
+        const onMouseUp = (event) => {
+            if(event.button === 2) {
+                this.bPressingForward = false
+            }
+        }
         this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
         window.document.addEventListener( 'keydown', onKeyDown )
         window.document.addEventListener( 'keyup', onKeyUp )
+        window.document.addEventListener( 'mousedown', onMouseDown )
+        window.document.addEventListener( 'mouseup', onMouseUp )
 
         return this
     }

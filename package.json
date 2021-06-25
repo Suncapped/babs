@@ -6,10 +6,8 @@
   },
   "scripts": {
     "dev": "snowpack dev",
-    
     "build": "snowpack build && echo Size: && du -sh build",
     "postbuild": "sh buildtime.sh",
-
     "predeploy": "npm run build",
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
   },
@@ -21,7 +19,7 @@
     "ndarray": "^1.0.19",
     "ndarray-linear-interpolate": "^1.0.0",
     "ndarray-ops": "^1.2.2",
-    "snowpack": "^3.5.9"
+    "snowpack": "^3.6.2"
   },
   "dependencies": {
     "three": "^0.129.0"

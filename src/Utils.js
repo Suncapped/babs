@@ -4,7 +4,6 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { BabsSocket } from './Socket'
 // import unpack from 'ndarray-unpack' // @ts-ignore
 
-
 export const ZONE_TEXTURE_GEN_MIPMAPS = false  // gen mipmaps - maybe should be true in the future?
 export const ZONE_TEXTURE_INVERTY = false // invertY (flip?)
 
