@@ -12,9 +12,11 @@
 	<div class="topitem">
 		<div id="charsave" style="float:left;">
 			<span>Character Save:</span>
-			<input name="email" type="email" placeholder="Email - no spam" />
-			<input name="password" type="password" placeholder="Password" />
-			<button type="submit">Enter</button>
+			<form method="post">
+				<input name="email" type="email" autocomplete="email" placeholder="Email - no spam" />
+				<input name="password" type="password" autocomplete="new-password" placeholder="Password" />
+				<button type="submit" id="enterbutton">Enter</button>
+			</form>
 		</div>
 		<div style="float:right; position:absolulte; right:0px; margin-top: 5px;">Designed for laptops and desktops</div>
 		<div style="clear:both"></div>

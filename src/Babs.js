@@ -28,10 +28,10 @@ import ops from 'ndarray-ops'
 import bicubic from 'bicubic-interpolate'
 import ndinterpolate from 'ndarray-linear-interpolate'
 
-import * as BabsUtils from './Utils'
+import * as Utils from './Utils'
 // import { BbPlayer } from './BabsPlayer'
 import { World } from './World'
-import { BabsSocket } from './Socket'
+import { Socket } from './Socket'
 
 // import Stats from 'three/examples/jsm/libs/stats.module.js'
 import Stats from 'three/examples/jsm/libs/stats.module'
@@ -88,10 +88,8 @@ class ECS {
      * @return {null|Com} component of given class on entity, if exists
      * */
     static AddCom(clCom, idEnt, props) {
-        console.log('wut', ECS.ents[idEnt])
         if(!ECS.ents.has(idEnt)) return null
         ECS.coms[clCom.sType] = ECS.coms[clCom.sType] || [] // Create if needed
-        console.log('welp', ECS.coms[clCom.sType])
         const length = ECS.coms[clCom.sType].push(clCom.Create(idEnt, props))
         return ECS.coms[clCom.sType][length -1]
     }
@@ -115,21 +113,16 @@ async function init() {
     // camera.quaternion.normalize()
     // camera.rotation.y = 2
     // camera.rotateY( - Math.PI / 2 )
-    camera.rotateY(BabsUtils.radians(-135))
     
     world = new World(scene)
     
     idPlayer = ECS.CreateEnt(1)
-    console.log('idPlayer', idPlayer)
 
     ECS.AddCom(ComControllable, idPlayer)
-    console.log('coms', ECS.coms)
 
     ECS.GetComsAll(ComControllable).forEach(async com => {
         await com.init(scene, camera) // make 'em wait!
     })
-    console.log("init done")
-
 
     cube = makeCube(scene)
     world.dirLight.target = cube
@@ -167,6 +160,7 @@ async function init() {
 
     /** @type {HTMLCanvasElement} */
     const canvas = renderer.domElement
+    canvas.id = 'canvas'
 
 // var outlineMaterial1 = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.BackSide } )
 // 	var outlineMesh1 = new THREE.Mesh( geometry, outlineMaterial1 )
@@ -268,7 +262,7 @@ function makeCube(scene) {
 // var texts = new Array<TextBlock>()
 
 
-let socket = new BabsSocket()
+let socket = new Socket()
 socket.connect()
 socket.ws.onopen = (event) => {
     console.log('socket onopen', event)
@@ -291,7 +285,7 @@ socket.ws.onmessage = async (event) => {
             }
             else if('Join' === parts[0]) {
                 const joinZone = parts[1]
-                await world.loadStatics(BabsSocket.urlFiles, scene)
+                await world.loadStatics(Socket.urlFiles, scene)
                 // TODO do joining stuff then
 
 

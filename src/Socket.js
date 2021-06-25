@@ -1,5 +1,5 @@
 
-export class BabsSocket {
+export class Socket {
     static urlFiles
     static urlSocket
     ws
@@ -10,18 +10,18 @@ export class BabsSocket {
         //     this.urlSocket = `wss://${this.serverHost}/proxima`
         // }  else
         if(window.location.href.startsWith('https://earth.suncapped.com')) {
-            BabsSocket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
-            BabsSocket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
+            Socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
+            Socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
         } 
         else {
-            BabsSocket.urlSocket = `ws://localhost:2567` /* Proxima */
-            BabsSocket.urlFiles = `http://localhost:3000` /* Express (Snowpack dev is 8081) */
+            Socket.urlSocket = `ws://localhost:2567` /* Proxima */
+            Socket.urlFiles = `http://localhost:3000` /* Express (Snowpack dev is 8081) */
         }
     }
 
     connect(){
 
-        this.ws = new WebSocket(BabsSocket.urlSocket)
+        this.ws = new WebSocket(Socket.urlSocket)
         this.ws.onerror = (event) => {
             console.log('socket error', event)
         }

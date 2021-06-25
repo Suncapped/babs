@@ -1,13 +1,13 @@
 import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial } from "three"
-import { BabsSocket } from "./Socket"
+import { Socket } from "./Socket"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as BabsUtils from './Utils'
+import * as Utils from './Utils'
 export class BabsObject {
 
     mesh
 
     async init(path, scene) {
-        const group = await BabsUtils.loadFbx(path)
+        const group = await Utils.loadFbx(path)
 
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )

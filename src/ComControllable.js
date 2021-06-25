@@ -2,6 +2,7 @@ import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
 import { BabsObject } from "./Object"
 import { Com } from "./Com"
+import * as Utils from "./Utils"
 
 export class ComControllable extends Com {
     static sType = 'controllable'
@@ -28,20 +29,20 @@ export class ComControllable extends Com {
     }
 
     async init(scene, camera) {
-        console.log('init ComControllable on ' + this.idEnt, this.cameraStartPosition)
+        console.log('ComControllable init on idEnt ' + this.idEnt)
         camera.name = 'player'
-
+        camera.rotateY(Utils.radians(-135))
         camera.position.set(0, this.ftHeightHead, 0)
+        scene.add(camera)
+
+        this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
 
         this.controls = new PointerLockControls( camera, document.body )
         // const blocker = window.document.getElementById( 'blocker' )
         // const instructions = window.document.getElementById( 'instructions' )
         
-        this.controls.isLocked = true // Don't require pointer lock to move around, but still allow it too, below
-        window.document.addEventListener( 'click', () => {
-            this.controls.lock()
-            this.bPressingForward = false // In case of a previous click
-        })
+        // this.controls.isLocked = true // Don't require pointer lock to move around, but still allow it too, below
+
         // controls.addEventListener( 'lock', function () {
         //     instructions.style.display = 'none'
         //     blocker.style.display = 'none'
@@ -57,8 +58,9 @@ export class ComControllable extends Com {
 
         
 
-        const onKeyDown = async ( event ) => {
-            switch ( event.code ) {
+        const onKeyDown = async ( ev ) => {
+
+            switch ( ev.code ) {
                 case 'ArrowUp':
                 case 'KeyW':
                     this.bPressingForward = true
@@ -82,14 +84,15 @@ export class ComControllable extends Com {
                 case 'KeyF':
                     let obj = await new BabsObject().init('/mesh/fireplace.fbx', scene)
                     obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+                    console.log(scene.children)
                     const player = scene.children.find(o=>o.name=='player')
                     obj.mesh.position.copy(player.position)
                     obj.mesh.position.y -= this.ftHeightHead
                     break
             }
         }
-        const onKeyUp = (event) => {
-            switch ( event.code ) {
+        const onKeyUp = (ev) => {
+            switch ( ev.code ) {
                 case 'ArrowUp':
                 case 'KeyW':
                     this.bPressingForward = false
@@ -111,21 +114,64 @@ export class ComControllable extends Com {
                     break
             }
         }
-        const onMouseDown = (event) => {
-            if(event.button === 2) {
+        const onMouseDown = (ev) => {
+            if(ev.button === 2) {
                 this.bPressingForward = true
             }
         }
-        const onMouseUp = (event) => {
-            if(event.button === 2) {
+        const onMouseUp = (ev) => {
+            if(ev.button === 2) {
                 this.bPressingForward = false
             }
         }
-        this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
-        window.document.addEventListener( 'keydown', onKeyDown )
-        window.document.addEventListener( 'keyup', onKeyUp )
-        window.document.addEventListener( 'mousedown', onMouseDown )
-        window.document.addEventListener( 'mouseup', onMouseUp )
+
+        const keyListener = (ev) => {
+            // console.log('KL', ev)
+            if(this.controls.isLocked === true) {
+                switch(ev.type) {
+                    case 'keydown':
+                        onKeyDown(ev)
+                    break;
+                    case 'keyup':
+                        onKeyUp(ev)
+                    break;
+                }
+            }
+        }
+
+        const mouseListener = (ev) => {
+            // console.log('ML', ev)
+            if(ev.target.id === 'canvas'){ // Limit to canvas
+                switch(ev.type) {
+                    case 'click':
+                        this.controls.lock()
+                        this.bPressingForward = false // In case of a previous click
+                    break;
+                }
+            }
+            if(this.controls.isLocked === true){
+                switch(ev.type) {
+                    case 'mousedown':
+                        onMouseDown(ev)
+                    break;
+                    case 'mouseup':
+                        onMouseUp(ev)
+                    break;
+                    case 'keydown':
+                        onKeyDown(ev)
+                    break;
+                    case 'keyup':
+                        onKeyUp(ev)
+                    break;
+                }
+            }
+
+        }
+        window.document.addEventListener( 'click', mouseListener )
+        window.document.addEventListener( 'mousedown', mouseListener )
+        window.document.addEventListener( 'mouseup', mouseListener )
+        window.document.addEventListener( 'keyup', keyListener )
+        window.document.addEventListener( 'keydown', keyListener )
 
         return this
     }

@@ -1,7 +1,7 @@
 import ndarray from 'ndarray'
 import { Group } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-import { BabsSocket } from './Socket'
+import { Socket } from './Socket'
 // import unpack from 'ndarray-unpack' // @ts-ignore
 
 export const ZONE_TEXTURE_GEN_MIPMAPS = false  // gen mipmaps - maybe should be true in the future?
@@ -83,7 +83,7 @@ timeReporter.next('end')
     // //     mixMaterial.diffuseTexture3.wrapU = mixMaterial.diffuseTexture3.wrapV = 
     // //     mixMaterial.diffuseTexture4.wrapU = mixMaterial.diffuseTexture4.wrapV = 
     // //     mixMaterial.diffuseTexture5.wrapU = mixMaterial.diffuseTexture5.wrapV = Texture.WRAP_ADDRESSMODE
-    // mixMaterial.diffuseColor = new Color3(15, 15, 15) // Integrates with BabsUtils.landcoverGenerate const full = 17; 17*15=255
+    // mixMaterial.diffuseColor = new Color3(15, 15, 15) // Integrates with Utils.landcoverGenerate const full = 17; 17*15=255
     // mixMaterial.backFaceCulling = false
     // // mixMaterial.alpha = 0.8
     // // mixMaterial.specularColor = new Color3(0.5, 0.5, 0.5)
@@ -101,7 +101,7 @@ export function loadFbx(path) {
     const loader = new FBXLoader()
     return new Promise( (resolve, reject) => {
         loader.load(
-            `${BabsSocket.urlFiles}${path}`, // resource URL
+            `${Socket.urlFiles}${path}`, // resource URL
             (group) => { // onLoad callback
                 resolve(group)
             },

@@ -1,5 +1,5 @@
 
-import * as BabsUtils from './Utils'
+import * as Utils from './Utils'
 import ndarray from 'ndarray'
 import { 
     PlaneGeometry, 
@@ -166,7 +166,7 @@ export class World {
     // waterMesh
     // async loadStatics(urlFiles, scene) {
 
-    //     let timeReporter = BabsUtils.createTimeReporter(); timeReporter.next()
+    //     let timeReporter = Utils.createTimeReporter(); timeReporter.next()
     //     timeReporter.next('loadStatics:')
 
     //     console.log("loading~")
@@ -186,17 +186,17 @@ export class World {
     //     skyboxMaterial.disableLighting = true
     //     skybox.material = skyboxMaterial
 
-    //     let mixMaterial = BabsUtils.getMixMaterial(urlFiles, scene)
+    //     let mixMaterial = Utils.getMixMaterial(urlFiles, scene)
     //     // mixMaterial.wireframe = true
     //     this.rawTexture1 = new RawTexture( new Uint8Array(250*250*4),
     //         ZONE.ZONE_DATUMS, ZONE.ZONE_DATUMS, Engine.TEXTUREFORMAT_RGBA, scene,
-    //         BabsUtils.ZONE_TEXTURE_GEN_MIPMAPS, BabsUtils.ZONE_TEXTURE_INVERTY, 
+    //         Utils.ZONE_TEXTURE_GEN_MIPMAPS, Utils.ZONE_TEXTURE_INVERTY, 
     //         Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_INT
     //     )
     //     mixMaterial.mixTexture1 = this.rawTexture1
     //     this.rawTexture2 = new RawTexture( new Uint8Array(250*250*4),
     //         ZONE.ZONE_DATUMS, ZONE.ZONE_DATUMS, Engine.TEXTUREFORMAT_RGBA, scene,
-    //         BabsUtils.ZONE_TEXTURE_GEN_MIPMAPS, BabsUtils.ZONE_TEXTURE_INVERTY, 
+    //         Utils.ZONE_TEXTURE_GEN_MIPMAPS, Utils.ZONE_TEXTURE_INVERTY, 
     //         Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_INT
     //     )
     //     mixMaterial.mixTexture2 = this.rawTexture2
@@ -230,7 +230,7 @@ export class World {
     //     timeReporter.next('Done')
     // }
     async updateTerrain(urlFiles, geometry) {
-        let timeReporter = BabsUtils.createTimeReporter(); timeReporter.next()
+        let timeReporter = Utils.createTimeReporter(); timeReporter.next()
 
         timeReporter.next('Terrain start')
         this.terrainData = null
@@ -247,7 +247,7 @@ export class World {
         // timeReporter.next('Terrain data.arrayBuffer')
         this.terrainData = new Uint8Array(buff)
         // timeReporter.next('Terrain new Uint8Array')
-        // this.groundMesh = await BabsUtils.terrainGenerate(this.terrainData, this.groundMesh)
+        // this.groundMesh = await Utils.terrainGenerate(this.terrainData, this.groundMesh)
 
 
         const vertices = geometry.getAttribute('position').array
@@ -257,16 +257,16 @@ export class World {
 
         }
 
-        timeReporter.next('Terrain BabsUtils.terrainGenerate')
+        timeReporter.next('Terrain Utils.terrainGenerate')
     }
     // async updateLandcover(urlFiles) {
     //     while(this.terrainData === null) await sleep(100)
     //     const lcBuffer = await ky.get(`${urlFiles}/terrain/LANDCOVER.bil`).arrayBuffer()
     //     const landcoverData = ndarray(new Uint8Array(lcBuffer), [ZONE.ARR_SIDE_LEN,ZONE.ARR_SIDE_LEN])
-    //     const [landcoverRGBAs1, landcoverRGBAs2] = await BabsUtils.landcoverGenerate(landcoverData)
+    //     const [landcoverRGBAs1, landcoverRGBAs2] = await Utils.landcoverGenerate(landcoverData)
     //     this.rawTexture1.update(landcoverRGBAs1)
     //     this.rawTexture2.update(landcoverRGBAs2)
-    //     const water = BabsUtils.waterGenerate(landcoverData, ndarray(this.terrainData, [251,251]))
+    //     const water = Utils.waterGenerate(landcoverData, ndarray(this.terrainData, [251,251]))
     //     if(water) {
     //         water.applyToMesh(this.waterMesh, true)
     //     }

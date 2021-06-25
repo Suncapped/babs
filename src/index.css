@@ -13,6 +13,9 @@ body {
     padding: 3px;
     margin: 2px;
 }
+#charsave form{
+    display: inline;
+}
 #fps, #mem {
     position: absolute;
     bottom: 10px;
