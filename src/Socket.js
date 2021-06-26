@@ -1,72 +1,100 @@
+import Cookies from "js-cookie"
+import { BABS } from "./Babs"
+
 export class Socket {
-    urlFiles
-    urlSocket
-    ws
-    world
-    scene
+	urlFiles
+	urlSocket
+	ws
+	world
+	scene
 
-    static Create(scene, world) {
-        let socket = new Socket
-        socket.scene = scene
-        socket.world = world
-        if(window.location.href.startsWith('https://earth.suncapped.com')) {
-            socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
-            socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
-        } 
-        else {
-            socket.urlSocket = `ws://localhost:2567` /* Proxima */
-            socket.urlFiles = `http://localhost:3000` /* Express (Snowpack dev is 8081) */
-        }
-        return socket        
-    }
+	static CookieOpts = { 
+		expires: 365, 
+		domain: 'suncapped.com',
+	}
 
-    connect = () => {
-        this.ws = new WebSocket(this.urlSocket)
-        this.ws.onerror = (event) => {
-            console.log('socket error', event)
-        }
-        this.ws.onclose = (event) => {
-            console.log('socket closed', event)
-        }
+	static Create(scene, world) {
+		let socket = new Socket
+		socket.scene = scene
+		socket.world = world
+		if (window.location.href.startsWith('https://earth.suncapped.com')) {
+			socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
+			socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
+		}
+		else {
+			socket.urlSocket = `ws://localhost:2567` /* Proxima */
+			socket.urlFiles = `http://localhost:3000` /* Express (Snowpack dev is 8081) */
+		}
 
-        this.ws.onopen = (event) => {
-            console.log('socket onopen', event)
-            this.send(`Login:adam/test`)
-        }
+		socket.ws = new WebSocket(socket.urlSocket)
 
-        this.ws.onmessage = async (event) => {
-            console.log('Rec:', event.data)
-            if(typeof event.data === 'string') {
-                const parts = event.data.split(/\:(.+)/) // split on first ':'
-                if(parts.length > 1) {
-                    if('Session' === parts[0]) {
-                        this.session = parts[1]
-                        localStorage.setItem('session', this.session)
-                        this.send('Session:'+this.session)
-                    }
-                    else if('Join' === parts[0]) {
-                        const joinZone = parts[1]
-                        await this.world.loadStatics(this.urlFiles, this.scene)
-                        // TODO do joining stuff then
+		socket.ws.onopen = (event) => {
+			const existingSession = Cookies.get('session')
+			console.log('existingSession', existingSession)
+			if(existingSession){
+				document.getElementById('charsave').style.visibility = 'hidden'
+				document.getElementById('gameinfo').textContent = "Logging in..."
+				socket.auth(existingSession)
+			}
+			else {
+				BABS.run()
+			}
+		}
+		socket.ws.onmessage = (event) => {
+			const payload = JSON.parse(event.data)
+			console.log('Rec:', payload)
+			socket.process(payload)
+		}
+		socket.ws.onerror = (event) => {
+			console.log('socket error', event)
+			document.getElementById('gameinfo').innerHTML = `<span title="${event}">Unable to connect to server.</span>`
+		}
+		socket.ws.onclose = (event) => {
+			console.log('socket closed', event)
+		}
+		
+		return socket
+	}
 
+	auth(session) {
+		this.send({
+			auth: session
+		})
+	}
+	login(email, pass) {
+		this.send({
+			login: {
+				email,
+				pass,
+			}
+		})
+	}
 
-                        this.send('Join:'+joinZone)
-                    }
-                    else {
-                        console.log('Unknown event.data value')
-                    }
-                }
-            }
-        }
-    }
+	send(json) {
+		console.log('Send:', json)
+		this.ws.send(JSON.stringify(json))
+	}
 
-    send(data) {
-        this.ws.send(data)
-        console.log('Send:', data)
-    }
+	process(payload){
+		Object.entries(payload).forEach(async ([op, data]) => {
+			switch(op) {
+				case 'session':
+					this.session = data
+					Cookies.set('session', this.session, this.CookieOpts)
+					this.auth(this.session)
+				break;
+				case 'join':
 
-
-    // document.getElementById('gameinfo')
-    // document.getElementById('charsave')
+					const joinZone = data
+					await this.world.loadStatics(this.urlFiles, this.scene)
+					// TODO do joining stuff then
+	
+					this.send({
+						join: 'testzone'
+					})
+				break;
+			}
+		})
+	}
 
 }

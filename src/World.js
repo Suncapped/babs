@@ -37,7 +37,7 @@ export class World {
     dirLight
     dirLightHelper
 
-    lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30); // for re-use
+    lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 
     worldMesh
     constructor (scene) {
@@ -45,7 +45,7 @@ export class World {
         let renderer = new WebGLRenderer()
 
         renderer.shadowMap.enabled = true
-        renderer.shadowMap.type = PCFSoftShadowMap; // or any other type of shadowmap
+        renderer.shadowMap.type = PCFSoftShadowMap // or any other type of shadowmap
 
         scene.background = new Color().setHSL( 0.6, 0, 1 )
         scene.fog = new Fog( scene.background, 1, 5000 )

@@ -22,6 +22,7 @@
     "snowpack": "^3.6.2"
   },
   "dependencies": {
+    "js-cookie": "^2.2.1",
     "three": "^0.129.0"
   }
 }
