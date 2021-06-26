@@ -3,6 +3,7 @@ export class Ui {
     document
     constructor(document) {
         this.document = document
+		document.getElementById('gameinfo').textContent = document.getElementById('gameinfo').dataset.default
     }
     /** 
      * @param {'fps'|'mem'} which

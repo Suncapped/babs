@@ -44,4 +44,15 @@ body {
     /* width: 100%; */
     padding: 10px;
 }
+#gameinfo{
+	float:right; 
+	position:absolulte; 
+	right:0px; 
+	margin-top: 5px; 
+	background-color:rgb(245, 236, 158);
+}
 
+#gameinfo a{
+	position:relative;
+	top: -3px;
+}

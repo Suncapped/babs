@@ -21,20 +21,25 @@ class Babs {
 	cube
 	ui
 	socket
+	alreadyRunning = false
 
 	init() {
 		// Connect immediately to check for existing session
 		this.scene = new Scene()
 		this.world = new World(this.scene)
 		this.socket = Socket.Create(this.scene, this.world)
+		this.ui = new Ui(document)
 	}
 
 	async run() {
+		if(this.alreadyRunning) return
+		this.alreadyRunning = true
+
 		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
 		document.getElementById('enterbutton').addEventListener('click', (ev) => {
 			ev.preventDefault()
-			this.socket.login(
+			this.socket.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value
 			)
@@ -52,14 +57,13 @@ class Babs {
 		this.world.dirLight.target = this.cube
 		this.scene.add( this.world.dirLight.target )
 
-		window.addEventListener('resize', function () { 
+		window.addEventListener('resize', () => { 
 			this.camera.aspect = window.innerWidth / window.innerHeight
 			this.renderer.setSize( window.innerWidth, window.innerHeight )
 			this.camera.updateProjectionMatrix()
 			this.renderer.render( this.scene, this.camera )
 		})
 
-		this.ui = new Ui(document)
 		this.ui.createStats('fps').createStats('mem')
 
 		this.renderer = new WebGLRenderer( { antialias: true } )
