@@ -140,7 +140,7 @@ export class World {
     }
 
 
-    async loadStatics(urlFiles, scene) {
+    async loadStatics(urlFiles, scene, zone) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(World.ZoneLength /2, 0, World.ZoneLength /2)
@@ -153,7 +153,7 @@ export class World {
         ground.receiveShadow = true
 
 
-        await this.updateTerrain(urlFiles, geometry)
+        await this.updateTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
         scene.add( ground )
@@ -229,7 +229,7 @@ export class World {
     //     await this.updateLandcover(urlFiles)
     //     timeReporter.next('Done')
     // }
-    async updateTerrain(urlFiles, geometry) {
+    async updateTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
 
         timeReporter.next('Terrain start')
@@ -239,7 +239,7 @@ export class World {
         // this.groundMesh.name = `ground` // dataUrl.split('/').slice(-1)[0]
         // const data = await ky.get(dataUrl)
         // timeReporter.next('Terrain ky.get')
-        const fet = await fetch(`${urlFiles}/zone/0,0/elevations`)
+        const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
         timeReporter.next('Terrain fetch.blob')
 

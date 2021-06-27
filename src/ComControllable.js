@@ -84,10 +84,17 @@ export class ComControllable extends Com {
                 case 'KeyF':
                     let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
                     obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-                    console.log(scene.children)
                     const player = scene.children.find(o=>o.name=='player')
                     obj.mesh.position.copy(player.position)
                     obj.mesh.position.y -= this.ftHeightHead
+
+					// Place fire in front of you:
+					// // move forward parallel to the xz-plane
+					// // assumes camera.up is y-up
+					// _vector.setFromMatrixColumn( camera.matrix, 0 );
+					// _vector.crossVectors( camera.up, _vector );
+					// camera.position.addScaledVector( _vector, distance );
+					
                     break
             }
         }

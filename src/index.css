@@ -52,7 +52,7 @@ body {
 	background-color:rgb(245, 236, 158);
 }
 
-#gameinfo a{
+#gameinfo a#logout{
 	position:relative;
 	top: -3px;
 }

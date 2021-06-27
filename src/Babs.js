@@ -29,13 +29,6 @@ class Babs {
 		this.world = new World(this.scene)
 		this.socket = Socket.Create(this.scene, this.world)
 		this.ui = new Ui(document)
-	}
-
-	async run() {
-		if(this.alreadyRunning) return
-		this.alreadyRunning = true
-
-		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
 		document.getElementById('enterbutton').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -44,6 +37,14 @@ class Babs {
 				document.getElementById('password').value
 			)
 		})
+
+	}
+
+	async run() {
+		if(this.alreadyRunning) return
+		this.alreadyRunning = true
+
+		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
 		this.idPlayer = ECS.CreateEnt(1)
 		ECS.AddCom(ComControllable, this.idPlayer)

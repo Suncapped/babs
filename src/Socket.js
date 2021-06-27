@@ -45,10 +45,11 @@ export class Socket {
 		}
 		socket.ws.onerror = (event) => {
 			console.log('socket error', event)
-			document.getElementById('gameinfo').innerHTML = `<span title="${event}">Unable to connect to server.</span>`
+			offerReconnect('Connection error')
 		}
 		socket.ws.onclose = (event) => {
 			console.log('socket closed', event)
+			offerReconnect('Connection is closed')
 		}
 		
 		return socket
@@ -77,7 +78,14 @@ export class Socket {
 
 	send(json) {
 		console.log('Send:', json)
-		this.ws.send(JSON.stringify(json))
+
+		if(this.ws.readyState === this.ws.OPEN) {
+			this.ws.send(JSON.stringify(json))
+		}
+		else {
+			console.log('Cannot send; WebSocket is in CLOSING or CLOSED state')
+			offerReconnect('Cannot reach server')
+		}
 	}
 
 	process(payload){
@@ -94,48 +102,70 @@ export class Socket {
 					else if(data === 'emailinvalid') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Email is invalid."
-						BABS.run()
+						// BABS.run()
 					}
 					else if(data === 'accountfailed') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Account creation error."
-						BABS.run()
+						// BABS.run()
 					}
 					else if(data === 'passtooshort') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Password too short, must be 8"
-						BABS.run()
+						// BABS.run()
 					}
 				break;
 				case 'session':
 					this.session = data
 					Cookies.set('session', this.session, { 
-						expires: 365, 
+						expires: 31,
 						domain: this.baseDomain,
 					})
-					window.location.reload() // Simpler than auth for now
-					// this.auth(this.session)
+					document.getElementById('gameinfo').textContent = "Entering..."
+					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break;
-				case 'join':
-					BABS.run()
-					console.log('visitor?', data.visitor)
-					if(data.visitor !== true) {
+				case 'load':
+					const pself = data.self
+					const players = data.players
+					const zones = data.zones
+					const zone = zones.find(z => z.id == pself.idzone)
+					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
+					
+					if(pself.visitor !== true) {
 						document.getElementById('gameinfo').innerHTML = '<a id="logout" href="#">Logout</a>'
 						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('charsave').innerHTML = 'Welcome, '+data.id
+						document.getElementById('charsave').innerHTML = 'Waking up...'
 						document.getElementById('logout').addEventListener('click', (ev) => {
 							Cookies.remove('session')
 							window.location.reload()
 							ev.preventDefault()
 						})
 					}
-					await this.world.loadStatics(this.urlFiles, this.scene)
+
+					BABS.run()
+					await this.world.loadStatics(this.urlFiles, this.scene, zone)
+
+					if(pself.visitor !== true) {
+						document.getElementById('charsave').innerHTML = 'Welcome to First Earth'
+					}
 					this.send({
-						joined: data.zone
+						ready: pself.id
 					})
 				break;
 			}
 		})
 	}
+
+
+}
+
+
+function offerReconnect(reason) {
+	document.getElementById('gameinfo').innerHTML = `<span title="${event}">${reason}. <a id="reconnect" href="">Reconnect?</a></span>`
+	document.getElementById('reconnect').addEventListener('click', (ev) => {
+		window.location.reload()
+		ev.preventDefault()
+	})
+	document.getElementById('enterbutton').disabled = false
 
 }
