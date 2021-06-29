@@ -1,8 +1,13 @@
 
 export class ECS {
+
     /** @type {Set} ents */
     static ents = new Set()
     
+    /** @type {Object.<string, Com[]>} coms - object of types, each type has array of coms */
+    static coms = {}
+
+	
     /** 
      * @return {number} entity id
      * */
@@ -10,10 +15,8 @@ export class ECS {
         ECS.ents.add(idEnt)
         return idEnt
     }
-
-    /** @type {Object.<string, Com[]>} coms - object of types, each type has array of coms */
-    static coms = {}
     
+
     /** 
      * @param {Com|null} clCom class to get, or null for all
      * @return {Com[]} all components of given class

@@ -1,8 +1,8 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
 import { Gob } from "./Gob"
-import { Com } from "./Com"
-import * as Utils from "./Utils"
+import { Com } from "./shared/public/Com"
+import * as Utils from "./shared/public/Utils"
 
 export class ComControllable extends Com {
     static sType = 'controllable'

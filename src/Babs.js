@@ -13,7 +13,7 @@ import { World } from './World'
 import { Socket } from './Socket'
 import { Ui } from './Ui'
 import { ComControllable } from './ComControllable'
-import { ECS } from './ECS'
+import { ECS } from './shared/public/ECS'
 class Babs {
 	camera
 	renderer

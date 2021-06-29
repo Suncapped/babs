@@ -71,7 +71,7 @@ export class Socket {
 			enter: {
 				email,
 				pass,
-				session: Cookies.get('session')
+				session: Cookies.get('session'),
 			}
 		})
 	}

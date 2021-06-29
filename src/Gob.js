@@ -1,14 +1,14 @@
 import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial } from "three"
 import { Socket } from "./Socket"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as Utils from './Utils'
+import * as Utils from './shared/public/Utils'
 export class Gob {
 
     mesh
 
     static async Create(path, scene, socket) {
         let gob = new Gob
-        const group = await Utils.loadFbx(socket, path)
+        const group = await ComAppearance.LoadFbx(socket, path)
 
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )
