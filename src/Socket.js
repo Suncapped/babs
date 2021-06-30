@@ -39,8 +39,8 @@ export class Socket {
 			}
 		}
 		socket.ws.onmessage = (event) => {
+			console.log('Rec:', event.data)
 			const payload = JSON.parse(event.data)
-			console.log('Rec:', payload)
 			socket.process(payload)
 		}
 		socket.ws.onerror = (event) => {
