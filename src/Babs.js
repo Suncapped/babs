@@ -12,16 +12,16 @@ import {
 import { World } from './World'
 import { Socket } from './Socket'
 import { Ui } from './Ui'
-import { ComControllable } from './ComControllable'
-import { ECS } from './shared/public/ECS'
+import { InputSystem } from './InputSystem'
+import { ECS } from './ECS'
 class Babs {
 	camera
 	renderer
-	idPlayer
 	cube
 	ui
 	socket
 	alreadyRunning = false
+	inputSystem
 
 	init() {
 		// Connect immediately to check for existing session
@@ -29,6 +29,7 @@ class Babs {
 		this.world = new World(this.scene)
 		this.socket = Socket.Create(this.scene, this.world)
 		this.ui = new Ui(document)
+		this.inputSystem = InputSystem.Create()
 
 		document.getElementById('enterbutton').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -46,13 +47,16 @@ class Babs {
 
 		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
 
-		this.idPlayer = ECS.CreateEnt(1)
-		ECS.AddCom(ComControllable, this.idPlayer)
+		// this.idPlayer = ECS.CreateEnt(1)
+		// ECS.AddCom(this.idPlayer, 'controller', )
 
 		// Components init
-		ECS.GetComsAll(ComControllable).forEach(async com => {
-			await com.init(this.scene, this.camera, this.socket) // make 'em wait! // Should I have to pass to each?
-		})
+		// ECS.GetComsAll(Controller.sType).forEach(async com => {
+		// 	await com.init(this.scene, this.camera, this.socket) // make 'em wait! // Should I have to pass to each?
+		// })
+		// todo replace above with system
+		this.inputSystem.init(this.scene, this.camera, this.socket)
+
 
 		this.cube = this.makeCube(this.scene)
 		this.world.dirLight.target = this.cube
@@ -100,11 +104,9 @@ class Babs {
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
-		ECS.GetComsAll(ComControllable).forEach(com => {
-			com.animControls(this.delta, this.scene)
-		})
+		this.inputSystem.animControls(this.delta, this.scene)
 
-		this.world.animate(this.delta, this.camera, this.idPlayer)
+		this.world.animate(this.delta, this.camera)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )

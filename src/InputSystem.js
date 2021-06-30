@@ -1,12 +1,9 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
 import { Gob } from "./Gob"
-import { Com } from "./shared/public/Com"
-import * as Utils from "./shared/public/Utils"
+import * as Utils from "./Utils"
 
-export class ComControllable extends Com {
-    static sType = 'controllable'
-    idEnt
+export class InputSystem {
 
     bPressingForward = false
     bPressingBackward = false
@@ -21,15 +18,12 @@ export class ComControllable extends Com {
     controls
     raycaster
 
-    static Create(idEnt, props) {
-        const c = new ComControllable
-        c.idEnt = idEnt
-        Object.assign(c, props) // Overrides of defaults // todo reenable
-        return c
+    static Create() {
+        return new InputSystem
     }
 
     async init(scene, camera, socket) {
-        console.log('ComControllable init on idEnt ' + this.idEnt)
+        console.log('InputSystem init')
         camera.name = 'player'
         camera.rotateY(Utils.radians(-135))
         camera.position.set(0, this.ftHeightHead, 0)

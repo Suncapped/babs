@@ -1,5 +1,5 @@
 
-import * as Utils from './shared/public/Utils'
+import * as Utils from './Utils'
 import ndarray from 'ndarray'
 import { 
     PlaneGeometry, 

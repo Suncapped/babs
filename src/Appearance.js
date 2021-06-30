@@ -4,7 +4,7 @@ import { Group } from 'three'
 import { Socket } from './Socket'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 
-export class ComAppearance {
+export class Appearance {
 	/**
 	 * @constructor
 	 * @param {string} path
@@ -27,5 +27,13 @@ export class ComAppearance {
 				}
 			)
 		}); 
+	}
+	init(one, two, three) {
+
+	}
+
+
+    animControls(delta, scene) {
+
 	}
 }
