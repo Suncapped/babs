@@ -10,7 +10,7 @@ import {
     AxesHelper,
 } from 'three'
 import { World } from './World'
-import { Socket } from './Socket'
+import { offerReconnect, Socket } from './Socket'
 import { Ui } from './Ui'
 import { InputSystem } from './InputSystem'
 import { ECS } from './ECS'
@@ -24,6 +24,24 @@ class Babs {
 	inputSystem
 
 	init() {
+		// Cookies are required
+		const cookiesEnabled = (() => {
+			try {
+				document.cookie = 'cookietest=1';
+				const ret = document.cookie.indexOf('cookietest=') !== -1;
+				document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT';
+				return ret;
+			}
+			catch (e) {
+				return false;
+			}
+		})()
+		console.log('Cookies?', cookiesEnabled)
+		if(!cookiesEnabled) {
+			offerReconnect('Session cookies needed!')
+			return
+		}
+
 		// Connect immediately to check for existing session
 		this.scene = new Scene()
 		this.world = new World(this.scene)
@@ -33,6 +51,7 @@ class Babs {
 
 		document.getElementById('enterbutton').addEventListener('click', (ev) => {
 			ev.preventDefault()
+			document.getElementById('enterbutton').disabled = true
 			this.socket.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value

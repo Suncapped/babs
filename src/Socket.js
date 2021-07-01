@@ -30,8 +30,6 @@ export class Socket {
 			const existingSession = Cookies.get('session')
 			console.log('existingSession', existingSession)
 			if(existingSession){
-				// document.getElementById('charsave').style.visibility = 'hidden'
-				// document.getElementById('gameinfo').textContent = 'Entering...'
 				socket.auth(existingSession)
 			}
 			else { // No cookie, so indicate visitor
@@ -45,11 +43,11 @@ export class Socket {
 		}
 		socket.ws.onerror = (event) => {
 			console.log('socket error', event)
-			offerReconnect('Connection error')
+			offerReconnect('Connection error.')
 		}
 		socket.ws.onclose = (event) => {
 			console.log('socket closed', event)
-			offerReconnect('Connection is closed')
+			offerReconnect('Connection is closed.')
 		}
 		
 		return socket
@@ -66,7 +64,6 @@ export class Socket {
 		})
 	}
 	enter(email, pass) {
-		document.getElementById('enterbutton').disabled = true
 		this.send({
 			enter: {
 				email,
@@ -84,7 +81,7 @@ export class Socket {
 		}
 		else {
 			console.log('Cannot send; WebSocket is in CLOSING or CLOSED state')
-			offerReconnect('Cannot reach server')
+			offerReconnect('Cannot reach server.')
 		}
 	}
 
@@ -115,11 +112,23 @@ export class Socket {
 						// BABS.run()
 					}
 				break;
+				case 'visitor':
+					this.session = data
+					Cookies.set('session', this.session, { 
+						domain: this.baseDomain,
+						secure: true,
+						sameSite: 'strict',
+					}) // Non-set expires means it's a session cookie only, not saved across sessions
+					document.getElementById('gameinfo').textContent = "Entering..."
+					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
+				break;
 				case 'session':
 					this.session = data
 					Cookies.set('session', this.session, { 
-						expires: 31,
+						expires: 365,
 						domain: this.baseDomain,
+						secure: true,
+						sameSite: 'strict',
 					})
 					document.getElementById('gameinfo').textContent = "Entering..."
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
@@ -160,12 +169,11 @@ export class Socket {
 }
 
 
-function offerReconnect(reason) {
-	document.getElementById('gameinfo').innerHTML = `<span title="${event}">${reason}. <a id="reconnect" href="">Reconnect?</a></span>`
+export function offerReconnect(reason) {
+	document.getElementById('gameinfo').innerHTML = `<span title="${event}">${reason} [<a id="reconnect" href="">Reconnect?</a>]</span>`
 	document.getElementById('reconnect').addEventListener('click', (ev) => {
 		window.location.reload()
 		ev.preventDefault()
 	})
 	document.getElementById('enterbutton').disabled = false
-
 }
