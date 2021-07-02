@@ -1,5 +1,5 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
-import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls"
+import { BabsPointerLockControls } from "./BabsPointerLockControls"
 import { Gob } from "./Gob"
 import * as Utils from "./Utils"
 
@@ -23,7 +23,7 @@ export class InputSystem {
     }
 
     async init(scene, camera, socket) {
-        console.log('InputSystem init')
+
         camera.name = 'player'
         camera.rotateY(Utils.radians(-135))
         camera.position.set(0, this.ftHeightHead, 0)
@@ -31,56 +31,37 @@ export class InputSystem {
 
         this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
 
-        this.controls = new PointerLockControls( camera, document.body )
-        // const blocker = window.document.getElementById( 'blocker' )
-        // const instructions = window.document.getElementById( 'instructions' )
-        
-        // this.controls.isLocked = true // Don't require pointer lock to move around, but still allow it too, below
-
-        // controls.addEventListener( 'lock', function () {
-        //     instructions.style.display = 'none'
-        //     blocker.style.display = 'none'
-        // } )
-        // controls.addEventListener( 'unlock', function () {
-        //     blocker.style.display = 'block'
-        //     instructions.style.display = ''
-        // } )
-        // document.addEventListener("DOMContentLoaded", function(event) {
-        // })
-
-        // scene.add( this.controls.getObject() ) // Camera is already added isn't it?
-
-        
+        this.controls = new BabsPointerLockControls( camera, document.body )
 
         const onKeyDown = async ( ev ) => {
 
             switch ( ev.code ) {
                 case 'ArrowUp':
-                case 'KeyW':
+                // case 'KeyW':
                     this.bPressingForward = true
                     break
                 case 'ArrowLeft':
-                case 'KeyA':
+                // case 'KeyA':
                     this.bPressingLeft = true
                     break
                 case 'ArrowDown':
-                case 'KeyS':
+                // case 'KeyS':
                     this.bPressingBackward = true
                     break
                 case 'ArrowRight':
-                case 'KeyD':
+                // case 'KeyD':
                     this.bPressingRight = true
                     break
                 case 'Space':
-                    if ( this.bCanJump === true ) this.vVelocity.y += 350
-                    this.bCanJump = false
+                    // if ( this.bCanJump === true ) this.vVelocity.y += 350
+                    // this.bCanJump = false
                     break
                 case 'KeyF':
-                    let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
-                    obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-                    const player = scene.children.find(o=>o.name=='player')
-                    obj.mesh.position.copy(player.position)
-                    obj.mesh.position.y -= this.ftHeightHead
+                    // let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
+                    // obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+                    // const player = scene.children.find(o=>o.name=='player')
+                    // obj.mesh.position.copy(player.position)
+                    // obj.mesh.position.y -= this.ftHeightHead
 
 					// Place fire in front of you:
 					// // move forward parallel to the xz-plane
@@ -95,40 +76,48 @@ export class InputSystem {
         const onKeyUp = (ev) => {
             switch ( ev.code ) {
                 case 'ArrowUp':
-                case 'KeyW':
+                // case 'KeyW':
                     this.bPressingForward = false
                     break
 
                 case 'ArrowLeft':
-                case 'KeyA':
+                // case 'KeyA':
                     this.bPressingLeft = false
                     break
 
                 case 'ArrowDown':
-                case 'KeyS':
+                // case 'KeyS':
                     this.bPressingBackward = false
                     break
 
                 case 'ArrowRight':
-                case 'KeyD':
+                // case 'KeyD':
                     this.bPressingRight = false
                     break
             }
         }
         const onMouseDown = (ev) => {
             if(ev.button === 2) {
-                this.bPressingForward = true
+				if(ev.target.id === 'canvas') {
+					console.log('mouse2down target', ev.target.id)
+					this.controls.lock()
+					this.bPressingForward = true
+					document.getElementById('canvas').style.cursor = 'none'
+				}
             }
         }
         const onMouseUp = (ev) => {
             if(ev.button === 2) {
+				console.log('mouse2up target', ev.target.id)
+				this.controls.unlock()
                 this.bPressingForward = false
+				document.getElementById('canvas').style.cursor = 'auto'
             }
         }
 
         const keyListener = (ev) => {
             // console.log('KL', ev)
-            if(this.controls.isLocked === true) {
+            // if(this.controls.isLocked === true) {
                 switch(ev.type) {
                     case 'keydown':
                         onKeyDown(ev)
@@ -137,20 +126,19 @@ export class InputSystem {
                         onKeyUp(ev)
                     break
                 }
-            }
+            // }
         }
 
         const mouseListener = (ev) => {
             // console.log('ML', ev)
-            if(ev.target.id === 'canvas'){ // Limit to canvas
-                switch(ev.type) {
-                    case 'click':
-                        this.controls.lock()
-                        this.bPressingForward = false // In case of a previous click
-                    break
-                }
-            }
-            if(this.controls.isLocked === true){
+            // if(ev.target.id === 'canvas'){ // Limit to canvas
+            //     if(ev.type == 'click') {
+			// 		// this.controls.lock()
+			// 		document.getElementById('canvas').style.cursor = 'none'
+			// 		this.bPressingForward = false // In case of a previous click
+            //     }
+            // }
+            // if(this.controls.isLocked === true){
                 switch(ev.type) {
                     case 'mousedown':
                         onMouseDown(ev)
@@ -165,7 +153,7 @@ export class InputSystem {
                         onKeyUp(ev)
                     break
                 }
-            }
+            // }
 
         }
         window.document.addEventListener( 'click', mouseListener )
@@ -179,7 +167,8 @@ export class InputSystem {
 
     ten = 0
     animControls(delta, scene) {
-        if (this.controls.isLocked === true) {
+		
+        // if (this.controls.isLocked === true) {
 
             this.raycaster.ray.origin.copy( this.controls.getObject().position )
             // this.raycaster.ray.origin.y += this.ftHeightHead*2
@@ -188,12 +177,6 @@ export class InputSystem {
             const intersNotCamera = intersections?.filter(o => o.object.name !== 'cameracube')
             // const onObject = intersNotCamera.length > 0
             const onObject = intersNotCamera?.[0]?.distance <= this.ftHeightHead
-
-            // if(this.ten < 10) {
-
-            //     // console.log(scene.children)
-            //     this.ten++
-            // }
     
             this.vVelocity.x -= this.vVelocity.x * 10.0 * delta
             this.vVelocity.z -= this.vVelocity.z * 10.0 * delta
@@ -242,7 +225,7 @@ export class InputSystem {
                 this.controls.getObject().position.y = groundHeightY + this.ftHeightHead
             }
     
-        }
+        // }
     }
 
 }

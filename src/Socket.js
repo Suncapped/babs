@@ -1,5 +1,6 @@
 import Cookies from "js-cookie"
 import { BABS } from "./Babs"
+import { Ui } from "./Ui"
 
 export class Socket {
 	urlFiles
@@ -8,19 +9,22 @@ export class Socket {
 	world
 	scene
 
+	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
+	static devDomain = 'localhost'
+
 	static Create(scene, world) {
 		let socket = new Socket
 		socket.scene = scene
 		socket.world = world
-		if (window.location.href.startsWith('https://earth.suncapped.com')) {
+		if (Socket.isProd) {
 			socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
 			socket.baseDomain = 'suncapped.com'
 		}
 		else {
-			socket.urlSocket = `ws://localhost:2567` /* Proxima */
-			socket.urlFiles = `http://localhost:3000` /* Express (Snowpack dev is 8081) */
-			socket.baseDomain = 'localhost'
+			socket.urlSocket = `ws://${Socket.devDomain}:2567` /* Proxima */
+			socket.urlFiles = `http://${Socket.devDomain}:3000` /* Express (Snowpack dev is 8081) */
+			socket.baseDomain = `${Socket.devDomain}`
 		}
 
 		socket.ws = new WebSocket(socket.urlSocket)
@@ -116,7 +120,7 @@ export class Socket {
 					this.session = data
 					Cookies.set('session', this.session, { 
 						domain: this.baseDomain,
-						secure: true,
+						secure: Socket.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
 					document.getElementById('gameinfo').textContent = "Entering..."
@@ -127,7 +131,7 @@ export class Socket {
 					Cookies.set('session', this.session, { 
 						expires: 365,
 						domain: this.baseDomain,
-						secure: true,
+						secure: Socket.isProd,
 						sameSite: 'strict',
 					})
 					document.getElementById('gameinfo').textContent = "Entering..."
@@ -141,14 +145,18 @@ export class Socket {
 					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
 					
 					if(pself.visitor !== true) {
-						document.getElementById('gameinfo').innerHTML = '<a id="logout" href="#">Logout</a>'
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('charsave').innerHTML = 'Waking up...'
-						document.getElementById('logout').addEventListener('click', (ev) => {
-							Cookies.remove('session')
-							window.location.reload()
-							ev.preventDefault()
-						})
+						document.getElementById('gameinfo').innerHTML = `<div id="menu"><a href="#">Menu</a> (esc key)</div>`
+						
+						const toggleEscModal = (ev) => {
+							if(ev.code == 'Escape' || ev.type == 'click') {
+								const escModal = document.getElementById('escmodal')
+								escModal.style.display = escModal.style.display == 'block' ? 'none' : 'block'
+							}
+						}
+						document.getElementById('menu').addEventListener('click', toggleEscModal)
+						document.addEventListener('keydown', toggleEscModal)
 					}
 
 					BABS.run()

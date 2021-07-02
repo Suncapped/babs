@@ -29,7 +29,7 @@ import {
     BufferGeometry,
     Vector2,
 } from 'three'
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
+
 export class World {
 
     static ZoneLength = 1000
@@ -42,10 +42,10 @@ export class World {
     worldMesh
     constructor (scene) {
 
-        let renderer = new WebGLRenderer()
+        // let renderer = new WebGLRenderer()
 
-        renderer.shadowMap.enabled = true
-        renderer.shadowMap.type = PCFSoftShadowMap // or any other type of shadowmap
+        // renderer.shadowMap.enabled = true
+        // renderer.shadowMap.type = PCFSoftShadowMap // or any other type of shadowmap
 
         scene.background = new Color().setHSL( 0.6, 0, 1 )
         scene.fog = new Fog( scene.background, 1, 5000 )
@@ -105,6 +105,7 @@ export class World {
     }
 
     animate(delta, camera, player) {
+
 
         // csm.update(camera.matrix)
 

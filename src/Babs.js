@@ -81,17 +81,19 @@ class Babs {
 		this.world.dirLight.target = this.cube
 		this.scene.add( this.world.dirLight.target )
 
-		window.addEventListener('resize', () => { 
+		window.addEventListener('resize', () => {
+			console.log('resize')
 			this.camera.aspect = window.innerWidth / window.innerHeight
 			this.renderer.setSize( window.innerWidth, window.innerHeight )
 			this.camera.updateProjectionMatrix()
-			this.renderer.render( this.scene, this.camera )
+			this.renderer.render( this.scene, this.camera ) // todo needed at all since animate() does it?
 		})
 
-		this.ui.createStats('fps').createStats('mem')
+		// this.ui.createStats('fps').createStats('mem')
 
 		this.renderer = new WebGLRenderer( { antialias: true } )
-		this.renderer.setPixelRatio( window.devicePixelRatio )
+		console.log('isWebGL2', this.renderer.capabilities.isWebGL2)
+		this.renderer.setPixelRatio( Ui.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setSize( window.innerWidth, window.innerHeight )
 		this.renderer.setAnimationLoop( (p) => {
 			this.animation(p)
@@ -111,27 +113,29 @@ class Babs {
 		/** @type {HTMLCanvasElement} */
 		const canvas = this.renderer.domElement
 		canvas.id = 'canvas'
+
+
+		document.getElementById('canvas').addEventListener('contextmenu', ev => ev.preventDefault()); // move to ui?
 	}
 
 	prevTime = performance.now()
 	delta
 	animation(time) {
-		this.ui['fps'].begin()
-		this.ui['mem'].begin()
+		this.ui['fps']?.begin()
+		this.ui['mem']?.begin()
 		this.delta = (time -this.prevTime) /1000
 
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
 		this.inputSystem.animControls(this.delta, this.scene)
-
 		this.world.animate(this.delta, this.camera)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )
 
-		this.ui['fps'].end()
-		this.ui['mem'].end()
+		this.ui['fps']?.end()
+		this.ui['mem']?.end()
 	}
 
 	makeCube() {
