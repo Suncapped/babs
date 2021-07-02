@@ -77,11 +77,11 @@ export class Socket {
 		})
 	}
 
-	send(json) {
+	async send(json) {
 		console.log('Send:', json)
 
 		if(this.ws.readyState === this.ws.OPEN) {
-			this.ws.send(JSON.stringify(json))
+			await this.ws.send(JSON.stringify(json))
 		}
 		else {
 			console.log('Cannot send; WebSocket is in CLOSING or CLOSED state')
@@ -98,22 +98,18 @@ export class Socket {
 					if(data === 'userpasswrong') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Username/password does not match."
-						BABS.run()
 					}
 					else if(data === 'emailinvalid') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Email is invalid."
-						// BABS.run()
 					}
 					else if(data === 'accountfailed') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Account creation error."
-						// BABS.run()
 					}
 					else if(data === 'passtooshort') {
 						document.getElementById('charsave').style.visibility = 'visible'
 						document.getElementById('gameinfo').textContent = "Password too short, must be 8"
-						// BABS.run()
 					}
 				break;
 				case 'visitor':
@@ -146,24 +142,61 @@ export class Socket {
 					
 					if(pself.visitor !== true) {
 						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('charsave').innerHTML = 'Waking up...'
-						document.getElementById('gameinfo').innerHTML = `<div id="menu"><a href="#">Menu</a> (esc key)</div>`
+						document.getElementById('charsave').textContent = 'Waking up...'
+						document.getElementById('gameinfo').innerHTML = '<div id="linkmenu"><a href="#">Menu</a> (esc key)</div>'
 						
-						const toggleEscModal = (ev) => {
+						const togglemenu = (ev) => {
 							if(ev.code == 'Escape' || ev.type == 'click') {
-								const escModal = document.getElementById('escmodal')
-								escModal.style.display = escModal.style.display == 'block' ? 'none' : 'block'
+								const menu = document.getElementById('menu')
+								menu.style.display = menu.style.display == 'block' ? 'none' : 'block'
 							}
 						}
-						document.getElementById('menu').addEventListener('click', toggleEscModal)
-						document.addEventListener('keydown', toggleEscModal)
+						document.getElementById('linkmenu').addEventListener('click', togglemenu)
+						document.addEventListener('keydown', togglemenu)
+
+						const joinDate = new Date(Date.parse(pself.created_at))
+						const joinMonth = joinDate.toLocaleString('default', { month: 'long' })
+						const joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
+
+						const menul = document.querySelector('#menu > ul')
+						menul.append(Ui.CreateEl(`<li>Joined in <span title="${joinDate}">${joinMonth} ${joinYear}<span></li>`))
+						if(pself.nick) menul.append(Ui.CreateEl(`<li>Known as: ${pself.nick}</li>`))
+						menul.append(Ui.CreateEl(`<li>What are you most excited to do in First Earth?</li>`))
+						menul.append(Ui.CreateEl(`<li>
+							<input id="inputreason" type="text" value="${pself.reason}" />
+							<button id="savereason" type="submit" >Save</button> />
+						</li>`))
+						document.getElementById('savereason').addEventListener('click', async ev => {
+							ev.preventDefault()
+							const reason = ev.target.value
+							ev.target.value = 'Saving...'
+							await this.send({
+								'savereason': reason,
+							})
+							ev.target.value = reason
+						})
+
+						menul.append(Ui.CreateEl(`<li>&nbsp;</li>`))
+						menul.append(Ui.CreateEl(`<li><b>Account<b/></li>`))
+						menul.append(Ui.CreateEl(`<li>${pself.email}</li>`))
+						menul.append(Ui.CreateEl(`<li>Credit Months: ${pself.credits}</li>`))
+						menul.append(Ui.CreateEl(`<li>Subscription: Credits</li>`)) // Free / Credits / Paid / Paid (Credits)
+						menul.append(Ui.CreateEl(`<li>Until: (after release)</li>`))
+						
+						menul.append(Ui.CreateEl(`<li>&nbsp;</li>`))
+						menul.append(Ui.CreateEl(`<li><a id="logout" href="#">Logout</a></li>`))
+						document.getElementById('logout').addEventListener('click', (ev) => {
+							ev.preventDefault()
+							Cookies.remove('session')
+							window.location.reload()
+						})
 					}
 
 					BABS.run()
 					await this.world.loadStatics(this.urlFiles, this.scene, zone)
 
 					if(pself.visitor !== true) {
-						document.getElementById('charsave').innerHTML = 'Welcome to First Earth'
+						document.getElementById('charsave').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 					this.send({
 						ready: pself.id

@@ -4,7 +4,8 @@
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
   mount: {
-    src: '/',
+    public: {url: '/', static: true},
+    src: '/dist',
   },
   optimize: {
     bundle: true,
@@ -13,6 +14,8 @@ module.exports = {
   },
   devOptions: {
     port: 8081,
+	// hmr: true,
+	// hmrPort: 12321,
   },
   buildOptions: {
     // out: '../expressa/public', // Instead, I'll copy it manually in package.json.
@@ -20,6 +23,18 @@ module.exports = {
     // And anyway I switched to rsync for deploys to remote!
   },
   plugins: [
+	['@snowpack/plugin-svelte', {
+		// Snowpack docs are wrong, "Fast Refresh" doesn't work with svelte premade project
+		// https://github.com/snowpackjs/snowpack/tree/main/create-snowpack-app/app-template-svelte
+		// Below options don't work (tried to see why, not sure)
+		// https://github.com/snowpackjs/snowpack/discussions/1567
+		// https://github.com/snowpackjs/snowpack/pull/1727
+		// hmrOptions: { 
+		// 	noReload: true,
+		// 	preserveLocalState: true
+		// }
+		// Best method for FR then is just: // @hmr:keep
+	}],
   ],
   packageOptions: {
   },

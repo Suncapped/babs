@@ -130,7 +130,7 @@ export class InputSystem {
         }
 
         const mouseListener = (ev) => {
-            // console.log('ML', ev)
+            // console.log('mouseListener', ev.type)
             // if(ev.target.id === 'canvas'){ // Limit to canvas
             //     if(ev.type == 'click') {
 			// 		// this.controls.lock()
@@ -139,20 +139,23 @@ export class InputSystem {
             //     }
             // }
             // if(this.controls.isLocked === true){
+
+			if(ev.type == 'mouseup') { // Outside of canvas test
+				onMouseUp(ev)
+			}
+			if(ev.target.id == 'canvas') {
                 switch(ev.type) {
-                    case 'mousedown':
-                        onMouseDown(ev)
-                    break
-                    case 'mouseup':
-                        onMouseUp(ev)
-                    break
-                    case 'keydown':
-                        onKeyDown(ev)
-                    break
-                    case 'keyup':
-                        onKeyUp(ev)
-                    break
-                }
+					case 'mousedown':
+						onMouseDown(ev)
+					break
+					case 'keydown':
+						onKeyDown(ev)
+					break
+					case 'keyup':
+						onKeyUp(ev)
+					break
+				}
+			}
             // }
 
         }

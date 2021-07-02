@@ -39,28 +39,39 @@ body {
     left: 100px;
     text-align:left;
 }
-.topitem {
-    background-color: rgb(245, 236, 158);
-    /* width: 100%; */
-    padding: 10px;
-}
 #gameinfo{
 	float:right; 
 	position:absolulte; 
 	right:0px; 
 	margin-top: 5px; 
-	background-color:rgb(245, 236, 158);
 }
 
-#gameinfo #menu{
+#gameinfo #linkmenu{
 	position:relative;
-	top: -3px;
+	top: -5px;
 }
 
-#escmodal{
+.overlaytop {
+	position:absolute;
+	top:0px;
+	width: 100%;
+}
+.topitem {
+    background-color: #fdfbd3; /* FFF4BC */
+    padding: 10px;
+	padding-top: 12px;
+}
+#menu{
 	display:none;
+	background-color: #FFF4BC;
+	width: auto;
+	float:right;
 }
 
-/* canvas {
-	cursor: none;
-} */
+#menu ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 10px;
+	text-align:right;
+}
+

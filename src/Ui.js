@@ -1,3 +1,4 @@
+import Cookies from 'js-cookie'
 import Stats from 'three/examples/jsm/libs/stats.module'
 export class Ui {
 	static browser
@@ -33,6 +34,12 @@ export class Ui {
         this.document.body.appendChild(this[which].dom)
         return this
     }
+
+	static CreateEl(html) {
+		const doc = new DOMParser().parseFromString(html, "text/html")
+		const el = doc.firstChild
+		return el
+	}
 
 }
 

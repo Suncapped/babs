@@ -14,6 +14,9 @@ import { offerReconnect, Socket } from './Socket'
 import { Ui } from './Ui'
 import { InputSystem } from './InputSystem'
 import { ECS } from './ECS'
+
+import App from "./App.svelte";
+
 class Babs {
 	camera
 	renderer
@@ -58,6 +61,11 @@ class Babs {
 			)
 		})
 
+		let app = new App({
+			target: document.body,
+		});
+		// export default app;
+
 	}
 
 	async run() {
@@ -89,7 +97,7 @@ class Babs {
 			this.renderer.render( this.scene, this.camera ) // todo needed at all since animate() does it?
 		})
 
-		// this.ui.createStats('fps').createStats('mem')
+		this.ui.createStats('fps').createStats('mem')
 
 		this.renderer = new WebGLRenderer( { antialias: true } )
 		console.log('isWebGL2', this.renderer.capabilities.isWebGL2)

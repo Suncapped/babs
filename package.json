@@ -12,17 +12,19 @@
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
   },
   "devDependencies": {
+    "@snowpack/plugin-svelte": "^3.7.0",
     "@types/ndarray": "^1.0.9",
     "@types/ndarray-ops": "^1.2.1",
-    "@types/three": "^0.129.1",
+    "@types/three": "^0.129.2",
     "bicubic-interpolate": "^1.0.4",
     "ndarray": "^1.0.19",
     "ndarray-linear-interpolate": "^1.0.0",
     "ndarray-ops": "^1.2.2",
-    "snowpack": "^3.6.2"
+    "snowpack": "^3.7.1"
   },
   "dependencies": {
     "js-cookie": "^2.2.1",
+    "svelte": "^3.38.3",
     "three": "^0.129.0"
   }
 }
