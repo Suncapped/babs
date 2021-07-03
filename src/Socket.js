@@ -12,6 +12,7 @@ export class Socket {
 
 	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
 	static devDomain = 'localhost'
+	static baseDomain
 
 	static Create(scene, world) {
 		let socket = new Socket
@@ -20,20 +21,20 @@ export class Socket {
 		if (Socket.isProd) {
 			socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
-			socket.baseDomain = 'suncapped.com'
+			Socket.baseDomain = 'suncapped.com'
 		}
 		else {
 			socket.urlSocket = `ws://${Socket.devDomain}:2567` /* Proxima */
 			socket.urlFiles = `http://${Socket.devDomain}:3000` /* Express (Snowpack dev is 8081) */
-			socket.baseDomain = `${Socket.devDomain}`
+			Socket.baseDomain = `${Socket.devDomain}`
 		}
 
 		babsSocket.set(socket)
 
-		// Ui.Overlay.$set({toprightText: 'Connecting...'})
-
 		toprightText.set('Connecting...')
+		document.getElementById('topleft').style.visibility = 'hidden'
 		socket.ws = new WebSocket(socket.urlSocket)
+
 
 		socket.ws.onopen = (event) => {
 			const existingSession = Cookies.get('session')
@@ -83,7 +84,7 @@ export class Socket {
 	}
 
 	async send(json) {
-		console.log('Send:', json)
+		if(!json.ping) console.log('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
@@ -119,7 +120,7 @@ export class Socket {
 				case 'visitor':
 					this.session = data
 					Cookies.set('session', this.session, { 
-						domain: this.baseDomain,
+						domain: Socket.baseDomain,
 						secure: Socket.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
@@ -130,7 +131,7 @@ export class Socket {
 					this.session = data
 					Cookies.set('session', this.session, { 
 						expires: 365,
-						domain: this.baseDomain,
+						domain: Socket.baseDomain,
 						secure: Socket.isProd,
 						sameSite: 'strict',
 					})
@@ -144,6 +145,7 @@ export class Socket {
 					const zone = zones.find(z => z.id == pself.idzone)
 					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
 					toprightText.set(Ui.toprightTextDefault)
+					document.getElementById('topleft').style.visibility = 'visible'
 					
 					if(pself.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
@@ -163,6 +165,14 @@ export class Socket {
 					this.send({
 						ready: pself.id
 					})
+
+
+					window.setInterval(() => {
+						this.send({
+							ping:'ping'
+						})
+					}, 10_000)
+
 				break;
 			}
 		})

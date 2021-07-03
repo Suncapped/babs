@@ -2,6 +2,7 @@
 	import { onMount, afterUpdate } from 'svelte'
 	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect } from "./stores.js";
 	import Cookies from 'js-cookie'
+import { Socket } from './Socket.js';
 
 	
 	let topmenuDisplay = 'none'
@@ -34,7 +35,11 @@
 	}
 
 	function logout(ev) {
-		Cookies.remove('session')
+		Cookies.remove('session', { 
+			domain: Socket.baseDomain,
+			secure: Socket.isProd,
+			sameSite: 'strict',
+		})
 		window.location.reload()
 	}
 
