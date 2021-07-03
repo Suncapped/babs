@@ -18,6 +18,25 @@ export class InputSystem {
     controls
     raycaster
 
+	// Stateful tracking of mouse button states
+	mouse = {
+		button: {
+			left: false,
+			right: false,
+			center: false,
+			four: false,
+			five: false,
+		},
+		pos: {
+			x: 0,
+			y: 0,
+		},
+	}
+
+	static MOUSE_LEFT = 0
+	static MOUSE_RIGHT = 2
+
+
     static Create() {
         return new InputSystem
     }
@@ -33,23 +52,18 @@ export class InputSystem {
 
         this.controls = new BabsPointerLockControls( camera, document.body )
 
-        const onKeyDown = async ( ev ) => {
-
+        const keyOnDown = async (ev) => {
             switch ( ev.code ) {
                 case 'ArrowUp':
-                // case 'KeyW':
                     this.bPressingForward = true
                     break
                 case 'ArrowLeft':
-                // case 'KeyA':
                     this.bPressingLeft = true
                     break
                 case 'ArrowDown':
-                // case 'KeyS':
                     this.bPressingBackward = true
                     break
                 case 'ArrowRight':
-                // case 'KeyD':
                     this.bPressingRight = true
                     break
                 case 'Space':
@@ -69,108 +83,80 @@ export class InputSystem {
 					// _vector.setFromMatrixColumn( camera.matrix, 0 );
 					// _vector.crossVectors( camera.up, _vector );
 					// camera.position.addScaledVector( _vector, distance );
-					
                     break
             }
         }
-        const onKeyUp = (ev) => {
+        const keyOnUp = (ev) => {
             switch ( ev.code ) {
                 case 'ArrowUp':
-                // case 'KeyW':
                     this.bPressingForward = false
                     break
 
                 case 'ArrowLeft':
-                // case 'KeyA':
                     this.bPressingLeft = false
                     break
 
                 case 'ArrowDown':
-                // case 'KeyS':
                     this.bPressingBackward = false
                     break
 
                 case 'ArrowRight':
-                // case 'KeyD':
                     this.bPressingRight = false
                     break
             }
         }
-        const onMouseDown = (ev) => {
-            if(ev.button === 2) {
-				if(ev.target.id === 'canvas') {
-					console.log('mouse2down target', ev.target.id)
-					this.controls.lock()
-					this.bPressingForward = true
-					document.getElementById('canvas').style.cursor = 'none'
-				}
-            }
+        const mouseOnDown = (ev) => {
+			console.log('mouseOnDown', ev.button, ev.target.id)
+
+			if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = true
+			if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = true
+
+			if(ev.target.id === 'canvas') {
+				this.controls.lock()
+				document.getElementById('canvas').style.cursor = 'none'
+			}
+			if(this.mouse.button.left) {
+				this.bPressingForward = true
+			}
         }
-        const onMouseUp = (ev) => {
-            if(ev.button === 2) {
-				console.log('mouse2up target', ev.target.id)
+        const mouseOnUp = (ev) => {
+			console.log('mouseOnUp', ev.button, ev.target.id)
+
+			if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = false
+			if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = false
+
+			if(!this.mouse.button.right && !this.mouse.button.left) {
 				this.controls.unlock()
-                this.bPressingForward = false
 				document.getElementById('canvas').style.cursor = 'auto'
-            }
-        }
-
-        const keyListener = (ev) => {
-            // console.log('KL', ev)
-            // if(this.controls.isLocked === true) {
-                switch(ev.type) {
-                    case 'keydown':
-                        onKeyDown(ev)
-                    break
-                    case 'keyup':
-                        onKeyUp(ev)
-                    break
-                }
-            // }
-        }
-
-        const mouseListener = (ev) => {
-            // console.log('mouseListener', ev.type)
-            // if(ev.target.id === 'canvas'){ // Limit to canvas
-            //     if(ev.type == 'click') {
-			// 		// this.controls.lock()
-			// 		document.getElementById('canvas').style.cursor = 'none'
-			// 		this.bPressingForward = false // In case of a previous click
-            //     }
-            // }
-            // if(this.controls.isLocked === true){
-
-			if(ev.type == 'mouseup') { // Outside of canvas test
-				onMouseUp(ev)
 			}
-			if(ev.target.id == 'canvas') {
-                switch(ev.type) {
-					case 'mousedown':
-						onMouseDown(ev)
-					break
-					case 'keydown':
-						onKeyDown(ev)
-					break
-					case 'keyup':
-						onKeyUp(ev)
-					break
-				}
+			if(!this.mouse.button.left) {
+				this.bPressingForward = false
 			}
-            // }
-
         }
-        window.document.addEventListener( 'click', mouseListener )
-        window.document.addEventListener( 'mousedown', mouseListener )
-        window.document.addEventListener( 'mouseup', mouseListener )
-        window.document.addEventListener( 'keyup', keyListener )
-        window.document.addEventListener( 'keydown', keyListener )
+        const mouseOnClick = (ev) => {
+			console.log('mouseOnClick', ev.code, ev.button, ev.target.id)
+
+			// if(ev.button === 0) this.mouse.button.left = false
+			// if(ev.button === 2) this.mouse.button.right = false
+
+			// if(!this.mouse.button.right && !this.mouse.button.left) {
+			// 	this.controls.unlock()
+			// 	this.bPressingForward = false
+			// }
+        }
+
+        window.document.addEventListener( 'click', mouseOnClick )
+        window.document.addEventListener( 'mousedown', mouseOnDown )
+        window.document.addEventListener( 'mouseup', mouseOnUp )
+        window.document.addEventListener( 'keyup', keyOnUp )
+        window.document.addEventListener( 'keydown', keyOnDown )
 
         return this
     }
 
     ten = 0
     animControls(delta, scene) {
-		
+
         // if (this.controls.isLocked === true) {
 
             this.raycaster.ray.origin.copy( this.controls.getObject().position )

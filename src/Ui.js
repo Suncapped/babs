@@ -1,14 +1,13 @@
-import Cookies from 'js-cookie'
 import Stats from 'three/examples/jsm/libs/stats.module'
+import Overlay from './Overlay.svelte'
+import { toprightText, menuShowLink } from "./stores.js";
+
 export class Ui {
 	static browser
 
-    document
+	static toprightTextDefault = 'Designed for Chrome-like browsers'
 
-    constructor(document) {
-        this.document = document
-		document.getElementById('gameinfo').textContent = document.getElementById('gameinfo').dataset.default
-
+    constructor() {
 		Ui.browser = (function (agent) {
 			switch (true) {
 				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)";
@@ -22,6 +21,12 @@ export class Ui {
 			}
 		})(window.navigator.userAgent.toLowerCase());
 		console.log('Browser is', Ui.browser)
+
+		new Overlay({
+			target: document.body,
+		})
+
+		toprightText.set(Ui.toprightTextDefault)
     }
     /** 
      * @param {'fps'|'mem'} which
@@ -31,7 +36,7 @@ export class Ui {
         this[which].showPanel(which=="fps"?0:2)
         this[which].dom.id = which
         this[which].dom.style = ""
-        this.document.body.appendChild(this[which].dom)
+        document.body.appendChild(this[which].dom)
         return this
     }
 

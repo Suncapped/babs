@@ -1,5 +1,6 @@
 import Cookies from "js-cookie"
 import { BABS } from "./Babs"
+import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "./stores"
 import { Ui } from "./Ui"
 
 export class Socket {
@@ -27,8 +28,12 @@ export class Socket {
 			socket.baseDomain = `${Socket.devDomain}`
 		}
 
+		babsSocket.set(socket)
+
+		// Ui.Overlay.$set({toprightText: 'Connecting...'})
+
+		toprightText.set('Connecting...')
 		socket.ws = new WebSocket(socket.urlSocket)
-		document.getElementById('gameinfo').textContent = 'Connecting...'
 
 		socket.ws.onopen = (event) => {
 			const existingSession = Cookies.get('session')
@@ -51,7 +56,7 @@ export class Socket {
 		}
 		socket.ws.onclose = (event) => {
 			console.log('socket closed', event)
-			offerReconnect('Connection is closed.')
+			offerReconnect('Server connection closed.')
 		}
 		
 		return socket
@@ -79,7 +84,6 @@ export class Socket {
 
 	async send(json) {
 		console.log('Send:', json)
-
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
@@ -93,23 +97,23 @@ export class Socket {
 		Object.entries(payload).forEach(async ([op, data]) => {
 			switch(op) {
 				case 'auth':
-					document.getElementById('enterbutton').disabled = false
+					document.getElementById('charsave').disabled = false
 					// Handle failed login/register here
 					if(data === 'userpasswrong') {
-						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('gameinfo').textContent = "Username/password does not match."
+						document.getElementById('topleft').style.visibility = 'visible'
+						toprightText.set('Username/password does not match.')
 					}
 					else if(data === 'emailinvalid') {
-						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('gameinfo').textContent = "Email is invalid."
+						document.getElementById('topleft').style.visibility = 'visible'
+						toprightText.set('Email is invalid.')
 					}
 					else if(data === 'accountfailed') {
-						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('gameinfo').textContent = "Account creation error."
+						document.getElementById('topleft').style.visibility = 'visible'
+						toprightText.set('Account creation error.')
 					}
 					else if(data === 'passtooshort') {
-						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('gameinfo').textContent = "Password too short, must be 8"
+						document.getElementById('topleft').style.visibility = 'visible'
+						toprightText.set('Password too short, must be 8.')
 					}
 				break;
 				case 'visitor':
@@ -119,7 +123,7 @@ export class Socket {
 						secure: Socket.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
-					document.getElementById('gameinfo').textContent = "Entering..."
+					toprightText.set('Visiting...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break;
 				case 'session':
@@ -130,7 +134,7 @@ export class Socket {
 						secure: Socket.isProd,
 						sameSite: 'strict',
 					})
-					document.getElementById('gameinfo').textContent = "Entering..."
+					toprightText.set('Entering...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break;
 				case 'load':
@@ -139,64 +143,22 @@ export class Socket {
 					const zones = data.zones
 					const zone = zones.find(z => z.id == pself.idzone)
 					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
+					toprightText.set(Ui.toprightTextDefault)
 					
 					if(pself.visitor !== true) {
-						document.getElementById('charsave').style.visibility = 'visible'
-						document.getElementById('charsave').textContent = 'Waking up...'
-						document.getElementById('gameinfo').innerHTML = '<div id="linkmenu"><a href="#">Menu</a> (esc key)</div>'
-						
-						const togglemenu = (ev) => {
-							if(ev.code == 'Escape' || ev.type == 'click') {
-								const menu = document.getElementById('menu')
-								menu.style.display = menu.style.display == 'block' ? 'none' : 'block'
-							}
-						}
-						document.getElementById('linkmenu').addEventListener('click', togglemenu)
-						document.addEventListener('keydown', togglemenu)
+						document.getElementById('topleft').style.visibility = 'visible'
+						document.getElementById('topleft').textContent = 'Waking up...'
 
-						const joinDate = new Date(Date.parse(pself.created_at))
-						const joinMonth = joinDate.toLocaleString('default', { month: 'long' })
-						const joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
+						menuShowLink.set(true)
 
-						const menul = document.querySelector('#menu > ul')
-						menul.append(Ui.CreateEl(`<li>Joined in <span title="${joinDate}">${joinMonth} ${joinYear}<span></li>`))
-						if(pself.nick) menul.append(Ui.CreateEl(`<li>Known as: ${pself.nick}</li>`))
-						menul.append(Ui.CreateEl(`<li>What are you most excited to do in First Earth?</li>`))
-						menul.append(Ui.CreateEl(`<li>
-							<input id="inputreason" type="text" value="${pself.reason}" />
-							<button id="savereason" type="submit" >Save</button> />
-						</li>`))
-						document.getElementById('savereason').addEventListener('click', async ev => {
-							ev.preventDefault()
-							const reason = ev.target.value
-							ev.target.value = 'Saving...'
-							await this.send({
-								'savereason': reason,
-							})
-							ev.target.value = reason
-						})
-
-						menul.append(Ui.CreateEl(`<li>&nbsp;</li>`))
-						menul.append(Ui.CreateEl(`<li><b>Account<b/></li>`))
-						menul.append(Ui.CreateEl(`<li>${pself.email}</li>`))
-						menul.append(Ui.CreateEl(`<li>Credit Months: ${pself.credits}</li>`))
-						menul.append(Ui.CreateEl(`<li>Subscription: Credits</li>`)) // Free / Credits / Paid / Paid (Credits)
-						menul.append(Ui.CreateEl(`<li>Until: (after release)</li>`))
-						
-						menul.append(Ui.CreateEl(`<li>&nbsp;</li>`))
-						menul.append(Ui.CreateEl(`<li><a id="logout" href="#">Logout</a></li>`))
-						document.getElementById('logout').addEventListener('click', (ev) => {
-							ev.preventDefault()
-							Cookies.remove('session')
-							window.location.reload()
-						})
+						menuSelfData.set(pself)
 					}
 
 					BABS.run()
 					await this.world.loadStatics(this.urlFiles, this.scene, zone)
 
 					if(pself.visitor !== true) {
-						document.getElementById('charsave').innerHTML = 'Welcome to First Earth (pre-alpha)'
+						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 					this.send({
 						ready: pself.id
@@ -211,10 +173,5 @@ export class Socket {
 
 
 export function offerReconnect(reason) {
-	document.getElementById('gameinfo').innerHTML = `<span title="${event}">${reason} [<a id="reconnect" href="">Reconnect?</a>]</span>`
-	document.getElementById('reconnect').addEventListener('click', (ev) => {
-		window.location.reload()
-		ev.preventDefault()
-	})
-	document.getElementById('enterbutton').disabled = false
+	toprightReconnect.set(reason)
 }

@@ -15,8 +15,6 @@ import { Ui } from './Ui'
 import { InputSystem } from './InputSystem'
 import { ECS } from './ECS'
 
-import App from "./App.svelte";
-
 class Babs {
 	camera
 	renderer
@@ -46,25 +44,20 @@ class Babs {
 		}
 
 		// Connect immediately to check for existing session
+		this.ui = new Ui()
 		this.scene = new Scene()
 		this.world = new World(this.scene)
 		this.socket = Socket.Create(this.scene, this.world)
-		this.ui = new Ui(document)
 		this.inputSystem = InputSystem.Create()
 
-		document.getElementById('enterbutton').addEventListener('click', (ev) => {
+		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
-			document.getElementById('enterbutton').disabled = true
+			document.getElementById('charsave').disabled = true
 			this.socket.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value
 			)
 		})
-
-		let app = new App({
-			target: document.body,
-		});
-		// export default app;
 
 	}
 
