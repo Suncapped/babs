@@ -81,7 +81,8 @@
 	</div>
 	<div class="topitem" id="topmenu" style="display:{topmenuDisplay};">
 		<ul>
-			<li>To move, click and hold mouse.</li>
+			<li>Mouse click-hold to move, right-click to look.</li>
+			<li>F key to build campfire!</li>
 			
 			<li>&nbsp;</li>
 			{#if $menuSelfData.nick}

@@ -12,7 +12,7 @@ export class InputSystem {
     bCanJump = false
     vVelocity = new Vector3()
     vAccel = new Vector3()
-    ftpsSpeed = 2000 // Todo scale this here and in tick to ft/s // Is it really speed?
+    ftpsSpeed = 500 // Todo scale this here and in tick to ft/s // Is it really speed?
     ftHeightHead = 6
     
     controls
@@ -71,18 +71,20 @@ export class InputSystem {
                     // this.bCanJump = false
                     break
                 case 'KeyF':
-                    // let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
-                    // obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-                    // const player = scene.children.find(o=>o.name=='player')
-                    // obj.mesh.position.copy(player.position)
-                    // obj.mesh.position.y -= this.ftHeightHead
+                    let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
+                    obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+                    const player = scene.children.find(o=>o.name=='player')
+                    obj.mesh.position.copy(player.position)
+                    obj.mesh.position.y -= this.ftHeightHead
 
 					// Place fire in front of you:
-					// // move forward parallel to the xz-plane
-					// // assumes camera.up is y-up
-					// _vector.setFromMatrixColumn( camera.matrix, 0 );
-					// _vector.crossVectors( camera.up, _vector );
-					// camera.position.addScaledVector( _vector, distance );
+					// move forward parallel to the xz-plane
+					// assumes camera.up is y-up
+					const distance = 8
+					let _vector = new Vector3();
+					_vector.setFromMatrixColumn( camera.matrix, 0 );
+					_vector.crossVectors( camera.up, _vector );
+					obj.mesh.position.addScaledVector( _vector, distance );
                     break
             }
         }
