@@ -4,13 +4,11 @@
 	import Cookies from 'js-cookie'
 import { Socket } from './Socket.js';
 
-	
 	let topmenuDisplay = 'none'
-
-
 	function toggleMenu(ev) {
-		if(ev.code == 'Escape' || ev.type == 'click')
+		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
 			topmenuDisplay = topmenuDisplay == 'block' ? 'none' : 'block'
+		}
 	}
 
 	let joinDate, joinMonth, joinYear
@@ -19,11 +17,6 @@ import { Socket } from './Socket.js';
 		joinMonth = joinDate.toLocaleString('default', { month: 'long' })
 		joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
 	})
-
-
-	// toprightText.subscribe(val => {
-	// 	$toprightReconnect = false // Remove if new text up there // Unnecessary, reloads anyway
-	// })
 
 	let inputreason
 	async function saveReason(ev) {
