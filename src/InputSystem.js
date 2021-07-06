@@ -12,7 +12,7 @@ export class InputSystem {
     bCanJump = false
     vVelocity = new Vector3()
     vAccel = new Vector3()
-    ftpsSpeed = 500 // Todo scale this here and in tick to ft/s // Is it really speed?
+    ftpsSpeed = 1000 // Todo scale this here and in tick to ft/s // Is it really speed?
     ftHeightHead = 6
     
     controls

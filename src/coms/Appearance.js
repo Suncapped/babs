@@ -1,16 +1,7 @@
-
-
-import { Group } from 'three'
-import { Socket } from './Socket'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 
 export class Appearance {
-	/**
-	 * @constructor
-	 * @param {string} path
-	 * @param {string} author
-	 * @returns {Promise<Group>}
-	 */
+	
 	static LoadFbx(socket, path) {
 		const loader = new FBXLoader()
 		return new Promise( (resolve, reject) => {

@@ -11,10 +11,25 @@ export class ECS {
      * @param {null|number} idEnt entity id to add, or null to create one in db
      * @return {number} entity id
      * */
-     static CreateEnt(idEnt :number) :number {
+     static AddEnt(idEnt :number) :number {
         ECS.ents.add(idEnt)
         return idEnt
     }
+	// No to below, let's instead use uuids for local entities? Or maybe a separate entity array?
+    // /** 
+    //  * @return {number} entity id
+    //  * */
+    //  static CreateEnt() :number {
+	// 	 let idEnt
+	// 	 for(let i=0; i<10; i++) {
+	// 		idEnt = window.crypto.getRandomValues(new Uint32Array(1))
+	// 		if(ECS.ents.has(idEnt)) { // Collision
+	// 			continue // Keep trying
+	// 		}
+	// 		ECS.ents.add(idEnt[0])
+	// 		return idEnt[0]
+	// 	 }
+    // }
 
     /** 
      * @param {string|null} comName com to get, or null for all

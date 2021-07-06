@@ -118,8 +118,8 @@ export class World {
         // temp.add(playerPosition)
 
         // this.dirLight.position.copy(camera.position)
-        const rounded = camera.position.clone().round()
-        document.getElementById('log').innerText = `${rounded.x}, ${rounded.y}, ${rounded.z}`
+        // const rounded = camera.position.clone().round()
+        document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
 
         this.dirLight.target.position.set( camera.position.x, camera.position.y + 50, camera.position.z ); // Set cube to camera

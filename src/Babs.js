@@ -14,6 +14,7 @@ import { offerReconnect, Socket } from './Socket'
 import { Ui } from './Ui'
 import { InputSystem } from './InputSystem'
 import { ECS } from './ECS'
+import { MoveSystem } from './MoveSystem'
 
 class Babs {
 	camera
@@ -23,6 +24,7 @@ class Babs {
 	socket
 	alreadyRunning = false
 	inputSystem
+	moveSystem
 
 	init() {
 		// Cookies are required
@@ -58,6 +60,8 @@ class Babs {
 				document.getElementById('password').value
 			)
 		})
+
+		this.moveSystem = MoveSystem.Create().init()
 
 	}
 
@@ -129,6 +133,7 @@ class Babs {
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
+		this.moveSystem.update(this.delta, this.camera, this.socket)
 		this.inputSystem.animControls(this.delta, this.scene)
 		this.world.animate(this.delta, this.camera)
 		

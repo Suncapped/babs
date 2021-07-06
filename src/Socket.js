@@ -1,5 +1,7 @@
 import Cookies from "js-cookie"
 import { BABS } from "./Babs"
+import { ECS } from "./ECS"
+import { MoveSystem } from "./MoveSystem"
 import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "./stores"
 import { Ui } from "./Ui"
 
@@ -13,6 +15,7 @@ export class Socket {
 	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
 	static devDomain = 'localhost'
 	static baseDomain
+	static pingSeconds = 30
 
 	static Create(scene, world) {
 		let socket = new Socket
@@ -139,11 +142,14 @@ export class Socket {
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break;
 				case 'load':
+					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
+						this.send({ping:'ping'})
+					}, Socket.pingSeconds * 1000)
+
 					const pself = data.self
-					const players = data.players
 					const zones = data.zones
 					const zone = zones.find(z => z.id == pself.idzone)
-					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
+					console.log('Welcome to', pself.idzone, pself.idzip, pself.id, pself.visitor)
 					toprightText.set(Ui.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					
@@ -162,16 +168,23 @@ export class Socket {
 					if(pself.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
+
+
+					// Let's set pself transform data
+					ECS.AddEnt(pself.id)
+					ECS.AddCom(pself.id, 'player', {self:true})
+					ECS.AddCom(pself.id, 'location', {
+						idzone: pself.idzone,
+						x: pself.x,
+						z: pself.z,
+					})
+					MoveSystem.evtSelfAdded(pself)
+
+
 					this.send({
-						ready: pself.id
+						ready: pself.idzip
 					})
 
-
-					window.setInterval(() => {
-						this.send({
-							ping:'ping'
-						})
-					}, 10_000)
 
 				break;
 			}

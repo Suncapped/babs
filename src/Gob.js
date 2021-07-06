@@ -2,7 +2,7 @@ import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial
 import { Socket } from "./Socket"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from './Utils'
-import { Appearance } from "./Appearance"
+import { Appearance } from "./coms/Appearance"
 export class Gob {
 
     mesh
