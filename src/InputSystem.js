@@ -1,7 +1,9 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { BabsPointerLockControls } from "./BabsPointerLockControls"
 import { Gob } from "./Gob"
+import { topmenuVisible } from "./stores"
 import * as Utils from "./Utils"
+import { get as sget } from 'svelte/store';
 
 export class InputSystem {
 
@@ -53,74 +55,84 @@ export class InputSystem {
         this.controls = new BabsPointerLockControls( camera, document.body )
 
         const keyOnDown = async (ev) => {
-            switch ( ev.code ) {
-                case 'ArrowUp':
-                    this.bPressingForward = true
-                    break
-                case 'ArrowLeft':
-                    this.bPressingLeft = true
-                    break
-                case 'ArrowDown':
-                    this.bPressingBackward = true
-                    break
-                case 'ArrowRight':
-                    this.bPressingRight = true
-                    break
-                case 'Space':
-                    // if ( this.bCanJump === true ) this.vVelocity.y += 350
-                    // this.bCanJump = false
-                    break
-                case 'KeyF':
-                    let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
-                    obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-                    const player = scene.children.find(o=>o.name=='player')
-                    obj.mesh.position.copy(player.position)
-                    obj.mesh.position.y -= this.ftHeightHead
+			if(!sget(topmenuVisible)) {
+				switch ( ev.code ) {
+				//     case 'ArrowUp':
+				//         this.bPressingForward = true
+				//         break
+				//     case 'ArrowLeft':
+				//         this.bPressingLeft = true
+				//         break
+				//     case 'ArrowDown':
+				//         this.bPressingBackward = true
+				//         break
+				//     case 'ArrowRight':
+				//         this.bPressingRight = true
+				//         break
+					case 'Space':
+						// if ( this.bCanJump === true ) this.vVelocity.y += 350
+						// this.bCanJump = false
+						break
+					case 'Escape':
+						// if ( this.bCanJump === true ) this.vVelocity.y += 350
+						// this.bCanJump = false
+						console.log('InputSystem escape')
+						break
+					case 'KeyF':
+						let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
+						obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+						const player = scene.children.find(o=>o.name=='player')
+						obj.mesh.position.copy(player.position)
+						obj.mesh.position.y -= this.ftHeightHead
 
-					// Place fire in front of you:
-					// move forward parallel to the xz-plane
-					// assumes camera.up is y-up
-					const distance = 8
-					let _vector = new Vector3();
-					_vector.setFromMatrixColumn( camera.matrix, 0 );
-					_vector.crossVectors( camera.up, _vector );
-					obj.mesh.position.addScaledVector( _vector, distance );
-                    break
-            }
+						// Plaxe in front; move forward parallel to the xz-plane, assume camera.up is y-up
+						const distance = 8
+						let _vector = new Vector3()
+						_vector.setFromMatrixColumn( camera.matrix, 0 )
+						_vector.crossVectors( camera.up, _vector )
+						obj.mesh.position.addScaledVector( _vector, distance )
+						break
+				}
+			}
         }
         const keyOnUp = (ev) => {
             switch ( ev.code ) {
-                case 'ArrowUp':
-                    this.bPressingForward = false
-                    break
+                // case 'ArrowUp':
+                //     this.bPressingForward = false
+                //     break
 
-                case 'ArrowLeft':
-                    this.bPressingLeft = false
-                    break
+                // case 'ArrowLeft':
+                //     this.bPressingLeft = false
+                //     break
 
-                case 'ArrowDown':
-                    this.bPressingBackward = false
-                    break
+                // case 'ArrowDown':
+                //     this.bPressingBackward = false
+                //     break
 
-                case 'ArrowRight':
-                    this.bPressingRight = false
-                    break
+                // case 'ArrowRight':
+                //     this.bPressingRight = false
+                //     break
             }
         }
+
         const mouseOnDown = (ev) => {
 			console.log('mouseOnDown', ev.button, ev.target.id)
 
-			if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = true
-			if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = true
+			if(!sget(topmenuVisible) && ev.target.id === 'canvas') {
+				if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = true
+				if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = true
 
-			if(ev.target.id === 'canvas') {
-				this.controls.lock()
-				document.getElementById('canvas').style.cursor = 'none'
-			}
-			if(this.mouse.button.left) {
-				this.bPressingForward = true
+				if(ev.target.id === 'canvas') {
+					this.controls.lock()
+					document.getElementById('canvas').style.cursor = 'none'
+				}
+				if(this.mouse.button.left) {
+					this.bPressingForward = true
+				}
 			}
         }
+
+		topmenuVisible.subscribe(vis => vis ? this.releaseMouse() : null) // If menu becomes visible, release mouse
         const mouseOnUp = (ev) => {
 			console.log('mouseOnUp', ev.button, ev.target.id)
 
@@ -137,14 +149,6 @@ export class InputSystem {
         }
         const mouseOnClick = (ev) => {
 			console.log('mouseOnClick', ev.code, ev.button, ev.target.id)
-
-			// if(ev.button === 0) this.mouse.button.left = false
-			// if(ev.button === 2) this.mouse.button.right = false
-
-			// if(!this.mouse.button.right && !this.mouse.button.left) {
-			// 	this.controls.unlock()
-			// 	this.bPressingForward = false
-			// }
         }
 
         window.document.addEventListener( 'click', mouseOnClick )
@@ -155,6 +159,12 @@ export class InputSystem {
 
         return this
     }
+
+	releaseMouse() {
+		this.controls.unlock()
+		document.getElementById('canvas').style.cursor = 'auto'
+		this.bPressingForward = false
+	}
 
     ten = 0
     animControls(delta, scene) {

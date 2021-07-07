@@ -1,13 +1,12 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect } from "./stores.js";
+	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect, topmenuVisible } from "./stores.js";
 	import Cookies from 'js-cookie'
 import { Socket } from './Socket.js';
 
-	let topmenuDisplay = 'none'
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
-			topmenuDisplay = topmenuDisplay == 'block' ? 'none' : 'block'
+			$topmenuVisible = !$topmenuVisible
 		}
 	}
 
@@ -19,12 +18,18 @@ import { Socket } from './Socket.js';
 	})
 
 	let inputreason
+	let savereason
 	async function saveReason(ev) {
 		$menuSelfData.reason = inputreason.value
 		await $babsSocket.send({
 			'savereason': $menuSelfData.reason,
 		})
-		toggleMenu({code:'Escape'})
+		savereason.innerText = '> Saved!'
+		savereason.disabled = true
+		setTimeout(() => {
+			savereason.innerText = 'Save'
+			savereason.disabled = false
+		}, 3000)
 	}
 
 	function logout(ev) {
@@ -77,7 +82,7 @@ import { Socket } from './Socket.js';
 		</div>
 		<div style="clear:both" />
 	</div>
-	<div class="topitem" id="topmenu" style="display:{topmenuDisplay};">
+	<div class="topitem" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};">
 		<ul>
 			<li>Mouse click-hold to move, right-click to look.</li>
 			<li>F key to build campfire!</li>
@@ -90,7 +95,7 @@ import { Socket } from './Socket.js';
 			<li>What are you most excited to do in First Earth?</li>
 			<li>
 				<textarea bind:this={inputreason} id="inputreason" maxlength="10000">{$menuSelfData.reason}</textarea>
-				<button id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button>
+				<button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button>
 			</li>
 
 			<li>&nbsp;</li>

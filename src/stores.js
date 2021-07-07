@@ -6,4 +6,4 @@ export const menuShowLink = writable(false)
 export const menuSelfData = writable({})
 export const toprightReconnect = writable('')
 export const babsSocket = writable()
-
+export const topmenuVisible = writable(false)
