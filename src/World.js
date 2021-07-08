@@ -29,6 +29,7 @@ import {
     BufferGeometry,
     Vector2,
 } from 'three'
+import { CameraHelper } from 'three'
 
 export class World {
 
@@ -40,7 +41,7 @@ export class World {
     lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 
     worldMesh
-    constructor (scene) {
+    constructor (scene, camera, player) {
 
         // let renderer = new WebGLRenderer()
 
@@ -64,22 +65,34 @@ export class World {
 
         this.dirLight = new DirectionalLight(0xffffff, 1)
         // this.dirLight.color.setHSL( 0.1, 1, 0.95 )
-        this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
-        this.dirLight.position.multiplyScalar( 30 )
+        // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
+        // this.dirLight.position.multiplyScalar( 3 )
         // this.dirLight.target
-        scene.add(this.dirLight)
+
         this.dirLight.castShadow = true
         this.dirLight.shadow.mapSize.width = 2048
         this.dirLight.shadow.mapSize.height = 2048
-        const d = 50
-        this.dirLight.shadow.camera.left = - d
-        this.dirLight.shadow.camera.right = d
-        this.dirLight.shadow.camera.top = d
-        this.dirLight.shadow.camera.bottom = - d
-        this.dirLight.shadow.camera.far = 3500
-        this.dirLight.shadow.bias = - 0.0001
+        // const d = 75
+        // this.dirLight.shadow.camera.top = 0//d
+        // this.dirLight.shadow.camera.left = 0
+        // this.dirLight.shadow.camera.bottom = 0
+        // this.dirLight.shadow.camera.right = 0//d
+        this.dirLight.shadow.camera.far = 500
+        this.dirLight.shadow.bias = - 0.001
+
+		// const player = this.scene.children.find(o=>o.name=='player')
+		this.dirLight.target = player
+        scene.add(this.dirLight)
+
+		
         this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
         scene.add( this.dirLightHelper )
+
+
+		var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
+		scene.add( shadowHelper )
+
+
 
         this.dirLight.visible = true
         hemiLight.visible = false
@@ -108,39 +121,14 @@ export class World {
     }
 
     animate(delta, camera, player) {
-
-
-        // csm.update(camera.matrix)
-
-        // console.log(playerPosition)
-
-
-        // this.dirLight.position.set( - 1, 1.75, 1 )
-        // let temp = new Vector3()
-        // temp.addScaledVector(new Vector3(- 1, 1.75, 1), 30)
-        // temp.add(playerPosition)
+        document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
         // this.dirLight.position.copy(camera.position)
         // const rounded = camera.position.clone().round()
-        document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
-
-        this.dirLight.target.position.set( camera.position.x, camera.position.y + 50, camera.position.z ); // Set cube to camera
+        // this.dirLight.target.position.set( camera.position.x, camera.position.y + 50, camera.position.z ); // Set cube to camera
         this.dirLight.position.copy( this.dirLight.target.position ).add( this.lightShift )
 
-
-        // this.dirLight.position.x = camera.position.x - player.cameraStartPosition.x + 20 
-        // this.dirLight.position.z = camera.position.z - player.cameraStartPosition.z + 20
-        // this.dirLight.target.position.set(( camera.position.x - player.cameraStartPosition.x),0,(camera.position.z - player.cameraStartPosition.z))
-
-
-        // this.dirLight.position.addScaledVector(new Vector3(- 1, 1.75, 1), 30)
-        // this.dirLight.position.multiplyScalar( 30 )
-
-        // let newpos = new Vector3(-1, 1.75, 1)
-        // newpos = newpos.multiplyScalar(30)
-
-        // this.dirLight.position.set(newpos) // - 1, 1.75, 1 
     }
 
 

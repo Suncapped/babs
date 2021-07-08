@@ -28,7 +28,7 @@ export class MoveSystem {
 		MoveSystem.instance.pselfServerUpdateLoc = true
 	}
 
-	update(dt, camera, socket) {
+	update(dt, camera, socket, scene) {
 		// if(!this.playerSelf) { // Watch for self
 		// 	this.playerSelf = ECS.GetComsAll('player')?.find(p => p.self === true)
 		// }
@@ -41,10 +41,12 @@ export class MoveSystem {
 		// console.log(camera.position.x, camera.position.z)
 
 		if(this.pselfServerUpdateLoc) {
-			const yBoost = 100 // todo
 			this.pselfServerUpdateLoc = false
+			const yBoost = 100 // todo
 			console.log(this.pself.x, this.pself.z)
-			camera.position.set(this.pself.x *4, camera.position.y +yBoost, this.pself.z *4)
+			const player = scene.children.find(o=>o.name=='player')
+
+			player.position.set(this.pself.x *4, camera.position.y +yBoost, this.pself.z *4)
 			this.pselfGridLoc = new Vector3(this.pself.x, null, this.pself.z)
 		}
 

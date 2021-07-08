@@ -15,6 +15,7 @@ import { Ui } from './Ui'
 import { InputSystem } from './InputSystem'
 import { ECS } from './ECS'
 import { MoveSystem } from './MoveSystem'
+import * as Utils from './Utils'
 
 class Babs {
 	camera
@@ -45,10 +46,23 @@ class Babs {
 			return
 		}
 
+
+
+
 		// Connect immediately to check for existing session
 		this.ui = new Ui()
 		this.scene = new Scene()
-		this.world = new World(this.scene)
+
+
+		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
+		this.camera.rotateY(Utils.radians(-135))
+        // this.camera.position.set(0, this.ftHeightHead, 0)
+
+		this.cube = this.makeCube(this.scene)
+		this.scene.add( this.cube )
+		this.cube.name = 'player'
+
+		this.world = new World(this.scene, this.camera, this.cube)
 		this.socket = Socket.Create(this.scene, this.world)
 		this.inputSystem = InputSystem.Create()
 
@@ -69,8 +83,6 @@ class Babs {
 		if(this.alreadyRunning) return
 		this.alreadyRunning = true
 
-		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
-
 		// this.idPlayer = ECS.CreateEnt(1)
 		// ECS.AddCom(this.idPlayer, 'controller', )
 
@@ -82,9 +94,6 @@ class Babs {
 		this.inputSystem.init(this.scene, this.camera, this.socket)
 
 
-		this.cube = this.makeCube(this.scene)
-		this.world.dirLight.target = this.cube
-		this.scene.add( this.world.dirLight.target )
 
 		window.addEventListener('resize', () => {
 			console.log('resize')
@@ -135,7 +144,7 @@ class Babs {
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
-		this.moveSystem.update(this.delta, this.camera, this.socket)
+		this.moveSystem.update(this.delta, this.camera, this.socket, this.scene)
 		this.inputSystem.animControls(this.delta, this.scene)
 		this.world.animate(this.delta, this.camera)
 		

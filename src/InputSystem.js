@@ -45,40 +45,36 @@ export class InputSystem {
 
     async init(scene, camera, socket) {
 
-        camera.name = 'player'
-        camera.rotateY(Utils.radians(-135))
-        camera.position.set(0, this.ftHeightHead, 0)
-        scene.add(camera)
 
         this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
 
         this.controls = new BabsPointerLockControls( camera, document.getElementById('canvas') )
 
         const keyOnDown = async (ev) => {
-			// if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
-			// 	switch ( ev.code ) {
-			// 	    case 'ArrowUp':
-			// 	    case 'KeyW':
-			// 	        this.bPressingForward = true
-			// 		break
-			// 	    case 'ArrowLeft':
-			// 	    case 'KeyA':
-			// 	        this.bPressingLeft = true
-			// 		break
-			// 	    case 'ArrowDown':
-			// 	    case 'KeyS':
-			// 	        this.bPressingBackward = true
-			// 		break
-			// 	    case 'ArrowRight':
-			// 	    case 'KeyD':
-			// 	        this.bPressingRight = true
-			// 		break
-			// 		case 'Space':
-			// 			// if ( this.bCanJump === true ) this.vVelocity.y += 350
-			// 			// this.bCanJump = false
-			// 		break
-			// 	}
-			// }
+			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
+				switch ( ev.code ) {
+				    case 'ArrowUp':
+				    case 'KeyW':
+				        this.bPressingForward = true
+					break
+				    case 'ArrowLeft':
+				    case 'KeyA':
+				        this.bPressingLeft = true
+					break
+				    case 'ArrowDown':
+				    case 'KeyS':
+				        this.bPressingBackward = true
+					break
+				    case 'ArrowRight':
+				    case 'KeyD':
+				        this.bPressingRight = true
+					break
+					case 'Space':
+						// if ( this.bCanJump === true ) this.vVelocity.y += 350
+						// this.bCanJump = false
+					break
+				}
+			}
 			if(!sget(topmenuVisible)) {
 				switch ( ev.code ) {
 					case 'Escape':
@@ -95,34 +91,34 @@ export class InputSystem {
 						// Plaxe in front; move forward parallel to the xz-plane, assume camera.up is y-up
 						const distance = 8
 						let _vector = new Vector3()
-						_vector.setFromMatrixColumn( camera.matrix, 0 )
-						_vector.crossVectors( camera.up, _vector )
+						_vector.setFromMatrixColumn( player.matrix, 0 )  // camera.matrix
+						_vector.crossVectors( player.up, _vector ) // camera.up
 						obj.mesh.position.addScaledVector( _vector, distance )
 					break
 				}
 			}
         }
         const keyOnUp = (ev) => {
-			// if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
-				// switch ( ev.code ) {
-				// 	case 'ArrowUp':
-				// 	case 'KeyW':
-				// 		this.bPressingForward = false
-				// 	break
-				// 	case 'ArrowLeft':
-				// 	case 'KeyA':
-				// 		this.bPressingLeft = false
-				// 	break
-				// 	case 'ArrowDown':
-				// 	case 'KeyS':
-				// 		this.bPressingBackward = false
-				// 	break
-				// 	case 'ArrowRight':
-				// 	case 'KeyD':
-				// 		this.bPressingRight = false
-				// 	break
-				// }
-			// }
+			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
+				switch ( ev.code ) {
+					case 'ArrowUp':
+					case 'KeyW':
+						this.bPressingForward = false
+					break
+					case 'ArrowLeft':
+					case 'KeyA':
+						this.bPressingLeft = false
+					break
+					case 'ArrowDown':
+					case 'KeyS':
+						this.bPressingBackward = false
+					break
+					case 'ArrowRight':
+					case 'KeyD':
+						this.bPressingRight = false
+					break
+				}
+			}
         }
 
         const mouseOnDown = (ev) => {

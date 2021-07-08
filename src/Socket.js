@@ -217,16 +217,17 @@ export class Socket {
 					// Let's load the model?
 					// let obj = await Gob.Create('/char/model/woman-actionhero-EXPORT.fbx', this.scene, this)
 					// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-					const player = this.scene.children.find(o=>o.name=='player')
+					// const player = this.scene.children.find(o=>o.name=='player')
 					// obj.mesh.position.copy(player.position)
 					// obj.mesh.position.y -= this.ftHeightHead
 					let playerGob = new Gob
-					let playerThing = await playerGob.loadChar('/char/woman-actionhero.gltf', this)
-					console.log('thing?', playerThing)
-					playerThing.position.x = 20
-					playerThing.position.z = 20
-					playerThing.position.y = 2
-					playerThing.scale.multiplyScalar(3.3)
+					let pMesh = await playerGob.loadChar('/char/woman-actionhero.gltf', this)
+					console.log('thing?', pMesh)
+					pMesh.position.x = 200
+					pMesh.position.z = 200
+					pMesh.position.y = 4
+					pMesh.scale.multiplyScalar(3.3)
+					pMesh.castShadow = true
 					
 					
 					const texture = new TextureLoader().load('http://localhost:3000/char/color-atlas-new2.png');
@@ -245,12 +246,20 @@ export class Socket {
 						// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 					} );
 					
-					playerThing.material = material
-					this.scene.add(playerThing)
+					pMesh.material = material
+					this.scene.add(pMesh)
 
 
 					// Animation?
-					
+
+
+					// mixer = new THREE.AnimationMixer( mesh );
+					// mixer.clipAction( gltf.animations[ 0 ] ).setDuration( 1 ).play();
+
+					// fadeToAction( name, 0.2 );
+					// mixer.addEventListener( 'finished', restoreState );
+
+
 
 
 				break;
