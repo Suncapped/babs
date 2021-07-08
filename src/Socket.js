@@ -1,6 +1,12 @@
 import Cookies from "js-cookie"
+import { MeshPhongMaterial } from "three"
+import { DoubleSide } from "three"
+import { LinearEncoding } from "three"
+import { MeshBasicMaterial, sRGBEncoding } from "three"
+import { TextureLoader } from "three"
 import { BABS } from "./Babs"
 import { ECS } from "./ECS"
+import { Gob } from "./Gob"
 import { MoveSystem } from "./MoveSystem"
 import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "./stores"
 import { Ui } from "./Ui"
@@ -37,6 +43,7 @@ export class Socket {
 		toprightText.set('Connecting...')
 		document.getElementById('topleft').style.visibility = 'hidden'
 		socket.ws = new WebSocket(socket.urlSocket)
+		socket.ws.binaryType = 'arraybuffer'
 
 
 		socket.ws.onopen = (event) => {
@@ -51,8 +58,20 @@ export class Socket {
 		}
 		socket.ws.onmessage = (event) => {
 			console.log('Rec:', event.data)
-			const payload = JSON.parse(event.data)
-			socket.process(payload)
+			if(event.data instanceof ArrayBuffer) { // Locations
+				// const players = []
+				// const playerMoves = new Uint8Array(event.data) // byte typedarray view
+				// for(let mi=0; mi <playerMoves.length; mi++) {
+				// 	players
+				// 	playerMoves[mi]
+				// }
+
+        		// console.log(view.getInt32(0));
+			}
+			else {
+				const payload = JSON.parse(event.data)
+				socket.process(payload)
+			}
 		}
 		socket.ws.onerror = (event) => {
 			console.log('socket error', event)
@@ -87,7 +106,7 @@ export class Socket {
 	}
 
 	async send(json) {
-		if(!json.ping) console.log('Send:', json)
+		if(!json.ping && !json.move) console.log('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
@@ -141,6 +160,12 @@ export class Socket {
 					toprightText.set('Entering...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break;
+				case 'alreadyin':
+					// Just have them repeat the auth if this was their second login device
+					
+					offerReconnect('Logged out your other session.  Try again! ->')
+					
+				break;
 				case 'load':
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						this.send({ping:'ping'})
@@ -149,7 +174,7 @@ export class Socket {
 					const pself = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == pself.idzone)
-					console.log('Welcome to', pself.idzone, pself.idzip, pself.id, pself.visitor)
+					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
 					toprightText.set(Ui.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					
@@ -169,7 +194,6 @@ export class Socket {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 
-
 					// Let's set pself transform data
 					ECS.AddEnt(pself.id)
 					ECS.AddCom(pself.id, 'player', {self:true})
@@ -182,8 +206,35 @@ export class Socket {
 
 
 					this.send({
-						ready: pself.idzip
+						ready: pself.id,
 					})
+
+					// Let's load the model?
+					// let obj = await Gob.Create('/char/model/woman-actionhero-EXPORT.fbx', this.scene, this)
+					// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+					const player = this.scene.children.find(o=>o.name=='player')
+					// obj.mesh.position.copy(player.position)
+					// obj.mesh.position.y -= this.ftHeightHead
+					let playerGob = new Gob
+					let playerThing = await playerGob.loadChar('/char/model/woman-actionhero.glb', this)
+					console.log('thing?', playerThing)
+					playerThing.position.x = 20
+					playerThing.position.z = 20
+					playerThing.position.y = 2
+					playerThing.scale.multiplyScalar(3.3)
+					
+					
+					const texture = new TextureLoader().load('http://localhost:3000/char/texture/color-atlas-new2.png');
+					// texture.encoding = LinearEncoding
+					texture.encoding = sRGBEncoding
+					
+					// immediately use the texture for material creation
+					// const material = new MeshBasicMaterial( { map: texture } ); // Basic gives the "flat color" look
+					const material = new MeshPhongMaterial( { map: texture, side: DoubleSide } );
+					
+					playerThing.material = material
+					
+					this.scene.add(playerThing)
 
 
 				break;

@@ -77,7 +77,7 @@ class BabsPointerLockControls extends EventDispatcher {
 
 		function onPointerlockError() {
 
-			console.error( 'THREE.(Babs)PointerLockControls: Unable to use Pointer Lock API' );
+			console.log( 'THREE.(Babs)PointerLockControls: Unable to use Pointer Lock API' );
 
 		}
 

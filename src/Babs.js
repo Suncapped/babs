@@ -119,6 +119,8 @@ class Babs {
 		const canvas = this.renderer.domElement
 		canvas.id = 'canvas'
 
+		// console.log(this.renderer, sRGBEncoding) // confirmed: renderer.outputEncoding === THREE.sRGBEncoding
+
 
 		document.getElementById('canvas').addEventListener('contextmenu', ev => ev.preventDefault()); // move to ui?
 	}

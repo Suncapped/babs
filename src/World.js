@@ -59,7 +59,7 @@ export class World {
         const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
         scene.add( hemiLightHelper )
 
-        this.dirLight = new DirectionalLight( 0xffffff, 1 )
+        this.dirLight = new DirectionalLight(0xffffff, 0.5)
         this.dirLight.color.setHSL( 0.1, 1, 0.95 )
         this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z)
         this.dirLight.position.multiplyScalar( 30 )

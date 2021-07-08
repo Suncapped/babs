@@ -41,10 +41,6 @@ import { Socket } from './Socket.js';
 		window.location.reload()
 	}
 
-	function reload(ev) {
-		window.location.reload()
-	}
-
 </script>
 
 <svelte:window on:keydown={toggleMenu}/>
@@ -53,7 +49,7 @@ import { Socket } from './Socket.js';
 	<div class="topitem">
 		<div id="topright">
 			{#if $toprightReconnect}
-				{$toprightReconnect} [<a href on:click|preventDefault={reload}>Reconnect?</a>]
+				{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]
 			{:else if $menuShowLink}
 				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Menu</a> (esc key)</div>
 			{:else}

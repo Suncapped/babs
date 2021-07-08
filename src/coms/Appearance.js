@@ -5,6 +5,7 @@ export class Appearance {
 	static LoadFbx(socket, path) {
 		const loader = new FBXLoader()
 		return new Promise( (resolve, reject) => {
+			console.log('loading', socket.urlFiles, path)
 			loader.load(
 				`${socket.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback

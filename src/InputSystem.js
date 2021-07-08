@@ -52,32 +52,39 @@ export class InputSystem {
 
         this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
 
-        this.controls = new BabsPointerLockControls( camera, document.body )
+        this.controls = new BabsPointerLockControls( camera, document.getElementById('canvas') )
 
         const keyOnDown = async (ev) => {
+			// if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
+			// 	switch ( ev.code ) {
+			// 	    case 'ArrowUp':
+			// 	    case 'KeyW':
+			// 	        this.bPressingForward = true
+			// 		break
+			// 	    case 'ArrowLeft':
+			// 	    case 'KeyA':
+			// 	        this.bPressingLeft = true
+			// 		break
+			// 	    case 'ArrowDown':
+			// 	    case 'KeyS':
+			// 	        this.bPressingBackward = true
+			// 		break
+			// 	    case 'ArrowRight':
+			// 	    case 'KeyD':
+			// 	        this.bPressingRight = true
+			// 		break
+			// 		case 'Space':
+			// 			// if ( this.bCanJump === true ) this.vVelocity.y += 350
+			// 			// this.bCanJump = false
+			// 		break
+			// 	}
+			// }
 			if(!sget(topmenuVisible)) {
 				switch ( ev.code ) {
-				//     case 'ArrowUp':
-				//         this.bPressingForward = true
-				//         break
-				//     case 'ArrowLeft':
-				//         this.bPressingLeft = true
-				//         break
-				//     case 'ArrowDown':
-				//         this.bPressingBackward = true
-				//         break
-				//     case 'ArrowRight':
-				//         this.bPressingRight = true
-				//         break
-					case 'Space':
-						// if ( this.bCanJump === true ) this.vVelocity.y += 350
-						// this.bCanJump = false
-						break
 					case 'Escape':
 						// if ( this.bCanJump === true ) this.vVelocity.y += 350
 						// this.bCanJump = false
-						console.log('InputSystem escape')
-						break
+					break
 					case 'KeyF':
 						let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
 						obj.mesh.scale.multiplyScalar(0.01 * 3.3)
@@ -91,39 +98,47 @@ export class InputSystem {
 						_vector.setFromMatrixColumn( camera.matrix, 0 )
 						_vector.crossVectors( camera.up, _vector )
 						obj.mesh.position.addScaledVector( _vector, distance )
-						break
+					break
 				}
 			}
         }
         const keyOnUp = (ev) => {
-            switch ( ev.code ) {
-                // case 'ArrowUp':
-                //     this.bPressingForward = false
-                //     break
-
-                // case 'ArrowLeft':
-                //     this.bPressingLeft = false
-                //     break
-
-                // case 'ArrowDown':
-                //     this.bPressingBackward = false
-                //     break
-
-                // case 'ArrowRight':
-                //     this.bPressingRight = false
-                //     break
-            }
+			// if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
+				// switch ( ev.code ) {
+				// 	case 'ArrowUp':
+				// 	case 'KeyW':
+				// 		this.bPressingForward = false
+				// 	break
+				// 	case 'ArrowLeft':
+				// 	case 'KeyA':
+				// 		this.bPressingLeft = false
+				// 	break
+				// 	case 'ArrowDown':
+				// 	case 'KeyS':
+				// 		this.bPressingBackward = false
+				// 	break
+				// 	case 'ArrowRight':
+				// 	case 'KeyD':
+				// 		this.bPressingRight = false
+				// 	break
+				// }
+			// }
         }
 
         const mouseOnDown = (ev) => {
 			console.log('mouseOnDown', ev.button, ev.target.id)
 
-			if(!sget(topmenuVisible) && ev.target.id === 'canvas') {
+			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
 				if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = true
 				if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = true
 
 				if(ev.target.id === 'canvas') {
-					this.controls.lock()
+					try {
+						this.controls.lock()
+					} catch(e) {
+						console.log('hope')
+					}
+					
 					document.getElementById('canvas').style.cursor = 'none'
 				}
 				if(this.mouse.button.left) {
