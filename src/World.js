@@ -51,19 +51,22 @@ export class World {
         scene.fog = new Fog( scene.background, 1, 5000 )
 
         // LIGHTS
+
+		// this.scene.add( new AmbientLight( 0x222222 ) ) // Maybe?
+
         const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.2 )
         hemiLight.color.setHSL( 0.6, 1, 0.6 )
         hemiLight.groundColor.setHSL( 0.095, 1, 0.75 )
-        hemiLight.position.set( 0, 50, 0 )
-        scene.add( hemiLight )
+        hemiLight.position.set( 0, 50, 0 ).normalize()
+        // scene.add( hemiLight )
         const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
-        scene.add( hemiLightHelper )
+        // scene.add( hemiLightHelper )
 
-        this.dirLight = new DirectionalLight(0xffffff, 0.5)
-        this.dirLight.color.setHSL( 0.1, 1, 0.95 )
-        this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z)
+        this.dirLight = new DirectionalLight(0xffffff, 1)
+        // this.dirLight.color.setHSL( 0.1, 1, 0.95 )
+        this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
         this.dirLight.position.multiplyScalar( 30 )
-        this.dirLight.target
+        // this.dirLight.target
         scene.add(this.dirLight)
         this.dirLight.castShadow = true
         this.dirLight.shadow.mapSize.width = 2048
@@ -79,7 +82,7 @@ export class World {
         scene.add( this.dirLightHelper )
 
         this.dirLight.visible = true
-        hemiLight.visible = true
+        hemiLight.visible = false
 
         // SKYDOME
         const vertexShader = document.getElementById( 'vertexShader' ).textContent

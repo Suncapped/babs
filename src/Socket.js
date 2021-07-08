@@ -3,6 +3,11 @@ import { MeshPhongMaterial } from "three"
 import { DoubleSide } from "three"
 import { LinearEncoding } from "three"
 import { MeshBasicMaterial, sRGBEncoding } from "three"
+import { Color } from "three"
+import { AmbientLight } from "three"
+import { DirectionalLight } from "three"
+import { PointLight } from "three"
+import { CubeTextureLoader } from "three"
 import { TextureLoader } from "three"
 import { BABS } from "./Babs"
 import { ECS } from "./ECS"
@@ -216,7 +221,7 @@ export class Socket {
 					// obj.mesh.position.copy(player.position)
 					// obj.mesh.position.y -= this.ftHeightHead
 					let playerGob = new Gob
-					let playerThing = await playerGob.loadChar('/char/model/woman-actionhero.glb', this)
+					let playerThing = await playerGob.loadChar('/char/woman-actionhero.gltf', this)
 					console.log('thing?', playerThing)
 					playerThing.position.x = 20
 					playerThing.position.z = 20
@@ -224,17 +229,28 @@ export class Socket {
 					playerThing.scale.multiplyScalar(3.3)
 					
 					
-					const texture = new TextureLoader().load('http://localhost:3000/char/texture/color-atlas-new2.png');
-					// texture.encoding = LinearEncoding
-					texture.encoding = sRGBEncoding
+					const texture = new TextureLoader().load('http://localhost:3000/char/color-atlas-new2.png');
+					texture.flipY = false // quirk for GLTFLoader separate texture loading!
+					texture.encoding = sRGBEncoding // This too, though the default seems right
+					// texture.anisotropy = 16;
 					
-					// immediately use the texture for material creation
-					// const material = new MeshBasicMaterial( { map: texture } ); // Basic gives the "flat color" look
-					const material = new MeshPhongMaterial( { map: texture, side: DoubleSide } );
+					const material = new MeshPhongMaterial( {
+						map: texture,
+						// bumpMap: texture,
+						// bumpScale: bumpScale,
+						// color: diffuseColor,
+						specular: 0.16,
+						// reflectivity: 0.5, // ??
+						shininess: 0.2,
+						// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
+					} );
 					
 					playerThing.material = material
-					
 					this.scene.add(playerThing)
+
+
+					// Animation?
+					
 
 
 				break;
