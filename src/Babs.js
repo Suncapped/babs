@@ -17,7 +17,7 @@ import { ECS } from './ECS'
 import { MoveSys } from './MoveSys'
 import * as Utils from './Utils'
 
-class Babs {
+class BABS {
 	camera
 	renderer
 	cube
@@ -27,7 +27,10 @@ class Babs {
 	inputSystem
 	moveSystem
 
-	init() {
+
+	static Init() {
+		let babs = new BABS
+
 		// Cookies are required
 		const cookiesEnabled = (() => {
 			try {
@@ -50,33 +53,46 @@ class Babs {
 
 
 		// Connect immediately to check for existing session
-		this.ui = Ui.Init()
-		this.scene = new Scene()
+		babs.ui = Ui.Init()
+		babs.scene = new Scene()
 
 
-		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
-		this.camera.rotateY(Utils.radians(-135))
-        // this.camera.position.set(0, this.ftHeightHead, 0)
+		babs.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
+		babs.camera.rotateY(Utils.radians(-135))
+        // babs.camera.position.set(0, babs.ftHeightHead, 0)
 
-		this.cube = this.makeCube(this.scene)
-		this.scene.add( this.cube )
-		this.cube.name = 'player'
+		babs.cube = babs.makeCube()
+		babs.scene.add( babs.cube )
+		babs.cube.name = 'player'
 
-		this.world = new World(this.scene, this.camera, this.cube)
-		this.socket = Socket.Create(this.scene, this.world)
-		this.inputSystem = InputSys.Create()
+		babs.world = World.Init(babs.scene, babs.camera, babs.cube)
+		babs.inputSystem = InputSys.Create()
+		
+		babs.socket = Socket.Create(babs.scene, babs.world)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
 			document.getElementById('charsave').disabled = true
-			this.socket.enter(
+			babs.socket.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value
 			)
 		})
 
-		this.moveSystem = MoveSys.Create().init()
+		babs.moveSystem = MoveSys.Create().init()
 
+		// Poll for ready so no circular dependency - todo rethink this dep situation
+		const waitForReady = () => {
+			if(babs.socket.babsReady) {
+				babs.run()
+			} 
+			else {
+				setTimeout(waitForReady, 100)
+			}
+		}
+		waitForReady()
+
+		return babs
 	}
 
 	async run() {
@@ -171,13 +187,4 @@ class Babs {
 
 }
 
-export const BABS = new Babs
-
-// Get around HMR problem?  Not sure about this one
-// https://github.com/vitejs/vite/issues/3033
-// https://stackoverflow.com/questions/65038253/uncaught-referenceerror-cannot-access-webpack-default-export-before-initi
-// setTimeout(() => {
-	BABS.init()
-// }, 500)
-
-
+export default BABS.Init()

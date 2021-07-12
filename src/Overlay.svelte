@@ -2,7 +2,7 @@
 	import { onMount, afterUpdate } from 'svelte'
 	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect, topmenuVisible } from "./stores.js";
 	import Cookies from 'js-cookie'
-import { Socket } from './Socket.js';
+	import { Socket } from './Socket.js';
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {

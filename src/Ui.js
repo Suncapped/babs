@@ -27,7 +27,7 @@ export class Ui {
 			target: document.body,
 		})
 
-		// toprightText.set(Ui.toprightTextDefault)
+		toprightText.set(Ui.toprightTextDefault)
 
 		return ui
     }

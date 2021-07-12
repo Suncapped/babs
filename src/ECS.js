@@ -1,8 +1,6 @@
-export type jobject = {[key:string]:any}
-
 export class ECS {
 
-    static ents = new Set<number>()
+    static ents = new Set
    
 	/** @type {Object.<string, Object[]>} coms - object of types, each type has array of coms */
     static coms = {}
@@ -11,7 +9,7 @@ export class ECS {
      * @param {null|number} idEnt entity id to add, or null to create one in db
      * @return {number} entity id
      * */
-     static AddEnt(idEnt :number) :number {
+     static AddEnt(idEnt) {
         ECS.ents.add(idEnt)
         return idEnt
     }
@@ -39,12 +37,12 @@ export class ECS {
         return comName ? ECS.coms[comName] : ECS.coms
     }
 
-    static GetCom(idEnt, comName :string) :null|jobject {
+    static GetCom(idEnt, comName) {
         if(!ECS.ents.has(idEnt)) return null
         return ECS.coms[comName].find(com => com.idEnt === idEnt)
     }
 
-    static AddCom(idEnt, comName, comData) :null|jobject {
+    static AddCom(idEnt, comName, comData) {
         if(!ECS.ents.has(idEnt)) return null
         ECS.coms[comName] = ECS.coms[comName] || [] // Create if needed
         const length = ECS.coms[comName].push({idEnt, ...comData})

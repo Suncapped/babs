@@ -41,8 +41,9 @@ export class World {
     lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 
     worldMesh
-    constructor (scene, camera, player) {
+    static Init(scene, camera, player) {
 
+		let world = new World
         // let renderer = new WebGLRenderer()
 
         // renderer.shadowMap.enabled = true
@@ -53,7 +54,7 @@ export class World {
 
         // LIGHTS
 
-		// this.scene.add( new AmbientLight( 0x222222 ) ) // Maybe?
+		// world.scene.add( new AmbientLight( 0x222222 ) ) // Maybe?
 
         const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.2 )
         hemiLight.color.setHSL( 0.6, 1, 0.6 )
@@ -63,38 +64,38 @@ export class World {
         const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
         // scene.add( hemiLightHelper )
 
-        this.dirLight = new DirectionalLight(0xffffff, 1)
-        // this.dirLight.color.setHSL( 0.1, 1, 0.95 )
-        // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
-        // this.dirLight.position.multiplyScalar( 3 )
-        // this.dirLight.target
+        world.dirLight = new DirectionalLight(0xffffff, 1)
+        // world.dirLight.color.setHSL( 0.1, 1, 0.95 )
+        // world.dirLight.position.set(world.lightShift.x, world.lightShift.y, world.lightShift.z).normalize()
+        // world.dirLight.position.multiplyScalar( 3 )
+        // world.dirLight.target
 
-        this.dirLight.castShadow = true
-        this.dirLight.shadow.mapSize.width = 2048
-        this.dirLight.shadow.mapSize.height = 2048
+        world.dirLight.castShadow = true
+        world.dirLight.shadow.mapSize.width = 2048
+        world.dirLight.shadow.mapSize.height = 2048
         // const d = 75
-        // this.dirLight.shadow.camera.top = 0//d
-        // this.dirLight.shadow.camera.left = 0
-        // this.dirLight.shadow.camera.bottom = 0
-        // this.dirLight.shadow.camera.right = 0//d
-        this.dirLight.shadow.camera.far = 500
-        this.dirLight.shadow.bias = - 0.001
+        // world.dirLight.shadow.camera.top = 0//d
+        // world.dirLight.shadow.camera.left = 0
+        // world.dirLight.shadow.camera.bottom = 0
+        // world.dirLight.shadow.camera.right = 0//d
+        world.dirLight.shadow.camera.far = 500
+        world.dirLight.shadow.bias = - 0.001
 
-		// const player = this.scene.children.find(o=>o.name=='player')
-		this.dirLight.target = player
-        scene.add(this.dirLight)
+		// const player = world.scene.children.find(o=>o.name=='player')
+		world.dirLight.target = player
+        scene.add(world.dirLight)
 
 		
-        this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
-        scene.add( this.dirLightHelper )
+        world.dirLightHelper = new DirectionalLightHelper( world.dirLight, 10 )
+        scene.add( world.dirLightHelper )
 
 
-		var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
+		var shadowHelper = new CameraHelper( world.dirLight.shadow.camera )
 		scene.add( shadowHelper )
 
 
 
-        this.dirLight.visible = true
+        world.dirLight.visible = true
         hemiLight.visible = false
 
         // SKYDOME
@@ -118,6 +119,7 @@ export class World {
         const sky = new Mesh( skyGeo, skyMat )
         scene.add( sky )
 
+		return world
     }
 
     animate(delta, camera, player) {

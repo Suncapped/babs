@@ -16,7 +16,6 @@ import { LoopOnce } from "three"
 import { PointLight } from "three"
 import { CubeTextureLoader } from "three"
 import { TextureLoader } from "three"
-import { BABS } from "./Babs"
 import { Appearance } from "./coms/Appearance"
 import { ECS } from "./ECS"
 import { Gob } from "./Gob"
@@ -30,6 +29,7 @@ export class Socket {
 	ws
 	world
 	scene
+	babsReady = false
 
 	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
 	static devDomain = 'localhost'
@@ -38,6 +38,8 @@ export class Socket {
 
 
 	static Create(scene, world) {
+		// console.log('SOCKET CREATE', babs)
+		// this.babs = babs
 		let socket = new Socket
 		socket.scene = scene
 		socket.world = world
@@ -201,7 +203,7 @@ export class Socket {
 						menuSelfData.set(pself)
 					}
 
-					BABS.run()
+					this.babsReady = true
 					await this.world.loadStatics(this.urlFiles, this.scene, zone)
 
 					if(pself.visitor !== true) {

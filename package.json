@@ -1,18 +1,23 @@
 {
   "name": "babs",
+  "type": "module",
   "version": "0.3.0",
   "engines": {
     "node": "v16"
   },
   "scripts": {
-    "dev": "snowpack dev",
-    "build": "snowpack build && echo Size: && du -sh build",
+    "//dev": "snowpack dev",
+    "//build": "snowpack build && echo Size: && du -sh build",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
     "postbuild": "sh buildtime.sh",
     "predeploy": "npm run build",
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
   },
   "devDependencies": {
-    "@snowpack/plugin-svelte": "^3.7.0",
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.12",
+    "@tsconfig/svelte": "^2.0.1",
     "@types/ndarray": "^1.0.9",
     "@types/ndarray-ops": "^1.2.1",
     "@types/three": "^0.129.2",
@@ -20,11 +25,14 @@
     "ndarray": "^1.0.19",
     "ndarray-linear-interpolate": "^1.0.0",
     "ndarray-ops": "^1.2.2",
-    "snowpack": "^3.7.1"
+    "svelte": "^3.38.3",
+    "svelte-check": "^2.2.2",
+    "svelte-preprocess": "^4.7.4",
+    "tslib": "^2.3.0",
+    "vite": "^2.4.2"
   },
   "dependencies": {
     "js-cookie": "^2.2.1",
-    "svelte": "^3.38.3",
     "three": "^0.129.0"
   }
 }
