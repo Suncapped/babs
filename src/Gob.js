@@ -55,12 +55,15 @@ export class Gob {
 					// // roughnessMipmapper.dispose();
 					// render();
 
-					let mesh = gltf.scene.children[0]
+					// let mesh = gltf.scene.children[0]
+
+					console.log('Make a scene!', gltf)
+
 					// const material = new MeshPhongMaterial( {side: DoubleSide} )
 					// mesh.material.color = new Color(55, 55, 55).convertSRGBToLinear()
 					// mesh.material.emissive = new Color(0, 200, 0).convertSRGBToLinear()
 					// mesh.material = material
-					resolve(mesh)
+					resolve(gltf)
 				},
 				(xhr) => { // onProgress callback
 					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )

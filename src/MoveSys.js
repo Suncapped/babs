@@ -5,7 +5,7 @@ import { Socket } from "./Socket"
 import { babsSocket } from "./stores"
 
 
-export class MoveSystem {
+export class MoveSys {
 	// This class will manipulate entities that have Player components. 
 	// It will do things such as update their Location components based on network input.
 
@@ -16,16 +16,16 @@ export class MoveSystem {
 	pselfGridLoc
 
 	static Create() {
-		MoveSystem.instance = new MoveSystem
-		return MoveSystem.instance
+		MoveSys.instance = new MoveSys
+		return MoveSys.instance
 	}
 	init() {
-		return MoveSystem.instance
+		return MoveSys.instance
 	}
 
 	static evtSelfAdded(playerSelf) {
-		MoveSystem.instance.pself = playerSelf
-		MoveSystem.instance.pselfServerUpdateLoc = true
+		MoveSys.instance.pself = playerSelf
+		MoveSys.instance.pselfServerUpdateLoc = true
 	}
 
 	update(dt, camera, socket, scene) {
@@ -42,7 +42,7 @@ export class MoveSystem {
 
 		if(this.pselfServerUpdateLoc) {
 			this.pselfServerUpdateLoc = false
-			const yBoost = 100 // todo
+			const yBoost = 50 // todo
 			console.log(this.pself.x, this.pself.z)
 			const player = scene.children.find(o=>o.name=='player')
 

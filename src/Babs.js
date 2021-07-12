@@ -12,9 +12,9 @@ import {
 import { World } from './World'
 import { offerReconnect, Socket } from './Socket'
 import { Ui } from './Ui'
-import { InputSystem } from './InputSystem'
+import { InputSys } from './InputSys'
 import { ECS } from './ECS'
-import { MoveSystem } from './MoveSystem'
+import { MoveSys } from './MoveSys'
 import * as Utils from './Utils'
 
 class Babs {
@@ -50,7 +50,7 @@ class Babs {
 
 
 		// Connect immediately to check for existing session
-		this.ui = new Ui()
+		this.ui = Ui.Init()
 		this.scene = new Scene()
 
 
@@ -64,7 +64,7 @@ class Babs {
 
 		this.world = new World(this.scene, this.camera, this.cube)
 		this.socket = Socket.Create(this.scene, this.world)
-		this.inputSystem = InputSystem.Create()
+		this.inputSystem = InputSys.Create()
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -75,13 +75,14 @@ class Babs {
 			)
 		})
 
-		this.moveSystem = MoveSystem.Create().init()
+		this.moveSystem = MoveSys.Create().init()
 
 	}
 
 	async run() {
 		if(this.alreadyRunning) return
 		this.alreadyRunning = true
+
 
 		// this.idPlayer = ECS.CreateEnt(1)
 		// ECS.AddCom(this.idPlayer, 'controller', )
@@ -147,6 +148,8 @@ class Babs {
 		this.moveSystem.update(this.delta, this.camera, this.socket, this.scene)
 		this.inputSystem.animControls(this.delta, this.scene)
 		this.world.animate(this.delta, this.camera)
+
+		this.socket?.update(this.delta)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )
@@ -162,11 +165,19 @@ class Babs {
 		cube.name = 'this.cameracube'
 		cube.position.copy(new Vector3(0,200,0))
 		cube.castShadow = true
-		cube.receiveShadow = true
+		// cube.receiveShadow = true
 		return cube
 	}
 
 }
 
 export const BABS = new Babs
-BABS.init()
+
+// Get around HMR problem?  Not sure about this one
+// https://github.com/vitejs/vite/issues/3033
+// https://stackoverflow.com/questions/65038253/uncaught-referenceerror-cannot-access-webpack-default-export-before-initi
+// setTimeout(() => {
+	BABS.init()
+// }, 500)
+
+

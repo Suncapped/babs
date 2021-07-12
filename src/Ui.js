@@ -7,7 +7,8 @@ export class Ui {
 
 	static toprightTextDefault = 'Designed for Chrome-like browsers'
 
-    constructor() {
+    static Init() {
+		const ui = new Ui
 		Ui.browser = (function (agent) {
 			switch (true) {
 				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)";
@@ -26,7 +27,9 @@ export class Ui {
 			target: document.body,
 		})
 
-		toprightText.set(Ui.toprightTextDefault)
+		// toprightText.set(Ui.toprightTextDefault)
+
+		return ui
     }
     /** 
      * @param {'fps'|'mem'} which

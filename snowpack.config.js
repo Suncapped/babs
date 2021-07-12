@@ -14,8 +14,9 @@ module.exports = {
   },
   devOptions: {
     port: 8081,
-	// hmr: true,
+	// hmr: false,
 	// hmrPort: 12321,
+	hmrDelay: 500,
   },
   buildOptions: {
     // out: '../expressa/public', // Instead, I'll copy it manually in package.json.
@@ -30,8 +31,8 @@ module.exports = {
 		// https://github.com/snowpackjs/snowpack/discussions/1567
 		// https://github.com/snowpackjs/snowpack/pull/1727
 		// hmrOptions: { 
-		// 	noReload: true,
-		// 	preserveLocalState: true
+		// 	noReload: false,
+		// 	preserveLocalState: false
 		// }
 		// Best method for FR then is just: // @hmr:keep
 	}],

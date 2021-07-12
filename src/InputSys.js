@@ -5,7 +5,7 @@ import { topmenuVisible } from "./stores"
 import * as Utils from "./Utils"
 import { get as sget } from 'svelte/store';
 
-export class InputSystem {
+export class InputSys {
 
     bPressingForward = false
     bPressingBackward = false
@@ -40,7 +40,7 @@ export class InputSystem {
 
 
     static Create() {
-        return new InputSystem
+        return new InputSys
     }
 
     async init(scene, camera, socket) {
@@ -125,8 +125,8 @@ export class InputSystem {
 			console.log('mouseOnDown', ev.button, ev.target.id)
 
 			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
-				if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = true
-				if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = true
+				if(ev.button === InputSys.MOUSE_LEFT) this.mouse.button.left = true
+				if(ev.button === InputSys.MOUSE_RIGHT) this.mouse.button.right = true
 
 				if(ev.target.id === 'canvas') {
 					try {
@@ -147,8 +147,8 @@ export class InputSystem {
         const mouseOnUp = (ev) => {
 			console.log('mouseOnUp', ev.button, ev.target.id)
 
-			if(ev.button === InputSystem.MOUSE_LEFT) this.mouse.button.left = false
-			if(ev.button === InputSystem.MOUSE_RIGHT) this.mouse.button.right = false
+			if(ev.button === InputSys.MOUSE_LEFT) this.mouse.button.left = false
+			if(ev.button === InputSys.MOUSE_RIGHT) this.mouse.button.right = false
 
 			if(!this.mouse.button.right && !this.mouse.button.left) {
 				this.controls.unlock()
