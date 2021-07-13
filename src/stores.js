@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import { Socket } from './Socket'
+import { SocketSys } from './sys/SocketSys'
 
 export const toprightText = writable('')
 export const menuShowLink = writable(false)

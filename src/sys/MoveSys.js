@@ -1,8 +1,8 @@
 import { Vector2 } from "three"
 import { Vector3 } from "three"
-import { ECS } from "./ECS"
-import { Socket } from "./Socket"
-import { babsSocket } from "./stores"
+import { SocketSys } from "./SocketSys"
+import { babsSocket } from "../stores"
+import { EventSys } from "./EventSys"
 
 
 export class MoveSys {
@@ -17,28 +17,24 @@ export class MoveSys {
 
 	static Create() {
 		MoveSys.instance = new MoveSys
+
+		EventSys.Subscribe(MoveSys)
+
 		return MoveSys.instance
 	}
 	init() {
 		return MoveSys.instance
 	}
 
-	static evtSelfAdded(playerSelf) {
-		MoveSys.instance.pself = playerSelf
-		MoveSys.instance.pselfServerUpdateLoc = true
+	static Event(type, data) {
+		if(type == 'load-self') {
+			MoveSys.instance.pself = data
+			MoveSys.instance.pselfServerUpdateLoc = true
+		}
 	}
 
 	update(dt, camera, socket, scene) {
-		// if(!this.playerSelf) { // Watch for self
-		// 	this.playerSelf = ECS.GetComsAll('player')?.find(p => p.self === true)
-		// }
-		// else {
-		// 	const selfLoc = ECS.GetCom(this.playerSelf.idEnt, 'location')
-		// 	if(!this.playerSelfLocation){ // We know self, watch for changes
-		// 		this.playerSelfLocation = ECS.GetCom(this.playerSelf.idEnt, 'location')
-		// 	}
-		// }
-		// console.log(camera.position.x, camera.position.z)
+
 
 		if(this.pselfServerUpdateLoc) {
 			this.pselfServerUpdateLoc = false

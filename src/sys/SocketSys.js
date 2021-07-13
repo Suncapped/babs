@@ -1,4 +1,4 @@
-import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "./stores"
+import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "../stores"
 import Cookies from "js-cookie"
 import { MeshPhongMaterial } from "three"
 import { DoubleSide } from "three"
@@ -16,14 +16,14 @@ import { LoopOnce } from "three"
 import { PointLight } from "three"
 import { CubeTextureLoader } from "three"
 import { TextureLoader } from "three"
-import { Appearance } from "./coms/Appearance"
-import { ECS } from "./ECS"
-import { Gob } from "./Gob"
+import { Appearance } from "../com/Appearance"
+import { Gob } from "../ent/Gob"
 import { MoveSys } from "./MoveSys"
-import { Ui } from "./Ui"
-import * as Utils from './Utils'
+import { Ui } from "../ui/Ui"
+import * as Utils from '../Utils'
+import { EventSys } from "./EventSys"
 
-export class Socket {
+export class SocketSys {
 	urlFiles
 	urlSocket
 	ws
@@ -40,18 +40,18 @@ export class Socket {
 	static Create(scene, world) {
 		// console.log('SOCKET CREATE', babs)
 		// this.babs = babs
-		let socket = new Socket
+		let socket = new SocketSys
 		socket.scene = scene
 		socket.world = world
-		if (Socket.isProd) {
+		if (SocketSys.isProd) {
 			socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
-			Socket.baseDomain = 'suncapped.com'
+			SocketSys.baseDomain = 'suncapped.com'
 		}
 		else {
-			socket.urlSocket = `ws://${Socket.devDomain}:2567` /* Proxima */
-			socket.urlFiles = `http://${Socket.devDomain}:3000` /* Express (Snowpack dev is 8081) */
-			Socket.baseDomain = `${Socket.devDomain}`
+			socket.urlSocket = `ws://${SocketSys.devDomain}:2567` /* Proxima */
+			socket.urlFiles = `http://${SocketSys.devDomain}:3000` /* Express (Snowpack dev is 8081) */
+			SocketSys.baseDomain = `${SocketSys.devDomain}`
 		}
 
 		babsSocket.set(socket)
@@ -158,8 +158,8 @@ export class Socket {
 				case 'visitor':
 					this.session = data
 					Cookies.set('session', this.session, { 
-						domain: Socket.baseDomain,
-						secure: Socket.isProd,
+						domain: SocketSys.baseDomain,
+						secure: SocketSys.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
 					toprightText.set('Visiting...')
@@ -169,8 +169,8 @@ export class Socket {
 					this.session = data
 					Cookies.set('session', this.session, { 
 						expires: 365,
-						domain: Socket.baseDomain,
-						secure: Socket.isProd,
+						domain: SocketSys.baseDomain,
+						secure: SocketSys.isProd,
 						sameSite: 'strict',
 					})
 					toprightText.set('Entering...')
@@ -185,7 +185,7 @@ export class Socket {
 				case 'load':
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						this.send({ping:'ping'})
-					}, Socket.pingSeconds * 1000)
+					}, SocketSys.pingSeconds * 1000)
 
 					const pself = data.self
 					const zones = data.zones
@@ -211,14 +211,14 @@ export class Socket {
 					}
 
 					// Let's set pself transform data
-					ECS.AddEnt(pself.id)
-					ECS.AddCom(pself.id, 'player', {self:true})
-					ECS.AddCom(pself.id, 'location', {
-						idzone: pself.idzone,
-						x: pself.x,
-						z: pself.z,
-					})
-					MoveSys.evtSelfAdded(pself)
+					// ECS.AddEnt(pself.id)
+					// ECS.AddCom(pself.id, 'player', {self:true})
+					// ECS.AddCom(pself.id, 'location', {
+					// 	idzone: pself.idzone,
+					// 	x: pself.x,
+					// 	z: pself.z,
+					// })
+					EventSys.Dispatch('load-self', pself)
 
 
 					this.send({

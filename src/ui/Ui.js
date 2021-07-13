@@ -1,6 +1,6 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
 import Overlay from './Overlay.svelte'
-import { toprightText, menuShowLink } from "./stores.js";
+import { toprightText, menuShowLink } from "../stores.js";
 
 export class Ui {
 	static browser

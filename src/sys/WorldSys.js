@@ -1,5 +1,5 @@
 
-import * as Utils from './Utils'
+import * as Utils from '../Utils'
 import ndarray from 'ndarray'
 import { 
     PlaneGeometry, 
@@ -31,7 +31,7 @@ import {
 } from 'three'
 import { CameraHelper } from 'three'
 
-export class World {
+export class WorldSys {
 
     static ZoneLength = 1000
 
@@ -43,7 +43,7 @@ export class World {
     worldMesh
     static Init(scene, camera, player) {
 
-		let world = new World
+		let world = new WorldSys
         // let renderer = new WebGLRenderer()
 
         // renderer.shadowMap.enabled = true
@@ -137,7 +137,7 @@ export class World {
     async loadStatics(urlFiles, scene, zone) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
-        geometry.translate(World.ZoneLength /2, 0, World.ZoneLength /2)
+        geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
         material.color.setHSL( 0.095, 1, 0.75 )

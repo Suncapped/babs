@@ -1,8 +1,8 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { BabsPointerLockControls } from "./BabsPointerLockControls"
-import { Gob } from "./Gob"
-import { topmenuVisible } from "./stores"
-import * as Utils from "./Utils"
+import { Gob } from "../ent/Gob"
+import { topmenuVisible } from "../stores"
+import * as Utils from "../Utils"
 import { get as sget } from 'svelte/store';
 
 export class InputSys {

@@ -1,8 +1,8 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect, topmenuVisible } from "./stores.js";
+	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect, topmenuVisible } from "../stores.js";
 	import Cookies from 'js-cookie'
-	import { Socket } from './Socket.js';
+	import { SocketSys } from '../sys/SocketSys.js';
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
@@ -34,8 +34,8 @@
 
 	function logout(ev) {
 		Cookies.remove('session', { 
-			domain: Socket.baseDomain,
-			secure: Socket.isProd,
+			domain: SocketSys.baseDomain,
+			secure: SocketSys.isProd,
 			sameSite: 'strict',
 		})
 		window.location.reload()

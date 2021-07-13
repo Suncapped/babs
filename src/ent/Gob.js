@@ -1,8 +1,8 @@
 import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide } from "three"
-import { Socket } from "./Socket"
+import { SocketSys } from "../sys/SocketSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as Utils from './Utils'
-import { Appearance } from "./coms/Appearance"
+import * as Utils from '../Utils'
+import { Appearance } from "../com/Appearance"
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

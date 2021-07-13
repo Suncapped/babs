@@ -3,7 +3,7 @@ import {
 	EventDispatcher,
 	Vector3
 } from 'three';
-import { Ui } from './Ui';
+import { Ui } from '../ui/Ui';
 
 const _euler = new Euler( 0, 0, 0, 'YXZ' );
 const _vector = new Vector3();

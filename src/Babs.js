@@ -9,12 +9,11 @@ import {
     MeshPhongMaterial,
     AxesHelper,
 } from 'three'
-import { World } from './World'
-import { offerReconnect, Socket } from './Socket'
-import { Ui } from './Ui'
-import { InputSys } from './InputSys'
-import { ECS } from './ECS'
-import { MoveSys } from './MoveSys'
+import { WorldSys } from './sys/WorldSys'
+import { offerReconnect, SocketSys } from './sys/SocketSys'
+import { Ui } from './ui/Ui'
+import { InputSys } from './sys/InputSys'
+import { MoveSys } from './sys/MoveSys'
 import * as Utils from './Utils'
 
 class BABS {
@@ -65,10 +64,10 @@ class BABS {
 		babs.scene.add( babs.cube )
 		babs.cube.name = 'player'
 
-		babs.world = World.Init(babs.scene, babs.camera, babs.cube)
+		babs.world = WorldSys.Init(babs.scene, babs.camera, babs.cube)
 		babs.inputSystem = InputSys.Create()
 		
-		babs.socket = Socket.Create(babs.scene, babs.world)
+		babs.socket = SocketSys.Create(babs.scene, babs.world)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -100,14 +99,6 @@ class BABS {
 		this.alreadyRunning = true
 
 
-		// this.idPlayer = ECS.CreateEnt(1)
-		// ECS.AddCom(this.idPlayer, 'controller', )
-
-		// Components init
-		// ECS.GetComsAll(Controller.sType).forEach(async com => {
-		// 	await com.init(this.scene, this.camera, this.socket) // make 'em wait! // Should I have to pass to each?
-		// })
-		// todo replace above with system
 		this.inputSystem.init(this.scene, this.camera, this.socket)
 
 
