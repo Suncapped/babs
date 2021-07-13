@@ -35,15 +35,15 @@ export class WorldSys {
 
     static ZoneLength = 1000
 
-    dirLight
-    dirLightHelper
+    static dirLight
+    static dirLightHelper
 
-    lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
+    static lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 
-    worldMesh
-    static Init(scene, camera, player) {
+    static worldMesh
+	
+    static Start(scene, camera, player) {
 
-		let world = new WorldSys
         // let renderer = new WebGLRenderer()
 
         // renderer.shadowMap.enabled = true
@@ -54,7 +54,7 @@ export class WorldSys {
 
         // LIGHTS
 
-		// world.scene.add( new AmbientLight( 0x222222 ) ) // Maybe?
+		// this.scene.add( new AmbientLight( 0x222222 ) ) // Maybe?
 
         const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.2 )
         hemiLight.color.setHSL( 0.6, 1, 0.6 )
@@ -64,38 +64,37 @@ export class WorldSys {
         const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
         // scene.add( hemiLightHelper )
 
-        world.dirLight = new DirectionalLight(0xffffff, 1)
-        // world.dirLight.color.setHSL( 0.1, 1, 0.95 )
-        // world.dirLight.position.set(world.lightShift.x, world.lightShift.y, world.lightShift.z).normalize()
-        // world.dirLight.position.multiplyScalar( 3 )
-        // world.dirLight.target
+        this.dirLight = new DirectionalLight(0xffffff, 1)
+        // this.dirLight.color.setHSL( 0.1, 1, 0.95 )
+        // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
+        // this.dirLight.position.multiplyScalar( 3 )
+        // this.dirLight.target
 
-        world.dirLight.castShadow = true
-        world.dirLight.shadow.mapSize.width = 2048
-        world.dirLight.shadow.mapSize.height = 2048
+        this.dirLight.castShadow = true
+        this.dirLight.shadow.mapSize.width = 2048
+        this.dirLight.shadow.mapSize.height = 2048
         // const d = 75
-        // world.dirLight.shadow.camera.top = 0//d
-        // world.dirLight.shadow.camera.left = 0
-        // world.dirLight.shadow.camera.bottom = 0
-        // world.dirLight.shadow.camera.right = 0//d
-        world.dirLight.shadow.camera.far = 500
-        world.dirLight.shadow.bias = - 0.001
+        // this.dirLight.shadow.camera.top = 0//d
+        // this.dirLight.shadow.camera.left = 0
+        // this.dirLight.shadow.camera.bottom = 0
+        // this.dirLight.shadow.camera.right = 0//d
+        this.dirLight.shadow.camera.far = 500
+        this.dirLight.shadow.bias = - 0.001
 
-		// const player = world.scene.children.find(o=>o.name=='player')
-		world.dirLight.target = player
-        scene.add(world.dirLight)
+		// const player = this.scene.children.find(o=>o.name=='player')
+		this.dirLight.target = player
+        scene.add(this.dirLight)
 
 		
-        world.dirLightHelper = new DirectionalLightHelper( world.dirLight, 10 )
-        scene.add( world.dirLightHelper )
+        this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
+        scene.add( this.dirLightHelper )
 
 
-		var shadowHelper = new CameraHelper( world.dirLight.shadow.camera )
+		var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
 		scene.add( shadowHelper )
 
 
-
-        world.dirLight.visible = true
+        this.dirLight.visible = true
         hemiLight.visible = false
 
         // SKYDOME
@@ -118,23 +117,22 @@ export class WorldSys {
         } )
         const sky = new Mesh( skyGeo, skyMat )
         scene.add( sky )
-
-		return world
     }
 
-    animate(delta, camera, player) {
+    static Update(delta, camera) {
+		// console.log('world UPDATETKEJEKEJLEJLEJ', camera.position)
         document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
         // this.dirLight.position.copy(camera.position)
         // const rounded = camera.position.clone().round()
 
         // this.dirLight.target.position.set( camera.position.x, camera.position.y + 50, camera.position.z ); // Set cube to camera
-        this.dirLight.position.copy( this.dirLight.target.position ).add( this.lightShift )
+        WorldSys.dirLight.position.copy( WorldSys.dirLight.target.position ).add( WorldSys.lightShift )
 
     }
 
 
-    async loadStatics(urlFiles, scene, zone) {
+    static async LoadStatics(urlFiles, scene, zone) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
@@ -147,13 +145,13 @@ export class WorldSys {
         ground.receiveShadow = true
 
 
-        await this.updateTerrain(urlFiles, geometry, zone)
+        await WorldSys.UpdateTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
         scene.add( ground )
     }
 
-    terrainData = null
+    static terrainData = null
     // rawTexture1
     // rawTexture2
     // public groundMesh
@@ -223,7 +221,7 @@ export class WorldSys {
     //     await this.updateLandcover(urlFiles)
     //     timeReporter.next('Done')
     // }
-    async updateTerrain(urlFiles, geometry, zone) {
+    static async UpdateTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
 
         timeReporter.next('Terrain start')

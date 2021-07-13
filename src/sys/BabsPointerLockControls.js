@@ -3,7 +3,7 @@ import {
 	EventDispatcher,
 	Vector3
 } from 'three';
-import { Ui } from '../ui/Ui';
+import { UiSys } from '../sys/UiSys';
 
 const _euler = new Euler( 0, 0, 0, 'YXZ' );
 const _vector = new Vector3();
@@ -143,7 +143,7 @@ class BabsPointerLockControls extends EventDispatcher {
 		};
 
 		this.lock = function () {
-			if(Ui.browser == 'safari') {
+			if(UiSys.browser == 'safari') {
 				scope.isLocked = true;
 			} else {
 				this.domElement.requestPointerLock();
@@ -151,7 +151,7 @@ class BabsPointerLockControls extends EventDispatcher {
 		};
 
 		this.unlock = function () {
-			if(Ui.browser == 'safari') {
+			if(UiSys.browser == 'safari') {
 				scope.isLocked = false;
 			} else {
 				scope.domElement.ownerDocument.exitPointerLock();

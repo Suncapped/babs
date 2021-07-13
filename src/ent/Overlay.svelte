@@ -21,7 +21,7 @@
 	let savereason
 	async function saveReason(ev) {
 		$menuSelfData.reason = inputreason.value
-		await $babsSocket.send({
+		await $babsSocket.Send({
 			'savereason': $menuSelfData.reason,
 		})
 		savereason.innerText = '> Saved!'

@@ -10,9 +10,9 @@ export class Gob {
 
     mesh
 
-    static async Create(path, scene, socket) {
+    static async Create(path, scene) {
         let gob = new Gob
-        const group = await Appearance.LoadFbx(socket, path)
+        const group = await Appearance.LoadFbx(path)
 
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )
@@ -38,13 +38,13 @@ export class Gob {
         return gob
     }
 
-	loadChar(path, socket) {
+	loadChar(path) {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' );
 
 		return new Promise( (resolve, reject) => {
 			console.log('loading', path)
 
-			loader.load(`${socket.urlFiles}${path}`,// function ( gltf ) {
+			loader.load(`${SocketSys.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
 					// gltf.scene.traverse( function ( child ) {
 					// 	if ( child.isMesh ) {

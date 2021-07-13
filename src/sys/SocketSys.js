@@ -19,61 +19,51 @@ import { TextureLoader } from "three"
 import { Appearance } from "../com/Appearance"
 import { Gob } from "../ent/Gob"
 import { MoveSys } from "./MoveSys"
-import { Ui } from "../ui/Ui"
+import { UiSys } from '../sys/UiSys'
 import * as Utils from '../Utils'
 import { EventSys } from "./EventSys"
+import { WorldSys } from "./WorldSys"
 
 export class SocketSys {
-	urlFiles
-	urlSocket
-	ws
-	world
-	scene
-	babsReady = false
 
-	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
-	static devDomain = 'localhost'
-	static baseDomain
+	static ws
+	static scene
+	static babsReady = false
+
+	static urlSocket
+	static urlFiles
+
+
 	static pingSeconds = 30
 
 
-	static Create(scene, world) {
-		// console.log('SOCKET CREATE', babs)
-		// this.babs = babs
-		let socket = new SocketSys
-		socket.scene = scene
-		socket.world = world
-		if (SocketSys.isProd) {
-			socket.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
-			socket.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
-			SocketSys.baseDomain = 'suncapped.com'
-		}
-		else {
-			socket.urlSocket = `ws://${SocketSys.devDomain}:2567` /* Proxima */
-			socket.urlFiles = `http://${SocketSys.devDomain}:3000` /* Express (Snowpack dev is 8081) */
-			SocketSys.baseDomain = `${SocketSys.devDomain}`
-		}
+	static Start(scene, urlSocket, urlFiles) {
 
-		babsSocket.set(socket)
+		this.urlSocket = urlSocket
+		this.urlFiles = urlFiles
+
+		this.scene = scene
+
+		babsSocket.set(this)
 
 		toprightText.set('Connecting...')
 		document.getElementById('topleft').style.visibility = 'hidden'
-		socket.ws = new WebSocket(socket.urlSocket)
-		socket.ws.binaryType = 'arraybuffer'
+		this.ws = new WebSocket(this.urlSocket)
+		this.ws.binaryType = 'arraybuffer'
 
 
-		socket.ws.onopen = (event) => {
+		this.ws.onopen = (event) => {
 			const existingSession = Cookies.get('session')
 			console.log('existingSession', existingSession)
 			if(existingSession){
-				socket.auth(existingSession)
+				this.Auth(existingSession)
 			}
 			else { // No cookie, so indicate visitor
-				socket.visitor()
+				this.Visitor()
 			}
 		}
-		socket.ws.onmessage = (event) => {
-			console.log('Rec:', event.data)
+		this.ws.onmessage = (event) => {
+			console.log('Socket rec:', event.data)
 			if(event.data instanceof ArrayBuffer) { // Locations
 				// const players = []
 				// const playerMoves = new Uint8Array(event.data) // byte typedarray view
@@ -86,33 +76,31 @@ export class SocketSys {
 			}
 			else {
 				const payload = JSON.parse(event.data)
-				socket.process(payload)
+				this.Process(payload)
 			}
 		}
-		socket.ws.onerror = (event) => {
-			console.log('socket error', event)
-			offerReconnect('Connection error.')
+		this.ws.onerror = (event) => {
+			console.log('Socket error', event)
+			UiSys.OfferReconnect('Connection error.')
 		}
-		socket.ws.onclose = (event) => {
-			console.log('socket closed', event)
-			offerReconnect('Server connection closed.')
+		this.ws.onclose = (event) => {
+			console.log('Socket closed', event)
+			UiSys.OfferReconnect('Server connection closed.')
 		}
-		
-		return socket
 	}
 
-	visitor() {
-		this.send({
+	static Visitor() {
+		this.Send({
 			auth: 'visitor'
 		})
 	}
-	auth(session) {
-		this.send({
+	static Auth(session) {
+		this.Send({
 			auth: session
 		})
 	}
-	enter(email, pass) {
-		this.send({
+	static Enter(email, pass) {
+		this.Send({
 			enter: {
 				email,
 				pass,
@@ -121,18 +109,18 @@ export class SocketSys {
 		})
 	}
 
-	async send(json) {
+	static async Send(json) {
 		if(!json.ping && !json.move) console.log('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
 		else {
 			console.log('Cannot send; WebSocket is in CLOSING or CLOSED state')
-			offerReconnect('Cannot reach server.')
+			UiSys.OfferReconnect('Cannot reach server.')
 		}
 	}
 
-	process(payload){
+	static Process(payload){
 		Object.entries(payload).forEach(async ([op, data]) => {
 			switch(op) {
 				case 'auth':
@@ -179,19 +167,19 @@ export class SocketSys {
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
-					offerReconnect('Logged out your other session.  Try again! ->')
+					UiSys.OfferReconnect('Logged out your other session.  Try again! ->')
 					
 				break;
 				case 'load':
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
-						this.send({ping:'ping'})
+						this.Send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
 					const pself = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == pself.idzone)
 					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
-					toprightText.set(Ui.toprightTextDefault)
+					toprightText.set(UiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					
 					if(pself.visitor !== true) {
@@ -204,7 +192,7 @@ export class SocketSys {
 					}
 
 					this.babsReady = true
-					await this.world.loadStatics(this.urlFiles, this.scene, zone)
+					await WorldSys.LoadStatics(this.urlFiles, this.scene, zone)
 
 					if(pself.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
@@ -221,7 +209,7 @@ export class SocketSys {
 					EventSys.Dispatch('load-self', pself)
 
 
-					this.send({
+					this.Send({
 						ready: pself.id,
 					})
 
@@ -349,7 +337,7 @@ export class SocketSys {
 					////////////////////////////////////////////////////////////
 
 					// Now let's try with new export
-					const fbx = await Appearance.LoadFbx(this, '/files/char/female/female-rig-idle.fbx') 
+					const fbx = await Appearance.LoadFbx('/files/char/female/female-rig-idle.fbx') 
 					console.log('fbx', fbx)
 
 					// fbx.rotateX(Utils.radians(90))
@@ -411,11 +399,11 @@ export class SocketSys {
 	}
 
 
-	resetTime
-	action
-	mixer
+	static resetTime
+	static action
+	static mixer
 	// once = 0
-	update(dt) {
+	static Update(dt) {
 		// if(this.once < 10) {
 		// 	this.once++
 		// 	console.log(this.mixer?._actions)
@@ -439,8 +427,3 @@ export class SocketSys {
 
 }
 
-
-
-export function offerReconnect(reason) {
-	toprightReconnect.set(reason)
-}

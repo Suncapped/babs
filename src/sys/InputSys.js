@@ -7,21 +7,21 @@ import { get as sget } from 'svelte/store';
 
 export class InputSys {
 
-    bPressingForward = false
-    bPressingBackward = false
-    bPressingLeft = false
-    bPressingRight = false
-    bCanJump = false
-    vVelocity = new Vector3()
-    vAccel = new Vector3()
-    ftpsSpeed = 500 // Todo scale this here and in tick to ft/s // Is it really speed?
-    ftHeightHead = 6
+    static bPressingForward = false
+    static bPressingBackward = false
+    static bPressingLeft = false
+    static bPressingRight = false
+    static bCanJump = false
+    static vVelocity = new Vector3()
+    static vAccel = new Vector3()
+    static ftpsSpeed = 500 // Todo scale this here and in tick to ft/s // Is it really speed?
+    static ftHeightHead = 6
     
-    controls
-    raycaster
+    static controls
+    static raycaster
 
 	// Stateful tracking of mouse button states
-	mouse = {
+	static mouse = {
 		button: {
 			left: false,
 			right: false,
@@ -39,16 +39,13 @@ export class InputSys {
 	static MOUSE_RIGHT = 2
 
 
-    static Create() {
-        return new InputSys
-    }
-
-    async init(scene, camera, socket) {
+    static async Start(scene, camera) {
 
 
         this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, - 1, 0 ), 0, 50 )
 
         this.controls = new BabsPointerLockControls( camera, document.getElementById('canvas') )
+
 
         const keyOnDown = async (ev) => {
 			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
@@ -82,7 +79,7 @@ export class InputSys {
 						// this.bCanJump = false
 					break
 					case 'KeyF':
-						let obj = await Gob.Create('/mesh/fireplace.fbx', scene, socket)
+						let obj = await Gob.Create('/mesh/fireplace.fbx', scene)
 						obj.mesh.scale.multiplyScalar(0.01 * 3.3)
 						const player = scene.children.find(o=>o.name=='player')
 						obj.mesh.position.copy(player.position)
@@ -171,14 +168,14 @@ export class InputSys {
         return this
     }
 
-	releaseMouse() {
+	static releaseMouse() {
 		this.controls.unlock()
 		document.getElementById('canvas').style.cursor = 'auto'
 		this.bPressingForward = false
 	}
 
-    ten = 0
-    animControls(delta, scene) {
+    static ten = 0
+    static Update(delta, scene) {
 
         // if (this.controls.isLocked === true) {
 

@@ -10,25 +10,39 @@ import {
     AxesHelper,
 } from 'three'
 import { WorldSys } from './sys/WorldSys'
-import { offerReconnect, SocketSys } from './sys/SocketSys'
-import { Ui } from './ui/Ui'
+import { SocketSys } from './sys/SocketSys'
+import { UiSys } from './sys/UiSys'
 import { InputSys } from './sys/InputSys'
 import { MoveSys } from './sys/MoveSys'
 import * as Utils from './Utils'
 
 class BABS {
-	camera
-	renderer
-	cube
-	ui
-	socket
-	alreadyRunning = false
-	inputSystem
-	moveSystem
+
+	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
+	static baseDomain
+	static urlFiles
+	static urlSocket
+
+	static camera
+	static renderer
+	static cube
+	static ui
+	static alreadyRunning = false
 
 
-	static Init() {
-		let babs = new BABS
+	static Start() {
+
+		if (this.isProd) {
+			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
+			this.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
+			this.baseDomain = 'suncapped.com'
+		}
+		else {
+			const localDomain = 'localhost'
+			this.urlSocket = `ws://${localDomain}:2567` /* Proxima */
+			this.urlFiles = `http://${localDomain}:3000` /* Express (Snowpack dev is 8081) */
+			this.baseDomain = `${localDomain}`
+		}
 
 		// Cookies are required
 		const cookiesEnabled = (() => {
@@ -44,46 +58,41 @@ class BABS {
 		})()
 		console.log('Cookies?', cookiesEnabled)
 		if(!cookiesEnabled) {
-			offerReconnect('Session cookies needed!')
+			UiSys.OfferReconnect('Session cookies needed!')
 			return
 		}
 
-
-
-
-		// Connect immediately to check for existing session
-		babs.ui = Ui.Init()
-		babs.scene = new Scene()
-
-
-		babs.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
-		babs.camera.rotateY(Utils.radians(-135))
-        // babs.camera.position.set(0, babs.ftHeightHead, 0)
-
-		babs.cube = babs.makeCube()
-		babs.scene.add( babs.cube )
-		babs.cube.name = 'player'
-
-		babs.world = WorldSys.Init(babs.scene, babs.camera, babs.cube)
-		babs.inputSystem = InputSys.Create()
+		UiSys.Start()
 		
-		babs.socket = SocketSys.Create(babs.scene, babs.world)
+		this.scene = new Scene()
+
+		this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
+		this.camera.rotateY(Utils.radians(-135))
+        this.camera.position.set(0, InputSys.ftHeightHead, 0)
+
+		this.cube = this.makeCube()
+		this.scene.add( this.cube )
+		this.cube.name = 'player'
+
+		WorldSys.Start(this.scene, this.camera, this.cube)
+		
+		SocketSys.Start(this.scene, this.urlSocket, this.urlFiles)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
 			document.getElementById('charsave').disabled = true
-			babs.socket.enter(
+			SocketSys.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value
 			)
 		})
 
-		babs.moveSystem = MoveSys.Create().init()
+		MoveSys.Start()
 
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
-			if(babs.socket.babsReady) {
-				babs.run()
+			if(SocketSys.babsReady) {
+				this.Run()
 			} 
 			else {
 				setTimeout(waitForReady, 100)
@@ -91,17 +100,14 @@ class BABS {
 		}
 		waitForReady()
 
-		return babs
 	}
 
-	async run() {
+	static async Run() {
 		if(this.alreadyRunning) return
 		this.alreadyRunning = true
 
 
-		this.inputSystem.init(this.scene, this.camera, this.socket)
-
-
+		InputSys.Start(this.scene, this.camera)
 
 		window.addEventListener('resize', () => {
 			console.log('resize')
@@ -111,14 +117,15 @@ class BABS {
 			this.renderer.render( this.scene, this.camera ) // todo needed at all since animate() does it?
 		})
 
-		this.ui.createStats('fps').createStats('mem')
+		UiSys.CreateStats('fps')
+		UiSys.CreateStats('mem')
 
 		this.renderer = new WebGLRenderer( { antialias: true } )
 		console.log('isWebGL2', this.renderer.capabilities.isWebGL2)
-		this.renderer.setPixelRatio( Ui.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
+		this.renderer.setPixelRatio( UiSys.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setSize( window.innerWidth, window.innerHeight )
 		this.renderer.setAnimationLoop( (p) => {
-			this.animation(p)
+			this.Update(p)
 		} )
 		document.body.appendChild( this.renderer.domElement )
 		this.renderer.outputEncoding = sRGBEncoding // todo?
@@ -142,30 +149,29 @@ class BABS {
 		document.getElementById('canvas').addEventListener('contextmenu', ev => ev.preventDefault()); // move to ui?
 	}
 
-	prevTime = performance.now()
-	delta
-	animation(time) {
-		this.ui['fps']?.begin()
-		this.ui['mem']?.begin()
-		this.delta = (time -this.prevTime) /1000
+	static prevTime = performance.now()
+	static Update(time) {
+		const dt = (time -this.prevTime) /1000
+		
+		UiSys.UpdateBegin(dt)
 
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
-		this.moveSystem.update(this.delta, this.camera, this.socket, this.scene)
-		this.inputSystem.animControls(this.delta, this.scene)
-		this.world.animate(this.delta, this.camera)
+		MoveSys.Update(dt, this.camera, this.scene)
+		InputSys.Update(dt, this.scene)
 
-		this.socket?.update(this.delta)
+		WorldSys.Update(dt, this.camera)
+
+		SocketSys.Update(dt)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )
 
-		this.ui['fps']?.end()
-		this.ui['mem']?.end()
+		UiSys.UpdateEnd(dt)
 	}
 
-	makeCube() {
+	static makeCube() {
 		const geometry = new BoxGeometry( 10, 10, 10 )
 		const material = new MeshPhongMaterial()
 		const cube = new Mesh(geometry, material)
@@ -178,4 +184,5 @@ class BABS {
 
 }
 
-export default BABS.Init()
+BABS.Start()
+export default BABS

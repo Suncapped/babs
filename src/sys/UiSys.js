@@ -1,15 +1,18 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
-import Overlay from './Overlay.svelte'
-import { toprightText, menuShowLink } from "../stores.js";
+import Overlay from '../ent/Overlay.svelte'
+import { toprightText, toprightReconnect, menuShowLink } from "../stores.js";
 
-export class Ui {
+export class UiSys {
 	static browser
 
 	static toprightTextDefault = 'Designed for Chrome-like browsers'
 
-    static Init() {
-		const ui = new Ui
-		Ui.browser = (function (agent) {
+	static OfferReconnect(reason) {
+		toprightReconnect.set(reason)
+	}
+
+    static Start() {
+		UiSys.browser = (function (agent) {
 			switch (true) {
 				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)";
 				case agent.indexOf("edg") > -1: return "MS Edge Chromium";
@@ -21,32 +24,39 @@ export class Ui {
 				default: return "other";
 			}
 		})(window.navigator.userAgent.toLowerCase());
-		console.log('Browser is', Ui.browser)
+		console.log('Browser is', UiSys.browser)
 
 		new Overlay({
 			target: document.body,
 		})
 
-		toprightText.set(Ui.toprightTextDefault)
-
-		return ui
+		toprightText.set(UiSys.toprightTextDefault)
     }
     /** 
      * @param {'fps'|'mem'} which
      */
-    createStats(which) {
+    static CreateStats(which) {
         this[which] = Stats()
         this[which].showPanel(which=="fps"?0:2)
         this[which].dom.id = which
         this[which].dom.style = ""
         document.body.appendChild(this[which].dom)
-        return this
     }
 
 	static CreateEl(html) {
 		const doc = new DOMParser().parseFromString(html, "text/html")
 		const el = doc.firstChild
 		return el
+	}
+
+	static UpdateBegin() {
+		this['fps']?.begin()
+		this['mem']?.begin()
+	}
+	static UpdateEnd() {
+
+		this['fps']?.end()
+		this['mem']?.end()
 	}
 
 }

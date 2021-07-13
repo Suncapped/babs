@@ -1,13 +1,14 @@
+import { SocketSys } from '../sys/SocketSys';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 
 export class Appearance {
 	
-	static LoadFbx(socket, path) {
+	static LoadFbx(path) {
 		const loader = new FBXLoader()
 		return new Promise( (resolve, reject) => {
-			console.log('loading', socket.urlFiles, path)
+			console.log('loading', SocketSys.urlFiles, path)
 			loader.load(
-				`${socket.urlFiles}${path}`, // resource URL
+				`${SocketSys.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
 					resolve(group)
 				},
