@@ -15,6 +15,7 @@ import { UiSys } from './sys/UiSys'
 import { InputSys } from './sys/InputSys'
 import { MoveSys } from './sys/MoveSys'
 import * as Utils from './Utils'
+import { LoaderSys } from './sys/LoaderSys'
 
 class BABS {
 
@@ -34,13 +35,13 @@ class BABS {
 
 		if (this.isProd) {
 			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
-			this.urlFiles = `https://earth.suncapped.com` /* Express (includes Snowback build) */
+			this.urlFiles = `https://earth.suncapped.com/files` /* Express (includes Snowback build) */
 			this.baseDomain = 'suncapped.com'
 		}
 		else {
 			const localDomain = 'localhost'
 			this.urlSocket = `ws://${localDomain}:2567` /* Proxima */
-			this.urlFiles = `http://${localDomain}:3000` /* Express (Snowpack dev is 8081) */
+			this.urlFiles = `http://${localDomain}:3000/files` /* Express (Snowpack dev is 8081) */
 			this.baseDomain = `${localDomain}`
 		}
 
@@ -61,6 +62,9 @@ class BABS {
 			UiSys.OfferReconnect('Session cookies needed!')
 			return
 		}
+
+
+		LoaderSys.Start(this.urlFiles)
 
 		UiSys.Start()
 		
@@ -160,10 +164,8 @@ class BABS {
 		
 		MoveSys.Update(dt, this.camera, this.scene)
 		InputSys.Update(dt, this.scene)
-
 		WorldSys.Update(dt, this.camera)
-
-		SocketSys.Update(dt)
+		LoaderSys.Update(dt)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )

@@ -5,6 +5,7 @@ import * as Utils from '../Utils'
 import { Appearance } from "../com/Appearance"
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { LoaderSys } from "../sys/LoaderSys"
 
 export class Gob {
 
@@ -12,7 +13,7 @@ export class Gob {
 
     static async Create(path, scene) {
         let gob = new Gob
-        const group = await Appearance.LoadFbx(path)
+        const group = await LoaderSys.LoadFbx(path)
 
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )
@@ -37,45 +38,6 @@ export class Gob {
         }
         return gob
     }
-
-	loadChar(path) {
-		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' );
-
-		return new Promise( (resolve, reject) => {
-			console.log('loading', path)
-
-			loader.load(`${SocketSys.urlFiles}${path}`,// function ( gltf ) {
-				(gltf) => { // onLoad callback
-					// gltf.scene.traverse( function ( child ) {
-					// 	if ( child.isMesh ) {
-					// 		roughnessMipmapper.generateMipmaps( child.material );
-					// 	}
-					// } );
-					// scene.add( gltf.scene );
-					// // roughnessMipmapper.dispose();
-					// render();
-
-					// let mesh = gltf.scene.children[0]
-
-					console.log('Make a scene!', gltf)
-
-					// const material = new MeshPhongMaterial( {side: DoubleSide} )
-					// mesh.material.color = new Color(55, 55, 55).convertSRGBToLinear()
-					// mesh.material.emissive = new Color(0, 200, 0).convertSRGBToLinear()
-					// mesh.material = material
-					resolve(gltf)
-				},
-				(xhr) => { // onProgress callback
-					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
-				},
-				(err) => { // onError callback
-					console.log( 'An error happened', err )
-				}
-			)
-
-		}); 
-
-	}
 }
 
 
