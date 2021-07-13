@@ -1,4 +1,4 @@
-import { babsSocket, menuSelfData, menuShowLink, toprightReconnect, toprightText } from "../stores"
+import { menuSelfData, menuShowLink, toprightReconnect, toprightText } from "../stores"
 import Cookies from "js-cookie"
 import { MeshPhongMaterial } from "three"
 import { DoubleSide } from "three"
@@ -43,8 +43,6 @@ export class SocketSys {
 		this.urlFiles = urlFiles
 
 		this.scene = scene
-
-		babsSocket.set(this)
 
 		toprightText.set('Connecting...')
 		document.getElementById('topleft').style.visibility = 'hidden'

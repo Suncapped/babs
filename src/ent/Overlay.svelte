@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, babsSocket, toprightReconnect, topmenuVisible } from "../stores.js";
+	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible } from "../stores.js";
 	import Cookies from 'js-cookie'
 	import { SocketSys } from '../sys/SocketSys.js';
 
@@ -21,7 +21,7 @@
 	let savereason
 	async function saveReason(ev) {
 		$menuSelfData.reason = inputreason.value
-		await $babsSocket.Send({
+		await SocketSys.Send({
 			'savereason': $menuSelfData.reason,
 		})
 		savereason.innerText = '> Saved!'

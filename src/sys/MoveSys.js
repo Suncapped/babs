@@ -1,7 +1,6 @@
 import { Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
-import { babsSocket } from "../stores"
 import { EventSys } from "./EventSys"
 
 
