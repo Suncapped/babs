@@ -213,8 +213,8 @@ export class SocketSys {
 					})
 
 					const charScene = await LoaderSys.LoadCharacter(pself.char)
-					console.log("INSOCKKJLEKJSKDF", charScene, this.scene)
 					this.scene.add(charScene)
+					charScene.name = 'player'
 
 				break;
 			}

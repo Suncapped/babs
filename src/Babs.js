@@ -76,7 +76,7 @@ class BABS {
 
 		this.cube = this.makeCube()
 		this.scene.add( this.cube )
-		this.cube.name = 'player'
+		this.cube.name = 'cube'
 
 		WorldSys.Start(this.scene, this.camera, this.cube)
 		
@@ -156,20 +156,18 @@ class BABS {
 	static prevTime = performance.now()
 	static Update(time) {
 		const dt = (time -this.prevTime) /1000
-		
 		UiSys.UpdateBegin(dt)
 
 		this.cube.rotation.x = time /4000
 		this.cube.rotation.y = time /1000
 		
-		MoveSys.Update(dt, this.camera, this.scene)
-		InputSys.Update(dt, this.scene)
-		WorldSys.Update(dt, this.camera)
 		LoaderSys.Update(dt)
+		InputSys.Update(dt, this.scene)
+		MoveSys.Update(dt, this.camera, this.scene)
+		WorldSys.Update(dt, this.camera)
 		
 		this.prevTime = time
 		this.renderer.render( this.scene, this.camera )
-
 		UiSys.UpdateEnd(dt)
 	}
 

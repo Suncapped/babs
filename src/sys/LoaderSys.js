@@ -10,15 +10,10 @@ import { AnimationMixer } from "three"
 
 export class LoaderSys {
 
-	// static pself
-	// static pselfServerUpdateLoc = false
-	// static pselfGridLoc
-
 	static urlFiles
 
 	static Start(urlFiles) {
 		this.urlFiles = urlFiles
-		// EventSys.Subscribe(MoveSys)
 	}
 
 	static LoadFbx(path) {
