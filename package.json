@@ -6,11 +6,9 @@
     "node": "v16"
   },
   "scripts": {
-    "//dev": "snowpack dev",
-    "//build": "snowpack build && echo Size: && du -sh build",
     "dev": "vite",
-    "build": "vite build",
     "serve": "vite preview",
+    "build": "vite build",
     "postbuild": "sh buildtime.sh",
     "predeploy": "npm run build",
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"

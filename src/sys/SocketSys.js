@@ -1,26 +1,6 @@
 import { menuSelfData, menuShowLink, toprightReconnect, toprightText } from "../stores"
 import Cookies from "js-cookie"
-import { MeshPhongMaterial } from "three"
-import { DoubleSide } from "three"
-import { LinearEncoding } from "three"
-import { MeshBasicMaterial, sRGBEncoding } from "three"
-import { Color } from "three"
-import { AmbientLight } from "three"
-import { DirectionalLight } from "three"
-import { AnimationMixer } from "three"
-import { LoopRepeat } from "three"
-import { Skeleton } from "three"
-import { AnimationClip } from "three"
-import { SkinnedMesh } from "three"
-import { LoopOnce } from "three"
-import { PointLight } from "three"
-import { CubeTextureLoader } from "three"
-import { TextureLoader } from "three"
-import { Appearance } from "../com/Appearance"
-import { Gob } from "../ent/Gob"
-import { MoveSys } from "./MoveSys"
 import { UiSys } from '../sys/UiSys'
-import * as Utils from '../Utils'
 import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
@@ -197,14 +177,7 @@ export class SocketSys {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 
-					// Let's set pself transform data
-					// ECS.AddEnt(pself.id)
-					// ECS.AddCom(pself.id, 'player', {self:true})
-					// ECS.AddCom(pself.id, 'location', {
-					// 	idzone: pself.idzone,
-					// 	x: pself.x,
-					// 	z: pself.z,
-					// })
+
 					EventSys.Dispatch('load-self', pself)
 
 
@@ -212,9 +185,6 @@ export class SocketSys {
 						ready: pself.id,
 					})
 
-					const charScene = await LoaderSys.LoadCharacter(pself.char)
-					this.scene.add(charScene)
-					charScene.name = 'player'
 
 				break;
 			}

@@ -1,5 +1,4 @@
-import { Vector2 } from "three"
-import { Vector3 } from "three"
+import { Vector2, Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
 
@@ -24,11 +23,11 @@ export class MoveSys {
 
 		if(this.pselfServerUpdateLoc) {
 			this.pselfServerUpdateLoc = false
-			const yBoost = 50 // todo
-			console.log(this.pself.x, this.pself.z)
+			console.log('pselfServerUpdateLoc', this.pself.x, this.pself.z)
 			const player = scene.children.find(o=>o.name=='player')
-
-			player.position.set(this.pself.x *4, camera.position.y +yBoost, this.pself.z *4)
+			
+			const yBoost = 50 // todo
+			// player.position.set(this.pself.x *4, camera.position.y +yBoost, this.pself.z *4)
 			this.pselfGridLoc = new Vector3(this.pself.x, null, this.pself.z)
 		}
 
