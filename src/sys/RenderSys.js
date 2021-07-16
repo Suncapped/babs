@@ -33,7 +33,7 @@ export class RenderSys {
 		const near = 1.0
 		const far = 1000.0
 		this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
-		this._camera.position.set(25, 10, 25)
+		this._camera.position.set(12, 8, 12)
 
 		this._scene = new THREE.Scene()
 

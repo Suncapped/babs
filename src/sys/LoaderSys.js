@@ -23,7 +23,7 @@ export class LoaderSys {
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
-					console.log('Loaded FBX:', group)
+					console.log('Loaded FBX:', path, group)
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback

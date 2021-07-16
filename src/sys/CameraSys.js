@@ -12,7 +12,7 @@ export class CameraSys {
 	}
 
 	_CalculateIdealOffset() {
-		const idealOffset = new THREE.Vector3(-15, 20, -30)
+		const idealOffset = new THREE.Vector3(-4, 12, -36) // camera.set
 		idealOffset.applyQuaternion(this._target.Rotation)
 		idealOffset.add(this._target.Position)
 		return idealOffset

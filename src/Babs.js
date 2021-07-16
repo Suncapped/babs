@@ -159,6 +159,7 @@ class BABS {
 
 	static prevTime = performance.now()
 	static Update(time) {
+		// console.log(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
 		UiSys.UpdateBegin(dt)
 
@@ -185,7 +186,7 @@ class BABS {
 		const material = new MeshPhongMaterial()
 		const cube = new Mesh(geometry, material)
 		cube.name = 'this.cameracube'
-		cube.position.copy(new Vector3(0,3,0))
+		cube.position.copy(new Vector3(10,3,0))
 		cube.castShadow = true
 		// cube.receiveShadow = true
 		return cube

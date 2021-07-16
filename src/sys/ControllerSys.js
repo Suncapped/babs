@@ -394,8 +394,8 @@ class WalkState extends State {
 
 	Update(timeElapsed, input) {
 		if (input._keys.forward || input._keys.backward) {
-			if (input._keys.shift) {
-				this._parent.SetState('walk')
+			if (!input._keys.shift) {
+				this._parent.SetState('run')
 			}
 			return
 		}
@@ -443,7 +443,7 @@ class RunState extends State {
 	Update(timeElapsed, input) {
 		if (input._keys.forward || input._keys.backward) {
 			if (input._keys.shift) {
-				this._parent.SetState('run')
+				this._parent.SetState('walk')
 			}
 			return
 		}
@@ -463,12 +463,38 @@ class IdleState extends State {
 	}
 
 	Enter(prevState) {
-		console.log('idleenter', this._parent._proxy._animations)
 		const idleAction = this._parent._proxy._animations['idle'].action
+		console.log('idleenter', prevState, idleAction)
+
+
+		const mixer = idleAction.getMixer()
+		mixer.addEventListener('finished', (stuff) => {
+			console.log('finished?', stuff)
+		})
+
+		idleAction.getClip().duration = 5 // via diagnose below
+
 		if (prevState) {
 			const prevAction = this._parent._proxy._animations[prevState.Name].action
 			idleAction.time = 0.0
 			idleAction.enabled = true
+
+
+			// // Diagnose and find bad track 
+			// const clip = idleAction.getClip()
+			// let count = 0
+			// clip.tracks.map(track => {
+			// 	console.log('track', count)
+			// 	count++
+			// 	const maxValueObject = track.times.filter(time => {
+			// 		return time > 8 // Too long for this anim
+			// 	})
+			// 	console.log('max', maxValueObject)
+			// })
+			// console.log('duration', idleAction.getClip().duration)
+			// idleAction.getClip().resetDuration()
+			// console.log('after', idleAction.getClip().duration)
+
 			idleAction.setEffectiveTimeScale(1.0)
 			idleAction.setEffectiveWeight(1.0)
 			idleAction.crossFadeFrom(prevAction, 0.5, true)
@@ -482,6 +508,7 @@ class IdleState extends State {
 	}
 
 	Update(_, input) {
+		// console.log('idleup', _)
 		if (input._keys.forward || input._keys.backward) {
 			this._parent.SetState('run')
 		} else if (input._keys.space) {
