@@ -11,7 +11,7 @@
     "build": "vite build",
     "postbuild": "sh buildtime.sh",
     "predeploy": "npm run build",
-    "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./build/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
+    "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.12",

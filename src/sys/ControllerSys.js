@@ -82,6 +82,8 @@ export class ControllerSys {
 
 			this._stateMachine.SetState('idle')
 
+			EventSys.Dispatch('self-loaded', fbx)
+
 		}
 	}
 

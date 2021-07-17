@@ -19,6 +19,7 @@ import { LoaderSys } from './sys/LoaderSys'
 import { ControllerSys } from './sys/ControllerSys'
 import { CameraSys } from './sys/CameraSys'
 import { RenderSys } from './sys/RenderSys'
+import log from './Utils'
 
 class BABS {
 
@@ -106,7 +107,7 @@ class BABS {
 			)
 		})
 
-		MoveSys.Start()
+		MoveSys.Start(this.scene)
 
 
 		UiSys.CreateStats('fps')

@@ -5,46 +5,47 @@ import { EventSys } from "./EventSys"
 
 export class MoveSys {
 
-	static pself
-	static pselfServerUpdateLoc = false
-	static pselfGridLoc
+	static loadSelfData
+	static self
+	static selfGridPos
 
-	static Start() {
-		EventSys.Subscribe(MoveSys)
+	static scene
+
+	static Start(scene) {
+		this.scene = scene
+		EventSys.Subscribe(this)
 	}
 	static Event(type, data) {
 		if(type == 'load-self') {
-			MoveSys.pself = data
-			MoveSys.pselfServerUpdateLoc = true
+			MoveSys.loadSelfData = data
+		}
+		if(type == 'self-loaded') {
+			this.self = data
+			
+			console.log('self-loaded moves pself to', this.loadSelfData.x, this.loadSelfData.z)
+			const yBoost = 10 // todo use ray to terrain
+			this.self.position.set(this.loadSelfData.x *4, yBoost, this.loadSelfData.z *4)
+			this.selfGridPos = this.CalcGridPos(new Vector3(this.self.position.x, yBoost, this.self.position.z))
 		}
 	}
 
 	static Update(dt, camera, scene) {
-
-		if(this.pselfServerUpdateLoc) {
-			this.pselfServerUpdateLoc = false
-			console.log('pselfServerUpdateLoc', this.pself.x, this.pself.z)
-			const player = scene.children.find(o=>o.name=='player')
-			
-			const yBoost = 50 // todo
-			// player.position.set(this.pself.x *4, camera.position.y +yBoost, this.pself.z *4)
-			this.pselfGridLoc = new Vector3(this.pself.x, null, this.pself.z)
-		}
-
-		if(this.pselfGridLoc) {
-			const calcGridLoc = new Vector3(Math.floor(camera.position.x / 4), null, Math.floor(camera.position.z / 4))
-			if(!calcGridLoc.equals(this.pselfGridLoc)) { // Player has moved on grid!
+		if(this.selfGridPos) { // It's been init
+			const gridPos = this.CalcGridPos(this.self.position)
+			if(!gridPos.equals(this.selfGridPos)) { // Player has moved on grid!
 				SocketSys.Send({
 					move: {
-						x: calcGridLoc.x,
-						z: calcGridLoc.z,
+						x: gridPos.x,
+						z: gridPos.z,
 					}
 				})
-				this.pselfGridLoc = calcGridLoc
+				this.selfGridPos = gridPos
 			}
 		}
+	}
 
-
+	static CalcGridPos(worldPosition) {
+		return new Vector3(Math.floor(worldPosition.x / 4), null, Math.floor(worldPosition.z / 4))
 	}
 
 

@@ -142,3 +142,25 @@ export function* createTimeReporter() {
 //     // return mixMaterial
 // // }
 
+// Simpler logging
+const showInfoLogs = true
+export const log = (function() {
+    function log(...params) { 
+        console.log(...params)
+    }
+	log.info = (...params) => {
+		if(showInfoLogs) {
+			params[0] = '{info} '+params[0]
+			console.log(...params)
+		}
+	}
+	log.warn = (...params) => {
+		console.warn(...params)
+	}
+	log.err = (...params) => {
+		console.error(...params)
+	}
+
+	return log
+})() // IIFE
+
