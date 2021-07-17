@@ -1,4 +1,4 @@
-
+import { log } from './../Utils'
 
 export class EventSys {
 	static subscribers = new Set
@@ -6,7 +6,7 @@ export class EventSys {
 		this.subscribers.add(subscriber)
 	}
 	static Dispatch(type, data) {
-		console.log('** Event:', type)
+		log.info('** Event:', type)
 		for (let sub of EventSys.subscribers){
 			sub.Event(type, data)
 		}

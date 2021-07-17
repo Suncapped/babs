@@ -1,6 +1,7 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
 import Overlay from '../ent/Overlay.svelte'
 import { toprightText, toprightReconnect, menuShowLink } from "../stores.js";
+import { log } from './../Utils'
 
 export class UiSys {
 	static browser
@@ -24,7 +25,7 @@ export class UiSys {
 				default: return "other";
 			}
 		})(window.navigator.userAgent.toLowerCase());
-		console.log('Browser is', UiSys.browser)
+		log.info('Browser is', UiSys.browser)
 
 		new Overlay({
 			target: document.body,

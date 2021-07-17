@@ -3,7 +3,8 @@ import { BabsPointerLockControls } from "./BabsPointerLockControls"
 import { Gob } from "../ent/Gob"
 import { topmenuVisible } from "../stores"
 import * as Utils from "../Utils"
-import { get as sget } from 'svelte/store';
+import { get as sget } from 'svelte/store'
+import { log } from './../Utils'
 
 export class InputSys {
 
@@ -119,7 +120,7 @@ export class InputSys {
         }
 
         const mouseOnDown = (ev) => {
-			console.log('mouseOnDown', ev.button, ev.target.id)
+			log.info('mouseOnDown', ev.button, ev.target.id)
 
 			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' || (!ev.target.id && this.mouse.button.right))) {
 				if(ev.button === InputSys.MOUSE_LEFT) this.mouse.button.left = true
@@ -129,7 +130,7 @@ export class InputSys {
 					try {
 						this.controls.lock()
 					} catch(e) {
-						console.log('hope')
+						log.info('hope')
 					}
 					
 					document.getElementById('canvas').style.cursor = 'none'
@@ -142,7 +143,7 @@ export class InputSys {
 
 		topmenuVisible.subscribe(vis => vis ? this.releaseMouse() : null) // If menu becomes visible, release mouse
         const mouseOnUp = (ev) => {
-			console.log('mouseOnUp', ev.button, ev.target.id)
+			log.info('mouseOnUp', ev.button, ev.target.id)
 
 			if(ev.button === InputSys.MOUSE_LEFT) this.mouse.button.left = false
 			if(ev.button === InputSys.MOUSE_RIGHT) this.mouse.button.right = false
@@ -156,7 +157,7 @@ export class InputSys {
 			}
         }
         const mouseOnClick = (ev) => {
-			console.log('mouseOnClick', ev.code, ev.button, ev.target.id)
+			log.info('mouseOnClick', ev.code, ev.button, ev.target.id)
         }
 
         window.document.addEventListener( 'click', mouseOnClick )
@@ -181,7 +182,7 @@ export class InputSys {
 
             this.raycaster.ray.origin.copy( this.controls.getObject().position )
             // this.raycaster.ray.origin.y += this.ftHeightHead*2
-            // console.log(scene.children.length)
+            // log.info(scene.children.length)
             let intersections = this.raycaster.intersectObjects( scene.children )
             const intersNotCamera = intersections?.filter(o => o.object.name !== 'cameracube')
             // const onObject = intersNotCamera.length > 0
@@ -201,7 +202,7 @@ export class InputSys {
             if ( this.bPressingLeft || this.bPressingRight ) this.vVelocity.x -= this.vAccel.x * this.ftpsSpeed * delta // Todo scale this here and in tick to ft/s
     
             if ( onObject === true ) {
-                // console.log("onObject", intersNotCamera.length, intersNotCamera[0])
+                // log.info("onObject", intersNotCamera.length, intersNotCamera[0])
                 this.vVelocity.y = Math.max( 0, this.vVelocity.y ); // It's Max so that you can jump when on an object :p
                 this.bCanJump = true
             }
@@ -228,9 +229,9 @@ export class InputSys {
             const ground = scene.children.find(o=>o.name=='ground')
             intersections = ground && this.raycaster.intersectObject(ground)
             const groundHeightY = intersections?.[0]?.point.y
-            // console.log(groundHeightY, this.controls.getObject().position.y)
+            // log.info(groundHeightY, this.controls.getObject().position.y)
             if(groundHeightY > this.controls.getObject().position.y -this.ftHeightHead) {
-                // console.log('stopped')
+                // log.info('stopped')
                 this.controls.getObject().position.y = groundHeightY + this.ftHeightHead
             }
     

@@ -4,6 +4,7 @@ import {
 	Vector3
 } from 'three';
 import { UiSys } from '../sys/UiSys';
+import { log } from './../Utils'
 
 const _euler = new Euler( 0, 0, 0, 'YXZ' );
 const _vector = new Vector3();
@@ -22,7 +23,7 @@ class BabsPointerLockControls extends EventDispatcher {
 
 		if ( domElement === undefined ) {
 
-			console.warn( 'THREE.(Babs)PointerLockControls: The second parameter "domElement" is now mandatory.' );
+			log.warn( 'THREE.(Babs)PointerLockControls: The second parameter "domElement" is now mandatory.' );
 			domElement = document.body;
 
 		}
@@ -77,7 +78,7 @@ class BabsPointerLockControls extends EventDispatcher {
 
 		function onPointerlockError() {
 
-			console.log( 'THREE.(Babs)PointerLockControls: Unable to use Pointer Lock API' );
+			log.info( 'THREE.(Babs)PointerLockControls: Unable to use Pointer Lock API' );
 
 		}
 

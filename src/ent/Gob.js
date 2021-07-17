@@ -6,6 +6,7 @@ import { Appearance } from "../com/Appearance"
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LoaderSys } from "../sys/LoaderSys"
+import { log } from './../Utils'
 
 export class Gob {
 
@@ -18,7 +19,7 @@ export class Gob {
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )
         gob.mesh = group.children[0]
-        console.log('gob.mesh',(group))
+        log.info('gob.mesh',(group))
 
 		if(Array.isArray(gob.mesh.material)) { // Fire
 			gob.mesh.material[2].side = DoubleSide
@@ -34,7 +35,7 @@ export class Gob {
 
         scene.add( gob.mesh )
         if(group.children.length > 1) {
-            console.error("Loading FBX with more than one child!", group)
+            log.err("Loading FBX with more than one child!", group)
         }
         return gob
     }

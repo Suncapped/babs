@@ -7,6 +7,7 @@ import { TextureLoader } from "three"
 import { MeshPhongMaterial } from "three"
 import { AnimationMixer } from "three"
 import { SkinnedMesh } from "three"
+import { log } from './../Utils'
 
 
 export class LoaderSys {
@@ -23,14 +24,14 @@ export class LoaderSys {
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
-					console.log('Loaded FBX:', path, group)
+					log.info('Loaded FBX:', path, group)
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback
-					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
+					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					console.log( 'An error happened', err )
+					log.info( 'An error happened', err )
 				}
 			)
 		}); 
@@ -52,11 +53,11 @@ export class LoaderSys {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' );
 
 		return new Promise( (resolve, reject) => {
-			console.log('loading', path)
+			log.info('loading', path)
 
 			loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
-					console.log('Loaded GLTF:', gltf)
+					log.info('Loaded GLTF:', gltf)
 
 					// gltf.scene.traverse( function ( child ) {
 					// 	if ( child.isMesh ) {
@@ -72,10 +73,10 @@ export class LoaderSys {
 					resolve(gltf)
 				},
 				(xhr) => { // onProgress callback
-					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
+					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					console.log( 'An error happened', err )
+					log.info( 'An error happened', err )
 				}
 			)
 

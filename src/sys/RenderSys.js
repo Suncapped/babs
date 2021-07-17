@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { UiSys } from './UiSys'
+import { log } from './../Utils'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -22,7 +23,7 @@ export class RenderSys {
 
 		this._threejs.domElement.id = 'canvas'
 		this._threejs.domElement.addEventListener('contextmenu', ev => ev.preventDefault()); // todo move to ui
-		console.log('isWebGL2', this._threejs.capabilities.isWebGL2)
+		log.info('isWebGL2', this._threejs.capabilities.isWebGL2)
 
 		window.addEventListener('resize', () => {
 			this._OnWindowResize()

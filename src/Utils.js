@@ -1,3 +1,28 @@
+// Simpler logging
+
+// const showInfoLogs = true
+const showInfoLogs = false
+export const log = (function() {
+    function log(...params) { 
+        console.log(...params)
+    }
+	log.info = (...params) => {
+		if(showInfoLogs) {
+			params[0] = '{info} '+params[0]
+			console.log(...params)
+		}
+	}
+	log.warn = (...params) => {
+		console.warn(...params)
+	}
+	log.err = (...params) => {
+		console.error(...params)
+	}
+
+	return log
+})() // IIFE
+
+
 // export function clamp(n:number, min:number, max:number){
 //     return Math.max(Math.min(n, max), min)
 // }
@@ -53,11 +78,6 @@
 //     }
 // }
 
-// export function log(input) {
-// 	const name = Object.keys({input})[0]
-// 	console.log(name+':', input)
-// }
-
 var RATIO_DEGREES = 180 / Math.PI
 var RATIO_RADIANS = Math.PI / 180
 export function radians (degrees) {
@@ -73,7 +93,7 @@ export function* createTimeReporter() {
     let marker = 'start'
     while(true){
         const newTime = new Date().getTime()
-        console.log(`Time @${marker}: ${newTime - lastTime}ms`)
+        log.info(`Time @${marker}: ${newTime - lastTime}ms`)
         lastTime = newTime
         marker = yield null
     }
@@ -89,7 +109,7 @@ export function* createTimeReporter() {
 
 // // export async function terrainGenerate(terrainData:Uint8Array, ground:Mesh) {
 //     // const terrainDataFloat = Array.from(terrainData).map((ele:number) => ele /ZONE.TR_MULT)
-//     // console.log(terrainDataFloat)
+//     // log.info(terrainDataFloat)
 //     // ground.position = new Vector3(World.ZoneLength/2, 0, World.ZoneLength/2)
 //     // let vertexData = CreateGroundFromArray(World.ZoneLength, World.ZoneLength, ZONE.ZONE_DATUMS, terrainDataFloat)
 //     // vertexData.applyToMesh(ground, true)
@@ -141,26 +161,3 @@ export function* createTimeReporter() {
 //     // // mixMaterial.specularPower = 64
 //     // return mixMaterial
 // // }
-
-// Simpler logging
-const showInfoLogs = true
-export const log = (function() {
-    function log(...params) { 
-        console.log(...params)
-    }
-	log.info = (...params) => {
-		if(showInfoLogs) {
-			params[0] = '{info} '+params[0]
-			console.log(...params)
-		}
-	}
-	log.warn = (...params) => {
-		console.warn(...params)
-	}
-	log.err = (...params) => {
-		console.error(...params)
-	}
-
-	return log
-})() // IIFE
-

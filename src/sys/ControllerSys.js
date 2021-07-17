@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { EventSys } from './EventSys'
 import { LoaderSys } from './LoaderSys'
+import { log } from './../Utils'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -99,7 +100,7 @@ export class ControllerSys {
 	}
 
 	update(dt) {
-		// console.log(dt)
+		// log.info(dt)
 		if (!this._stateMachine._currentState) {
 			return
 		}
@@ -466,12 +467,12 @@ class IdleState extends State {
 
 	Enter(prevState) {
 		const idleAction = this._parent._proxy._animations['idle'].action
-		console.log('idleenter', prevState, idleAction)
+		log.info('idleenter', prevState, idleAction)
 
 
 		const mixer = idleAction.getMixer()
 		mixer.addEventListener('finished', (stuff) => {
-			console.log('finished?', stuff)
+			log.info('finished?', stuff)
 		})
 
 		idleAction.getClip().duration = 5 // via diagnose below
@@ -486,16 +487,16 @@ class IdleState extends State {
 			// const clip = idleAction.getClip()
 			// let count = 0
 			// clip.tracks.map(track => {
-			// 	console.log('track', count)
+			// 	log.info('track', count)
 			// 	count++
 			// 	const maxValueObject = track.times.filter(time => {
 			// 		return time > 8 // Too long for this anim
 			// 	})
-			// 	console.log('max', maxValueObject)
+			// 	log.info('max', maxValueObject)
 			// })
-			// console.log('duration', idleAction.getClip().duration)
+			// log.info('duration', idleAction.getClip().duration)
 			// idleAction.getClip().resetDuration()
-			// console.log('after', idleAction.getClip().duration)
+			// log.info('after', idleAction.getClip().duration)
 
 			idleAction.setEffectiveTimeScale(1.0)
 			idleAction.setEffectiveWeight(1.0)
@@ -510,7 +511,7 @@ class IdleState extends State {
 	}
 
 	Update(_, input) {
-		// console.log('idleup', _)
+		// log.info('idleup', _)
 		if (input._keys.forward || input._keys.backward) {
 			this._parent.SetState('run')
 		} else if (input._keys.space) {

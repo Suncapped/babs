@@ -19,7 +19,7 @@ import { LoaderSys } from './sys/LoaderSys'
 import { ControllerSys } from './sys/ControllerSys'
 import { CameraSys } from './sys/CameraSys'
 import { RenderSys } from './sys/RenderSys'
-import log from './Utils'
+import { log } from './Utils'
 
 class BABS {
 
@@ -64,7 +64,7 @@ class BABS {
 				return false;
 			}
 		})()
-		console.log('Cookies?', cookiesEnabled)
+		log.info('Cookies?', cookiesEnabled)
 		if(!cookiesEnabled) {
 			UiSys.OfferReconnect('Session cookies needed!')
 			return
@@ -129,7 +129,7 @@ class BABS {
 	}
 		// InputSys.Start(this.scene, this.camera)
 		// window.addEventListener('resize', () => {
-		// 	console.log('resize')
+		// 	log.info('resize')
 		// 	this.camera.aspect = window.innerWidth / window.innerHeight
 		// 	this.renderer.setSize( window.innerWidth, window.innerHeight )
 		// 	this.camera.updateProjectionMatrix()
@@ -148,7 +148,7 @@ class BABS {
 		// canvas.id = 'canvas'
 		// document.getElementById('canvas').addEventListener('contextmenu', ev => ev.preventDefault()); // move to ui?
 
-		// console.log(this.renderer, sRGBEncoding) // confirmed: renderer.outputEncoding === THREE.sRGBEncoding
+		// log.info(this.renderer, sRGBEncoding) // confirmed: renderer.outputEncoding === THREE.sRGBEncoding
 
 		// this.scene.children.forEach((node) => {
 		// 	const axes = new AxesHelper(10)
@@ -160,7 +160,7 @@ class BABS {
 
 	static prevTime = performance.now()
 	static Update(time) {
-		// console.log(time -this.prevTime)
+		// log.info(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
 		UiSys.UpdateBegin(dt)
 

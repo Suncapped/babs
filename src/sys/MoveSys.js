@@ -1,6 +1,7 @@
 import { Vector2, Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
+import { log } from './../Utils'
 
 
 export class MoveSys {
@@ -22,7 +23,7 @@ export class MoveSys {
 		if(type == 'self-loaded') {
 			this.self = data
 			
-			console.log('self-loaded moves pself to', this.loadSelfData.x, this.loadSelfData.z)
+			log.info('self-loaded moves pself to', this.loadSelfData.x, this.loadSelfData.z)
 			const yBoost = 10 // todo use ray to terrain
 			this.self.position.set(this.loadSelfData.x *4, yBoost, this.loadSelfData.z *4)
 			this.selfGridPos = this.CalcGridPos(new Vector3(this.self.position.x, yBoost, this.self.position.z))

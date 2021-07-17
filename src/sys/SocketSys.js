@@ -4,6 +4,7 @@ import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
+import { log } from './../Utils'
 
 export class SocketSys {
 
@@ -33,7 +34,7 @@ export class SocketSys {
 
 		this.ws.onopen = (event) => {
 			const existingSession = Cookies.get('session')
-			console.log('existingSession', existingSession)
+			log.info('existingSession', existingSession)
 			if(existingSession){
 				this.Auth(existingSession)
 			}
@@ -42,7 +43,7 @@ export class SocketSys {
 			}
 		}
 		this.ws.onmessage = (event) => {
-			console.log('Socket rec:', event.data)
+			log.info('Socket rec:', event.data)
 			if(event.data instanceof ArrayBuffer) { // Locations
 				// const players = []
 				// const playerMoves = new Uint8Array(event.data) // byte typedarray view
@@ -51,7 +52,7 @@ export class SocketSys {
 				// 	playerMoves[mi]
 				// }
 
-        		// console.log(view.getInt32(0));
+        		// log.info(view.getInt32(0));
 			}
 			else {
 				const payload = JSON.parse(event.data)
@@ -59,11 +60,11 @@ export class SocketSys {
 			}
 		}
 		this.ws.onerror = (event) => {
-			console.log('Socket error', event)
+			log.info('Socket error', event)
 			UiSys.OfferReconnect('Connection error.')
 		}
 		this.ws.onclose = (event) => {
-			console.log('Socket closed', event)
+			log.info('Socket closed', event)
 			UiSys.OfferReconnect('Server connection closed.')
 		}
 	}
@@ -89,12 +90,12 @@ export class SocketSys {
 	}
 
 	static async Send(json) {
-		if(!json.ping && !json.move) console.log('Send:', json)
+		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
 		else {
-			console.log('Cannot send; WebSocket is in CLOSING or CLOSED state')
+			log.info('Cannot send; WebSocket is in CLOSING or CLOSED state')
 			UiSys.OfferReconnect('Cannot reach server.')
 		}
 	}
@@ -157,7 +158,7 @@ export class SocketSys {
 					const pself = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == pself.idzone)
-					console.log('Welcome to', pself.idzone, pself.id, pself.visitor)
+					log.info('Welcome to', pself.idzone, pself.id, pself.visitor)
 					toprightText.set(UiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					

@@ -28,8 +28,9 @@ import {
     TubeGeometry,
     BufferGeometry,
     Vector2,
+	CameraHelper,
 } from 'three'
-import { CameraHelper } from 'three'
+import { log } from './../Utils'
 
 export class WorldSys {
 
@@ -120,7 +121,7 @@ export class WorldSys {
     }
 
     static Update(delta, camera) {
-		// console.log('world UPDATETKEJEKEJLEJLEJ', camera.position)
+		// log.info('world UPDATETKEJEKEJLEJLEJ', camera.position)
         document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
         // this.dirLight.position.copy(camera.position)
@@ -161,7 +162,7 @@ export class WorldSys {
     //     let timeReporter = Utils.createTimeReporter(); timeReporter.next()
     //     timeReporter.next('loadStatics:')
 
-    //     console.log("loading~")
+    //     log.info("loading~")
     //     // const light = new HemisphericLight('light1', new Vector3(0, 1, 0), scene) // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
     //     const light = new DirectionalLight("DirectionalLight", new Vector3(0.5, -1, 0.5), scene)
     //     light.intensity = 1
