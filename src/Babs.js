@@ -13,13 +13,13 @@ import { WorldSys } from './sys/WorldSys'
 import { SocketSys } from './sys/SocketSys'
 import { UiSys } from './sys/UiSys'
 import { InputSys } from './sys/InputSys'
-import { MoveSys } from './sys/MoveSys'
 import * as Utils from './Utils'
 import { LoaderSys } from './sys/LoaderSys'
-import { ControllerSys } from './sys/ControllerSys'
 import { CameraSys } from './sys/CameraSys'
 import { RenderSys } from './sys/RenderSys'
 import { log } from './Utils'
+import { Player } from './ent/Player'
+import { Controller } from './com/Controller'
 
 class BABS {
 
@@ -34,8 +34,10 @@ class BABS {
 	static cube
 	static ui
 
-	static controllerSys
 	static cameraSys
+
+	static ents = new Map() // id key, value ent
+	static comcats = new Map() // comType key, value is an array of those coms
 
 
 	static Start() {
@@ -81,11 +83,10 @@ class BABS {
         // this.camera.position.set(0, InputSys.ftHeightHead, 0)
 
 		this.renderSys = new RenderSys()
-		this.controllerSys = new ControllerSys(this.renderSys._scene)
-		this.cameraSys = new CameraSys(this.renderSys._camera, this.controllerSys)
-
-		this.camera = this.renderSys._camera
 		this.scene = this.renderSys._scene
+		this.camera = this.renderSys._camera
+
+		// this.contrSys = new Controller(this.renderSys._scene) // Moved to sys (socket for now)
 
 
 
@@ -96,7 +97,7 @@ class BABS {
 
 		WorldSys.Start(this.scene, this.camera, this.cube)
 		
-		SocketSys.Start(this.scene, this.urlSocket, this.urlFiles)
+		SocketSys.Start(this)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -107,7 +108,6 @@ class BABS {
 			)
 		})
 
-		MoveSys.Start(this.scene)
 
 
 		UiSys.CreateStats('fps')
@@ -169,12 +169,17 @@ class BABS {
 		
 		// LoaderSys.Update(dt)
 		// InputSys.Update(dt, this.scene)
-		MoveSys.Update(dt, this.camera, this.scene)
 		WorldSys.Update(dt, this.camera)
 
+		for(let [name, coms] of this.comcats) {
+			if(coms) {
+				for(let com of coms) {
+					com.update(dt)
+				}
+			}
+		}
 
-		this.controllerSys.update(dt)
-		this.cameraSys.update(dt)
+		this.cameraSys?.update(dt)
 		
 		this.renderSys.update(dt)
 

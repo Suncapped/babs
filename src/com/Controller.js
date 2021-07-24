@@ -1,7 +1,11 @@
 import * as THREE from 'three'
-import { EventSys } from './EventSys'
-import { LoaderSys } from './LoaderSys'
-import { log } from './../Utils'
+import { EventSys } from '../sys/EventSys'
+import { LoaderSys } from '../sys/LoaderSys'
+import { log } from '../Utils'
+import { Raycaster } from 'three'
+import { Vector3 } from 'three'
+import { Com } from './Com'
+import { SocketSys } from '../sys/SocketSys'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -15,11 +19,34 @@ class BasicCharacterControllerProxy {
 	}
 }
 
-export class ControllerSys {
+export class Controller extends Com {
+	static name = 'controller'
+
 	scene
 
-	constructor(scene) {
-		this.scene = scene
+	// MoveSys
+	maxTerrainHeight = 100_000
+	MOVE = {
+		Idle: 0,
+		Run: 1,
+		Walk: 2,
+		Jump: 3,
+		Dodge: 4,
+		Rotate: 5,
+		Emote: 6,
+	}
+	player
+	_targetGridPos
+	raycaster
+
+	constructor(pself, idEnt, babs) {
+		super(babs, idEnt, Controller)
+
+		this.pself = pself
+
+		this.scene = babs.scene
+		log('scene is', this.scene)
+
 		this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0)
 		this._acceleration = new THREE.Vector3(1, 0.25, 50.0)
 		this._velocity = new THREE.Vector3(0, 0, 0)
@@ -28,65 +55,68 @@ export class ControllerSys {
 		this._animations = {}
 		this._input = new BasicCharacterControllerInput()
 		this._stateMachine = new CharacterFSM(
-			new BasicCharacterControllerProxy(this._animations))
-
+			new BasicCharacterControllerProxy(this._animations)
+		)
 		
-		EventSys.Subscribe(this)
+		// EventSys.Subscribe(this)
+
+		// Loading...
+
+
 	}
 
-	async Event(type, data) {
-		if(type == 'load-self') {
-			const char = data.char
+	async init() {
+		const fbx = await LoaderSys.LoadRig(this.pself.char.gender)
+		this.scene.add(fbx)
 		
-			const fbx = await LoaderSys.LoadCharacter(char.gender)
-			this.scene.add(fbx)
-			fbx.name = 'player'
+		this._target = fbx
+		this._mixer = new THREE.AnimationMixer(this._target)
+
+		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
+
+		await Promise.all(animList.map(async animName => {
+			const anim = await LoaderSys.LoadAnim(this.pself.char.gender, animName)
+			const clip = anim.animations[0]
+			const action = this._mixer.clipAction(clip)
+
+			this._animations[animName] = {
+				clip: clip,
+				action: action,
+			}
+		}));
+
+		this._stateMachine.SetState('idle')
 
 
-			this._target = fbx
-			this._mixer = new THREE.AnimationMixer(this._target)
-
-			// this._manager = new THREE.LoadingManager()
-			// this._manager.onLoad = () => {
-			// 	this._stateMachine.SetState('idle')
-			// }
-
-			// const _OnLoad = (animName, anim) => {
-			// 	const clip = anim.animations[0]
-			// 	const action = this._mixer.clipAction(clip)
-
-			// 	this._animations[animName] = {
-			// 		clip: clip,
-			// 		action: action,
-			// 	}
-			// }
-			// const loader = new FBXLoader(this._manager)
-			// loader.setPath('./resources/zombie/')
-			// loader.load('walk.fbx', (a) => { _OnLoad('walk', a); })
-			// loader.load('run.fbx', (a) => { _OnLoad('run', a); })
-			// loader.load('idle.fbx', (a) => { _OnLoad('idle', a); })
-			// loader.load('dance.fbx', (a) => { _OnLoad('dance', a); })
-
-			const animList = ['walk', 'run', 'idle', 'dance']
-
-
-			await Promise.all(animList.map(async animName => {
-				const anim = await LoaderSys.LoadAnim(char.gender, animName)
-				const clip = anim.animations[0]
-				const action = this._mixer.clipAction(clip)
-
-				this._animations[animName] = {
-					clip: clip,
-					action: action,
-				}
-			}));
-
-			this._stateMachine.SetState('idle')
-
-			EventSys.Dispatch('self-loaded', fbx)
-
-		}
+		this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.maxTerrainHeight )
+		log('controller init done, move player to', this.pself.x, this.pself.z, this._target)
+		this._target.position.set(this.pself.x *4, 0, this.pself.z *4)
+		this._targetGridPos = Controller.GridposFromWorldpos(new Vector3(this._target.position.x, 0, this._target.position.z))
 	}
+
+	// async Event(type, data) {
+	// 	if(type == 'load-self') {
+	// 		this.player = data
+
+	// 		const fbx = await LoaderSys.LoadRig(this.player.char.gender)
+	// 		this.scene.add(fbx)
+			
+	// 		this._target = fbx
+	// 		this._mixer = new THREE.AnimationMixer(this._target)
+
+	// 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
+	// 		await Promise.all(animList.map(async animName => {
+	// 			const anim = await LoaderSys.LoadAnim(this.player.char.gender, animName)
+	// 			const clip = anim.animations[0]
+	// 			const action = this._mixer.clipAction(clip)
+	// 			this._animations[animName] = {
+	// 				clip: clip,
+	// 				action: action,
+	// 			}
+	// 		}));
+	// 		this._stateMachine.SetState('idle')
+	// 	}
+	// }
 
 	get Position() {
 		return this._position
@@ -174,12 +204,55 @@ export class ControllerSys {
 			new THREE.Vector3(1000,10_000,1000),
 		)
 
+
 		this._position.copy(controlObject.position)
 
 		if (this._mixer) {
 			this._mixer.update(dt)
 		}
+
+		
+		// MoveSys todo 
+		if(this._targetGridPos) { // It's been init
+			const gridPos = Controller.GridposFromWorldpos(this._target.position)
+			if(!gridPos.equals(this._targetGridPos)) { // Player has moved on grid!
+				SocketSys.Send({
+					move: {
+						x: gridPos.x,
+						z: gridPos.z,
+						movestate: this.MOVE.Run
+					}
+				})
+				this._targetGridPos = gridPos
+			}
+
+
+			// Keep above ground
+			// log('self', this._target.position)
+			this.raycaster.ray.origin.copy(this._target.position)
+			this.raycaster.ray.origin.setY(this.maxTerrainHeight) // Use min from below?  No, backfaces not set to intersect!
+			const ground = this.scene.children.find(o=>o.name=='ground')
+			if(ground && this.raycaster) {
+				const groundIntersect = this.raycaster.intersectObject(ground, true)
+				// log('groundIntersect', groundIntersect, ground)
+				const groundHeightY = groundIntersect?.[0]?.point.y
+				if(groundHeightY != this._target.position.y) {
+					this._target.position.setY(groundHeightY) // Import is bottom-origin!
+				}
+	
+			}
+
+		}
+
 	}
+
+
+	static GridposFromWorldpos(worldPosition) {
+		return new Vector3(Math.floor(worldPosition.x / 4), null, Math.floor(worldPosition.z / 4))
+	}
+
+
+
 }
 
 class BasicCharacterControllerInput {
@@ -291,8 +364,9 @@ class CharacterFSM extends FiniteStateMachine {
 
 	_Init() {
 		this._AddState('idle', IdleState)
-		this._AddState('walk', WalkState)
 		this._AddState('run', RunState)
+		this._AddState('backward', BackwardState)
+		this._AddState('walk', WalkState)
 		this._AddState('dance', DanceState)
 	}
 }
@@ -360,53 +434,6 @@ class DanceState extends State {
 }
 
 
-class WalkState extends State {
-	constructor(parent) {
-		super(parent)
-	}
-
-	get Name() {
-		return 'walk'
-	}
-
-	Enter(prevState) {
-		const curAction = this._parent._proxy._animations['walk'].action
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-
-			curAction.enabled = true
-
-			if (prevState.Name == 'run') {
-				const ratio = curAction.getClip().duration / prevAction.getClip().duration
-				curAction.time = prevAction.time * ratio
-			} else {
-				curAction.time = 0.0
-				curAction.setEffectiveTimeScale(1.0)
-				curAction.setEffectiveWeight(1.0)
-			}
-
-			curAction.crossFadeFrom(prevAction, 0.5, true)
-			curAction.play()
-		} else {
-			curAction.play()
-		}
-	}
-
-	Exit() {
-	}
-
-	Update(timeElapsed, input) {
-		if (input._keys.forward || input._keys.backward) {
-			if (!input._keys.shift) {
-				this._parent.SetState('run')
-			}
-			return
-		}
-
-		this._parent.SetState('idle')
-	}
-}
-
 
 class RunState extends State {
 	constructor(parent) {
@@ -447,6 +474,106 @@ class RunState extends State {
 		if (input._keys.forward || input._keys.backward) {
 			if (input._keys.shift) {
 				this._parent.SetState('walk')
+			}
+			return
+		}
+
+		this._parent.SetState('idle')
+	}
+}
+
+class BackwardState extends State {
+	constructor(parent) {
+		super(parent)
+	}
+
+	get Name() {
+		return 'backward'
+	}
+
+	Enter(prevState) {
+		const curAction = this._parent._proxy._animations['backward'].action
+		if (prevState) {
+			const prevAction = this._parent._proxy._animations[prevState.Name].action
+
+			curAction.enabled = true
+
+			if (prevState.Name == 'run') {
+				const ratio = curAction.getClip().duration / prevAction.getClip().duration
+				curAction.time = prevAction.time * ratio
+			} else {
+				curAction.time = 0.0
+				curAction.setEffectiveTimeScale(-1.0)
+				curAction.setEffectiveWeight(1.0)
+			}
+
+			curAction.crossFadeFrom(prevAction, 0.5, true)
+			curAction.play()
+		} else {
+			curAction.play()
+		}
+	}
+
+	Exit() {
+	}
+
+	Update(timeElapsed, input) {
+		if(input._keys.backward) {
+			return
+		}
+		else if (input._keys.forward) {
+			if (input._keys.shift) {
+				this._parent.SetState('walk')
+			} else {
+				this._parent.SetState('run')
+			}
+		}
+		else {
+			this._parent.SetState('idle')
+		}
+	}
+}
+
+
+class WalkState extends State {
+	constructor(parent) {
+		super(parent)
+	}
+
+	get Name() {
+		return 'walk'
+	}
+
+	Enter(prevState) {
+		const curAction = this._parent._proxy._animations['walk'].action
+		if (prevState) {
+			const prevAction = this._parent._proxy._animations[prevState.Name].action
+
+			curAction.enabled = true
+
+			if (prevState.Name == 'run') {
+				const ratio = curAction.getClip().duration / prevAction.getClip().duration
+				curAction.time = prevAction.time * ratio
+			} else {
+				curAction.time = 0.0
+				curAction.setEffectiveTimeScale(1.0)
+				curAction.setEffectiveWeight(1.0)
+			}
+
+			curAction.crossFadeFrom(prevAction, 0.5, true)
+			curAction.play()
+		} else {
+			curAction.play()
+		}
+	}
+
+	Exit() {
+	}
+
+	Update(timeElapsed, input) {
+		if (input._keys.forward || input._keys.backward) {
+			if (!input._keys.shift) {
+				this._parent.SetState('run')
 			}
 			return
 		}
@@ -512,10 +639,14 @@ class IdleState extends State {
 
 	Update(_, input) {
 		// log.info('idleup', _)
-		if (input._keys.forward || input._keys.backward) {
+		if (input._keys.forward) {
 			this._parent.SetState('run')
+		} else if (input._keys.backward) {
+			this._parent.SetState('backward')
 		} else if (input._keys.space) {
 			this._parent.SetState('dance')
+		} else {
+			return
 		}
 	}
 }

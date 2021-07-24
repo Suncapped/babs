@@ -84,7 +84,13 @@ export class LoaderSys {
 
 	}
 
-	static async LoadCharacter(gender) {
+	// static cachedChar = new Map
+	static async LoadRig(gender) {
+		// if(this.cachedChar?.get(gender)) {  // Doesn't work due to ref
+		// 	log('character is cached', gender)
+		// 	return this.cachedChar?.get(gender)
+		// }
+
 		const texture = await LoaderSys.LoadTexture(`/char/${gender}/color-atlas-new2.png`)
 		texture.flipY = true
 		const material = new MeshPhongMaterial({
@@ -105,6 +111,8 @@ export class LoaderSys {
 
 		fbx.scale.multiplyScalar(0.1)
 		fbx.traverse(c => c.castShadow = true)
+
+		// this.cachedChar.set(gender, fbx)
 
 		return fbx
 	}

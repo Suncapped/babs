@@ -5,6 +5,11 @@ import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
 import { log } from './../Utils'
+import { AnimationMixer, Vector3 } from "three"
+import { Controller } from "./../com/Controller"
+import { Player } from "../ent/Player"
+import { CameraSys } from "./CameraSys"
+import { Raycaster } from "three"
 
 export class SocketSys {
 
@@ -12,23 +17,17 @@ export class SocketSys {
 	static scene
 	static babsReady = false
 
-	static urlSocket
-	static urlFiles
-
-
 	static pingSeconds = 30
 
 
-	static Start(scene, urlSocket, urlFiles) {
+	static Start(babs) {
 
-		this.urlSocket = urlSocket
-		this.urlFiles = urlFiles
-
-		this.scene = scene
+		// log('BABS!!!', babs)
+		this.babs = babs
 
 		toprightText.set('Connecting...')
 		document.getElementById('topleft').style.visibility = 'hidden'
-		this.ws = new WebSocket(this.urlSocket)
+		this.ws = new WebSocket(this.babs.urlSocket)
 		this.ws.binaryType = 'arraybuffer'
 
 
@@ -43,16 +42,37 @@ export class SocketSys {
 			}
 		}
 		this.ws.onmessage = (event) => {
-			log.info('Socket rec:', event.data)
-			if(event.data instanceof ArrayBuffer) { // Locations
-				// const players = []
-				// const playerMoves = new Uint8Array(event.data) // byte typedarray view
-				// for(let mi=0; mi <playerMoves.length; mi++) {
-				// 	players
-				// 	playerMoves[mi]
-				// }
+			log('Socket rec:', event.data)
 
-        		// log.info(view.getInt32(0));
+
+			if(event.data instanceof ArrayBuffer) { // Locations
+
+				log(event.data)
+
+				// todo make this per-zone
+				// We'll have to have server send zone ids 'headers' per zone for a group of ints
+
+				let playerMoves = new Uint32Array(event.data)
+				const max = 4
+
+				// Shift the values out from binary data
+				for(let move of playerMoves) {
+					log('move', move)
+					// Binary is 4 bytes / 8 words / 32 bits; in bits: zip 12, state 4, a 8, b 8
+					const idzip = 		(move <<0) 	>>>(0 	+(0+8+8+4))
+					const movestate = 	(move <<12) >>>(12 	+(0+8+8))
+					const a = 			(move <<16) >>>(16 	+(0+8))
+					const b = 			(move <<24) >>>(24 	+(0))
+
+					const player = this.babs.scene.children.find(o=>o.feplayer?.idzip==idzip) 
+					console.log('moveplayer', player?.name, [idzip, movestate, a, b])
+					if(player) {
+						// player.movestate = movestate
+						player.position.setX(a * 4)
+						player.position.setZ(b * 4)
+					}
+				}
+
 			}
 			else {
 				const payload = JSON.parse(event.data)
@@ -172,14 +192,23 @@ export class SocketSys {
 					}
 
 					this.babsReady = true
-					await WorldSys.LoadStatics(this.urlFiles, this.scene, zone)
+					await WorldSys.LoadStatics(this.babs.urlFiles, this.babs.scene, zone)
 
 					if(pself.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 
 
-					EventSys.Dispatch('load-self', pself)
+					// Create player entity
+					const playerSelf = new Player(pself.id, this.babs)
+					playerSelf.controller = new Controller(pself, playerSelf.id, this.babs)
+					playerSelf.controller.init()
+					this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, playerSelf.controller)
+
+					log('uhh new player?', playerSelf)
+
+
+					// EventSys.Dispatch('load-self', pself)
 
 
 					this.Send({
@@ -188,6 +217,73 @@ export class SocketSys {
 
 
 				break;
+				case 'playersarrive':
+					console.log('playersarrive', data)
+
+					// EventSys.Dispatch('players-arrive', data)
+
+					for(let arrival of data) {
+						if(this.babs.ents.get(arrival.id)) return // Skip self aka players we already have!
+
+						
+						const player = new Player(data.id, this.babs)
+						player.controller = new Controller(pself, player.id, this.babs)
+						player.controller.init()
+						log('uhh new player?', player)
+						// TODO
+						
+						const fbx = await LoaderSys.LoadRig(arrival.gender)
+						console.log(fbx)
+						this.babs.scene.add(fbx)
+						fbx.name = 'player-'+arrival.id
+						fbx.feplayer = {
+							id: arrival.id,
+							idzip: arrival.idzip,
+							idzone: playarrivaler.idzone,
+							gender: arrival.gender,
+						}
+		
+						// this.contrSys = new Controller(this.renderSys._scene)
+		
+						// this._target = fbx
+						const mixer = new AnimationMixer(fbx)
+						const anim = await LoaderSys.LoadAnim(arrival.gender, 'idle')
+						const clip = anim.animations[0]
+						const idleAction = mixer.clipAction(clip)
+		
+						// this._stateMachine.SetState('idle')
+						// const idleAction = this._parent._proxy._animations['idle'].action
+						// log.info('idleenter', prevState, idleAction)
+						// const mixer = idleAction.getMixer()
+						// idleAction.getClip().duration = 5 // via diagnose below
+						idleAction.play()
+		
+						setTimeout(() => {
+							mixer.update()
+						}, 1000/60)
+		
+		
+						fbx.position.set(arrival.x *4, 3, arrival.z *4)
+		
+					}
+
+
+				break
+				case 'playerdepart':
+					const departer = this.babs.ents.get(data)
+					log('playerdepart', data, departer)
+					this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
+					
+					
+					for(let [cat, coms] of this.babs.comcats) {
+						for(let com of coms) {
+							com.update()
+						}
+					}
+					
+					this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
+					this.babs.ents.delete(departer.id)
+				break
 			}
 		})
 	}

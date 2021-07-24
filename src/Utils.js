@@ -1,7 +1,8 @@
 // Simpler logging
 
-// const showInfoLogs = true
-const showInfoLogs = false
+
+let showInfoLogs = false || import.meta.env.PROD // Always show in prod
+// showInfoLogs = true
 export const log = (function() {
     function log(...params) { 
         console.log(...params)
@@ -31,7 +32,7 @@ export const log = (function() {
 //     return Math.random() * (max - min) + min
 // }
 
-// export const sleep = (ms:number) => new Promise(r => setTimeout(r, ms))
+export const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
 // export function lerp (value1:number, value2:number, amount:number) {
 // 	amount = amount < 0 ? 0 : amount
