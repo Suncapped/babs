@@ -201,7 +201,7 @@ export class SocketSys {
 
 					// Create player entity
 					const playerSelf = new Player(pself.id, this.babs)
-					playerSelf.controller = new Controller(pself, playerSelf.id, this.babs)
+					playerSelf.controller = new Controller(pself, true, playerSelf.id, this.babs)
 					playerSelf.controller.init()
 					this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, playerSelf.controller)
 
@@ -224,22 +224,20 @@ export class SocketSys {
 
 					for(let arrival of data) {
 						if(this.babs.ents.get(arrival.id)) return // Skip self aka players we already have!
-
 						
-						const player = new Player(data.id, this.babs)
-						player.controller = new Controller(pself, player.id, this.babs)
+						const player = new Player(arrival.id, this.babs)
+						player.controller = new Controller(arrival, false, player.id, this.babs)
 						player.controller.init()
 						log('uhh new player?', player)
 						// TODO
 						
-						const fbx = await LoaderSys.LoadRig(arrival.gender)
-						console.log(fbx)
+						const fbx = await LoaderSys.LoadRig(arrival.char.gender)
 						this.babs.scene.add(fbx)
 						fbx.name = 'player-'+arrival.id
 						fbx.feplayer = {
 							id: arrival.id,
 							idzip: arrival.idzip,
-							idzone: playarrivaler.idzone,
+							idzone: arrival.idzone,
 							gender: arrival.gender,
 						}
 		
@@ -247,7 +245,7 @@ export class SocketSys {
 		
 						// this._target = fbx
 						const mixer = new AnimationMixer(fbx)
-						const anim = await LoaderSys.LoadAnim(arrival.gender, 'idle')
+						const anim = await LoaderSys.LoadAnim(arrival.char.gender, 'idle')
 						const clip = anim.animations[0]
 						const idleAction = mixer.clipAction(clip)
 		

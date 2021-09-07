@@ -19,19 +19,20 @@ export class LoaderSys {
 	}
 
 	static LoadFbx(path) {
+		log('TRYLOAD', path)
 		const loader = new FBXLoader()
 		return new Promise( (resolve, reject) => {
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
-					log.info('Loaded FBX:', path, group)
+					log('Loaded FBX:', path, group)
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback
 					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					log.info( 'An error happened', err )
+					log.err( 'An error happened', err )
 				}
 			)
 		}); 

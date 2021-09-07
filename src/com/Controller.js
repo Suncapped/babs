@@ -6,6 +6,7 @@ import { Raycaster } from 'three'
 import { Vector3 } from 'three'
 import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
+import { InputSys } from '../sys/InputSys'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -26,7 +27,7 @@ export class Controller extends Com {
 
 	// MoveSys
 	maxTerrainHeight = 100_000
-	MOVE = {
+	MOVESTATE = {
 		Idle: 0,
 		Run: 1,
 		Walk: 2,
@@ -35,17 +36,18 @@ export class Controller extends Com {
 		Rotate: 5,
 		Emote: 6,
 	}
-	player
+
 	_targetGridPos
 	raycaster
 
-	constructor(pself, idEnt, babs) {
+	bSelf
+
+	constructor(arrival, bSelf, idEnt, babs) {
 		super(babs, idEnt, Controller)
-
-		this.pself = pself
-
+		log.info('Controller arrival', bSelf, idEnt)
+		this.arrival = arrival
 		this.scene = babs.scene
-		log('scene is', this.scene)
+		this.bSelf = bSelf
 
 		this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0)
 		this._acceleration = new THREE.Vector3(1, 0.25, 50.0)
@@ -53,20 +55,22 @@ export class Controller extends Com {
 		this._position = new THREE.Vector3()
 
 		this._animations = {}
-		this._input = new BasicCharacterControllerInput()
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
 		)
 		
-		// EventSys.Subscribe(this)
+		// if(bSelf) {
+		// 	this._input = InputSys
+		// }
 
+		// EventSys.Subscribe(this)
 		// Loading...
 
 
 	}
 
 	async init() {
-		const fbx = await LoaderSys.LoadRig(this.pself.char.gender)
+		const fbx = await LoaderSys.LoadRig(this.arrival.char.gender)
 		this.scene.add(fbx)
 		
 		this._target = fbx
@@ -75,7 +79,7 @@ export class Controller extends Com {
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
 
 		await Promise.all(animList.map(async animName => {
-			const anim = await LoaderSys.LoadAnim(this.pself.char.gender, animName)
+			const anim = await LoaderSys.LoadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = this._mixer.clipAction(clip)
 
@@ -89,34 +93,10 @@ export class Controller extends Com {
 
 
 		this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.maxTerrainHeight )
-		log('controller init done, move player to', this.pself.x, this.pself.z, this._target)
-		this._target.position.set(this.pself.x *4, 0, this.pself.z *4)
+		log('controller init done, move player to', this.arrival.x, this.arrival.z, this._target)
+		this._target.position.set(this.arrival.x *4, 0, this.arrival.z *4)
 		this._targetGridPos = Controller.GridposFromWorldpos(new Vector3(this._target.position.x, 0, this._target.position.z))
 	}
-
-	// async Event(type, data) {
-	// 	if(type == 'load-self') {
-	// 		this.player = data
-
-	// 		const fbx = await LoaderSys.LoadRig(this.player.char.gender)
-	// 		this.scene.add(fbx)
-			
-	// 		this._target = fbx
-	// 		this._mixer = new THREE.AnimationMixer(this._target)
-
-	// 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
-	// 		await Promise.all(animList.map(async animName => {
-	// 			const anim = await LoaderSys.LoadAnim(this.player.char.gender, animName)
-	// 			const clip = anim.animations[0]
-	// 			const action = this._mixer.clipAction(clip)
-	// 			this._animations[animName] = {
-	// 				clip: clip,
-	// 				action: action,
-	// 			}
-	// 		}));
-	// 		this._stateMachine.SetState('idle')
-	// 	}
-	// }
 
 	get Position() {
 		return this._position
@@ -220,7 +200,7 @@ export class Controller extends Com {
 					move: {
 						x: gridPos.x,
 						z: gridPos.z,
-						movestate: this.MOVE.Run
+						movestate: this.MOVESTATE.Run
 					}
 				})
 				this._targetGridPos = gridPos
@@ -253,71 +233,6 @@ export class Controller extends Com {
 
 
 
-}
-
-class BasicCharacterControllerInput {
-	constructor() {
-		this._Init()
-	}
-
-	_Init() {
-		this._keys = {
-			forward: false,
-			backward: false,
-			left: false,
-			right: false,
-			space: false,
-			shift: false,
-		}
-		document.addEventListener('keydown', (e) => this._onKeyDown(e), false)
-		document.addEventListener('keyup', (e) => this._onKeyUp(e), false)
-	}
-
-	_onKeyDown(event) {
-		switch (event.keyCode) {
-			case 87: // w
-				this._keys.forward = true
-				break
-			case 65: // a
-				this._keys.left = true
-				break
-			case 83: // s
-				this._keys.backward = true
-				break
-			case 68: // d
-				this._keys.right = true
-				break
-			case 32: // SPACE
-				this._keys.space = true
-				break
-			case 16: // SHIFT
-				this._keys.shift = true
-				break
-		}
-	}
-
-	_onKeyUp(event) {
-		switch (event.keyCode) {
-			case 87: // w
-				this._keys.forward = false
-				break
-			case 65: // a
-				this._keys.left = false
-				break
-			case 83: // s
-				this._keys.backward = false
-				break
-			case 68: // d
-				this._keys.right = false
-				break
-			case 32: // SPACE
-				this._keys.space = false
-				break
-			case 16: // SHIFT
-				this._keys.shift = false
-				break
-		}
-	}
 }
 
 

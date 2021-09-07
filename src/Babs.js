@@ -8,6 +8,7 @@ import {
     sRGBEncoding,
     MeshPhongMaterial,
     AxesHelper,
+	Cache,
 } from 'three'
 import { WorldSys } from './sys/WorldSys'
 import { SocketSys } from './sys/SocketSys'
@@ -41,6 +42,8 @@ class BABS {
 
 
 	static Start() {
+
+		Cache.enabled = true // Caches eg FBX anims
 
 		if (this.isProd) {
 			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
@@ -108,11 +111,19 @@ class BABS {
 			)
 		})
 
-
-
 		UiSys.CreateStats('fps')
 		UiSys.CreateStats('mem')
 
+		InputSys.Start(this.scene, this.camera)
+
+		// this.scene.children.forEach((node) => {
+		// 	const axes = new AxesHelper(10)
+		// 	axes.renderOrder = 1
+		// 	axes.position.add(new Vector3(-0.2,0.2,-0.2))
+		// 	node.add(axes)
+		// }) // todo make this happen upon all scene.add
+
+		
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
 			if(SocketSys.babsReady) {
@@ -127,35 +138,6 @@ class BABS {
 		waitForReady()
 
 	}
-		// InputSys.Start(this.scene, this.camera)
-		// window.addEventListener('resize', () => {
-		// 	log.info('resize')
-		// 	this.camera.aspect = window.innerWidth / window.innerHeight
-		// 	this.renderer.setSize( window.innerWidth, window.innerHeight )
-		// 	this.camera.updateProjectionMatrix()
-		// 	this.renderer.render( this.scene, this.camera ) // todo needed at all since animate() does it?
-		// })
-
-		// // add an AxesHelper to each node
-		// this.scene.children.forEach((node) => {
-		// 	const axes = new AxesHelper(10)
-		// 	axes.renderOrder = 1
-		// 	axes.position.add(new Vector3(-0.2,0.2,-0.2))
-		// 	node.add(axes)
-		// })
-
-		// const canvas = this.renderer.domElement
-		// canvas.id = 'canvas'
-		// document.getElementById('canvas').addEventListener('contextmenu', ev => ev.preventDefault()); // move to ui?
-
-		// log.info(this.renderer, sRGBEncoding) // confirmed: renderer.outputEncoding === THREE.sRGBEncoding
-
-		// this.scene.children.forEach((node) => {
-		// 	const axes = new AxesHelper(10)
-		// 	axes.renderOrder = 1
-		// 	axes.position.add(new Vector3(-0.2,0.2,-0.2))
-		// 	node.add(axes)
-		// }) // todo make this happen upon all scene.add
 
 
 	static prevTime = performance.now()
@@ -168,7 +150,7 @@ class BABS {
 		// this.cube.rotation.y = time /1000
 		
 		// LoaderSys.Update(dt)
-		// InputSys.Update(dt, this.scene)
+		InputSys.Update(dt, this.scene)
 		WorldSys.Update(dt, this.camera)
 
 		for(let [name, coms] of this.comcats) {
