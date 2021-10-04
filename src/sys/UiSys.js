@@ -6,7 +6,7 @@ import { log } from './../Utils'
 export class UiSys {
 	static browser
 
-	static toprightTextDefault = 'Designed for Chrome-like browsers'
+	static toprightTextDefault = 'Works best in Chrome-like browsers'
 
 	static OfferReconnect(reason) {
 		toprightReconnect.set(reason)
@@ -31,6 +31,9 @@ export class UiSys {
 			target: document.body,
 		})
 
+		if(UiSys.browser == 'chrome' || UiSys.browser == 'MS Edge Chromium') {
+			UiSys.toprightTextDefault = 'Welcome to First Earth!'
+		}
 		toprightText.set(UiSys.toprightTextDefault)
     }
     /** 

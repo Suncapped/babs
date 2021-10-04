@@ -19,13 +19,12 @@ export class LoaderSys {
 	}
 
 	static LoadFbx(path) {
-		log('TRYLOAD', path)
 		const loader = new FBXLoader()
 		return new Promise( (resolve, reject) => {
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
-					log('Loaded FBX:', path, group)
+					log.info('Loaded FBX:', path, group)
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback

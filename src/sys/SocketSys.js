@@ -10,6 +10,7 @@ import { Controller } from "./../com/Controller"
 import { Player } from "../ent/Player"
 import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
+import { InputSys } from "./InputSys"
 
 export class SocketSys {
 
@@ -201,11 +202,13 @@ export class SocketSys {
 
 					// Create player entity
 					const playerSelf = new Player(pself.id, this.babs)
-					playerSelf.controller = new Controller(pself, true, playerSelf.id, this.babs)
+					const bSelf = true
+					playerSelf.controller = new Controller(pself, bSelf, playerSelf, this.babs) // Loads rig, creates Three stuff
 					playerSelf.controller.init()
 					this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, playerSelf.controller)
+					this.babs.inputSys = new InputSys(this.babs, playerSelf)
 
-					log('uhh new player?', playerSelf)
+					log('new player?', playerSelf)
 
 
 					// EventSys.Dispatch('load-self', pself)
@@ -228,7 +231,7 @@ export class SocketSys {
 						const player = new Player(arrival.id, this.babs)
 						player.controller = new Controller(arrival, false, player.id, this.babs)
 						player.controller.init()
-						log('uhh new player?', player)
+						log('other player?', player)
 						// TODO
 						
 						const fbx = await LoaderSys.LoadRig(arrival.char.gender)

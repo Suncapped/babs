@@ -121,8 +121,6 @@ export class WorldSys {
     }
 
     static Update(delta, camera) {
-		// log.info('world UPDATETKEJEKEJLEJLEJ', camera.position)
-        document.getElementById('log').innerText = `${Math.floor(camera.position.x / 4)}, ${Math.round(camera.position.y)}, ${Math.floor(camera.position.z / 4)}`
 
         // this.dirLight.position.copy(camera.position)
         // const rounded = camera.position.clone().round()

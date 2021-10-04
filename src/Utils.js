@@ -1,5 +1,7 @@
 // Simpler logging
 
+import { Vector3 } from "three"
+
 
 let showInfoLogs = false || import.meta.env.PROD // Always show in prod
 // showInfoLogs = true
@@ -162,3 +164,10 @@ export function* createTimeReporter() {
 //     // // mixMaterial.specularPower = 64
 //     // return mixMaterial
 // // }
+
+// export class Grid3 extends Vector3 {
+// 	constructor() {
+// 		super()
+// 	}
+// }
+

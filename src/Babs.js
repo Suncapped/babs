@@ -36,6 +36,7 @@ class BABS {
 	static ui
 
 	static cameraSys
+	static inputSys
 
 	static ents = new Map() // id key, value ent
 	static comcats = new Map() // comType key, value is an array of those coms
@@ -114,7 +115,6 @@ class BABS {
 		UiSys.CreateStats('fps')
 		UiSys.CreateStats('mem')
 
-		InputSys.Start(this.scene, this.camera)
 
 		// this.scene.children.forEach((node) => {
 		// 	const axes = new AxesHelper(10)
@@ -150,7 +150,7 @@ class BABS {
 		// this.cube.rotation.y = time /1000
 		
 		// LoaderSys.Update(dt)
-		InputSys.Update(dt, this.scene)
+		this.inputSys?.update(dt, this.scene)
 		WorldSys.Update(dt, this.camera)
 
 		for(let [name, coms] of this.comcats) {

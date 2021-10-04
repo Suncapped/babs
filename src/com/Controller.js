@@ -8,6 +8,8 @@ import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
 import { InputSys } from '../sys/InputSys'
 
+import  { State, DanceState, RunState, BackwardState, WalkState, IdleState } from './ControllerState'
+
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 class BasicCharacterControllerProxy {
@@ -37,14 +39,14 @@ export class Controller extends Com {
 		Emote: 6,
 	}
 
-	_targetGridPos
 	raycaster
 
 	bSelf
+	gDestination
 
-	constructor(arrival, bSelf, idEnt, babs) {
-		super(babs, idEnt, Controller)
-		log.info('Controller arrival', bSelf, idEnt)
+	constructor(arrival, bSelf, entPlayer, babs) {
+		super(babs, entPlayer.id, Controller)
+		log.info('Controller arrival', bSelf, entPlayer.id)
 		this.arrival = arrival
 		this.scene = babs.scene
 		this.bSelf = bSelf
@@ -58,7 +60,7 @@ export class Controller extends Com {
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
 		)
-		
+
 		// if(bSelf) {
 		// 	this._input = InputSys
 		// }
@@ -73,8 +75,8 @@ export class Controller extends Com {
 		const fbx = await LoaderSys.LoadRig(this.arrival.char.gender)
 		this.scene.add(fbx)
 		
-		this._target = fbx
-		this._mixer = new THREE.AnimationMixer(this._target)
+		this.target = fbx
+		this._mixer = new THREE.AnimationMixer(this.target)
 
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
 
@@ -93,9 +95,10 @@ export class Controller extends Com {
 
 
 		this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.maxTerrainHeight )
-		log('controller init done, move player to', this.arrival.x, this.arrival.z, this._target)
-		this._target.position.set(this.arrival.x *4, 0, this.arrival.z *4)
-		this._targetGridPos = Controller.GridposFromWorldpos(new Vector3(this._target.position.x, 0, this._target.position.z))
+		log('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
+		log('gta', new Vector3(this.arrival.x, 0, this.arrival.z))
+		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
+		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(2/4))
 	}
 
 	get Position() {
@@ -103,10 +106,31 @@ export class Controller extends Com {
 	}
 
 	get Rotation() {
-		if (!this._target) {
+		if (!this.target) {
 			return new THREE.Quaternion()
 		}
-		return this._target.quaternion
+		return this.target.quaternion
+	}
+
+	// Women runners do about 10 ft/s over 4 mi, so 1ft/100ms, 4ft/400ms
+	// But that's a little much for this version, let's just give an impulse?
+	// Or do I have to work backward from destination?
+	// Well, distance to next square will always be 4ft.  
+	// How about full speed, then at halfway (cell border) if they're not continuing, it slows?
+	setDestination(gVector3) {
+		if(gVector3.equals(this.gDestination)) return
+		
+		this.gDestination = gVector3.clone()
+
+		SocketSys.Send({
+			move: {
+				x: this.gDestination.x,
+				z: this.gDestination.z,
+				movestate: this.MOVESTATE.Run
+			}
+		})
+
+		log('setDestination', this.gDestination)
 	}
 
 	update(dt) {
@@ -129,36 +153,48 @@ export class Controller extends Com {
 
 		velocity.add(frameDecceleration)
 
-		const controlObject = this._target
+		const controlObject = this.target
 		const _Q = new THREE.Quaternion()
 		const _A = new THREE.Vector3()
 		const _R = controlObject.quaternion.clone()
 
 		const acc = this._acceleration.clone()
-		if (!this._input._keys.shift) {
-			acc.multiplyScalar(2.0)
-		}
+		// if (!this._input._keys.shift) {
+		// 	acc.multiplyScalar(2.0)
+		// }
 
-		if (this._stateMachine._currentState.Name == 'dance') {
-			acc.multiplyScalar(0.0)
-		}
+		// if (this._stateMachine._currentState.Name == 'dance') {
+		// 	acc.multiplyScalar(0.0)
+		// }
 
-		if (this._input._keys.forward) {
-			velocity.z += acc.z * dt
+		if(this.gDestination) {
+			const tDestination = this.gDestination.clone().multiplyScalar(4)
+			const tDestDiff = tDestination.clone().sub(controlObject.position)
+			// log('tDestDiff', tDestDiff, tDestination)
+			if (Math.abs(tDestDiff.z) < 0.5) {
+				velocity.z = 0
+				// controlObject.position.setZ(tDestination.z)
+			}
+			else if (tDestDiff.z > 0) {
+				velocity.z += acc.z * dt
+			}
+			else if (tDestDiff.z < 0) {
+				velocity.z -= acc.z * dt
+			}
 		}
-		if (this._input._keys.backward) {
-			velocity.z -= acc.z * dt
-		}
-		if (this._input._keys.left) {
-			_A.set(0, 1, 0)
-			_Q.setFromAxisAngle(_A, 4.0 * Math.PI * dt * this._acceleration.y)
-			_R.multiply(_Q)
-		}
-		if (this._input._keys.right) {
-			_A.set(0, 1, 0)
-			_Q.setFromAxisAngle(_A, 4.0 * -Math.PI * dt * this._acceleration.y)
-			_R.multiply(_Q)
-		}
+		// if (this._input._keys.backward) {
+		// 	velocity.z -= acc.z * dt
+		// }
+		// if (this._input._keys.left) {
+		// 	_A.set(0, 1, 0)
+		// 	_Q.setFromAxisAngle(_A, 4.0 * Math.PI * dt * this._acceleration.y)
+		// 	_R.multiply(_Q)
+		// }
+		// if (this._input._keys.right) {
+		// 	_A.set(0, 1, 0)
+		// 	_Q.setFromAxisAngle(_A, 4.0 * -Math.PI * dt * this._acceleration.y)
+		// 	_R.multiply(_Q)
+		// }
 
 		controlObject.quaternion.copy(_R)
 
@@ -193,45 +229,40 @@ export class Controller extends Com {
 
 		
 		// MoveSys todo 
-		if(this._targetGridPos) { // It's been init
-			const gridPos = Controller.GridposFromWorldpos(this._target.position)
-			if(!gridPos.equals(this._targetGridPos)) { // Player has moved on grid!
-				SocketSys.Send({
-					move: {
-						x: gridPos.x,
-						z: gridPos.z,
-						movestate: this.MOVESTATE.Run
-					}
-				})
-				this._targetGridPos = gridPos
-			}
+		if(this.gDestination) { // It's been init
+			// const gridPos = this.target.position.clone().multiplyScalar(1/4).floor()
+			// if(!gridPos.equals(this.gDestination)) { // Player has moved on grid!
+			// 	SocketSys.Send({
+			// 		move: {
+			// 			x: gridPos.x,
+			// 			z: gridPos.z,
+			// 			movestate: this.MOVESTATE.Run
+			// 		}
+			// 	})
+			// 	this.targetGridPos = gridPos
+			// }
 
 
 			// Keep above ground
-			// log('self', this._target.position)
-			this.raycaster.ray.origin.copy(this._target.position)
+			// log('self', this.target.position)
+			this.raycaster.ray.origin.copy(this.target.position)
 			this.raycaster.ray.origin.setY(this.maxTerrainHeight) // Use min from below?  No, backfaces not set to intersect!
 			const ground = this.scene.children.find(o=>o.name=='ground')
 			if(ground && this.raycaster) {
 				const groundIntersect = this.raycaster.intersectObject(ground, true)
 				// log('groundIntersect', groundIntersect, ground)
 				const groundHeightY = groundIntersect?.[0]?.point.y
-				if(groundHeightY != this._target.position.y) {
-					this._target.position.setY(groundHeightY) // Import is bottom-origin!
+				if(groundHeightY != this.target.position.y) {
+					this.target.position.setY(groundHeightY) // Import is bottom-origin!
 				}
 	
 			}
 
 		}
 
+		window.document.getElementById('log').innerText = `${Math.round(this.target.position.x)}, ${Math.round(this.target.position.y)}, ${Math.round(this.target.position.z)}`
+
 	}
-
-
-	static GridposFromWorldpos(worldPosition) {
-		return new Vector3(Math.floor(worldPosition.x / 4), null, Math.floor(worldPosition.z / 4))
-	}
-
-
 
 }
 
@@ -286,282 +317,3 @@ class CharacterFSM extends FiniteStateMachine {
 	}
 }
 
-
-class State {
-	constructor(parent) {
-		this._parent = parent
-	}
-
-	Enter() { }
-	Exit() { }
-	Update() { }
-}
-
-
-class DanceState extends State {
-	constructor(parent) {
-		super(parent)
-
-		this._FinishedCallback = () => {
-			this._Finished()
-		}
-	}
-
-	get Name() {
-		return 'dance'
-	}
-
-	Enter(prevState) {
-		const curAction = this._parent._proxy._animations['dance'].action
-		const mixer = curAction.getMixer()
-		mixer.addEventListener('finished', this._FinishedCallback)
-
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-
-			curAction.reset()
-			curAction.setLoop(THREE.LoopOnce, 1)
-			curAction.clampWhenFinished = true
-			curAction.crossFadeFrom(prevAction, 0.2, true)
-			curAction.play()
-		} else {
-			curAction.play()
-		}
-	}
-
-	_Finished() {
-		this._Cleanup()
-		this._parent.SetState('idle')
-	}
-
-	_Cleanup() {
-		const action = this._parent._proxy._animations['dance'].action
-
-		action.getMixer().removeEventListener('finished', this._CleanupCallback)
-	}
-
-	Exit() {
-		this._Cleanup()
-	}
-
-	Update(_) {
-	}
-}
-
-
-
-class RunState extends State {
-	constructor(parent) {
-		super(parent)
-	}
-
-	get Name() {
-		return 'run'
-	}
-
-	Enter(prevState) {
-		const curAction = this._parent._proxy._animations['run'].action
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-
-			curAction.enabled = true
-
-			if (prevState.Name == 'walk') {
-				const ratio = curAction.getClip().duration / prevAction.getClip().duration
-				curAction.time = prevAction.time * ratio
-			} else {
-				curAction.time = 0.0
-				curAction.setEffectiveTimeScale(1.0)
-				curAction.setEffectiveWeight(1.0)
-			}
-
-			curAction.crossFadeFrom(prevAction, 0.5, true)
-			curAction.play()
-		} else {
-			curAction.play()
-		}
-	}
-
-	Exit() {
-	}
-
-	Update(timeElapsed, input) {
-		if (input._keys.forward || input._keys.backward) {
-			if (input._keys.shift) {
-				this._parent.SetState('walk')
-			}
-			return
-		}
-
-		this._parent.SetState('idle')
-	}
-}
-
-class BackwardState extends State {
-	constructor(parent) {
-		super(parent)
-	}
-
-	get Name() {
-		return 'backward'
-	}
-
-	Enter(prevState) {
-		const curAction = this._parent._proxy._animations['backward'].action
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-
-			curAction.enabled = true
-
-			if (prevState.Name == 'run') {
-				const ratio = curAction.getClip().duration / prevAction.getClip().duration
-				curAction.time = prevAction.time * ratio
-			} else {
-				curAction.time = 0.0
-				curAction.setEffectiveTimeScale(-1.0)
-				curAction.setEffectiveWeight(1.0)
-			}
-
-			curAction.crossFadeFrom(prevAction, 0.5, true)
-			curAction.play()
-		} else {
-			curAction.play()
-		}
-	}
-
-	Exit() {
-	}
-
-	Update(timeElapsed, input) {
-		if(input._keys.backward) {
-			return
-		}
-		else if (input._keys.forward) {
-			if (input._keys.shift) {
-				this._parent.SetState('walk')
-			} else {
-				this._parent.SetState('run')
-			}
-		}
-		else {
-			this._parent.SetState('idle')
-		}
-	}
-}
-
-
-class WalkState extends State {
-	constructor(parent) {
-		super(parent)
-	}
-
-	get Name() {
-		return 'walk'
-	}
-
-	Enter(prevState) {
-		const curAction = this._parent._proxy._animations['walk'].action
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-
-			curAction.enabled = true
-
-			if (prevState.Name == 'run') {
-				const ratio = curAction.getClip().duration / prevAction.getClip().duration
-				curAction.time = prevAction.time * ratio
-			} else {
-				curAction.time = 0.0
-				curAction.setEffectiveTimeScale(1.0)
-				curAction.setEffectiveWeight(1.0)
-			}
-
-			curAction.crossFadeFrom(prevAction, 0.5, true)
-			curAction.play()
-		} else {
-			curAction.play()
-		}
-	}
-
-	Exit() {
-	}
-
-	Update(timeElapsed, input) {
-		if (input._keys.forward || input._keys.backward) {
-			if (!input._keys.shift) {
-				this._parent.SetState('run')
-			}
-			return
-		}
-
-		this._parent.SetState('idle')
-	}
-}
-
-
-class IdleState extends State {
-	constructor(parent) {
-		super(parent)
-	}
-
-	get Name() {
-		return 'idle'
-	}
-
-	Enter(prevState) {
-		const idleAction = this._parent._proxy._animations['idle'].action
-		log.info('idleenter', prevState, idleAction)
-
-
-		const mixer = idleAction.getMixer()
-		mixer.addEventListener('finished', (stuff) => {
-			log.info('finished?', stuff)
-		})
-
-		idleAction.getClip().duration = 5 // via diagnose below
-
-		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
-			idleAction.time = 0.0
-			idleAction.enabled = true
-
-
-			// // Diagnose and find bad track 
-			// const clip = idleAction.getClip()
-			// let count = 0
-			// clip.tracks.map(track => {
-			// 	log.info('track', count)
-			// 	count++
-			// 	const maxValueObject = track.times.filter(time => {
-			// 		return time > 8 // Too long for this anim
-			// 	})
-			// 	log.info('max', maxValueObject)
-			// })
-			// log.info('duration', idleAction.getClip().duration)
-			// idleAction.getClip().resetDuration()
-			// log.info('after', idleAction.getClip().duration)
-
-			idleAction.setEffectiveTimeScale(1.0)
-			idleAction.setEffectiveWeight(1.0)
-			idleAction.crossFadeFrom(prevAction, 0.5, true)
-			idleAction.play()
-		} else {
-			idleAction.play()
-		}
-	}
-
-	Exit() {
-	}
-
-	Update(_, input) {
-		// log.info('idleup', _)
-		if (input._keys.forward) {
-			this._parent.SetState('run')
-		} else if (input._keys.backward) {
-			this._parent.SetState('backward')
-		} else if (input._keys.space) {
-			this._parent.SetState('dance')
-		} else {
-			return
-		}
-	}
-}

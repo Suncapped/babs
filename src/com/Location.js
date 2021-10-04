@@ -1,11 +1,10 @@
-export class Location {
+export class Transform {
 	
 	idzone
 	x
 	z
 
 	// init() {
-	
 	// }
 
 

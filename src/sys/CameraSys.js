@@ -31,7 +31,9 @@ export class CameraSys {
 
 		// const t = 0.05
 		// const t = 4.0 * dt
-		const t = 1.0 - Math.pow(0.001, dt)
+		const slowFollow = 1.0
+		const fastFollow = 2.0
+		const t = fastFollow - Math.pow(0.001, dt)
 
 		this._currentPosition.lerp(idealOffset, t)
 		this._currentLookat.lerp(idealLookat, t)
