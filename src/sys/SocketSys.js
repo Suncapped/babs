@@ -43,12 +43,10 @@ export class SocketSys {
 			}
 		}
 		this.ws.onmessage = (event) => {
-			log('Socket rec:', event.data)
+			log.info('Socket rec:', event.data)
 
 
 			if(event.data instanceof ArrayBuffer) { // Locations
-
-				log(event.data)
 
 				// todo make this per-zone
 				// We'll have to have server send zone ids 'headers' per zone for a group of ints
@@ -58,7 +56,7 @@ export class SocketSys {
 
 				// Shift the values out from binary data
 				for(let move of playerMoves) {
-					log('move', move)
+					log.info('socket playerMOves move', move)
 					// Binary is 4 bytes / 8 words / 32 bits; in bits: zip 12, state 4, a 8, b 8
 					const idzip = 		(move <<0) 	>>>(0 	+(0+8+8+4))
 					const movestate = 	(move <<12) >>>(12 	+(0+8+8))
@@ -66,7 +64,7 @@ export class SocketSys {
 					const b = 			(move <<24) >>>(24 	+(0))
 
 					const player = this.babs.scene.children.find(o=>o.feplayer?.idzip==idzip) 
-					console.log('moveplayer', player?.name, [idzip, movestate, a, b])
+					log('socket moveplayer', player?.name, [idzip, movestate, a, b])
 					if(player) {
 						// player.movestate = movestate
 						player.position.setX(a * 4)
@@ -221,7 +219,7 @@ export class SocketSys {
 
 				break;
 				case 'playersarrive':
-					console.log('playersarrive', data)
+					log('playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 
@@ -273,17 +271,19 @@ export class SocketSys {
 				case 'playerdepart':
 					const departer = this.babs.ents.get(data)
 					log('playerdepart', data, departer)
-					this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
-					
-					
-					for(let [cat, coms] of this.babs.comcats) {
-						for(let com of coms) {
-							com.update()
+					if(departer) { // Could be self departing from a previous session, or person already otherwise departed?
+						this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
+						
+						
+						for(let [cat, coms] of this.babs.comcats) {
+							for(let com of coms) {
+								com.update()
+							}
 						}
+						
+						this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
+						this.babs.ents.delete(departer.id)
 					}
-					
-					this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
-					this.babs.ents.delete(departer.id)
 				break
 			}
 		})

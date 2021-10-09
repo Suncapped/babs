@@ -31,6 +31,8 @@ import {
 	CameraHelper,
 } from 'three'
 import { log } from './../Utils'
+import { WireframeGeometry } from 'three'
+import { LineSegments } from 'three'
 
 export class WorldSys {
 
@@ -148,6 +150,12 @@ export class WorldSys {
         geometry.computeVertexNormals()
 
         scene.add( ground )
+
+		let wireframe = new WireframeGeometry( geometry );
+		let line = new LineSegments( wireframe );
+		line.material.color.setHex(0x000000);
+		scene.add(line);
+
     }
 
     static terrainData = null

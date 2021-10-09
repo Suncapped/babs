@@ -162,8 +162,11 @@ class BABS {
 		}
 
 		this.cameraSys?.update(dt)
-		
+
+		// this.inputSys?.postUpdate(dt)
+
 		this.renderSys.update(dt)
+
 
 		this.prevTime = time
 		UiSys.UpdateEnd(dt)
