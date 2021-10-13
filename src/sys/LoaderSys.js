@@ -8,6 +8,11 @@ import { MeshPhongMaterial } from "three"
 import { AnimationMixer } from "three"
 import { SkinnedMesh } from "three"
 import { log } from './../Utils'
+import { Matrix4 } from "three"
+import { Group } from "three"
+import { Bone } from "three"
+import { Vector4 } from "three"
+import { Matrix3 } from "three"
 
 
 export class LoaderSys {
@@ -104,20 +109,107 @@ export class LoaderSys {
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 		})
 		
-		const fbx = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-idle.fbx`) 
+		// const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-idle.fbx`) 
+		const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
 
-		const skinnedMesh = fbx.children.find(c => c instanceof SkinnedMesh)
+		log(group)
+
+		const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
-		fbx.scale.multiplyScalar(0.1)
-		fbx.traverse(c => c.castShadow = true)
+		// // fbx.scale.multiplyScalar(0.1)
+		// // Permanently scale matrix (rather than Object3d.scale, which interferes with cross products etc)
+		// // const scalevector = new Vector3(1, 1, 1).multiplyScalar(0.1)
+		// const newMatrixScaled = new Matrix4()
+		// newMatrixScaled.copy(fbx.matrix.clone())
+		// log('fbx.matrix, newMatrixScaled pre', fbx.matrix.clone(), newMatrixScaled.clone())
+		// newMatrixScaled.makeScale(0.1, 0.1, 0.1)
+		// log('then', newMatrixScaled)
+		// newMatrixScaled.multiply(fbx.matrix)
+		// log('annnnnd after thing', newMatrixScaled)
+		// fbx.matrix.copy(newMatrixScaled.clone())
+		// // fbx.updateMatrix( true )
+		// // fbx.updateMatrixWorld( true )
+		// // fbx.matrixWorldNeedsUpdate = true
+		// log('scaled', fbx.matrix.clone())
+		// Okay let's try this https://stackoverflow.com/questions/27022160/three-js-can-i-apply-position-rotation-and-scale-to-the-geometry/27023024#27023024
 
+		log.info('fbx group', group)
+		log.info('skinnedMesh', skinnedMesh)
+
+		const boneRoot = group.children.find(c => c instanceof Group).children.find(c => c instanceof Bone)
+
+
+		// skinnedMesh.scale.set(1,1,1)
+
+		// group.scale.set(0.1, 0.1, 0.1)
+		// group.updateMatrix()
+
+		// skinnedMesh.updateMatrix()
+		// skinnedMesh.geometry.applyMatrix(group.matrix)
+		// // skinnedMesh.updateMatrix()
+
+		// group.applyMatrix(group.matrix)
+		// group.scale.set(1,1,1)
+		// group.updateMatrix()
+
+		// boneRoot.applyMatrix(group.matrix)
+		
+		// skinnedMesh.scale.multiplyScalar(0.1)
+		// skinnedMesh.updateMatrix()
+		// skinnedMesh.geometry.applyMatrix(skinnedMesh.matrix)
+		// skinnedMesh.scale.set(1,1,1)
+		// skinnedMesh.updateMatrix()
+
+		// myGroup.applyMatrix( new THREE.Matrix4().makeTranslation(x, y, z) );
+
+		// const scaleContainer = new Group()
+		// scaleContainer.add(group)
+		// scaleContainer.scale.set(0.1, 0.1, 0.1)
+
+
+
+		
+		
+		
+		/////////////
+
+		  
+		  
+
+
+		  // bakeSkeleton(skinnedMesh)
+		  
+		//   group.scale.set(0.1, 0.1, 0.1)
+		//   group.updateMatrix()
+		//   skinnedMesh.geometry.applyMatrix(group.matrix.clone())
+		//   group.scale.set(1,1,1)
+		//   group.updateMatrix()
+		//   skinnedMesh.skeleton.bones.forEach(bone => bone.scale.set(0.1,0.1,0.1))
+		  
+		// skinnedMesh.scale.set(1,1,1)
+
+		  ////////////
+		
+		// Well, couldn't figure that one out :p  Better to scale it before import.
+		group.scale.set(0.1,0.1,0.1)
+
+		group.traverse(c => c.castShadow = true)
 		// this.cachedChar.set(gender, fbx)
 
-		return fbx
+		return group
 	}
 	static async LoadAnim(gender, anim) {
 		const fbx = await LoaderSys.LoadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
+
+		log.info('anim', fbx)
+		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)
+		// fbx.scale.set(0.1, 0.1, 0.1)
+		// fbx.updateMatrix()
+		// skinnedMesh.geometry.applyMatrix(fbx.matrix)
+		// fbx.scale.set(1,1,1)
+		// fbx.updateMatrix()
+
 		return fbx
 	}
 

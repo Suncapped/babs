@@ -67,6 +67,7 @@ export class InputSys {
 		mright: OFF,
 		escape: OFF,
 		enter: OFF,
+		f: OFF,
 	}
 	
 	// static touchpad = {
@@ -80,6 +81,8 @@ export class InputSys {
 
 	movelock = false
 	runmode = true
+
+	arrowHoldStartTime = false
 
 
     constructor(babs, player) {
@@ -125,30 +128,53 @@ export class InputSys {
 					}
 				}
 
-				if(this.keys.up || this.keys.down) {
+				if(this.keys.up === PRESS || this.keys.down === PRESS) {
 					this.movelock = false
+				}
+
+				if(this.keys.left === PRESS || this.keys.right === PRESS) {
+					this.arrowHoldStartTime = 0 // Zero will trigger it immediately
 				}
 			}
 
 
-			// 		case 'KeyF':
-			// 			// let obj = await Gob.Create('/mesh/fireplace.fbx', scene)
-			// 			// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-			// 			// obj.mesh.position.copy(this.player.transform.position)
-			// 			// obj.mesh.position.y -= this.ftHeightHead
+			if(this.keys.f === PRESS) {
 
-			// 			// // Place in front; move forward parallel to the xz-plane, assume camera.up is y-up
-			// 			// const distance = 8
-			// 			// let _vector = new Vector3()
-			// 			// _vector.setFromMatrixColumn( player.matrix, 0 )  // camera.matrix
-			// 			// _vector.crossVectors( player.up, _vector ) // camera.up
-			// 			// obj.mesh.position.addScaledVector( _vector, distance )
-			// 		break
+
+
+				let obj = await Gob.Create(`/char/female/F_Bald_mesh_004.fbx`, this.babs.scene, 1)
+
+				// obj.mesh.scale.multiplyScalar(10)
+				// obj.mesh.scale.multiplyScalar(1/12) 
+
+				log('obj', obj)
+
+
+				// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
+				// obj.mesh.position.copy(this.player.controller.target.position)
+				// obj.mesh.position.y -= this.ftHeightHead
+
+				// Place in front; move forward parallel to the xz-plane, assume camera.up is y-up
+				// const distance = 8
+				// let _vector = new Vector3()
+				// _vector.setFromMatrixColumn( this.player.controller.target.matrix, 0 )  // camera.matrix
+				// _vector.crossVectors( this.player.controller.target.up, _vector ) // camera.up
+				// obj.mesh.position.addScaledVector( _vector, distance )
+
+
+				obj.mesh.position.copy(new Vector3(6,0,1))
+			}
 			
         })
 
         document.addEventListener( 'keyup', ev => {
 			this.keys[inputCodeMap[ev.code]] = LIFT
+
+
+			if(this.keys.left || this.keys.right) {
+				this.arrowHoldStartTime = false
+			}
+
         })
 
 		// document.addEventListener( 'click', mouseOnClick )
@@ -161,7 +187,6 @@ export class InputSys {
 			
 			// const mouseX = ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0 // This is already a delta
 			// const mouseY = ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
-
 
 			// Note I get MULTIPLE mousemove calls of this func in between a single update frame!
 			// Thus, setting this.mouse.dz =, doesn't work as it loses ones in between frames.
@@ -180,14 +205,13 @@ export class InputSys {
 			log('mouseOnDown', ev.button, ev.target.id)
 
 			if(!sget(topmenuVisible) && (ev.target.id === 'canvas' )){// || (!ev.target.id))) { //  && this.mouse.right
-
 				this.characterControlMode = true
-
 
 				if(ev.button === MOUSE_LEFT_CODE) {
 					this.mouse.left = PRESS
 
-					if(this.mouse.right && this.movelock) {
+					// Turn off movelock if hitting left (while right) after a delay
+					if(this.mouse.right && this.movelock && Date.now() -this.mouse.ldouble > this.doubleClickMs) {
 						this.movelock = false
 					}
 
@@ -199,10 +223,10 @@ export class InputSys {
 						if(this.mouse.right) {
 							this.movelock = true
 						}	
-						this.mouse.ldouble = false
 					}
 
 				}
+
 				if(ev.button === MOUSE_RIGHT_CODE) {
 					this.mouse.right = PRESS
 
@@ -261,8 +285,6 @@ export class InputSys {
 	displayDestinationMesh
     async update(dt, scene) {
 		
-		log(this.mouse.accumx)
-
 		const controlObject = this.player.controller.target
 
 		if(this.characterControlMode) { // Canvas targeted
@@ -278,23 +300,42 @@ export class InputSys {
 				let vector = new Vector3()
 				vector.setFromMatrixColumn( controlObject.matrix, 0 )  // camera.matrix
 
+				// Handle scaled objects
+				const reversedScale = 1/controlObject.scale.x
+				vector.multiplyScalar(reversedScale) 
+
 				if(this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock) {
 					vector.crossVectors( controlObject.up, vector ) // camera.up
 				}
 
-				// controlObject.position.addScaledVector( _vector, distance )
+				// log('vector', vector)
+
 				// Get direction
-				vector.normalize() // Direction 
-				if(this.keys.w || this.keys.up || this.mouse.left || this.movelock) vector.negate() // Why negate with .up?
+				vector.round()
+				log('vector round', vector)
+				// vector.normalize() // Direction 
+				// log('normalize', vector)
+				if(this.keys.w || this.keys.up || this.mouse.left || this.movelock) vector.negate() // Why is negate needed with controlObject.up?
 
 				// Okay, that was direction.  Now get distance
+				// Feels like I should place the character into the middle of the square.
+				// So that the character's position that's being compared to 'next square' is in the middle.
+				// So; find nearest grid, rounded
 				const gCurrentPos = controlObject.position.clone()
-				.addScalar(4/2) // Add a half tile so that forward and backward are equally far apart, because this is from model (model center maybe?)
-				.multiplyScalar(1/4).floor() // distance
+				log('gcp', gCurrentPos)
+				// gCurrentPos.addScalar(0) // Add a half tile so that forward and backward are equally far apart, because this is from model (model center maybe?)
+				// log('gcp addScalar', gCurrentPos)
+				gCurrentPos.multiplyScalar(1/4) // to grid
+				log('gcp multiplyScalar', gCurrentPos)
+				gCurrentPos.subScalar(0.001).round() // Find nearest grid from center of current one; round down from half
+				log('gcp round', gCurrentPos)
+				// gCurrentPos.floor() // find 1/4 tile you're in
+				// log('gcp floor', gCurrentPos)
 
 				gCurrentPos.setY(0)
-				const dest = gCurrentPos.clone().add(vector).round()
+				const dest = gCurrentPos.clone().add(vector)
 				dest.clamp(this.player.controller.vTerrainMin, this.player.controller.vTerrainMax)
+				log('dest', dest)
 
 				// Send to controller
 				this.player.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
@@ -314,77 +355,27 @@ export class InputSys {
 			}
 
 
-			// Now do rotation (keyboard)
-			// if (this.keys.a === PRESS || this.keys.d === PRESS) {
-
-			// 	const _Q = new Quaternion()
-			// 	const _A = new Vector3()
-			// 	const _R = controlObject.quaternion.clone()
-
-			// 	// _A.set(0, 1, 0)
-			// 	// _Q.setFromAxisAngle(_A, 4.0 * Math.PI * dt * this.player.controller.acceleration.y)
-			// 	// _R.multiply(_Q)
-			// 	// this.player.controller.setRotation(_R)
-
-			// 	// Hmm instead let's try snapping to 90 degrees; otherwise angle walk sends non-integer position
-			// 	_A.set(0, 1, 0)
-			// 	_Q.setFromAxisAngle(_A, MathUtils.degToRad(this.keys.a ? 90 : -90))
-			// 	_R.multiply(_Q)
-			// 	this.player.controller.setRotation(_R)
-
-			// 	// Hmm actually I kinda want this to be a mouse thing.  I do want to R.multiply, but with a small enough mouse factor.  
-			// 	// And for keyboard, that's strafe instead, motion not rotation.  
-			// 	// So move this into mouse and dt?
-			// }
+			// Handle arrow keys turns
+			if(this.keys.left || this.keys.right) {
+				if(this.arrowHoldStartTime === false || Date.now() -this.arrowHoldStartTime > 500) {
+					this.arrowHoldStartTime = Date.now()
+					
+					// Rotate player
+					const _Q = new Quaternion()
+					const _A = new Vector3()
+					const _R = this.player.controller.idealTargetQuaternion.clone()
+		
+					// Naive version
+					_A.set(0, this.keys.right ? -1 : 1, 0)
+					// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
+					_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
+					_R.multiply(_Q)
+					this.player.controller.setRotation(_R)
 
 
-			// Instead, rotation (mouse)
-			// I will need to detect not whether the mouse is moving, but how much it moved (since last frame).  
-			// Then move that much in proportion, and *dt.
-			if (this.mouse.dx) {
-
-				// log('dx', this.mouse.dx)
-
-				// const _Q = new Quaternion()
-				// const _A = new Vector3()
-				// const _R = controlObject.quaternion.clone()
-
-				// // Naive version
-				// _A.set(0, this.mouse.dx > 0 ? -1 : 1, 0)
-				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-				// _R.multiply(_Q)
-				// this.player.controller.setRotation(_R)
-
+				}
 			}
 
-			if(this.mouse.dz) { // Vertical mouse look
-
-				// log('dz', this.mouse.dz)
-
-				// const _Q = new Quaternion()
-				// const _A = new Vector3()
-				// const _R = this.babs.camera.quaternion.clone()
-
-				// // Naive version
-				// _A.set(this.mouse.dz > 0 ? -1 : 1, 0, 0)
-				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-				// _R.multiply(_Q)
-				// this.babs.camera.quaternion.setRotation(_R)
-
-				// From PointerLockControls
-				// const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-				// const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
-				// _euler.setFromQuaternion( camera.quaternion );
-				// _euler.y -= movementX * 0.002;
-				// _euler.x -= movementY * 0.002;
-				// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) );
-				// camera.quaternion.setFromEuler( _euler );
-
-				// This kinda works but maybe let's not even have this?
-				// this.babs.cameraSys.offsetHeight += this.mouse.dz
-	
-
-			}
 
 			// Accumulate mouse deltas (for rotation lock) and reset deltas; and prevent vast movements
 			// this.mouse.accumx += MathUtils.clamp(this.mouse.dx, -this.mouseAccumThreshold/2, this.mouseAccumThreshold/2)
@@ -440,8 +431,41 @@ export class InputSys {
 		// This means when the player stops rotating, it will 're-center' them so that rotating again takes a normal movement distance
 		// const reductionPerSecond = this.mouseAccumThreshold
 		// this.mouse.accumx -= reductionPerSecond *dt *Math.sign(this.mouse.accumx) 
-		// Per above, changing this to just be indicate by head rotation.
+		// Per above, changing this to just be indicated by head rotation.
 
+
+			// Vertical mouse look
+		if(this.mouse.right) {
+
+			// log('dz', this.mouse.dz)
+
+			// const _Q = new Quaternion()
+			// const _A = new Vector3()
+			// const _R = this.babs.cameraSys.camera.quaternion.clone()
+			// // Naive version
+			// _A.set(1, 0, 1) //this.mouse.dz > 0 ? -1 : 1
+			// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
+			// _R.multiply(_Q)
+			// this.babs.camera.quaternion.setRotation(_R)
+
+			const minPolarAngle = 0; // radians
+			const maxPolarAngle = Math.PI; // radians
+
+			// From PointerLockControls
+			// const _euler = new Euler( 0, 0, 0, 'YXZ' );
+			// _euler.setFromQuaternion( this.babs.camera.quaternion );
+			// _euler.y -= mouse.dx * 0.002;
+			// _euler.x -= mouse.dz * 0.002;
+			// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) );
+			// this.babs.camera.quaternion.setFromEuler( _euler );
+
+			// This kinda works but maybe let's not even have this?
+			// this.babs.cameraSys.offsetHeight += this.mouse.dz * 0.10
+
+
+		}
+
+		
 
 		this.mouse.dx = this.mouse.dz = 0
 

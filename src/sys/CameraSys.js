@@ -9,7 +9,7 @@ export class CameraSys {
 	static DefaultOffsetHeight = 12
 
 	constructor(camera, targetController) {
-		this._camera = camera
+		this.camera = camera
 		this._target = targetController
 
 		this.offsetHeight = CameraSys.DefaultOffsetHeight
@@ -19,7 +19,8 @@ export class CameraSys {
 	}
 
 	_CalculateIdealOffset() {
-		const idealOffset = new Vector3(-4, this.offsetHeight, -36) // camera.set
+		const idealOffset = new Vector3(-4, this.offsetHeight, -36) 
+		// const idealOffset = new Vector3(-4, this.offsetHeight /3, -3) // put lower and nearer for testing
 
 		idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
 		idealOffset.applyQuaternion(this._target.Rotation)
@@ -32,6 +33,11 @@ export class CameraSys {
 
 		idealLookat.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
 		idealLookat.applyQuaternion(this._target.Rotation)
+
+		// let pos = this._target.Position.clone()
+		// pos.setY(pos.y + 40)
+		// hmm, can't get it right now
+
 		idealLookat.add(this._target.Position)
 		return idealLookat
 	}
@@ -42,14 +48,14 @@ export class CameraSys {
 
 		// const t = 0.05
 		// const t = 4.0 * dt
-		const followSpeed = 2 // 0.98 - 2? // 0.93 // 2 // 1
-		const t = followSpeed - Math.pow(0.001, dt)
+		// const followSpeed = 1.5 // 0.98 - 2? // 0.93 // 2 // 1
+		// const t = followSpeed - Math.pow(0.001, dt)
 
-		this._currentPosition.lerp(idealOffset, t)
-		this._currentLookat.lerp(idealLookat, t)
-		this._camera.position.copy(this._currentPosition)
-		this._camera.lookAt(this._currentLookat)
-		// this._camera.position.copy(idealOffset)
-		// this._camera.lookAt(idealLookat)
+		// this._currentPosition.lerp(idealOffset, t)
+		// this._currentLookat.lerp(idealLookat, t)
+		// this.camera.position.copy(this._currentPosition)
+		// this.camera.lookAt(this._currentLookat)
+		this.camera.position.copy(idealOffset)
+		this.camera.lookAt(idealLookat)
 	}
 }

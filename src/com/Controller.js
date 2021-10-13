@@ -94,7 +94,7 @@ export class Controller extends Com {
 		this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
 		log('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
-		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(2/4))
+		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
 	}
 
 	get Position() {
@@ -131,14 +131,11 @@ export class Controller extends Com {
 		if(gVector3.equals(this.gDestination)) {
 			return
 		}
-
-		log.info('setDestination changed', this.gDestination, movestate)
-
-		this.run = movestate === 'run'
-
-		this._stateMachine.SetState(movestate)
 		
 		this.gDestination = gVector3.clone()
+		log('setDestination changed', this.gDestination, movestate)
+		this.run = movestate === 'run'
+		this._stateMachine.SetState(movestate)
 
 		SocketSys.Send({ // todo, only for local player
 			move: {
@@ -204,11 +201,19 @@ export class Controller extends Com {
 
 		// Move toward destination
 		if(this.gDestination) {
-			const tDestination = this.gDestination.clone().multiplyScalar(4)
-			const tDestDiff = tDestination.clone().sub(controlObject.position.clone().round()).round()
-			// log('tDestDiff', tDestDiff, tDestination)
-			if (Math.abs(tDestDiff.z) < 0.5) {
+			const tDestination = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
+			// log('tDestination', tDestination)
+			const tDestDiff = tDestination.clone().sub(controlObject.position) // Distance from CENTER
+
+			// if(tDestDiff.x !== 0 || tDestDiff.z !== 0) {
+				// TODOO
+				// log('controlObject.position, this.gDestination', controlObject.position, this.gDestination)
+				// log('tDestination, tDestDiff', tDestination, tDestDiff)
+			// }
+
+			if (Math.abs(tDestDiff.z) < 1) {
 				velocity.z = 0
+				controlObject.position.setZ(tDestination.z)
 			}
 			else if (tDestDiff.z > 0) {
 				velocity.z += acc.z * dt
@@ -217,8 +222,9 @@ export class Controller extends Com {
 				velocity.z -= acc.z * dt
 			}
 
-			if (Math.abs(tDestDiff.x) < 0.5) {
+			if (Math.abs(tDestDiff.x) < 1) {
 				velocity.x = 0
+				controlObject.position.setX(tDestination.x)
 			}
 			else if (tDestDiff.x > 0) {
 				velocity.x += acc.x * dt
@@ -231,6 +237,7 @@ export class Controller extends Com {
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
 					this._stateMachine.SetState('idle')
+					log('IDLE')
 				}
 			}
 		}

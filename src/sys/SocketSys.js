@@ -56,7 +56,7 @@ export class SocketSys {
 
 				// Shift the values out from binary data
 				for(let move of playerMoves) {
-					log.info('socket playerMOves move', move)
+					log.info('socket playerMoves move', move)
 					// Binary is 4 bytes / 8 words / 32 bits; in bits: zip 12, state 4, a 8, b 8
 					const idzip = 		(move <<0) 	>>>(0 	+(0+8+8+4))
 					const movestate = 	(move <<12) >>>(12 	+(0+8+8))
