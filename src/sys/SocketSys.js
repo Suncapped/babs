@@ -23,7 +23,6 @@ export class SocketSys {
 
 	static Start(babs) {
 
-		// log('BABS!!!', babs)
 		this.babs = babs
 
 		toprightText.set('Connecting...')

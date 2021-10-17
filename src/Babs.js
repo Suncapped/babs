@@ -44,9 +44,11 @@ class BABS {
 
 	static Start() {
 
+		log('mode is', import.meta.env.MODE)
+
 		Cache.enabled = true // Caches eg FBX anims
 
-		if (this.isProd) {
+		if (this.isProd ||  import.meta.env.MODE == 'playerdev') {
 			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			this.urlFiles = `https://earth.suncapped.com/files` /* Expressa */
 			this.baseDomain = 'suncapped.com'
