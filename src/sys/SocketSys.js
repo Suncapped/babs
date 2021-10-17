@@ -273,17 +273,17 @@ export class SocketSys {
 					const departer = this.babs.ents.get(data)
 					log('playerdepart', data, departer)
 					if(departer) { // Could be self departing from a previous session, or person already otherwise departed?
-						this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
+						// this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
 						
 						
-						for(let [cat, coms] of this.babs.comcats) {
-							for(let com of coms) {
-								com.update()
-							}
-						}
+						// for(let [cat, coms] of this.babs.comcats) {
+						// 	for(let com of coms) {
+						// 		com.update()
+						// 	}
+						// }
 						
-						this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
-						this.babs.ents.delete(departer.id)
+						// this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
+						// this.babs.ents.delete(departer.id)
 					}
 				break
 			}

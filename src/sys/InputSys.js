@@ -338,7 +338,7 @@ export class InputSys {
 		if(!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse
 			// Tested on Mac touchpads; not sure how it will do on PC
-			if(this.mouse.zoom > 50) {
+			if(this.mouse.zoom > 40) {
 				this.mouse.zoom = -this.mouse.zoom/4
 				if(!this.runmode) {
 					this.runmode = true
@@ -347,7 +347,7 @@ export class InputSys {
 					this.player.controller.jump(4)
 				}
 			}
-			else if(this.mouse.zoom < -50) {
+			else if(this.mouse.zoom < -40) {
 				this.mouse.zoom = -this.mouse.zoom/4
 				this.runmode = false
 			}

@@ -3,7 +3,7 @@
 import { Vector3 } from "three"
 
 
-let showInfoLogs = false || import.meta.env.PROD // Always show in prod
+let showInfoLogs = false// || import.meta.env.PROD // Always show in prod // Actually no lol, overload!
 // showInfoLogs = true
 export const log = (function() {
     function log(...params) { 
