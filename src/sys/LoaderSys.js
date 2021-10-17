@@ -43,9 +43,10 @@ export class LoaderSys {
 	}
 
 
-	static LoadTexture(path) {
+	static async LoadTexture(path) {
 
-		const texture = new TextureLoader().load(`${this.urlFiles}${path}`)
+		log('gon load', `${this.urlFiles}${path}`)
+		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
 		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if loading gltf
 		texture.encoding = sRGBEncoding // This too, though the default seems right
 		// texture.anisotropy = 16;

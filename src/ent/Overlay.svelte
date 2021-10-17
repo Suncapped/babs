@@ -3,6 +3,7 @@
 	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible } from "../stores.js";
 	import Cookies from 'js-cookie'
 	import { SocketSys } from '../sys/SocketSys.js';
+	import { log } from '../Utils.js';
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
@@ -80,8 +81,8 @@
 	</div>
 	<div class="topitem" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};">
 		<ul>
-			<li>Mouse click-hold to move, right-click to look.</li>
-			<li>F key to build campfire!</li>
+			<li>Hold right-mouse plus: left, double-left, space, wasd, middle.</li>
+			<li>Touchpad: Two finger touch, click, swipe, pinch.</li>
 			
 			<li>&nbsp;</li>
 			{#if $menuSelfData.nick}

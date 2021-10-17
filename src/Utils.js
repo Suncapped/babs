@@ -26,9 +26,9 @@ export const log = (function() {
 })() // IIFE
 
 
-// export function clamp(n:number, min:number, max:number){
-//     return Math.max(Math.min(n, max), min)
-// }
+export function clamp(n, min, max){
+    return Math.max(Math.min(n, max), min)
+}
 
 // export function rand(min:number, max:number):number { // Returns a random number between min (inclusive) and max (exclusive)
 //     return Math.random() * (max - min) + min
@@ -170,4 +170,3 @@ export function* createTimeReporter() {
 // 		super()
 // 	}
 // }
-

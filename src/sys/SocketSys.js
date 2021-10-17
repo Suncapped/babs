@@ -64,7 +64,7 @@ export class SocketSys {
 					const b = 			(move <<24) >>>(24 	+(0))
 
 					const player = this.babs.scene.children.find(o=>o.feplayer?.idzip==idzip) 
-					log('socket moveplayer', player?.name, [idzip, movestate, a, b])
+					log.info('socket moveplayer', player?.name, [idzip, movestate, a, b])
 					if(player) {
 						// player.movestate = movestate
 						player.position.setX(a * 4)
@@ -199,6 +199,7 @@ export class SocketSys {
 
 
 					// Create player entity
+					log.info('pself', pself)
 					const playerSelf = new Player(pself.id, this.babs)
 					const bSelf = true
 					playerSelf.controller = new Controller(pself, bSelf, playerSelf, this.babs) // Loads rig, creates Three stuff
@@ -206,7 +207,7 @@ export class SocketSys {
 					this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, playerSelf.controller)
 					this.babs.inputSys = new InputSys(this.babs, playerSelf)
 
-					log('new player?', playerSelf)
+					log('new player self', playerSelf)
 
 
 					// EventSys.Dispatch('load-self', pself)

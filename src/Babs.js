@@ -76,24 +76,13 @@ class BABS {
 			return
 		}
 
-
 		LoaderSys.Start(this.urlFiles)
 
 		UiSys.Start()
 		
-
-		// this.camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 )
-		// this.camera.rotateY(Utils.radians(-135))
-        // this.camera.position.set(0, InputSys.ftHeightHead, 0)
-
 		this.renderSys = new RenderSys()
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
-
-		// this.contrSys = new Controller(this.renderSys._scene) // Moved to sys (socket for now)
-
-
-
 
 		this.cube = this.makeCube()
 		this.scene.add( this.cube )
@@ -115,14 +104,12 @@ class BABS {
 		UiSys.CreateStats('fps')
 		UiSys.CreateStats('mem')
 
-
 		// this.scene.children.forEach((node) => {
 		// 	const axes = new AxesHelper(10)
 		// 	axes.renderOrder = 1
 		// 	axes.position.add(new Vector3(-0.2,0.2,-0.2))
 		// 	node.add(axes)
 		// }) // todo make this happen upon all scene.add
-
 		
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
@@ -162,8 +149,6 @@ class BABS {
 		}
 
 		this.cameraSys?.update(dt)
-
-		// this.inputSys?.postUpdate(dt)
 
 		this.renderSys.update(dt)
 

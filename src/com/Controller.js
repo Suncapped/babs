@@ -9,6 +9,7 @@ import { SocketSys } from '../sys/SocketSys'
 import { InputSys } from '../sys/InputSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
+import { Matrix4 } from 'three'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -41,7 +42,7 @@ export class Controller extends Com {
 
 	constructor(arrival, bSelf, entPlayer, babs) {
 		super(babs, entPlayer.id, Controller)
-		log.info('Controller arrival', bSelf, entPlayer.id)
+		log.info('Controller arrival', bSelf, entPlayer.id, arrival.toString())
 		this.arrival = arrival
 		this.scene = babs.scene
 		this.bSelf = bSelf
@@ -60,13 +61,10 @@ export class Controller extends Com {
 			new BasicCharacterControllerProxy(this._animations)
 		)
 
-		// EventSys.Subscribe(this)
-		// Loading...
-
-
 	}
 
 	async init() {
+		log.info('controller init, arrival', this.arrival)
 		const fbx = await LoaderSys.LoadRig(this.arrival.char.gender)
 		this.scene.add(fbx)
 		
@@ -117,23 +115,17 @@ export class Controller extends Com {
 
 	getHeadRotationX() {
 		return this.headRotationX
-
-		// if (!this.modelHead) return new THREE.Quaternion() 
-		
-		// const q = new THREE.Quaternion()
-		// this.modelHead.getWorldQuaternion(q)
-
-		// return q
 	}
 
 	// Women runners do about 10 ft/s over 4 mi, so 1ft/100ms, 4ft/400ms
 	setDestination(gVector3, movestate) {
+		// This takes a grid destination, which we'll be moved toward in update()
 		if(gVector3.equals(this.gDestination)) {
 			return
 		}
 		
 		this.gDestination = gVector3.clone()
-		log('setDestination changed', this.gDestination, movestate)
+		log.info('setDestination changed', this.gDestination, movestate)
 		this.run = movestate === 'run'
 		this._stateMachine.SetState(movestate)
 
@@ -147,14 +139,37 @@ export class Controller extends Com {
 	}
 
 	setRotation(_R) {
-		// this.target.quaternion.copy(_R)
 		this.idealTargetQuaternion = _R
+
+		// Need to immediately update this because Input will call setRotation and then immediately check this.target.matrix for choosing direction vector!
+		this.target.quaternion.copy(this.idealTargetQuaternion)
+
+		// What if when I turn, I have it snap me to grid center?
+		// That would avoid being off-center when turning during movement
+		const gCurrentPosition = this.target.position.clone().multiplyScalar(1/4).floor()
+		const eCurrentPosition = gCurrentPosition.clone().multiplyScalar(4).addScalar(2)
+		eCurrentPosition.setY(this.target.position.y)
+		this.target.position.copy(eCurrentPosition)
+		
+		// Now, let's translate velocity instead of zeroing it out, so they continue moving the same speed, but in the new direction.
+		let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.idealTargetQuaternion)
+		let vector = new Vector3().setFromMatrixColumn( tempMatrix, 0 )  // get X column of matrix
+		vector.negate()
+		vector.crossVectors( this.target.up, vector )
+		vector.round()
+
+		const topVelocity = Math.max(Math.abs(this.velocity.x), Math.abs(this.velocity.z))
+
+		vector.multiplyScalar(topVelocity)
+		vector.setY(this.velocity.y)
+		this.velocity.copy(vector)
+
 	}
 
 	jump(height) {
-		log('j', this.groundDistance, this.velocity.y)
+		log.info('j', this.groundDistance, this.velocity.y)
 		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
-			this.velocity.y += height*(1000/200) // $4ft, 200ms (5 times per second)
+			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
 			this.groundDistance = this.groundDistance || 1 // Get off the ground at least
 		}
 		// if(this._stateMachine._currentState != 'jump') {
@@ -167,8 +182,26 @@ export class Controller extends Com {
 			return
 		}
 
+		if(!this.velocity.equals(new Vector3(0,0,0))) {
+			log.info('Controller: update(), velocity:', this.velocity)
+		}
+
 		this._stateMachine.Update(dt, this._input)
 
+		const controlObject = this.target
+
+
+		// First handle rotations
+		// Note that rotation does not dictate movement direction.  Only this.gDestination does.
+		// this._currentPosition.lerp(idealOffset, t)
+		// this._currentLookat.lerp(idealLookat, t)
+		// this._camera.position.copy(this._currentPosition)
+		// this._camera.lookAt(this._currentLookat)
+		// controlObject.quaternion.slerp(this.idealTargetQuaternion, dt)
+		// log(controlObject.rotation.x, controlObject.rotation.y, controlObject.rotation.z)
+		controlObject.quaternion.copy(this.idealTargetQuaternion)
+
+		// Now movement physics
 		const velocity = this.velocity
 		const frameDecceleration = new THREE.Vector3(
 			velocity.x * this._decceleration.x,
@@ -180,73 +213,60 @@ export class Controller extends Com {
 		frameDecceleration.x = Math.sign(frameDecceleration.x) * Math.min(Math.abs(frameDecceleration.x), Math.abs(velocity.x))
 		// frameDecceleration.y = Math.sign(frameDecceleration.y) * Math.min(Math.abs(frameDecceleration.y), Math.abs(velocity.y))
 
-		// log('v', velocity.y, this.target.position.y, frameDecceleration.y)
-		
-
 		velocity.add(frameDecceleration)
-
-		const controlObject = this.target
-		// const _Q = new THREE.Quaternion()
-		// const _A = new THREE.Vector3()
-		// const _R = controlObject.quaternion.clone()
 
 		const acc = this.acceleration.clone()
 		if (this.run) {
 			acc.multiplyScalar(2.0)
 		}
 
-		// if (this._stateMachine._currentState.Name == 'dance') {
-		// 	acc.multiplyScalar(0.0)
-		// }
-
 		// Move toward destination
 		if(this.gDestination) {
-			const tDestination = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
+			const eDest = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
 			// log('tDestination', tDestination)
-			const tDestDiff = tDestination.clone().sub(controlObject.position) // Distance from CENTER
+			const eDiff = eDest.clone().sub(controlObject.position) // Distance from CENTER
 
-			// if(tDestDiff.x !== 0 || tDestDiff.z !== 0) {
-				// TODOO
-				// log('controlObject.position, this.gDestination', controlObject.position, this.gDestination)
-				// log('tDestination, tDestDiff', tDestination, tDestDiff)
-			// }
-
-			if (Math.abs(tDestDiff.z) < 1) {
+			if (Math.abs(eDiff.z) < 1) {
 				velocity.z = 0
-				controlObject.position.setZ(tDestination.z)
+				controlObject.position.setZ(eDest.z)
 			}
-			else if (tDestDiff.z > 0) {
+			else if (eDiff.z > 0) {
+				log.info('Controller: update(), addZ based on', eDiff)
 				velocity.z += acc.z * dt
 			}
-			else if (tDestDiff.z < 0) {
+			else if (eDiff.z < 0) {
 				velocity.z -= acc.z * dt
 			}
 
-			if (Math.abs(tDestDiff.x) < 1) {
+			if (Math.abs(eDiff.x) < 1) {
 				velocity.x = 0
-				controlObject.position.setX(tDestination.x)
+				controlObject.position.setX(eDest.x)
 			}
-			else if (tDestDiff.x > 0) {
+			else if (eDiff.x > 0) {
+				log.info('Controller: update(), addX based on', eDiff)
 				velocity.x += acc.x * dt
 			}
-			else if (tDestDiff.x < 0) {
+			else if (eDiff.x < 0) {
 				velocity.x -= acc.x * dt
 			}
 
-			// log('vel', velocity.x, velocity.z)
+			if(!velocity.equals(new Vector3())) {
+				log.info('vel', velocity)
+			}
+
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
 					this._stateMachine.SetState('idle')
-					log('IDLE')
 				}
 			}
+
 		}
 
 		if(this.groundDistance == 0) {
 			velocity.y = 0
 		} 
 		else {
-			const gravityFtS = 32
+			const gravityFtS = 32 *10 // Why does it feel off without *10?
 			velocity.y -= gravityFtS*dt
 		}
 
@@ -260,17 +280,14 @@ export class Controller extends Com {
 		// 	_Q.setFromAxisAngle(_A, 4.0 * -Math.PI * dt * this._acceleration.y)
 		// 	_R.multiply(_Q)
 		// }
-
 		// controlObject.quaternion.copy(_R)
-
-		// const oldPosition = new THREE.Vector3()
-		// oldPosition.copy(controlObject.position)
 
 		// I need to fix forward so that it's player-forward instead of world-forward, maybe?
 		const forward = new THREE.Vector3(1, 1, 1)
 		// forward.applyQuaternion(this.idealTargetQuaternion) // This was making rotation absolute; impossible to walk -z or -x
 		// forward.normalize()
 
+		// Sideeways needs doing for strafe
 		// const sideways = new THREE.Vector3(1, 0, 0)
 		// sideways.applyQuaternion(this.idealTargetQuaternion)
 		// sideways.normalize()
@@ -279,12 +296,8 @@ export class Controller extends Com {
 		// forward.multiplyScalar(velocity.z * dt)
 		forward.multiply(velocity.clone().multiplyScalar(dt))
 
-		// log('forward', forward)
-
 		controlObject.position.add(forward)
 		// controlObject.position.add(sideways)
-
-		
 
 		controlObject.position.clamp(
 			this.vTerrainMin,
@@ -293,10 +306,6 @@ export class Controller extends Com {
 
 		if (this._mixer) {
 			this._mixer.update(dt)
-		}
-
-		if(this.gDestination) { // It's been init
-
 		}
 
 		// Keep above ground
@@ -315,29 +324,16 @@ export class Controller extends Com {
 			this.groundDistance = controlObject.position.y - groundHeightY // Used for jump
 		}
 		
-
-		// Lerp rotation from input
-		// this._currentPosition.lerp(idealOffset, t)
-		// this._currentLookat.lerp(idealLookat, t)
-		// this._camera.position.copy(this._currentPosition)
-		// this._camera.lookAt(this._currentLookat)
-		// controlObject.quaternion.slerp(this.idealTargetQuaternion, dt)
-		controlObject.quaternion.copy(this.idealTargetQuaternion)
+		if(this.headRotationX) {
+			this.modelHead = this.modelHead || this.target.getObjectByName( 'Neck_M' )
+			this.modelHead.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
+			this.modelNeck = this.modelNeck || this.target.getObjectByName( 'Head_M' )
+			this.modelNeck.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
+		}
 
 		window.document.getElementById('log').innerText = `${Math.round(this.target.position.x)}, ${Math.round(this.target.position.y)}, ${Math.round(this.target.position.z)}`
-
-
-		this.modelHead = this.modelHead || this.target.getObjectByName( 'Neck_M' )
-		this.modelHead.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
-		this.modelNeck = this.modelNeck || this.target.getObjectByName( 'Head_M' )
-		this.modelNeck.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
 		
 	}
-
-	// postUpdate() {
-	// 	this.modelHead = this.modelHead || this.target.getObjectByName( 'Neck_M' )
-	// 	this.modelHead.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX)
-	// }
 
 }
 
