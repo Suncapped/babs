@@ -4,11 +4,11 @@
 
 Gamedev chat at https://discord.gg/f2nbKVzgwm
 
-## Currently useless!
+## What is this?
 
 This is the web client for First Earth, very much a work in progress!
 
-If you would like to play the game while customing this client code locally, you can!  See the install steps below.
+If you would like to play the game while customizing this client code locally, you can!  See the install steps below.
 
 This is open source mainly for the fun of anyone interested in gamedev or customizations.  In a browser game, the client code is delivered to the browser anyway, so it might as well be open sourced so that anyone can see the code, not just very technical people.  It also provides some visibility into the gamedev process, and proves you can make a game client without being a very good programmer ;)
 
