@@ -19,7 +19,7 @@ This codebase might not be useful as a library for making a different game, beca
 Requires Nodejs version 16.  An easy way to get there is using `nvm` https://github.com/nvm-sh/nvm.  Brief instructions:
 
 ```console
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 exit # Close console.  Then open a new console and:
 nvm install 16
 ```

@@ -111,7 +111,7 @@ export class LoaderSys {
 		// const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-idle.fbx`) 
 		const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
 
-		log(group)
+		log.info('LoadRig group', group)
 
 		const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material

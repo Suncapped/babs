@@ -6,7 +6,6 @@ import { Raycaster } from 'three'
 import { Vector3 } from 'three'
 import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
-import { InputSys } from '../sys/InputSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
@@ -38,14 +37,12 @@ export class Controller extends Com {
 
 	raycaster
 	gDestination
-	
 
-	constructor(arrival, bSelf, entPlayer, babs) {
-		super(babs, entPlayer.id, Controller)
-		log.info('Controller arrival', bSelf, entPlayer.id, arrival.toString())
+	constructor(arrival, fbx, babs) {
+		super(arrival.id, Controller, babs)
+		log.info('new Controller()', arrival)
 		this.arrival = arrival
 		this.scene = babs.scene
-		this.bSelf = bSelf
 
 		this.vTerrainMin = new THREE.Vector3(0,0,0)
 		this.vTerrainMax = new THREE.Vector3(1000,10_000,1000)
@@ -61,21 +58,14 @@ export class Controller extends Com {
 			new BasicCharacterControllerProxy(this._animations)
 		)
 
-	}
-
-	async init() {
-		log.info('controller init, arrival', this.arrival)
-		const fbx = await LoaderSys.LoadRig(this.arrival.char.gender)
-		this.scene.add(fbx)
-		
+		// Init
 		this.target = fbx
+		log('controller fbx', fbx)
 		this.idealTargetQuaternion = fbx.quaternion.clone()
-		
 		this._mixer = new THREE.AnimationMixer(this.target)
-
+		
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
-
-		await Promise.all(animList.map(async animName => {
+		Promise.all(animList.map(async animName => {
 			const anim = await LoaderSys.LoadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = this._mixer.clipAction(clip)
@@ -84,15 +74,31 @@ export class Controller extends Com {
 				clip: clip,
 				action: action,
 			}
-		}));
+		})).then(() => {
+			this._stateMachine.SetState('idle')
+		})
 
-		this._stateMachine.SetState('idle')
+		// const animList = ['run', 'backward', 'walk', 'idle', 'dance']
+		// animList.map(animName => {
+		// 	LoaderSys.LoadAnim(this.arrival.char.gender, animName).then(animResult => {
+		// 		const clip = animResult.animations[0]
+		// 		// log('animResult', animResult)
+		// 		this._animations[animName] = {
+		// 			clip: clip,
+		// 			action: this._mixer.clipAction(clip),
+		// 		}
+		// 	})
+		// })
 
 
-		this.raycaster = await new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
+		
+
+		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
+
 		log('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+		this.target.visible = true
 	}
 
 	get Position() {
@@ -101,7 +107,6 @@ export class Controller extends Com {
 
 	get Rotation() {
 		if (!this.target) return new THREE.Quaternion() 
-		
 		return this.target.quaternion
 	}
 
@@ -129,13 +134,16 @@ export class Controller extends Com {
 		this.run = movestate === 'run'
 		this._stateMachine.SetState(movestate)
 
-		SocketSys.Send({ // todo, only for local player
-			move: {
-				x: this.gDestination.x,
-				z: this.gDestination.z,
-				movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
-			}
-		})
+		// const player = this.babs.ents.get(this.idEnt)
+		if(this.idEnt === this.babs.idSelf) {
+			SocketSys.Send({ // todo, only for local player
+				move: {
+					x: this.gDestination.x,
+					z: this.gDestination.z,
+					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
+				}
+			})
+		}
 	}
 
 	setRotation(_R) {

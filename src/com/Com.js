@@ -1,15 +1,16 @@
+import { log } from "../Utils"
 
 export class Com {
 	babs
 	idEnt
-	constructor(babs, idEnt, comClass) {
-		this.babs = babs
+	constructor(idEnt, comClass, babs) {
 		this.idEnt = idEnt
+		this.babs = babs
 		const babsComCategory = this.babs.comcats.get(comClass.name)
 		// Create if needed!
 		if(babsComCategory) {
 			babsComCategory.push(this)
-		} 
+		}
 		else {
 			this.babs.comcats.set(comClass.name, [this])
 		}

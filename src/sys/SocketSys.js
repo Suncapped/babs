@@ -51,23 +51,21 @@ export class SocketSys {
 				// We'll have to have server send zone ids 'headers' per zone for a group of ints
 
 				let playerMoves = new Uint32Array(event.data)
-				const max = 4
 
 				// Shift the values out from binary data
 				for(let move of playerMoves) {
-					log.info('socket playerMoves move', move)
 					// Binary is 4 bytes / 8 words / 32 bits; in bits: zip 12, state 4, a 8, b 8
 					const idzip = 		(move <<0) 	>>>(0 	+(0+8+8+4))
 					const movestate = 	(move <<12) >>>(12 	+(0+8+8))
 					const a = 			(move <<16) >>>(16 	+(0+8))
 					const b = 			(move <<24) >>>(24 	+(0))
 
-					const player = this.babs.scene.children.find(o=>o.feplayer?.idzip==idzip) 
-					log.info('socket moveplayer', player?.name, [idzip, movestate, a, b])
-					if(player) {
-						// player.movestate = movestate
-						player.position.setX(a * 4)
-						player.position.setZ(b * 4)
+					const idPlayer = this.babs.zips.get(idzip)
+					const player = this.babs.ents.get(idPlayer)
+					log.info('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
+					if(player && player.id !== this.babs.idSelf) { // Skip self movements
+						const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
+						player.controller.setDestination(new Vector3(a, 0, b), movestateName)
 					}
 				}
 
@@ -173,47 +171,45 @@ export class SocketSys {
 						this.Send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
-					const pself = data.self
+					const arrivalSelf = data.self
 					const zones = data.zones
-					const zone = zones.find(z => z.id == pself.idzone)
-					log.info('Welcome to', pself.idzone, pself.id, pself.visitor)
+					const zone = zones.find(z => z.id == arrivalSelf.idzone)
+					log.info('Welcome to', arrivalSelf.idzone, arrivalSelf.id, arrivalSelf.visitor)
 					toprightText.set(UiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					
-					if(pself.visitor !== true) {
+					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
 						document.getElementById('topleft').textContent = 'Waking up...'
 
 						menuShowLink.set(true)
 
-						menuSelfData.set(pself)
+						menuSelfData.set(arrivalSelf)
 					}
 
 					this.babsReady = true
 					await WorldSys.LoadStatics(this.babs.urlFiles, this.babs.scene, zone)
 
-					if(pself.visitor !== true) {
+					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 
-
 					// Create player entity
-					log.info('pself', pself)
-					const playerSelf = new Player(pself.id, this.babs)
+					log('loadSelf', arrivalSelf)
 					const bSelf = true
-					playerSelf.controller = new Controller(pself, bSelf, playerSelf, this.babs) // Loads rig, creates Three stuff
-					playerSelf.controller.init()
-					this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, playerSelf.controller)
-					this.babs.inputSys = new InputSys(this.babs, playerSelf)
+					const playerSelf = new Player(arrivalSelf, bSelf, this.babs)
+
+					// const fbx = await LoaderSys.LoadRig(arrivalSelf.char.gender)
+					// playerSelf.controller = new Controller(arrivalSelf, bSelf, this.babs) // Loads rig, creates Three stuff
+					// playerSelf.controller.init(fbx)
+
 
 					log('new player self', playerSelf)
 
-
-					// EventSys.Dispatch('load-self', pself)
-
+					// EventSys.Dispatch('load-self', arrivalSelf)
 
 					this.Send({
-						ready: pself.id,
+						ready: arrivalSelf.id,
 					})
 
 
@@ -224,65 +220,36 @@ export class SocketSys {
 					// EventSys.Dispatch('players-arrive', data)
 
 					for(let arrival of data) {
-						if(this.babs.ents.get(arrival.id)) return // Skip self aka players we already have!
-						
-						const player = new Player(arrival.id, this.babs)
-						player.controller = new Controller(arrival, false, player.id, this.babs)
-						player.controller.init()
-						log('other player?', player)
-						// TODO
-						
-						const fbx = await LoaderSys.LoadRig(arrival.char.gender)
-						this.babs.scene.add(fbx)
-						fbx.name = 'player-'+arrival.id
-						fbx.feplayer = {
-							id: arrival.id,
-							idzip: arrival.idzip,
-							idzone: arrival.idzone,
-							gender: arrival.gender,
+						const existingPlayer = this.babs.ents.get(arrival.id)
+						if(existingPlayer) {
+							// If we already have that player, such as self, be sure to update it.
+							// This is primarily for getting movestate and .idzip, which server delays to set during tick.
+							existingPlayer.movestate = arrival.movestate
+
+							// This is also where self gets added to zips?
+							existingPlayer.idzip = arrival.idzip
+							this.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
+
 						}
-		
-						// this.contrSys = new Controller(this.renderSys._scene)
-		
-						// this._target = fbx
-						const mixer = new AnimationMixer(fbx)
-						const anim = await LoaderSys.LoadAnim(arrival.char.gender, 'idle')
-						const clip = anim.animations[0]
-						const idleAction = mixer.clipAction(clip)
-		
-						// this._stateMachine.SetState('idle')
-						// const idleAction = this._parent._proxy._animations['idle'].action
-						// log.info('idleenter', prevState, idleAction)
-						// const mixer = idleAction.getMixer()
-						// idleAction.getClip().duration = 5 // via diagnose below
-						idleAction.play()
-		
-						setTimeout(() => {
-							mixer.update()
-						}, 1000/60)
-		
-		
-						fbx.position.set(arrival.x *4, 3, arrival.z *4)
-		
+						else {
+							const bSelf = false
+							const player = new Player(arrival, bSelf, this.babs)
+						}
+
 					}
 
 
 				break
 				case 'playerdepart':
-					const departer = this.babs.ents.get(data)
-					log('playerdepart', data, departer)
-					if(departer) { // Could be self departing from a previous session, or person already otherwise departed?
-						// this.babs.scene.remove(departer) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
-						
-						
-						// for(let [cat, coms] of this.babs.comcats) {
-						// 	for(let com of coms) {
-						// 		com.update()
-						// 	}
-						// }
-						
-						// this.babs.comcats.forEach(cat => cat.filter(com => com.id !== departer.id))
-						// this.babs.ents.delete(departer.id)
+					const departPlayer = this.babs.ents.get(data)
+					log('departPlayer', data, departPlayer, this.babs.scene)
+
+					if(departPlayer && departPlayer.id !== this.babs.idSelf) {
+						// Could be self departing from a previous session, or person already otherwise departed?
+						if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
+							departPlayer.remove()
+						}
+
 					}
 				break
 			}
