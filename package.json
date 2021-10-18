@@ -6,7 +6,7 @@
     "node": "v16"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "playerdev": "vite --mode playerdev",
     "serve": "vite preview",
     "build": "vite build",

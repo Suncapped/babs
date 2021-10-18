@@ -58,7 +58,8 @@ class BABS {
 			this.baseDomain = 'suncapped.com'
 		}
 		else {
-			const localDomain = 'localhost'
+			const { hostname } = new URL(window.location.href) // eg 'localhost' or '192.168.0.120'
+			const localDomain = hostname
 			this.urlSocket = `ws://${localDomain}:2567` /* Proxima */
 			this.urlFiles = `http://${localDomain}:3000/files` /* Expressa */
 			this.baseDomain = `${localDomain}`
@@ -76,6 +77,9 @@ class BABS {
 				return false;
 			}
 		})()
+
+		UiSys.Start(this)
+
 		log.info('Cookies?', cookiesEnabled)
 		if(!cookiesEnabled) {
 			UiSys.OfferReconnect('Session cookies needed!')
@@ -84,7 +88,6 @@ class BABS {
 
 		LoaderSys.Start(this.urlFiles)
 
-		UiSys.Start()
 		
 		this.renderSys = new RenderSys()
 		this.scene = this.renderSys._scene

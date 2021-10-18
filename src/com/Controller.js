@@ -339,7 +339,6 @@ export class Controller extends Com {
 			this.modelNeck.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
 		}
 
-		window.document.getElementById('log').innerText = `${Math.round(this.target.position.x)}, ${Math.round(this.target.position.y)}, ${Math.round(this.target.position.z)}`
 		
 	}
 

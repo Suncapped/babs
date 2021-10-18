@@ -5,6 +5,7 @@ import { log } from './../Utils'
 
 export class UiSys {
 	static browser
+	static babs
 
 	static toprightTextDefault = 'Works best in Chrome-like browsers'
 
@@ -12,7 +13,9 @@ export class UiSys {
 		toprightReconnect.set(reason)
 	}
 
-    static Start() {
+    static Start(babs) {
+		UiSys.babs = babs
+
 		UiSys.browser = (function (agent) {
 			switch (true) {
 				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)";
@@ -56,6 +59,14 @@ export class UiSys {
 	static UpdateBegin() {
 		this['fps']?.begin()
 		this['mem']?.begin()
+
+		if(UiSys.babs?.idSelf) { // Player is loaded
+			const playerPos = UiSys.babs.ents.get(UiSys.babs.idSelf)?.controller?.target?.position
+			if(playerPos) {
+				window.document.getElementById('log').innerText = `${Math.round(playerPos.x)}, ${Math.round(playerPos.y)}, ${Math.round(playerPos.z)}`
+			}
+		}
+
 	}
 	static UpdateEnd() {
 
