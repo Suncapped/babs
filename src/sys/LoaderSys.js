@@ -7,25 +7,27 @@ import { TextureLoader } from "three"
 import { MeshPhongMaterial } from "three"
 import { AnimationMixer } from "three"
 import { SkinnedMesh } from "three"
-import { log } from './../Utils'
+import { log, sleep } from './../Utils'
 import { Matrix4 } from "three"
 import { Group } from "three"
 import { Bone } from "three"
 import { Vector4 } from "three"
 import { Matrix3 } from "three"
 
-
 export class LoaderSys {
 
 	static urlFiles
 
 	static Start(urlFiles) {
+		log('loader start', urlFiles)
 		this.urlFiles = urlFiles
 	}
 
-	static LoadFbx(path) {
+	static async LoadFbx(path) {
 		const loader = new FBXLoader()
+		// log('loader PRE urlfiels', this.urlFiles)
 		return new Promise( (resolve, reject) => {
+			log('loader urlfiels', this.urlFiles)
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
@@ -47,14 +49,15 @@ export class LoaderSys {
 		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
 		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if loading gltf
 		texture.encoding = sRGBEncoding // This too, though the default seems right
-		// texture.anisotropy = 16;
+		// Ah, because of this https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/5
+		// texture.anisotropy = 16
 		return texture 
 
 	}
 
 
 	static async LoadGltf(path) {
-		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' );
+		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
 
 		return new Promise( (resolve, reject) => {
 			log.info('loading', path)
@@ -65,12 +68,12 @@ export class LoaderSys {
 
 					// gltf.scene.traverse( function ( child ) {
 					// 	if ( child.isMesh ) {
-					// 		roughnessMipmapper.generateMipmaps( child.material );
+					// 		roughnessMipmapper.generateMipmaps( child.material )
 					// 	}
-					// } );
-					// scene.add( gltf.scene );
-					// // roughnessMipmapper.dispose();
-					// render();
+					// } )
+					// scene.add( gltf.scene )
+					// // roughnessMipmapper.dispose()
+					// render()
 
 					// let mesh = gltf.scene.children[0]
 
@@ -160,7 +163,7 @@ export class LoaderSys {
 		// skinnedMesh.scale.set(1,1,1)
 		// skinnedMesh.updateMatrix()
 
-		// myGroup.applyMatrix( new THREE.Matrix4().makeTranslation(x, y, z) );
+		// myGroup.applyMatrix( new THREE.Matrix4().makeTranslation(x, y, z) )
 
 		// const scaleContainer = new Group()
 		// scaleContainer.add(group)

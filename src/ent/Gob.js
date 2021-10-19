@@ -4,7 +4,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
 import { Appearance } from "../com/Appearance"
 
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { LoaderSys } from "../sys/LoaderSys"
 import { log } from './../Utils'
 

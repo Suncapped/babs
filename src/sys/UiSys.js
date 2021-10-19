@@ -1,6 +1,6 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
 import Overlay from '../ent/Overlay.svelte'
-import { toprightText, toprightReconnect, menuShowLink } from "../stores.js";
+import { toprightText, toprightReconnect, menuShowLink } from "../stores.js"
 import { log } from './../Utils'
 
 export class UiSys {
@@ -18,16 +18,16 @@ export class UiSys {
 
 		UiSys.browser = (function (agent) {
 			switch (true) {
-				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)";
-				case agent.indexOf("edg") > -1: return "MS Edge Chromium";
-				case agent.indexOf("opr") > -1 && !!window.opr: return "opera";
-				case agent.indexOf("chrome") > -1 && !!window.chrome: return "chrome";
-				case agent.indexOf("trident") > -1: return "Internet Explorer";
-				case agent.indexOf("firefox") > -1: return "firefox";
-				case agent.indexOf("safari") > -1: return "safari";
-				default: return "other";
+				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)"
+				case agent.indexOf("edg") > -1: return "MS Edge Chromium"
+				case agent.indexOf("opr") > -1 && !!window.opr: return "opera"
+				case agent.indexOf("chrome") > -1 && !!window.chrome: return "chrome"
+				case agent.indexOf("trident") > -1: return "Internet Explorer"
+				case agent.indexOf("firefox") > -1: return "firefox"
+				case agent.indexOf("safari") > -1: return "safari"
+				default: return "other"
 			}
-		})(window.navigator.userAgent.toLowerCase());
+		})(window.navigator.userAgent.toLowerCase())
 		log.info('Browser is', UiSys.browser)
 
 		new Overlay({

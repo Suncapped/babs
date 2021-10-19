@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { EventSys } from '../sys/EventSys'
 import { LoaderSys } from '../sys/LoaderSys'
 import { log } from '../Utils'
-import { Raycaster } from 'three'
+import { Euler, MathUtils, Raycaster } from 'three'
 import { Vector3 } from 'three'
 import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
@@ -33,6 +33,17 @@ export class Controller extends Com {
 		Dodge: 4,
 		Rotate: 5,
 		Emote: 6,
+	}
+	static JUMP_HEIGHT = 3
+	static ROTATION_ANGLE_MAP = {
+		0: 45,
+		1: 90,
+		2: 135,
+		3: -180,
+		4: -135,
+		5: -90,
+		6: -45,
+		7: 0,
 	}
 
 	raycaster
@@ -135,11 +146,11 @@ export class Controller extends Com {
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.idEnt === this.babs.idSelf) {
-			SocketSys.Send({ // todo, only for local player
+			SocketSys.Send({
 				move: {
-					x: this.gDestination.x,
-					z: this.gDestination.z,
-					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
+					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1],
+					a: this.gDestination.x,
+					b: this.gDestination.z,
 				}
 			})
 		}
@@ -166,32 +177,79 @@ export class Controller extends Com {
 		vector.round()
 
 		const topVelocity = Math.max(Math.abs(this.velocity.x), Math.abs(this.velocity.z))
-
 		vector.multiplyScalar(topVelocity)
 		vector.setY(this.velocity.y)
 		this.velocity.copy(vector)
 
+		if(this.idEnt === this.babs.idSelf) {
+			// Send turn amount to other players
+
+			// const euler = new Euler().setFromQuaternion(this.target.quaternion)
+			// const vector = euler.toVector3()
+			// function radiansToDegrees(radians){
+			// 	return radians * 180 / Math.PI
+			// }
+			// const angle = radiansToDegrees(Math.atan2(vector.z, vector.x))
+
+			// const radians = rotation.y > 0 ? rotation.y : (2 * Math.PI) + rotation.y
+			// const degrees = MathUtils.radToDeg(radians)
+
+			// var dir = new Vector3(-this.target.position.x, 0, -this.target.position.z).normalize()
+			
+			// let matrixtest = new Matrix4().makeRotationFromQuaternion(this.idealTargetQuaternion)
+			// let vectortest = new Vector3().setFromMatrixColumn( matrixtest, 1 )  // get X column of matrix
+			
+			var dir = new Vector3(1,0,1)
+			dir.applyQuaternion(this.idealTargetQuaternion)		
+			var theta = Math.atan2(dir.x, dir.z)
+			const angle = MathUtils.radToDeg(theta)
+			const round = Math.round(angle)
+			log('angle', dir, theta, round)
+			// ROTATION_ANGLE_MAP
+			// Not sure what I'm doing here...but mapping what I've got
+			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [180] // -180 can be 180...
+			const rotationWord = parseInt(found[0])
+			log('word', rotationWord)
+
+			SocketSys.Send({
+				move: {
+					movestate: Controller.MOVESTATE.Rotate,
+					a: rotationWord,
+					b: 0,
+				}
+			})
+		}
+
 	}
 
 	jump(height) {
-		log.info('j', this.groundDistance, this.velocity.y)
+		log.info('jump!', this.groundDistance, this.velocity.y)
 		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
 			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
 			this.groundDistance = this.groundDistance || 1 // Get off the ground at least
 		}
+		// todo add this anim and get this state working?  also dance?
 		// if(this._stateMachine._currentState != 'jump') {
 		// 	this._stateMachine.SetState('jump')
-		// } // todo add this anim and get this state working?  also dance?
+		// } 
+		if(this.idEnt === this.babs.idSelf) {
+			SocketSys.Send({
+				move: {
+					movestate: Controller.MOVESTATE.Jump,
+					a: 0,
+					b: 0,
+				}
+			})
+		}
 	}
 
 	update(dt) {
 		if (!this._stateMachine._currentState) {
 			return
 		}
-
-		if(!this.velocity.equals(new Vector3(0,0,0))) {
-			log.info('Controller: update(), velocity:', this.velocity)
-		}
+		// if(!this.velocity.equals(new Vector3(0,0,0))) {
+		// 	log.info('Controller: update(), velocity:', this.velocity)
+		// }
 
 		this._stateMachine.Update(dt, this._input)
 

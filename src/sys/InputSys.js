@@ -11,6 +11,7 @@ import { Mesh } from "three"
 import { DoubleSide } from "three"
 import { Matrix4 } from "three"
 import { Vector2 } from "three"
+import { Controller } from "../com/Controller"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -116,7 +117,7 @@ export class InputSys {
 				if(this.mouse.right) {
 					// Jump on spacebar if mouse right held
 					if(this.keys.space === PRESS) {
-						this.player.controller.jump(4)
+						this.player.controller.jump(Controller.JUMP_HEIGHT)
 					}
 				}
 
@@ -343,7 +344,7 @@ export class InputSys {
 					this.runmode = true
 				}
 				else { // If ready in runmode, jump!
-					this.player.controller.jump(4)
+					this.player.controller.jump(Controller.JUMP_HEIGHT)
 				}
 			}
 			else if(this.mouse.zoom < -40) {
@@ -435,12 +436,12 @@ export class InputSys {
 				// const maxPolarAngle = Math.PI; // radians
 
 				// From PointerLockControls
-				// const _euler = new Euler( 0, 0, 0, 'YXZ' );
-				// _euler.setFromQuaternion( this.babs.camera.quaternion );
-				// _euler.y -= mouse.dx * 0.002;
-				// _euler.x -= mouse.dy * 0.002;
-				// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) );
-				// this.babs.camera.quaternion.setFromEuler( _euler );
+				// const _euler = new Euler( 0, 0, 0, 'YXZ' )
+				// _euler.setFromQuaternion( this.babs.camera.quaternion )
+				// _euler.y -= mouse.dx * 0.002
+				// _euler.x -= mouse.dy * 0.002
+				// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) )
+				// this.babs.camera.quaternion.setFromEuler( _euler )
 
 				// This kinda works but maybe let's not even have this?
 				// Might need it for mountains, later.
@@ -456,7 +457,7 @@ export class InputSys {
 					const _Q = new Quaternion()
 					const _A = new Vector3()
 					const _R = this.player.controller.idealTargetQuaternion.clone()
-		
+					
 					// Naive version
 					_A.set(0, this.keys.right ? -1 : 1, 0)
 					// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
@@ -465,7 +466,7 @@ export class InputSys {
 					this.player.controller.setRotation(_R)
 				}
 			}
-
+			
 			// Runs every frame, selecting grid position for setDestination
 			if(
 				(this.mouse.right && (this.keys.w || this.keys.s || this.mouse.left)) //  || this.keys.a || this.keys.d

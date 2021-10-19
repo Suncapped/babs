@@ -14,11 +14,10 @@ import { WorldSys } from './sys/WorldSys'
 import { SocketSys } from './sys/SocketSys'
 import { UiSys } from './sys/UiSys'
 import { InputSys } from './sys/InputSys'
-import * as Utils from './Utils'
+import { sleep, log } from './Utils'
 import { LoaderSys } from './sys/LoaderSys'
 import { CameraSys } from './sys/CameraSys'
 import { RenderSys } from './sys/RenderSys'
-import { log } from './Utils'
 import { Player } from './ent/Player'
 import { Controller } from './com/Controller'
 
@@ -51,7 +50,7 @@ class BABS {
 		log('Mode is', import.meta.env.MODE)
 
 
-		var preservedConsoleLog = console.warn;
+		var preservedConsoleLog = console.warn
 		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
 			if(!arguments[0]?.startsWith('THREE.FBXLoader')) {
 				preservedConsoleLog.apply(console, arguments)
@@ -66,6 +65,7 @@ class BABS {
 			this.baseDomain = 'suncapped.com'
 		}
 		else {
+			log('href is', window.location.href)
 			const { hostname } = new URL(window.location.href) // eg 'localhost' or '192.168.0.120'
 			const localDomain = hostname
 			this.urlSocket = `ws://${localDomain}:2567` /* Proxima */
@@ -76,15 +76,19 @@ class BABS {
 		// Cookies are required
 		const cookiesEnabled = (() => {
 			try {
-				document.cookie = 'cookietest=1';
-				const ret = document.cookie.indexOf('cookietest=') !== -1;
-				document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT';
-				return ret;
+				document.cookie = 'cookietest=1'
+				const ret = document.cookie.indexOf('cookietest=') !== -1
+				document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT'
+				return ret
 			}
 			catch (e) {
-				return false;
+				return false
 			}
 		})()
+
+		log('loader PREstart')
+		LoaderSys.Start(this.urlFiles)
+		log('loader POSTstart')
 
 		UiSys.Start(this)
 
@@ -94,9 +98,7 @@ class BABS {
 			return
 		}
 
-		LoaderSys.Start(this.urlFiles)
 
-		
 		this.renderSys = new RenderSys()
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
@@ -105,7 +107,7 @@ class BABS {
 		this.scene.add( this.cube )
 		this.cube.name = 'cube'
 
-		WorldSys.Start(this.scene, this.camera, this.cube)
+		WorldSys.Start(this.renderSys.renderer, this.scene, this.camera, this.cube)
 		
 		SocketSys.Start(this)
 
@@ -131,7 +133,7 @@ class BABS {
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
 			if(SocketSys.babsReady) {
-				this.renderSys._threejs.setAnimationLoop( (p) => { // todo shorten?
+				this.renderSys.renderer.setAnimationLoop( (p) => { // todo shorten?
 					this.Update(p)
 				})
 			} 

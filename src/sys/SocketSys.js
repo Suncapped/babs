@@ -5,8 +5,8 @@ import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
 import { log } from './../Utils'
-import { AnimationMixer, Vector3 } from "three"
-import { Controller } from "./../com/Controller"
+import { AnimationMixer, MathUtils, Quaternion, Vector3 } from "three"
+import { Controller } from "../com/Controller"
 import { Player } from "../ent/Player"
 import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
@@ -19,6 +19,7 @@ export class SocketSys {
 	static babsReady = false
 
 	static pingSeconds = 30
+
 
 
 	static Start(babs) {
@@ -45,7 +46,7 @@ export class SocketSys {
 			log.info('Socket rec:', event.data)
 
 
-			if(event.data instanceof ArrayBuffer) { // Locations
+			if(event.data instanceof ArrayBuffer) { // Movement
 
 				// todo make this per-zone
 				// We'll have to have server send zone ids 'headers' per zone for a group of ints
@@ -65,7 +66,36 @@ export class SocketSys {
 					log.info('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
 					if(player && player.id !== this.babs.idSelf) { // Skip self movements
 						const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
-						player.controller.setDestination(new Vector3(a, 0, b), movestateName)
+
+						if(movestateName === 'run' || movestateName == 'walk') {
+							player.controller.setDestination(new Vector3(a, 0, b), movestateName)
+						}
+						else if(movestateName === 'jump') {
+							player.controller.jump(Controller.JUMP_HEIGHT)
+						}
+						else if(movestateName === 'rotate') {
+							log('got rotate', a)
+							// player.controller.setRotation(Controller.JUMP_HEIGHT)
+
+							// const _Q = new Quaternion()
+							// const _A = new Vector3()
+							// const _R = this.player.controller.idealTargetQuaternion.clone()
+							
+							// // Naive version
+							// _A.set(0, this.keys.right ? -1 : 1, 0)
+							// // _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
+							// _Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
+							// _R.multiply(_Q)
+							// this.player.controller.setRotation(_R)
+
+							const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
+							const quat = new Quaternion()
+							quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
+
+							player.controller.setRotation(quat)
+
+
+						}
 					}
 				}
 
@@ -138,7 +168,7 @@ export class SocketSys {
 						document.getElementById('topleft').style.visibility = 'visible'
 						toprightText.set('Password too short, must be 8.')
 					}
-				break;
+				break
 				case 'visitor':
 					this.session = data
 					Cookies.set('session', this.session, { 
@@ -148,7 +178,7 @@ export class SocketSys {
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
 					toprightText.set('Visiting...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
-				break;
+				break
 				case 'session':
 					this.session = data
 					Cookies.set('session', this.session, { 
@@ -159,13 +189,13 @@ export class SocketSys {
 					})
 					toprightText.set('Entering...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
-				break;
+				break
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
 					UiSys.OfferReconnect('Logged out your other session.  Try again! ->')
 					
-				break;
+				break
 				case 'load':
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						this.Send({ping:'ping'})
@@ -206,7 +236,7 @@ export class SocketSys {
 					})
 
 
-				break;
+				break
 				case 'playersarrive':
 					log('playersarrive', data)
 
