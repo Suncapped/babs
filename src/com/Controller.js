@@ -60,7 +60,6 @@ export class Controller extends Com {
 
 		// Init
 		this.target = fbx
-		log('controller fbx', fbx)
 		this.idealTargetQuaternion = fbx.quaternion.clone()
 		this._mixer = new THREE.AnimationMixer(this.target)
 		
@@ -95,7 +94,7 @@ export class Controller extends Com {
 
 		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
 
-		log('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
+		log.info('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
 		this.target.visible = true

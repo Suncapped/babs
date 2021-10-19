@@ -50,6 +50,14 @@ class BABS {
 
 		log('Mode is', import.meta.env.MODE)
 
+
+		var preservedConsoleLog = console.warn;
+		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
+			if(!arguments[0]?.startsWith('THREE.FBXLoader')) {
+				preservedConsoleLog.apply(console, arguments)
+			}
+		}
+
 		Cache.enabled = true // Caches eg FBX anims
 
 		if (this.isProd || import.meta.env.MODE == 'playerdev') {

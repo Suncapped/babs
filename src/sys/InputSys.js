@@ -1,5 +1,4 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
-import { BabsPointerLockControls } from "./BabsPointerLockControls"
 import { Gob } from "../ent/Gob"
 import { topmenuVisible } from "../stores"
 import * as Utils from "../Utils"

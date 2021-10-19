@@ -195,16 +195,9 @@ export class SocketSys {
 					}
 
 					// Create player entity
-					log('loadSelf', arrivalSelf)
+					log.info('loadSelf', arrivalSelf)
 					const bSelf = true
 					const playerSelf = new Player(arrivalSelf, bSelf, this.babs)
-
-					// const fbx = await LoaderSys.LoadRig(arrivalSelf.char.gender)
-					// playerSelf.controller = new Controller(arrivalSelf, bSelf, this.babs) // Loads rig, creates Three stuff
-					// playerSelf.controller.init(fbx)
-
-
-					log('new player self', playerSelf)
 
 					// EventSys.Dispatch('load-self', arrivalSelf)
 
