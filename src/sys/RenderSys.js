@@ -41,7 +41,7 @@ export class RenderSys {
 		const fov = 60
 		const aspect = window.innerWidth / window.innerHeight
 		const near = 1.0
-		this._camera = new PerspectiveCamera(fov, aspect, near, WorldSys.MAX_VIEW_DISTANCE)
+		this._camera = new PerspectiveCamera(fov, aspect, near, WorldSys.MAX_VIEW_DISTANCE*2)
 		this._camera.position.set(12, 8, 12)
 
 		this._scene = new Scene()

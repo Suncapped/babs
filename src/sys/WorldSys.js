@@ -65,8 +65,6 @@ export class WorldSys {
 		// exposure: renderer.toneMappingExposure
 	}
 
-	static dirLightLightness = 92/100
-	static dirLightColorHsl = `hsl(${45/256}%, ${1}%, ${this.dirLightLightness})`
 	
     static Start(renderer, scene, camera, player) {
 
@@ -143,8 +141,8 @@ export class WorldSys {
         const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.50 )
         const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
         scene.add( hemiLightHelper )
-        hemiLight.color.setHSL( 45/256, 1, 92/100 )
-        hemiLight.groundColor.setHSL( 245/256, 92/100, 1)
+        hemiLight.color.setHSL( 45/360, 1, 92/100 )
+        hemiLight.groundColor.setHSL( 245/360, 92/100, 1)
         // scene.add( hemiLight )
 
 		// https://hslpicker.com/#fff5d6
@@ -164,7 +162,8 @@ export class WorldSys {
         this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
         scene.add( this.dirLightHelper )
 
-        this.dirLight.color.set(this.dirLightColorHsl)
+		const hsl = { h: 45/360, s: 1, l: 92/100 }
+        this.dirLight.color.copy(new Color().setHSL(hsl.h, hsl.s, hsl.l))
         // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
         // this.dirLight.position.multiplyScalar( 3 )
 
@@ -192,9 +191,11 @@ export class WorldSys {
 		// renderer.shadowMap.type = PCFSoftShadowMap
         // renderer.shadowMap.autoUpdate/needsUpdate // Maybe use when sun isn't moving every frame
 
-		// log()
-
-        scene.fog = new Fog(new Color(this.dirLightColorHsl), 1, this.MAX_VIEW_DISTANCE)
+        scene.fog = new Fog(
+			new Color(), 
+			1, 
+			this.MAX_VIEW_DISTANCE
+		)
 		// May have to do like sun.material.fog = false ?  Not for sun since it's shader, but perhaps for other far things
 		// https://www.youtube.com/watch?v=k1zGz55EqfU Fog video, would be great for rain
 
@@ -204,7 +205,11 @@ export class WorldSys {
 
 		// Adjust fog lightness (white/black) to sun elevation
 		let fogHsl = this.scene.fog.color.getHSL({h:0, s:0, l:0})
-		this.scene.fog.color.setHSL(fogHsl.h, fogHsl.s, this.dirLightLightness * (this.effectController.elevation/100))
+		this.scene.fog.color.setHSL(
+			34/360, 
+			0.06, 
+			0.02 +(this.effectController.elevation /(90 +(90 /2)))
+		)
 
 		// Put directional light at sun position, just farther out
 		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))
