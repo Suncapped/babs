@@ -5,8 +5,8 @@ export class State {
 		this._parent = parent
 	}
 
-	Enter() { }
-	Exit() { }
+	enter() { }
+	exit() { }
 	update() { }
 }
 
@@ -15,22 +15,22 @@ export class DanceState extends State {
 	constructor(parent) {
 		super(parent)
 
-		this._FinishedCallback = () => {
-			this._Finished()
+		this._finishedCallback = () => {
+			this._finished()
 		}
 	}
 
-	get Name() {
+	get name() {
 		return 'dance'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const curAction = this._parent._proxy._animations['dance'].action
 		const mixer = curAction.getMixer()
-		mixer.addEventListener('finished', this._FinishedCallback)
+		mixer.addEventListener('finished', this._finishedCallback)
 
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.reset()
 			curAction.setLoop(THREE.LoopOnce, 1)
@@ -42,19 +42,19 @@ export class DanceState extends State {
 		}
 	}
 
-	_Finished() {
-		this._Cleanup()
-		this._parent.SetState('idle')
+	_finished() {
+		this._cleanup()
+		this._parent.setState('idle')
 	}
 
-	_Cleanup() {
+	_cleanup() {
 		const action = this._parent._proxy._animations['dance'].action
 
-		action.getMixer().removeEventListener('finished', this._CleanupCallback)
+		action.getMixer().removeEventListener('finished', this._cleanupCallback)
 	}
 
-	Exit() {
-		this._Cleanup()
+	exit() {
+		this._cleanup()
 	}
 
 	update(_) {
@@ -66,22 +66,22 @@ export class JumpState extends State {
 	constructor(parent) {
 		super(parent)
 
-		this._FinishedCallback = () => {
-			this._Finished()
+		this._finishedCallback = () => {
+			this._finished()
 		}
 	}
 
-	get Name() {
+	get name() {
 		return 'jump'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const curAction = this._parent._proxy._animations['jump'].action
 		const mixer = curAction.getMixer()
-		mixer.addEventListener('finished', this._FinishedCallback)
+		mixer.addEventListener('finished', this._finishedCallback)
 
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.reset()
 			curAction.setLoop(THREE.LoopOnce, 1)
@@ -93,19 +93,19 @@ export class JumpState extends State {
 		}
 	}
 
-	_Finished() {
-		this._Cleanup()
-		this._parent.SetState('idle')
+	_finished() {
+		this._cleanup()
+		this._parent.setState('idle')
 	}
 
-	_Cleanup() {
+	_cleanup() {
 		const action = this._parent._proxy._animations['jump'].action
 
-		action.getMixer().removeEventListener('finished', this._CleanupCallback)
+		action.getMixer().removeEventListener('finished', this._cleanupCallback)
 	}
 
-	Exit() {
-		this._Cleanup()
+	exit() {
+		this._cleanup()
 	}
 
 	update(_) {
@@ -119,18 +119,18 @@ export class RunState extends State {
 		super(parent)
 	}
 
-	get Name() {
+	get name() {
 		return 'run'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const curAction = this._parent._proxy._animations['run'].action
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.enabled = true
 
-			if (prevState.Name == 'walk') {
+			if (prevState.name == 'walk') {
 				const ratio = curAction.getClip().duration / prevAction.getClip().duration
 				curAction.time = prevAction.time * ratio
 			} else {
@@ -146,18 +146,18 @@ export class RunState extends State {
 		}
 	}
 
-	Exit() {
+	exit() {
 	}
 
 	update(timeElapsed, input) {
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (input._keys.shift) {
-		// 		this._parent.SetState('walk')
+		// 		this._parent.setState('walk')
 		// 	}
 		// 	return
 		// }
 
-		// this._parent.SetState('idle')
+		// this._parent.setState('idle')
 	}
 }
 
@@ -166,18 +166,18 @@ export class BackwardState extends State {
 		super(parent)
 	}
 
-	get Name() {
+	get name() {
 		return 'backward'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const curAction = this._parent._proxy._animations['backward'].action
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.enabled = true
 
-			if (prevState.Name == 'run') {
+			if (prevState.name == 'run') {
 				const ratio = curAction.getClip().duration / prevAction.getClip().duration
 				curAction.time = prevAction.time * ratio
 			} else {
@@ -193,7 +193,7 @@ export class BackwardState extends State {
 		}
 	}
 
-	Exit() {
+	exit() {
 	}
 
 	update(timeElapsed, input) {
@@ -202,13 +202,13 @@ export class BackwardState extends State {
 		// }
 		// else if (input._keys.forward) {
 		// 	if (input._keys.shift) {
-		// 		this._parent.SetState('walk')
+		// 		this._parent.setState('walk')
 		// 	} else {
-		// 		this._parent.SetState('run')
+		// 		this._parent.setState('run')
 		// 	}
 		// }
 		// else {
-			this._parent.SetState('idle')
+			this._parent.setState('idle')
 		// }
 	}
 }
@@ -219,18 +219,18 @@ export class WalkState extends State {
 		super(parent)
 	}
 
-	get Name() {
+	get name() {
 		return 'walk'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const curAction = this._parent._proxy._animations['walk'].action
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.enabled = true
 
-			if (prevState.Name == 'run') {
+			if (prevState.name == 'run') {
 				const ratio = curAction.getClip().duration / prevAction.getClip().duration
 				curAction.time = prevAction.time * ratio
 			} else {
@@ -246,18 +246,18 @@ export class WalkState extends State {
 		}
 	}
 
-	Exit() {
+	exit() {
 	}
 
 	update(timeElapsed, input) {
 		// No longer needed, because it's set by controller via Input or Socket
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (!input._keys.shift) {
-		// 		this._parent.SetState('run')
+		// 		this._parent.setState('run')
 		// 	}
 		// 	return
 		// }
-		// this._parent.SetState('idle')
+		// this._parent.setState('idle')
 	}
 }
 
@@ -267,11 +267,11 @@ export class IdleState extends State {
 		super(parent)
 	}
 
-	get Name() {
+	get name() {
 		return 'idle'
 	}
 
-	Enter(prevState) {
+	enter(prevState) {
 		const idleAction = this._parent._proxy._animations['idle'].action
 		log.info('idleenter', prevState, idleAction)
 
@@ -284,7 +284,7 @@ export class IdleState extends State {
 		idleAction.getClip().duration = 5 // via diagnose below
 
 		if (prevState) {
-			const prevAction = this._parent._proxy._animations[prevState.Name].action
+			const prevAction = this._parent._proxy._animations[prevState.name].action
 			idleAction.time = 0.0
 			idleAction.enabled = true
 
@@ -313,17 +313,17 @@ export class IdleState extends State {
 		}
 	}
 
-	Exit() {
+	exit() {
 	}
 
 	update(_, input) {
 		// log.info('idleup', _)
 		// if (input._keys.forward) {
-		// 	this._parent.SetState('run')
+		// 	this._parent.setState('run')
 		// } else if (input._keys.backward) {
-		// 	this._parent.SetState('backward')
+		// 	this._parent.setState('backward')
 		// } else if (input._keys.space) {
-		// 	this._parent.SetState('dance')
+		// 	this._parent.setState('dance')
 		// } else {
 		// 	return
 		// }

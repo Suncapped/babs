@@ -85,7 +85,7 @@ export class Controller extends Com {
 				action: action,
 			}
 		})).then(() => {
-			this._stateMachine.SetState('idle')
+			this._stateMachine.setState('idle')
 		})
 
 		// const animList = ['run', 'backward', 'walk', 'idle', 'dance']
@@ -151,11 +151,11 @@ export class Controller extends Com {
 		this.gDestination = gVector3.clone()
 		log.info('setDestination changed', this.gDestination, movestate)
 		this.run = movestate === 'run'
-		this._stateMachine.SetState(movestate)
+		this._stateMachine.setState(movestate)
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.idEnt === this.babs.idSelf) {
-			this.babs.socketSys.Send({
+			this.babs.socketSys.send({
 				move: {
 					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1],
 					a: this.gDestination.x,
@@ -220,7 +220,7 @@ export class Controller extends Com {
 			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [3]
 
 			const rotationWord = parseInt(found[0])
-			this.babs.socketSys.Send({
+			this.babs.socketSys.send({
 				move: {
 					movestate: Controller.MOVESTATE.Rotate,
 					a: rotationWord,
@@ -239,10 +239,10 @@ export class Controller extends Com {
 		}
 		// todo add this anim and get this state working?  also dance?
 		// if(this._stateMachine._currentState != 'jump') {
-		// 	this._stateMachine.SetState('jump')
+		// 	this._stateMachine.setState('jump')
 		// } 
 		if(this.idEnt === this.babs.idSelf) {
-			this.babs.socketSys.Send({
+			this.babs.socketSys.send({
 				move: {
 					movestate: Controller.MOVESTATE.Jump,
 					a: 0,
@@ -330,7 +330,7 @@ export class Controller extends Com {
 
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
-					this._stateMachine.SetState('idle')
+					this._stateMachine.setState('idle')
 				}
 			}
 
@@ -417,24 +417,24 @@ class FiniteStateMachine {
 		this._currentState = null
 	}
 
-	_AddState(name, type) {
+	addState(name, type) {
 		this._states[name] = type
 	}
 
-	SetState(name) {
+	setState(name) {
 		const prevState = this._currentState
 
 		if (prevState) {
-			if (prevState.Name == name) {
+			if (prevState.name == name) {
 				return
 			}
-			prevState.Exit()
+			prevState.exit()
 		}
 
 		const state = new this._states[name](this)
 
 		this._currentState = state
-		state.Enter(prevState)
+		state.enter(prevState)
 	}
 
 	update(timeElapsed, input) {
@@ -449,16 +449,14 @@ class CharacterFSM extends FiniteStateMachine {
 	constructor(proxy) {
 		super()
 		this._proxy = proxy
-		this._Init()
+
+		this.addState('idle', IdleState)
+		this.addState('run', RunState)
+		this.addState('backward', BackwardState)
+		this.addState('walk', WalkState)
+		this.addState('jump', JumpState)
+		this.addState('dance', DanceState)
 	}
 
-	_Init() {
-		this._AddState('idle', IdleState)
-		this._AddState('run', RunState)
-		this._AddState('backward', BackwardState)
-		this._AddState('walk', WalkState)
-		this._AddState('jump', JumpState)
-		this._AddState('dance', DanceState)
-	}
 }
 

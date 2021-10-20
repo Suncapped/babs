@@ -218,7 +218,7 @@ export class WorldSys {
     }
 
 
-    async LoadStatics(urlFiles, scene, zone) {
+    async loadStatics(urlFiles, scene, zone) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
@@ -231,7 +231,7 @@ export class WorldSys {
         ground.receiveShadow = true
 
 
-        await this.GenTerrain(urlFiles, geometry, zone)
+        await this.genTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
         scene.add( ground )
@@ -313,7 +313,7 @@ export class WorldSys {
     //     await this.updateLandcover(urlFiles)
     //     timeReporter.next('Done')
     // }
-    async GenTerrain(urlFiles, geometry, zone) {
+    async genTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
 
         timeReporter.next('Terrain start')

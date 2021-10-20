@@ -140,7 +140,7 @@ class Babs {
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
 			document.getElementById('charsave').disabled = true
-			SocketSys.Enter(
+			this.socketSys.enter(
 				document.getElementById('email').value, 
 				document.getElementById('password').value
 			)

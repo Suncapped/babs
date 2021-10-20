@@ -34,10 +34,10 @@ export class SocketSys {
 			const existingSession = Cookies.get('session')
 			log.info('existingSession', existingSession)
 			if(existingSession){
-				this.Auth(existingSession)
+				this.auth(existingSession)
 			}
 			else { // No cookie, so indicate visitor
-				this.Visitor()
+				this.visitor()
 			}
 		}
 		this.ws.onmessage = (event) => {
@@ -83,7 +83,7 @@ export class SocketSys {
 			}
 			else {
 				const payload = JSON.parse(event.data)
-				this.Process(payload)
+				this.process(payload)
 			}
 		}
 		this.ws.onerror = (event) => {
@@ -98,22 +98,22 @@ export class SocketSys {
 		socketSend.subscribe(data => { // eg Overlay.svelte 
 			if(Object.keys(data).length === 0) return
 			log('sub Send', data)
-			this.Send(data)
+			this.send(data)
 		})
 	}
 
-	Visitor() {
-		this.Send({
+	visitor() {
+		this.send({
 			auth: 'visitor'
 		})
 	}
-	Auth(session) {
-		this.Send({
+	auth(session) {
+		this.send({
 			auth: session
 		})
 	}
-	Enter(email, pass) {
-		this.Send({
+	enter(email, pass) {
+		this.send({
 			enter: {
 				email,
 				pass,
@@ -122,7 +122,7 @@ export class SocketSys {
 		})
 	}
 
-	async Send(json) {
+	async send(json) {
 		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
@@ -133,7 +133,7 @@ export class SocketSys {
 		}
 	}
 
-	Process(payload){
+	process(payload){
 		Object.entries(payload).forEach(async ([op, data]) => {
 			switch(op) {
 				case 'auth':
@@ -185,7 +185,7 @@ export class SocketSys {
 				break
 				case 'load':
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
-						this.Send({ping:'ping'})
+						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
 					const arrivalSelf = data.self
@@ -205,7 +205,7 @@ export class SocketSys {
 					}
 
 					this.babsReady = true
-					await this.babs.worldSys.LoadStatics(this.babs.urlFiles, this.babs.scene, zone)
+					await this.babs.worldSys.loadStatics(this.babs.urlFiles, this.babs.scene, zone)
 
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
@@ -218,7 +218,7 @@ export class SocketSys {
 
 					// EventSys.Dispatch('load-self', arrivalSelf)
 
-					this.Send({
+					this.send({
 						ready: arrivalSelf.id,
 					})
 

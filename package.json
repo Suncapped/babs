@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite --host",
     "playerdev": "vite --mode playerdev",
+	"commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
     "serve": "vite preview",
     "build": "vite build",
     "postbuild": "sh buildtime.sh",
