@@ -76,7 +76,7 @@ export class Controller extends Com {
 		
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
 		Promise.all(animList.map(async animName => {
-			const anim = await LoaderSys.LoadAnim(this.arrival.char.gender, animName)
+			const anim = await this.babs.loaderSys.LoadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = this._mixer.clipAction(clip)
 

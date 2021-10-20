@@ -16,18 +16,25 @@ import { Matrix3 } from "three"
 
 export class LoaderSys {
 
-	static urlFiles
+	urlFiles
 
-	static Start(urlFiles) {
+	constructor(urlFiles) {
 		log('loader start', urlFiles)
 		this.urlFiles = urlFiles
 	}
 
-	static async LoadFbx(path) {
-		const loader = new FBXLoader()
-		// log('loader PRE urlfiels', this.urlFiles)
-		return new Promise( (resolve, reject) => {
-			log('loader urlfiels', this.urlFiles)
+	async LoadFbx(path) {
+
+		return await new Promise( (resolve, reject) => {
+			const loader = new FBXLoader()
+
+			// log('loader PRE urlFiles', this.urlFiles)
+			// while(!this.urlFiles) {
+			// 	log('----zz--z-z-z-zz-z-z--z-z-z-z-z-z-z-z-z-z-z-z-z-z')
+			// 	await sleep(100)
+			// }
+			log('loader WAKEUP urlFiles', this.urlFiles)
+
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
@@ -45,7 +52,7 @@ export class LoaderSys {
 	}
 
 
-	static async LoadTexture(path) {
+	async LoadTexture(path) {
 		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
 		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if loading gltf
 		texture.encoding = sRGBEncoding // This too, though the default seems right
@@ -56,7 +63,7 @@ export class LoaderSys {
 	}
 
 
-	static async LoadGltf(path) {
+	async LoadGltf(path) {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
 
 		return new Promise( (resolve, reject) => {
@@ -92,13 +99,14 @@ export class LoaderSys {
 	}
 
 	// static cachedChar = new Map
-	static async LoadRig(gender) {
+	async LoadRig(gender) {
 		// if(this.cachedChar?.get(gender)) {  // Doesn't work due to ref
 		// 	log('character is cached', gender)
 		// 	return this.cachedChar?.get(gender)
 		// }
+		log('loadRig', this.urlFiles, this)
 
-		const texture = await LoaderSys.LoadTexture(`/char/${gender}/color-atlas-new2.png`)
+		const texture = await this.LoadTexture(`/char/${gender}/color-atlas-new2.png`)
 		texture.flipY = true
 		const material = new MeshPhongMaterial({
 			map: texture,
@@ -112,7 +120,7 @@ export class LoaderSys {
 		})
 		
 		// const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-idle.fbx`) 
-		const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
+		const group = await this.LoadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
 
 		log.info('LoadRig group', group)
 
@@ -201,8 +209,8 @@ export class LoaderSys {
 
 		return group
 	}
-	static async LoadAnim(gender, anim) {
-		const fbx = await LoaderSys.LoadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
+	async LoadAnim(gender, anim) {
+		const fbx = await this.LoadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
 
 		log.info('anim', fbx)
 		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)

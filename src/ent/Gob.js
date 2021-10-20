@@ -12,35 +12,35 @@ export class Gob {
 
     mesh
 
-    static async Create(path, scene, childIndex = 0) {
-        let gob = new Gob
-        const group = await LoaderSys.LoadFbx(path)
+    // static async Create(path, scene, childIndex = 0) {
+    //     let gob = new Gob
+    //     const group = await LoaderSys.LoadFbx(path)
 
 
-        if(group.children.length > 1) {
-            log.warn(`Loaded FBX with more than one child.  Using children[${childIndex}]`, group)
-        }
+    //     if(group.children.length > 1) {
+    //         log.warn(`Loaded FBX with more than one child.  Using children[${childIndex}]`, group)
+    //     }
 
-        // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
-        // const object = new Mesh( geometry, material )
-        gob.mesh = group.children[childIndex] // TODOO change back to [0]
-        log('Gob.Create fbx group', group, gob.mesh)
+    //     // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
+    //     // const object = new Mesh( geometry, material )
+    //     gob.mesh = group.children[childIndex] // TODOO change back to [0]
+    //     log('Gob.Create fbx group', group, gob.mesh)
 
-		if(Array.isArray(gob.mesh.material)) { // Fire
-			gob.mesh.material[2].side = DoubleSide
-			gob.mesh.material[2].color = new Color(0xFA942D) // albedo?  moderates .map?
-			gob.mesh.material[2].emissive = new Color(102, 0, 0) //  orange
-		}
-		else { // Player
-			// gob.mesh.material.side = DoubleSide
-			// gob.mesh.material.color = new Color(55, 200, 55)
-			// gob.mesh.material.emissive = new Color(0, 100, 0)
-		}
+	// 	if(Array.isArray(gob.mesh.material)) { // Fire
+	// 		gob.mesh.material[2].side = DoubleSide
+	// 		gob.mesh.material[2].color = new Color(0xFA942D) // albedo?  moderates .map?
+	// 		gob.mesh.material[2].emissive = new Color(102, 0, 0) //  orange
+	// 	}
+	// 	else { // Player
+	// 		// gob.mesh.material.side = DoubleSide
+	// 		// gob.mesh.material.color = new Color(55, 200, 55)
+	// 		// gob.mesh.material.emissive = new Color(0, 100, 0)
+	// 	}
 
 
-        scene.add( gob.mesh )
-        return gob
-    }
+    //     scene.add( gob.mesh )
+    //     return gob
+    // }
 }
 
 

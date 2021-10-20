@@ -74,27 +74,10 @@ export class SocketSys {
 							player.controller.jump(Controller.JUMP_HEIGHT)
 						}
 						else if(movestateName === 'rotate') {
-							log('got rotate', a)
-							// player.controller.setRotation(Controller.JUMP_HEIGHT)
-
-							// const _Q = new Quaternion()
-							// const _A = new Vector3()
-							// const _R = this.player.controller.idealTargetQuaternion.clone()
-							
-							// // Naive version
-							// _A.set(0, this.keys.right ? -1 : 1, 0)
-							// // _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-							// _Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
-							// _R.multiply(_Q)
-							// this.player.controller.setRotation(_R)
-
 							const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
 							const quat = new Quaternion()
 							quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
-
 							player.controller.setRotation(quat)
-
-
 						}
 					}
 				}

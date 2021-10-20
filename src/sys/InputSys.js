@@ -139,12 +139,13 @@ export class InputSys {
 				// Spawn test character
 				if(this.keys.f === PRESS) {
 
-					let obj = await Gob.Create(`/char/female/F_Bald_mesh_009.fbx`, this.babs.scene, 1)
-					log('obj', obj)
+					// let obj = await Gob.Create(`/char/female/F_Bald_mesh_009.fbx`, this.babs.scene, 1)
+					// log('obj', obj)
+					// obj.mesh.position.copy(new Vector3(6,0,10))
+
 					// obj.mesh.scale.multiplyScalar(10)
 					// obj.mesh.scale.multiplyScalar(1/12) 
 					// obj.mesh.geometry.scale.multiplyScalar(1/12) 
-					obj.mesh.position.copy(new Vector3(6,0,10))
 
 					/*
 					// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
@@ -403,7 +404,7 @@ export class InputSys {
 					_R.multiply(_Q)
 					this.player.controller.setRotation(_R)
 
-					log.info('InputSys: call controller.setRotation()')
+					log.info('InputSys: call controller.setRotation')
 
 					// After character snap rotate, bring head (camera) back to roughly where it was before (2.2 magic number)
 					this.mouse.accumx = -this.mouseAccumThreshold *(2.2/3) * Math.sign(this.mouse.accumx) 

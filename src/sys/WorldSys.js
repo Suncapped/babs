@@ -60,7 +60,7 @@ export class WorldSys {
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
 		mieDirectionalG: 0.7,
-		elevation: 20,//2,
+		elevation: 50,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}
@@ -101,7 +101,7 @@ export class WorldSys {
 		this.sunPosition = new Vector3()
 
 		this.effectController.exposure = renderer.toneMappingExposure
-		const guiChanged = () => {
+		const updateSkyValues = () => {
 
 
 			const uniforms = this.sky.material.uniforms
@@ -122,15 +122,15 @@ export class WorldSys {
 
 		}
 
-		const gui = new GUI()
-		gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged )
-		gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged )
-		gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged )
-		gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged )
-		gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged )
-		gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged )
-		gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged )
-		guiChanged()
+		// const gui = new GUI()
+		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged )
+		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged )
+		updateSkyValues()
 
 
 		// New lighting

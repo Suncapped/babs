@@ -36,6 +36,7 @@ class BABS {
 
 	static cameraSys
 	static inputSys
+	static loaderSys
 
 	static ents = new Map() // id key, value ent
 	static comcats = new Map() // comType key, value is an array of those coms
@@ -87,7 +88,8 @@ class BABS {
 		})()
 
 		log('loader PREstart')
-		LoaderSys.Start(this.urlFiles)
+		this.loaderSys = new LoaderSys(this.urlFiles)
+		// LoaderSys.Start(this.urlFiles)
 		log('loader POSTstart')
 
 		UiSys.Start(this)
