@@ -38,8 +38,8 @@ export class Player extends Ent {
 		}
 
 		Promise.all([ 
-			babs.loaderSys.LoadRig(arrival.char.gender), 
-			babs.loaderSys.LoadAnim(arrival.char.gender, 'idle') 
+			babs.loaderSys.loadRig(arrival.char.gender), 
+			babs.loaderSys.loadAnim(arrival.char.gender, 'idle') 
 		]).then(([fbxGroup, anim]) => {
 			fbxGroup.name = 'player-'+arrival.id
 			fbxGroup.feplayer = {

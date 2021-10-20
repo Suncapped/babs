@@ -7,4 +7,8 @@ export default defineConfig({
   server: {
 	  port: 3001,
   },
+  build: {
+	sourcemap: true,
+	minify: false,
+  },
 })

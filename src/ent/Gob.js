@@ -14,7 +14,7 @@ export class Gob {
 
     // static async Create(path, scene, childIndex = 0) {
     //     let gob = new Gob
-    //     const group = await LoaderSys.LoadFbx(path)
+    //     const group = await LoaderSys.loadFbx(path)
 
 
     //     if(group.children.length > 1) {

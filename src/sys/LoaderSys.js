@@ -22,7 +22,7 @@ export class LoaderSys {
 		this.urlFiles = urlFiles
 	}
 
-	async LoadFbx(path) {
+	async loadFbx(path) {
 
 		return await new Promise( (resolve, reject) => {
 			const loader = new FBXLoader()
@@ -44,7 +44,7 @@ export class LoaderSys {
 	}
 
 
-	async LoadTexture(path) {
+	async loadTexture(path) {
 		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
 		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if loading gltf
 		texture.encoding = sRGBEncoding // This too, though the default seems right
@@ -55,7 +55,7 @@ export class LoaderSys {
 	}
 
 
-	async LoadGltf(path) {
+	async loadGltf(path) {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
 
 		return new Promise( (resolve, reject) => {
@@ -91,14 +91,13 @@ export class LoaderSys {
 	}
 
 	// static cachedChar = new Map
-	async LoadRig(gender) {
+	async loadRig(gender) {
 		// if(this.cachedChar?.get(gender)) {  // Doesn't work due to ref
 		// 	log('character is cached', gender)
 		// 	return this.cachedChar?.get(gender)
 		// }
-		log('loadRig', this.urlFiles, this)
 
-		const texture = await this.LoadTexture(`/char/${gender}/color-atlas-new2.png`)
+		const texture = await this.loadTexture(`/char/${gender}/color-atlas-new2.png`)
 		texture.flipY = true
 		const material = new MeshPhongMaterial({
 			map: texture,
@@ -110,11 +109,13 @@ export class LoaderSys {
 			shininess: 0.2,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 		})
+		const hsl = material.color.getHSL({h:0,s:0,l:0})
+		material.color.setHSL(hsl.h, hsl.s, 1)
 		
-		// const group = await LoaderSys.LoadFbx(`/char/${gender}/female-rig-idle.fbx`) 
-		const group = await this.LoadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
+		// const group = await LoaderSys.loadFbx(`/char/${gender}/female-rig-idle.fbx`) 
+		const group = await this.loadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
 
-		log.info('LoadRig group', group)
+		log('loadRig group', group)
 
 		const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
@@ -201,8 +202,8 @@ export class LoaderSys {
 
 		return group
 	}
-	async LoadAnim(gender, anim) {
-		const fbx = await this.LoadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
+	async loadAnim(gender, anim) {
+		const fbx = await this.loadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
 
 		log.info('anim', fbx)
 		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)

@@ -52,6 +52,7 @@ export class WorldSys {
     dirLight
     dirLightHelper
     // lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
+	hemiLight
 
 	sky
 	sunPosition
@@ -122,14 +123,14 @@ export class WorldSys {
 
 		}
 
-		// const gui = new GUI()
-		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+		const gui = new GUI()
+		gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
 		updateSkyValues()
 
 
@@ -138,12 +139,12 @@ export class WorldSys {
 		// let light = new AmbientLight(0xFFFFFF, 1)
 		// scene.add(light)
 
-        const hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0.50 )
-        const hemiLightHelper = new HemisphereLightHelper( hemiLight, 10 )
+        this.hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0)
+        const hemiLightHelper = new HemisphereLightHelper( this.hemiLight, 10 )
         scene.add( hemiLightHelper )
-        hemiLight.color.setHSL( 45/360, 1, 92/100 )
-        hemiLight.groundColor.setHSL( 245/360, 92/100, 1)
-        // scene.add( hemiLight )
+        this.hemiLight.color.setHSL( 45/360, 1, 1)//92/100 )
+        this.hemiLight.groundColor.setHSL( 245/360, 92/100, 1)
+        scene.add( this.hemiLight )
 
 		// https://hslpicker.com/#fff5d6
 		// http://www.workwithcolor.com/hsl-color-picker-01.htm
@@ -156,13 +157,13 @@ export class WorldSys {
 
 		// Directional light
 
-        this.dirLight = new DirectionalLight(0xffffff, 1.5)
+        this.dirLight = new DirectionalLight(0xffffff, 0)
 		this.dirLight.target = player
         scene.add(this.dirLight)
         this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
         scene.add( this.dirLightHelper )
 
-		const hsl = { h: 45/360, s: 1, l: 92/100 }
+		const hsl = { h: 45/360, s: 1, l: 1}//92/100 }
         this.dirLight.color.copy(new Color().setHSL(hsl.h, hsl.s, hsl.l))
         // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
         // this.dirLight.position.multiplyScalar( 3 )
@@ -204,16 +205,21 @@ export class WorldSys {
     update(delta, camera) {
 		
 		// Adjust fog lightness (white/black) to sun elevation
-		const elevationRatio = Math.min(50, this.effectController.elevation) /90
+		const elevationRatio = this.effectController.elevation /90
+		const elevationRatioCapped = Math.min(50, this.effectController.elevation) /90
 		this.scene.fog.color.setHSL(
 			34/360, // Which color
 			0.1, // How much color
-			0.02 + (elevationRatio *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
+			0.02 + (elevationRatioCapped *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
 		)
 		// this.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// Put directional light at sun position, just farther out
 		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))
+
+		this.dirLight.intensity = MathUtils.lerp(0, 2, elevationRatio)
+		this.hemiLight.intensity = MathUtils.lerp(0.20, 0.75, elevationRatio)
+		log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
     }
 
@@ -224,7 +230,7 @@ export class WorldSys {
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
-        material.color.setHSL( 0.095, 1, 0.75 )
+        material.color.setHSL( 0.095, 0.5, 0.20 )
         const ground = new Mesh( geometry, material )
         ground.name = 'ground'
         ground.castShadow = true

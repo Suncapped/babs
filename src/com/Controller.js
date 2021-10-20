@@ -76,7 +76,7 @@ export class Controller extends Com {
 		
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
 		Promise.all(animList.map(async animName => {
-			const anim = await this.babs.loaderSys.LoadAnim(this.arrival.char.gender, animName)
+			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = this._mixer.clipAction(clip)
 
@@ -90,7 +90,7 @@ export class Controller extends Com {
 
 		// const animList = ['run', 'backward', 'walk', 'idle', 'dance']
 		// animList.map(animName => {
-		// 	LoaderSys.LoadAnim(this.arrival.char.gender, animName).then(animResult => {
+		// 	LoaderSys.loadAnim(this.arrival.char.gender, animName).then(animResult => {
 		// 		const clip = animResult.animations[0]
 		// 		// log('animResult', animResult)
 		// 		this._animations[animName] = {
