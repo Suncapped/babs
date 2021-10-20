@@ -51,7 +51,7 @@ export class Controller extends Com {
 
 	constructor(arrival, fbx, babs) {
 		super(arrival.id, Controller, babs)
-		log('new Controller()', arrival)
+		log.info('new Controller()', arrival)
 		this.arrival = arrival
 		this.scene = babs.scene
 
@@ -155,7 +155,7 @@ export class Controller extends Com {
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.idEnt === this.babs.idSelf) {
-			SocketSys.Send({
+			this.babs.socketSys.Send({
 				move: {
 					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1],
 					a: this.gDestination.x,
@@ -213,17 +213,14 @@ export class Controller extends Com {
 			var theta = Math.atan2(dir.x, dir.z)
 			const angle = MathUtils.radToDeg(theta)
 			const round = Math.round(angle)
-			log('angle', dir, theta, round)
-			// ROTATION_ANGLE_MAP
-			// Not sure what I'm doing here...but mapping what I've got
+			// log('angle', dir, theta, round)
 
+			// Not sure what I'm doing here...but mapping what I've got
 			 // -180 can be 180, so that's item 3...
 			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [3]
 
 			const rotationWord = parseInt(found[0])
-			log('word', rotationWord)
-
-			SocketSys.Send({
+			this.babs.socketSys.Send({
 				move: {
 					movestate: Controller.MOVESTATE.Rotate,
 					a: rotationWord,
@@ -245,7 +242,7 @@ export class Controller extends Com {
 		// 	this._stateMachine.SetState('jump')
 		// } 
 		if(this.idEnt === this.babs.idSelf) {
-			SocketSys.Send({
+			this.babs.socketSys.Send({
 				move: {
 					movestate: Controller.MOVESTATE.Jump,
 					a: 0,
@@ -263,7 +260,7 @@ export class Controller extends Com {
 		// 	log.info('Controller: update(), velocity:', this.velocity)
 		// }
 
-		this._stateMachine.Update(dt, this._input)
+		this._stateMachine.update(dt, this._input)
 
 		const controlObject = this.target
 
@@ -440,9 +437,9 @@ class FiniteStateMachine {
 		state.Enter(prevState)
 	}
 
-	Update(timeElapsed, input) {
+	update(timeElapsed, input) {
 		if (this._currentState) {
-			this._currentState.Update(timeElapsed, input)
+			this._currentState.update(timeElapsed, input)
 		}
 	}
 }

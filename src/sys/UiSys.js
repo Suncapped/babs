@@ -4,45 +4,31 @@ import { toprightText, toprightReconnect, menuShowLink } from "../stores.js"
 import { log } from './../Utils'
 
 export class UiSys {
-	static browser
-	static babs
+	babs
+	toprightTextDefault = 'Works best in Chrome-like browsers'
 
-	static toprightTextDefault = 'Works best in Chrome-like browsers'
-
-	static OfferReconnect(reason) {
+	OfferReconnect(reason) {
 		toprightReconnect.set(reason)
 	}
 
-    static Start(babs) {
-		UiSys.babs = babs
+    constructor(babs) {
+		this.babs = babs
 
-		UiSys.browser = (function (agent) {
-			switch (true) {
-				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)"
-				case agent.indexOf("edg") > -1: return "MS Edge Chromium"
-				case agent.indexOf("opr") > -1 && !!window.opr: return "opera"
-				case agent.indexOf("chrome") > -1 && !!window.chrome: return "chrome"
-				case agent.indexOf("trident") > -1: return "Internet Explorer"
-				case agent.indexOf("firefox") > -1: return "firefox"
-				case agent.indexOf("safari") > -1: return "safari"
-				default: return "other"
-			}
-		})(window.navigator.userAgent.toLowerCase())
-		log.info('Browser is', UiSys.browser)
+
 
 		new Overlay({
 			target: document.body,
 		})
 
-		if(UiSys.browser == 'chrome' || UiSys.browser == 'MS Edge Chromium') {
-			UiSys.toprightTextDefault = 'Welcome to First Earth!'
+		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
+			this.toprightTextDefault = 'Welcome to First Earth!'
 		}
-		toprightText.set(UiSys.toprightTextDefault)
+		toprightText.set(this.toprightTextDefault)
     }
     /** 
      * @param {'fps'|'mem'} which
      */
-    static CreateStats(which) {
+    CreateStats(which) {
         this[which] = Stats()
         this[which].showPanel(which=="fps"?0:2)
         this[which].dom.id = which
@@ -50,25 +36,25 @@ export class UiSys {
         document.body.appendChild(this[which].dom)
     }
 
-	static CreateEl(html) {
+	CreateEl(html) {
 		const doc = new DOMParser().parseFromString(html, "text/html")
 		const el = doc.firstChild
 		return el
 	}
 
-	static UpdateBegin() {
+	updateBegin() {
 		this['fps']?.begin()
 		this['mem']?.begin()
 
-		if(UiSys.babs?.idSelf) { // Player is loaded
-			const playerPos = UiSys.babs.ents.get(UiSys.babs.idSelf)?.controller?.target?.position
+		if(this.babs?.idSelf) { // Player is loaded
+			const playerPos = this.babs.ents.get(this.babs.idSelf)?.controller?.target?.position
 			if(playerPos) {
 				window.document.getElementById('log').innerText = `${Math.round(playerPos.x)}, ${Math.round(playerPos.y)}, ${Math.round(playerPos.z)}`
 			}
 		}
 
 	}
-	static UpdateEnd() {
+	updateEnd() {
 
 		this['fps']?.end()
 		this['mem']?.end()

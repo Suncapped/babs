@@ -1,4 +1,4 @@
-import { menuSelfData, menuShowLink, toprightReconnect, toprightText } from "../stores"
+import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend } from "../stores"
 import Cookies from "js-cookie"
 import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
@@ -14,15 +14,13 @@ import { InputSys } from "./InputSys"
 
 export class SocketSys {
 
-	static ws
-	static scene
-	static babsReady = false
+	ws
+	scene
+	babsReady = false
 
 	static pingSeconds = 30
 
-
-
-	static Start(babs) {
+	constructor(babs) {
 
 		this.babs = babs
 
@@ -90,25 +88,31 @@ export class SocketSys {
 		}
 		this.ws.onerror = (event) => {
 			log.info('Socket error', event)
-			UiSys.OfferReconnect('Connection error.')
+			babs.uiSys.OfferReconnect('Connection error.')
 		}
 		this.ws.onclose = (event) => {
 			log.info('Socket closed', event)
-			UiSys.OfferReconnect('Server connection closed.')
+			babs.uiSys.OfferReconnect('Server connection closed.')
 		}
+
+		socketSend.subscribe(data => { // eg Overlay.svelte 
+			if(Object.keys(data).length === 0) return
+			log('sub Send', data)
+			this.Send(data)
+		})
 	}
 
-	static Visitor() {
+	Visitor() {
 		this.Send({
 			auth: 'visitor'
 		})
 	}
-	static Auth(session) {
+	Auth(session) {
 		this.Send({
 			auth: session
 		})
 	}
-	static Enter(email, pass) {
+	Enter(email, pass) {
 		this.Send({
 			enter: {
 				email,
@@ -118,18 +122,18 @@ export class SocketSys {
 		})
 	}
 
-	static async Send(json) {
+	async Send(json) {
 		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
 		else {
-			log.info('Cannot send; WebSocket is in CLOSING or CLOSED state')
-			UiSys.OfferReconnect('Cannot reach server.')
+			log.warn('Cannot send; WebSocket is in CLOSING or CLOSED state')
+			this.babs.uiSys.OfferReconnect('Cannot reach server.')
 		}
 	}
 
-	static Process(payload){
+	Process(payload){
 		Object.entries(payload).forEach(async ([op, data]) => {
 			switch(op) {
 				case 'auth':
@@ -155,8 +159,8 @@ export class SocketSys {
 				case 'visitor':
 					this.session = data
 					Cookies.set('session', this.session, { 
-						domain: SocketSys.baseDomain,
-						secure: SocketSys.isProd,
+						domain: this.babs.baseDomain,
+						secure: this.babs.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
 					toprightText.set('Visiting...')
@@ -166,8 +170,8 @@ export class SocketSys {
 					this.session = data
 					Cookies.set('session', this.session, { 
 						expires: 365,
-						domain: SocketSys.baseDomain,
-						secure: SocketSys.isProd,
+						domain: this.babs.baseDomain,
+						secure: this.babs.isProd,
 						sameSite: 'strict',
 					})
 					toprightText.set('Entering...')
@@ -176,7 +180,7 @@ export class SocketSys {
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
-					UiSys.OfferReconnect('Logged out your other session.  Try again! ->')
+					this.babs.uiSys.OfferReconnect('Logged out your other session.  Try again! ->')
 					
 				break
 				case 'load':
@@ -188,7 +192,7 @@ export class SocketSys {
 					const zones = data.zones
 					const zone = zones.find(z => z.id == arrivalSelf.idzone)
 					log.info('Welcome to', arrivalSelf.idzone, arrivalSelf.id, arrivalSelf.visitor)
-					toprightText.set(UiSys.toprightTextDefault)
+					toprightText.set(this.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 					
 					if(arrivalSelf.visitor !== true) {
@@ -201,7 +205,7 @@ export class SocketSys {
 					}
 
 					this.babsReady = true
-					await WorldSys.LoadStatics(this.babs.urlFiles, this.babs.scene, zone)
+					await this.babs.worldSys.LoadStatics(this.babs.urlFiles, this.babs.scene, zone)
 
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'

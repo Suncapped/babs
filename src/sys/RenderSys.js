@@ -10,7 +10,7 @@ export class RenderSys {
 
 	renderer
 
-	constructor() {
+	constructor(babs) {
 		this.renderer = new WebGLRenderer({ antialias: true })
 		this.renderer.outputEncoding = LinearEncoding//sRGBEncoding
 
@@ -25,7 +25,7 @@ export class RenderSys {
 		// this.renderer.shadowMap.enabled = true
 		// this.renderer.shadowMap.type = THREE.PCFSoftShadowMap // todo shadows re-add?  or use in WorldSys?
 
-		this.renderer.setPixelRatio( UiSys.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
+		this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setSize(window.innerWidth, window.innerHeight)
 
 		document.body.appendChild(this.renderer.domElement)

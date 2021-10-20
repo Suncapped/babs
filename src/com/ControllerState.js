@@ -7,7 +7,7 @@ export class State {
 
 	Enter() { }
 	Exit() { }
-	Update() { }
+	update() { }
 }
 
 
@@ -57,7 +57,7 @@ export class DanceState extends State {
 		this._Cleanup()
 	}
 
-	Update(_) {
+	update(_) {
 	}
 }
 
@@ -108,7 +108,7 @@ export class JumpState extends State {
 		this._Cleanup()
 	}
 
-	Update(_) {
+	update(_) {
 	}
 }
 
@@ -149,7 +149,7 @@ export class RunState extends State {
 	Exit() {
 	}
 
-	Update(timeElapsed, input) {
+	update(timeElapsed, input) {
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (input._keys.shift) {
 		// 		this._parent.SetState('walk')
@@ -196,7 +196,7 @@ export class BackwardState extends State {
 	Exit() {
 	}
 
-	Update(timeElapsed, input) {
+	update(timeElapsed, input) {
 		// if(input._keys.backward) {
 		// 	return
 		// }
@@ -249,7 +249,7 @@ export class WalkState extends State {
 	Exit() {
 	}
 
-	Update(timeElapsed, input) {
+	update(timeElapsed, input) {
 		// No longer needed, because it's set by controller via Input or Socket
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (!input._keys.shift) {
@@ -316,7 +316,7 @@ export class IdleState extends State {
 	Exit() {
 	}
 
-	Update(_, input) {
+	update(_, input) {
 		// log.info('idleup', _)
 		// if (input._keys.forward) {
 		// 	this._parent.SetState('run')

@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible } from "../stores.js"
+	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { SocketSys } from '../sys/SocketSys.js'
 	import { log } from '../Utils.js'
@@ -22,7 +22,7 @@
 	let savereason
 	async function saveReason(ev) {
 		$menuSelfData.reason = inputreason.value
-		await SocketSys.Send({
+		socketSend.set({
 			'savereason': $menuSelfData.reason,
 		})
 		savereason.innerText = '> Saved!'
@@ -35,8 +35,8 @@
 
 	function logout(ev) {
 		Cookies.remove('session', { 
-			domain: SocketSys.baseDomain,
-			secure: SocketSys.isProd,
+			domain: $baseDomain,
+			secure: $isProd,
 			sameSite: 'strict',
 		})
 		window.location.reload()

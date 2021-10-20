@@ -21,32 +21,39 @@ import { RenderSys } from './sys/RenderSys'
 import { Player } from './ent/Player'
 import { Controller } from './com/Controller'
 
-class BABS {
+import { baseDomain, isProd } from "./stores"
 
-	static isProd = window.location.href.startsWith('https://earth.suncapped.com')
-	static baseDomain
-	static urlFiles
-	static urlSocket
+class Babs {
 
-	static camera
-	static scene
-	static renderer
-	static cube
-	static ui
+	isProd = window.location.href.startsWith('https://earth.suncapped.com')
+	baseDomain
+	urlFiles
+	urlSocket
 
-	static cameraSys
-	static inputSys
-	static loaderSys
+	browser
 
-	static ents = new Map() // id key, value ent
-	static comcats = new Map() // comType key, value is an array of those coms
+	camera
+	scene
+	renderer
+	cube
 
-	static zips = new Map() // idzip key, value idplayer
+	cameraSys
+	inputSys
+	loaderSys
+	uiSys
+	worldSys
+	socketSys
 
-	static idSelf
+
+	ents = new Map() // id key, value ent
+	comcats = new Map() // comType key, value is an array of those coms
+
+	zips = new Map() // idzip key, value idplayer
+
+	idSelf
 
 
-	static Start() {
+	constructor() {
 
 		log('Mode is', import.meta.env.MODE)
 
@@ -74,6 +81,10 @@ class BABS {
 			this.baseDomain = `${localDomain}`
 		}
 
+		// Send to Svelte
+		baseDomain.set(this.baseDomain)
+		isProd.set(this.isProd)
+
 		// Cookies are required
 		const cookiesEnabled = (() => {
 			try {
@@ -87,21 +98,34 @@ class BABS {
 			}
 		})()
 
-		log('loader PREstart')
 		this.loaderSys = new LoaderSys(this.urlFiles)
-		// LoaderSys.Start(this.urlFiles)
-		log('loader POSTstart')
 
-		UiSys.Start(this)
+		this.browser = (function (agent) {
+			switch (true) {
+				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)"
+				case agent.indexOf("edg") > -1: return "MS Edge Chromium"
+				case agent.indexOf("opr") > -1 && !!window.opr: return "opera"
+				case agent.indexOf("chrome") > -1 && !!window.chrome: return "chrome"
+				case agent.indexOf("trident") > -1: return "Internet Explorer"
+				case agent.indexOf("firefox") > -1: return "firefox"
+				case agent.indexOf("safari") > -1: return "safari"
+				default: return "other"
+			}
+		})(window.navigator.userAgent.toLowerCase())
+		log.info('Browser is', this.browser)
+
+		this.uiSys = new UiSys(this)
+		this.uiSys.CreateStats('fps')
+		this.uiSys.CreateStats('mem')
 
 		log.info('Cookies?', cookiesEnabled)
 		if(!cookiesEnabled) {
-			UiSys.OfferReconnect('Session cookies needed!')
+			this.uiSys.OfferReconnect('Session cookies needed!')
 			return
 		}
 
 
-		this.renderSys = new RenderSys()
+		this.renderSys = new RenderSys(this)
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
 
@@ -109,9 +133,9 @@ class BABS {
 		this.scene.add( this.cube )
 		this.cube.name = 'cube'
 
-		WorldSys.Start(this.renderSys.renderer, this.scene, this.camera, this.cube)
+		this.worldSys = new WorldSys(this.renderSys.renderer, this.scene, this.camera, this.cube)
 		
-		SocketSys.Start(this)
+		this.socketSys = new SocketSys(this)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -122,8 +146,6 @@ class BABS {
 			)
 		})
 
-		UiSys.CreateStats('fps')
-		UiSys.CreateStats('mem')
 
 		// this.scene.children.forEach((node) => {
 		// 	const axes = new AxesHelper(10)
@@ -134,9 +156,9 @@ class BABS {
 		
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
-			if(SocketSys.babsReady) {
+			if(this.socketSys.babsReady) {
 				this.renderSys.renderer.setAnimationLoop( (p) => { // todo shorten?
-					this.Update(p)
+					this.update(p)
 				})
 			} 
 			else {
@@ -148,18 +170,18 @@ class BABS {
 	}
 
 
-	static prevTime = performance.now()
-	static Update(time) {
+	prevTime = performance.now()
+	update(time) {
 		// log.info(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
-		UiSys.UpdateBegin(dt)
+		this.uiSys.updateBegin(dt)
 
 		// this.cube.rotation.x = time /4000
 		// this.cube.rotation.y = time /1000
 		
-		// LoaderSys.Update(dt)
+		// LoaderSys.update(dt)
 		this.inputSys?.update(dt, this.scene)
-		WorldSys.Update(dt, this.camera)
+		this.worldSys.update(dt, this.camera)
 
 		for(let [name, coms] of this.comcats) {
 			if(coms) {
@@ -175,10 +197,10 @@ class BABS {
 
 
 		this.prevTime = time
-		UiSys.UpdateEnd(dt)
+		this.uiSys.updateEnd(dt)
 	}
 
-	static makeCube() {
+	makeCube() {
 		const geometry = new BoxGeometry( 6, 6, 6 )
 		const material = new MeshPhongMaterial()
 		const cube = new Mesh(geometry, material)
@@ -191,5 +213,5 @@ class BABS {
 
 }
 
-BABS.Start()
-export default BABS
+const babs = new Babs()
+export default babs

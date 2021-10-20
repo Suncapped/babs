@@ -19,7 +19,6 @@ export class LoaderSys {
 	urlFiles
 
 	constructor(urlFiles) {
-		log('loader start', urlFiles)
 		this.urlFiles = urlFiles
 	}
 
@@ -27,13 +26,6 @@ export class LoaderSys {
 
 		return await new Promise( (resolve, reject) => {
 			const loader = new FBXLoader()
-
-			// log('loader PRE urlFiles', this.urlFiles)
-			// while(!this.urlFiles) {
-			// 	log('----zz--z-z-z-zz-z-z--z-z-z-z-z-z-z-z-z-z-z-z-z-z')
-			// 	await sleep(100)
-			// }
-			log('loader WAKEUP urlFiles', this.urlFiles)
 
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL

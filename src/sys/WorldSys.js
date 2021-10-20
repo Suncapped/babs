@@ -43,19 +43,19 @@ export class WorldSys {
 
     static ZoneLength = 1000
 
-	static MAX_VIEW_DISTANCE = this.ZoneLength
+	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
 	
-    static worldMesh
+    worldMesh
 
-	static scene
+	scene
 
-    static dirLight
-    static dirLightHelper
-    // static lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
+    dirLight
+    dirLightHelper
+    // lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 
-	static sky
-	static sunPosition
-	static effectController = {
+	sky
+	sunPosition
+	effectController = {
 		turbidity: 10,
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
@@ -66,7 +66,7 @@ export class WorldSys {
 	}
 
 	
-    static Start(renderer, scene, camera, player) {
+    constructor(renderer, scene, camera, player) {
 
 		this.scene = scene
 
@@ -122,14 +122,14 @@ export class WorldSys {
 
 		}
 
-		const gui = new GUI()
-		gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+		// const gui = new GUI()
+		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
 		updateSkyValues()
 
 
@@ -201,7 +201,7 @@ export class WorldSys {
 
     }
 
-    static Update(delta, camera) {
+    update(delta, camera) {
 		
 		// Adjust fog lightness (white/black) to sun elevation
 		const elevationRatio = Math.min(50, this.effectController.elevation) /90
@@ -218,7 +218,7 @@ export class WorldSys {
     }
 
 
-    static async LoadStatics(urlFiles, scene, zone) {
+    async LoadStatics(urlFiles, scene, zone) {
         const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
@@ -231,7 +231,7 @@ export class WorldSys {
         ground.receiveShadow = true
 
 
-        await WorldSys.UpdateTerrain(urlFiles, geometry, zone)
+        await this.GenTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
         scene.add( ground )
@@ -243,7 +243,7 @@ export class WorldSys {
 
     }
 
-    static terrainData = null
+    terrainData = null
     // rawTexture1
     // rawTexture2
     // public groundMesh
@@ -313,7 +313,7 @@ export class WorldSys {
     //     await this.updateLandcover(urlFiles)
     //     timeReporter.next('Done')
     // }
-    static async UpdateTerrain(urlFiles, geometry, zone) {
+    async GenTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
 
         timeReporter.next('Terrain start')
