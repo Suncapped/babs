@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { EventSys } from '../sys/EventSys'
 import { LoaderSys } from '../sys/LoaderSys'
 import { log } from '../Utils'
-import { Euler, MathUtils, Raycaster } from 'three'
+import { Euler, MathUtils, Quaternion, Raycaster } from 'three'
 import { Vector3 } from 'three'
 import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
@@ -51,7 +51,7 @@ export class Controller extends Com {
 
 	constructor(arrival, fbx, babs) {
 		super(arrival.id, Controller, babs)
-		log.info('new Controller()', arrival)
+		log('new Controller()', arrival)
 		this.arrival = arrival
 		this.scene = babs.scene
 
@@ -105,9 +105,18 @@ export class Controller extends Com {
 
 		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
 
-		log.info('controller init done, move player to', this.arrival.x, this.arrival.z, this.target)
+		// Set position warped
+		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+
+		// Set rotation
+		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why?  Who knows! :p
+		const quat = new Quaternion()
+		quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
+		this.setRotation(quat)
+
+		// Finally show the character
 		this.target.visible = true
 	}
 
@@ -207,7 +216,10 @@ export class Controller extends Com {
 			log('angle', dir, theta, round)
 			// ROTATION_ANGLE_MAP
 			// Not sure what I'm doing here...but mapping what I've got
-			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [180] // -180 can be 180...
+
+			 // -180 can be 180, so that's item 3...
+			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [3]
+
 			const rotationWord = parseInt(found[0])
 			log('word', rotationWord)
 

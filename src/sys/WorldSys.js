@@ -60,7 +60,7 @@ export class WorldSys {
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
 		mieDirectionalG: 0.7,
-		elevation: 50,//2,
+		elevation: 45,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}
@@ -122,14 +122,14 @@ export class WorldSys {
 
 		}
 
-		// const gui = new GUI()
-		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged )
-		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged )
+		const gui = new GUI()
+		gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+		gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
 		updateSkyValues()
 
 
@@ -202,14 +202,15 @@ export class WorldSys {
     }
 
     static Update(delta, camera) {
-
+		
 		// Adjust fog lightness (white/black) to sun elevation
-		let fogHsl = this.scene.fog.color.getHSL({h:0, s:0, l:0})
+		const elevationRatio = Math.min(50, this.effectController.elevation) /90
 		this.scene.fog.color.setHSL(
-			34/360, 
-			0.06, 
-			0.02 +(this.effectController.elevation /(90 +(90 /2)))
+			34/360, // Which color
+			0.1, // How much color
+			0.02 + (elevationRatio *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
 		)
+		// this.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// Put directional light at sun position, just farther out
 		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))

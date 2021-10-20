@@ -164,15 +164,15 @@ export class InputSys {
 
 				// Testing commanded movement
 				if(this.keys.v === PRESS) {
-					let dest
-					if(Math.random() > 0.5) {
-						dest = new Vector3(1, 0, 1)
-					} 
-					else {
-						dest = new Vector3(0, 0, 0)
-					}
-					log('dest', dest)
-					this.player.controller.setDestination(dest, 'walk')
+					// let dest
+					// if(Math.random() > 0.5) {
+					// 	dest = new Vector3(1, 0, 1)
+					// } 
+					// else {
+					// 	dest = new Vector3(0, 0, 0)
+					// }
+					// log('dest', dest)
+					// this.player.controller.setDestination(dest, 'walk')
 				}
 			}
 			
@@ -516,8 +516,8 @@ export class InputSys {
 					scene.add( this.displayDestinationMesh )
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
-				const easyRaiseAbove = 0.2
-				this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y + easyRaiseAbove, 0))
+				const easyRaiseAbove = 0.1
+				this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y-2 + easyRaiseAbove, 0))
 
 			}
 
