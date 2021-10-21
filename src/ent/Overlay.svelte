@@ -34,6 +34,7 @@
 	}
 
 	function logout(ev) {
+		log.info('logging out', $baseDomain, $isProd)
 		Cookies.remove('session', { 
 			domain: $baseDomain,
 			secure: $isProd,

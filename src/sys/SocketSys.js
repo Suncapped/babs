@@ -21,7 +21,6 @@ export class SocketSys {
 	static pingSeconds = 30
 
 	constructor(babs) {
-
 		this.babs = babs
 
 		toprightText.set('Connecting...')
@@ -29,8 +28,16 @@ export class SocketSys {
 		this.ws = new WebSocket(this.babs.urlSocket)
 		this.ws.binaryType = 'arraybuffer'
 
-
 		this.ws.onopen = (event) => {
+			// Fix people having earth subdomain cookies from previous versions; todo remove later perhaps
+			// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
+			// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
+			// Cookies.remove('session', { path: '/', domain: 'earth.suncapped.com' })
+			Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
+			// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
+			
+			// Now this should get root domain instead of earth subdomain
+			// https://github.com/js-cookie/js-cookie
 			const existingSession = Cookies.get('session')
 			log.info('existingSession', existingSession)
 			if(existingSession){
@@ -158,6 +165,7 @@ export class SocketSys {
 				break
 				case 'visitor':
 					this.session = data
+					log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
 					Cookies.set('session', this.session, { 
 						domain: this.babs.baseDomain,
 						secure: this.babs.isProd,
@@ -168,12 +176,14 @@ export class SocketSys {
 				break
 				case 'session':
 					this.session = data
-					Cookies.set('session', this.session, { 
+					log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
+					const result = Cookies.set('session', this.session, { 
 						expires: 365,
 						domain: this.babs.baseDomain,
 						secure: this.babs.isProd,
 						sameSite: 'strict',
 					})
+					log.info('cookie set', result)
 					toprightText.set('Entering...')
 					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
 				break

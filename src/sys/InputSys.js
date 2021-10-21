@@ -191,7 +191,7 @@ export class InputSys {
 		// document.addEventListener( 'click', mouseOnClick )
 
 		document.addEventListener('mousemove', ev => { // :MouseEvent
-			log.info('mousemove', ev.target.id, ev.offsetX, ev.movementX)
+			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
 			
 			// Note I get MULTIPLE mousemove calls of this func in between a single update frame!
 			// Thus, setting this.mouse.dy =, doesn't work as it loses ones in between frames.
@@ -333,8 +333,7 @@ export class InputSys {
 	displayDestinationMesh
     async update(dt, scene) {
 
-		log.info('scroll', this.mouse.zoom, this.mouse.scrolldy.toFixed(1), this.mouse.scrollaccumy.toFixed(1))
-
+		// log('scroll', this.mouse.zoom, this.mouse.scrolldy.toFixed(1), this.mouse.scrollaccumy.toFixed(1))
 
 		if(!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse

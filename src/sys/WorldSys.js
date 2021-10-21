@@ -123,14 +123,14 @@ export class WorldSys {
 
 		}
 
-		const gui = new GUI()
-		gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-		gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+		// const gui = new GUI()
+		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
 		updateSkyValues()
 
 
@@ -219,7 +219,7 @@ export class WorldSys {
 
 		this.dirLight.intensity = MathUtils.lerp(0, 2, elevationRatio)
 		this.hemiLight.intensity = MathUtils.lerp(0.20, 0.75, elevationRatio)
-		log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
+		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
     }
 
