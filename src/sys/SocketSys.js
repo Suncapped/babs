@@ -30,11 +30,17 @@ export class SocketSys {
 
 		this.ws.onopen = (event) => {
 			// Fix people having earth subdomain cookies from previous versions; todo remove later perhaps
+			if(this.babs.isProd) {
+				// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
 			// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
+				// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
+				// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
 			// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
-			// Cookies.remove('session', { path: '/', domain: 'earth.suncapped.com' })
-			Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
-			// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
+				// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
+				// Cookies.remove('session', { path: '/', domain: 'earth.suncapped.com' })
+				Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
+				// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
+			}
 			
 			// Now this should get root domain instead of earth subdomain
 			// https://github.com/js-cookie/js-cookie

@@ -61,7 +61,7 @@ export class WorldSys {
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
 		mieDirectionalG: 0.7,
-		elevation: 45,//2,
+		elevation: 60,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}

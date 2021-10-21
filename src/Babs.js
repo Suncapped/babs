@@ -67,19 +67,18 @@ class Babs {
 
 		Cache.enabled = true // Caches eg FBX anims
 
+		const { hostname } = new URL(window.location.href) // eg 'localhost' or '192.168.0.120'
+		this.baseDomain = this.isProd ? 'suncapped.com' : `${hostname}` 
+
 		if (this.isProd || import.meta.env.MODE == 'playerdev') {
 			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			this.urlFiles = `https://earth.suncapped.com/files` /* Expressa */
-			this.baseDomain = 'suncapped.com'
 		}
 		else {
-			log('href is', window.location.href)
-			const { hostname } = new URL(window.location.href) // eg 'localhost' or '192.168.0.120'
-			const localDomain = hostname
-			this.urlSocket = `ws://${localDomain}:2567` /* Proxima */
-			this.urlFiles = `http://${localDomain}:3000/files` /* Expressa */
-			this.baseDomain = `${localDomain}`
+			this.urlSocket = `ws://${this.baseDomain}:2567` /* Proxima */
+			this.urlFiles = `http://${this.baseDomain}:3000/files` /* Expressa */
 		}
+		log.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
 
 		// Send to Svelte
 		baseDomain.set(this.baseDomain)
