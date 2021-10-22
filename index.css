@@ -10,15 +10,15 @@ body {
 
 #fps, #mem {
     position: absolute;
-    bottom: 10px;
+    top: 63px;
     left: 10px;
 }
 #mem {
-    bottom: 64px;
+    top: 111px;
 }
 #info {
     position: absolute;
-    bottom: 10px;
+    top: 68px;
     left: 100px;
     text-align:left;
 }

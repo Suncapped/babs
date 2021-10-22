@@ -101,11 +101,11 @@ export class SocketSys {
 		}
 		this.ws.onerror = (event) => {
 			log.info('Socket error', event)
-			babs.uiSys.OfferReconnect('Connection error.')
+			babs.uiSys.offerReconnect('Connection error.')
 		}
 		this.ws.onclose = (event) => {
 			log.info('Socket closed', event)
-			babs.uiSys.OfferReconnect('Server connection closed.')
+			babs.uiSys.offerReconnect('Server connection closed.')
 		}
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
@@ -142,7 +142,7 @@ export class SocketSys {
 		}
 		else {
 			log.warn('Cannot send; WebSocket is in CLOSING or CLOSED state')
-			this.babs.uiSys.OfferReconnect('Cannot reach server.')
+			this.babs.uiSys.offerReconnect('Cannot reach server.')
 		}
 	}
 
@@ -196,7 +196,7 @@ export class SocketSys {
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
-					this.babs.uiSys.OfferReconnect('Logged out your other session.  Try again! ->')
+					this.babs.uiSys.offerReconnect('Logged out your other session.  Try again! ->')
 					
 				break
 				case 'load':
@@ -280,6 +280,7 @@ export class SocketSys {
 					const chattyPlayer = this.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
 						log('said by chattyPlayer', chattyPlayer.id, data.text)
+						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text)
 					}
 				break
 			}

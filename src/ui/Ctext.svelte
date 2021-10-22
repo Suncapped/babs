@@ -8,18 +8,6 @@
 
 	document.addEventListener('keydown', chatKeydown);
 
-	topmenuVisible.subscribe(val => {
-		log('topMenuVisible', val)
-	})
-
-	// const bannedKeys = [
-	// 	'Shift',
-	// 	'Control',
-	// 	'Meta',
-	// 	'Alt',
-	// 	'',
-	// 	'',
-	// ]
 	const sendChat = () => {
 		if(!chatbox.textContent) return
 		socketSend.set({
@@ -49,21 +37,16 @@
 				return
 			}
 		}
-		
 
 		if(ev.target !== document.body) return // Only active if on main game window, not login forms etc
 		
 		// Only enter keys that are talking keys
-		// const firstThree = ev.code.substring(0,3)
 		const singleCharacter = ev.key.length === 1
-		log('singleCharacter', singleCharacter, ev.code.length)
-		// if(firstThree !== 'Key' && firstThree !== ' ') { // Not a normal key or spacebar
 		if(singleCharacter) { // Normal key or spacebar
 			chatbox.textContent += ev.key // .innerText didn't work with ' '
 		}
 		else { // Not a normal key
 			if(ev.key === 'Backspace') { // Except backspace, which shall backspace properly
-				log('back', ev)
 				chatbox.textContent = chatbox.textContent.slice(0, -1)
 			}
 			else if(ev.key === 'Enter') { // Enter submits instead of other stuff
@@ -76,10 +59,9 @@
 
 		chatbox.style.display = chatbox.textContent ? 'block' : 'none'
 
-		document.getElementById('info').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
-		document.getElementById('fps').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
-		document.getElementById('mem').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
-
+		// document.getElementById('info').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
+		// document.getElementById('fps').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
+		// document.getElementById('mem').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
 		
 		// ev.preventDefault()
 	}
@@ -103,18 +85,35 @@
 		pointer-events: none; /* Clicks go through it */
 	}
 	
-	#Ctext > .label{
-		
+	:global #Ctext > #labelRenderer > .label{
+		width: 300px;
+		text-align: center;
+
+		/* background-color:red; */
+	}
+	:global #Ctext > #labelRenderer > .label > span{
+        display: inline-block;
+		text-align: left;
+		hyphens: auto;
+		-webkit-hyphens: auto;
+		margin-top:-50%; /* hmm; bottom-align paragraphs */
+
+		/* background-color:blue; */
 	}
 
-	#Ctext > .chatbubble{
-
+	#chatbox, :global #Ctext > #labelRenderer > .label {
+        font-family: "Nunito", sans-serif;
+		font-weight:bold;
+		font-size: 20px;
+        color: white;
+        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
+		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */
 	}
 
 	#chatbox{
 		/* height: 100px; */
 		width: 100%;
-		background-color:white;
+		/* background-color:white; */
 		position:absolute;
 		bottom:0px;
 		left:0px;
@@ -122,7 +121,6 @@
 		pointer-events: auto; /* Clicks affect it */
 
 		padding: 5px 10px;
-		opacity: 0.8;
 	}
 
 	#Ctext [contenteditable]:focus {

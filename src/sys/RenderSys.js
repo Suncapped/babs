@@ -2,6 +2,7 @@ import { UiSys } from './UiSys'
 import { log } from './../Utils'
 import { ACESFilmicToneMapping, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -9,6 +10,7 @@ import { WorldSys } from './WorldSys'
 export class RenderSys {
 
 	renderer
+	labelRenderer
 
 	constructor(babs) {
 		this.renderer = new WebGLRenderer({ antialias: true })
@@ -66,6 +68,13 @@ export class RenderSys {
 		// let light = new THREE.AmbientLight(0xFFFFFF, 1)
 		// this._scene.add(light)
 
+		this.labelRenderer = new CSS2DRenderer()
+		this.labelRenderer.domElement.style.position = 'absolute'
+		this.labelRenderer.domElement.id = 'labelRenderer'
+		this.labelRenderer.domElement.style.top = '0px'
+		// this.labelRenderer.domElement.style['pointer-events'] = 'none'
+		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
+
 		this.windowResize()
 	}
 
@@ -73,9 +82,11 @@ export class RenderSys {
 		this._camera.aspect = window.innerWidth / window.innerHeight
 		this._camera.updateProjectionMatrix()
 		this.renderer.setSize(window.innerWidth, window.innerHeight)
+		this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
 	}
 
 	update(dt) {
 		this.renderer.render(this._scene, this._camera)
+		this.labelRenderer.render(this._scene, this._camera)
 	}
 }

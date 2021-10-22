@@ -114,12 +114,12 @@ class Babs {
 		log.info('Browser is', this.browser)
 
 		this.uiSys = new UiSys(this)
-		this.uiSys.CreateStats('fps')
-		this.uiSys.CreateStats('mem')
+		this.uiSys.createStats('fps')
+		this.uiSys.createStats('mem')
 
 		log.info('Cookies?', cookiesEnabled)
 		if(!cookiesEnabled) {
-			this.uiSys.OfferReconnect('Session cookies needed!')
+			this.uiSys.offerReconnect('Session cookies needed!')
 			return
 		}
 
