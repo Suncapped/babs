@@ -1,5 +1,6 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
-import Overlay from '../ent/Overlay.svelte'
+import Overlay from '../ui/Overlay.svelte'
+import Ctext from '../ui/Ctext.svelte'
 import { toprightText, toprightReconnect, menuShowLink } from "../stores.js"
 import { log } from './../Utils'
 
@@ -14,9 +15,10 @@ export class UiSys {
     constructor(babs) {
 		this.babs = babs
 
-
-
 		new Overlay({
+			target: document.body,
+		})
+		new Ctext({
 			target: document.body,
 		})
 

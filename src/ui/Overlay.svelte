@@ -2,7 +2,6 @@
 	import { onMount, afterUpdate } from 'svelte'
 	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd } from "../stores.js"
 	import Cookies from 'js-cookie'
-	import { SocketSys } from '../sys/SocketSys.js'
 	import { log } from '../Utils.js'
 
 	function toggleMenu(ev) {

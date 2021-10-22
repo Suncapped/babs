@@ -1,6 +1,6 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible } from "../stores"
+import { topmenuVisible, rightMouseDown } from "../stores"
 import * as Utils from "../Utils"
 // import { get as sget } from 'svelte/store'
 import { log } from './../Utils'
@@ -108,9 +108,12 @@ export class InputSys {
 		})
 
         document.addEventListener('keydown', async ev => {
+			log('target', ev.target.id)
 			// OS-level key repeat keeps sending down events; 
 			if(this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
-				this.keys[inputCodeMap[ev.code]] = PRESS
+				if(ev.target.id !== 'chatbox') {
+					this.keys[inputCodeMap[ev.code]] = PRESS
+				}
 			}
 			
 			if(this.characterControlMode) {
@@ -119,6 +122,8 @@ export class InputSys {
 					if(this.keys.space === PRESS) {
 						this.player.controller.jump(Controller.JUMP_HEIGHT)
 					}
+
+					// ev.stopImmediatePropagation() // Doesn't work to prevent Ctext.svelte chatbox from receiving this event
 				}
 
 				// If arrows are used for movement, it breaks out of movelock or touchmove
@@ -209,7 +214,7 @@ export class InputSys {
         })
 
         document.addEventListener('mousedown', ev => {
-			log.info('mouseOnDown', ev.button, ev.target.id)
+			log('mouseOnDown', ev.button, ev.target.id)
 
 			if(!this.topMenuVisibleLocal && (ev.target.id === 'canvas' )){
 				this.characterControlMode = true
@@ -242,6 +247,8 @@ export class InputSys {
 
 				if(ev.button === MOUSE_RIGHT_CODE) {
 					this.mouse.right = PRESS
+
+					rightMouseDown.set(true)
 
 					if(this.mouse.left) {
 						// If using touchpad then switch to mouse; modern touchpads don't have both buttons to click at once
@@ -286,6 +293,8 @@ export class InputSys {
 			}
 			if(ev.button === MOUSE_RIGHT_CODE) {
 				this.mouse.right = LIFT
+
+				rightMouseDown.set(false)
 
 				this.mouse.ldouble = 0
 

@@ -108,9 +108,9 @@ export class SocketSys {
 			babs.uiSys.OfferReconnect('Server connection closed.')
 		}
 
-		socketSend.subscribe(data => { // eg Overlay.svelte 
+		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
 			if(Object.keys(data).length === 0) return
-			log('sub Send', data)
+			log('subscribe Send', data)
 			this.send(data)
 		})
 	}
@@ -263,8 +263,6 @@ export class SocketSys {
 						}
 
 					}
-
-
 				break
 				case 'playerdepart':
 					const departPlayer = this.babs.ents.get(data)
@@ -276,6 +274,12 @@ export class SocketSys {
 							departPlayer.remove()
 						}
 
+					}
+				break
+				case 'said':
+					const chattyPlayer = this.babs.ents.get(data.id)
+					if(chattyPlayer) { // Can be self; self text get put over head, too.
+						log('said by chattyPlayer', chattyPlayer.id, data.text)
 					}
 				break
 			}
