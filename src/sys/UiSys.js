@@ -33,15 +33,16 @@ export class UiSys {
 
 	playerSaid(idPlayer, text, color) {
 		const chatDiv = document.createElement('div')
-		// this.ctext.appendChild(chatDiv)
+
 		chatDiv.classList.add('label')
+
+		// Set color based on our menu or the color send with chat for other player
 		if(idPlayer === this.babs.idSelf) {
 			chatDiv.style.color = get(menuSelfData).color
 		}
 		else {
 			chatDiv.style.color = color
 		}
-		// chatDiv.style.width = '200px'
 		
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = text
@@ -59,10 +60,42 @@ export class UiSys {
 		const secondsClamped = MathUtils.clamp(seconds, startingTimeMin, 20)
 		
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *secondsClamped))
+		chatDiv.setAttribute('data-idPlayer', idPlayer)
+		chatDiv.style.visibility = 'hidden'
 		this.labelElements.push(chatDiv)
 
+
 		const chatLabel = new CSS2DObject( chatDiv )
-		chatLabel.position.set( 0, 80, 0 )
+		const chatStartingHeight = idPlayer === this.babs.idSelf ? 85 : 110
+		chatLabel.position.set( 0, chatStartingHeight, 0 )
+
+		const moveUpCheck = () => {
+			if(chatDiv.clientHeight !== 0) {
+				const newDivHeight = chatDiv.firstChild.offsetHeight // gets span
+				// It's added to DOM; now move everything up and then make this one visible
+
+				for(let div of this.labelElements) {
+					if(parseInt(div.getAttribute('data-idPlayer')) === idPlayer){
+						if(chatDiv === div) continue // Skip self
+
+						const pad = 5
+						const extraDistanceUp = newDivHeight*2 +pad // *2 why?  Vertical centering perhaps?
+
+						const currentPaddingBottom = parseInt(div.style.paddingBottom) || 0
+						log(extraDistanceUp, newDivHeight, div.clientHeight, div.style.paddingBottom, currentPaddingBottom)
+						div.style.paddingBottom = `${currentPaddingBottom +extraDistanceUp}px`
+
+						// todo there is still a bug with very long texts fast in a row, stacking badly.
+					}
+				}
+
+				chatDiv.style.visibility = 'visible' // Make new one visible
+			}
+			else {
+				setTimeout(moveUpCheck, 10)
+			}
+		}
+		moveUpCheck()
 
 		const player = this.babs.ents.get(idPlayer)
 		player.controller.target.add( chatLabel )
@@ -103,6 +136,7 @@ export class UiSys {
 			// const player = this.babs.ents.get(parseInt(idPlayer))
 			if(Date.now() > expires) {
 				chat.innerText = '' // todo dispose (and in renderer) and use a pool 
+				this.labelElements = this.labelElements.filter(e => e.innerText !== '')
 			}
 		})
 

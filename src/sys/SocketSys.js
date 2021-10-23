@@ -110,7 +110,6 @@ export class SocketSys {
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
 			if(Object.keys(data).length === 0) return
-			log('subscribe Send', data)
 			this.send(data)
 		})
 	}
@@ -279,7 +278,7 @@ export class SocketSys {
 				case 'said':
 					const chattyPlayer = this.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
-						log('said by chattyPlayer', chattyPlayer.id, data.text)
+						log.info('said by chattyPlayer', chattyPlayer.id, data.text)
 						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, data.color)
 					}
 				break

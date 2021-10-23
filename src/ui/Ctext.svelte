@@ -109,7 +109,8 @@
 		-webkit-hyphens: auto;
 		margin-top:-50%; /* hmm; bottom-align paragraphs */
 
-		/* background-color:blue; */
+		/* background-color:blue;
+		border:1px solid red; */
 	}
 
 	#chatbox, :global #Ctext > #labelRenderer > .label {
@@ -119,6 +120,8 @@
         color: white;
         /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
 		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */
+
+		/* background-color:red; */
 	}
 
 	#chatbox{
