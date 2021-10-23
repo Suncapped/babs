@@ -97,7 +97,7 @@
 	}
 	
 	:global #Ctext > #labelRenderer > .label{
-		width: 300px;
+		width: 200px;
 		text-align: center;
 
 		/* background-color:red; */
@@ -115,7 +115,7 @@
 	#chatbox, :global #Ctext > #labelRenderer > .label {
         font-family: "Nunito", sans-serif;
 		font-weight:bold;
-		font-size: 20px;
+		font-size: 18px;
         color: white;
         /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
 		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */

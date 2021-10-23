@@ -6,7 +6,7 @@ import { Quaternion } from 'three'
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 export class CameraSys {
-	static DefaultOffsetHeight = 12
+	static DefaultOffsetHeight = 32
 
 	constructor(camera, targetController) {
 		this.camera = camera
@@ -19,7 +19,7 @@ export class CameraSys {
 	}
 
 	_CalculateIdealOffset() {
-		const idealOffset = new Vector3(-4, this.offsetHeight, -36) 
+		const idealOffset = new Vector3(-4, this.offsetHeight, -75) 
 		// const idealOffset = new Vector3(-4, this.offsetHeight /3, -3) // put lower and nearer for testing
 
 		idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
