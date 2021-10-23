@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuVisible, socketSend, baseDomain, isProd, rightMouseDown } from "../stores.js"
+	import { topmenuVisible, socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 
@@ -18,7 +18,7 @@
 		chatbox.textContent = ''
 	}
 	function chatKeydown(ev) {
-		log('chatKeydown', $rightMouseDown, ev)
+		// log('chatKeydown', $rightMouseDown, ev)
 
 		if($rightMouseDown) return
 
@@ -28,6 +28,8 @@
 			if(ev.code === 'Enter') {
 				sendChat()
 				// No return, so that style visibility gets updated
+				log('prevent')
+				ev.preventDefault()
 			}
 			else if(ev.code === 'Escape') {
 				// If editing and you hit escape, defocus chat
@@ -36,6 +38,7 @@
 			else { // Skip all character keys when manually editing
 				return
 			}
+			chatbox.style.display = chatbox.textContent ? 'block' : 'none' // Needed because next return catchines in-box edits
 		}
 
 		if(ev.target !== document.body) return // Only active if on main game window, not login forms etc
@@ -57,14 +60,22 @@
 			}
 		}
 
+		// log('chatbox.textContent', chatbox.textContent)
 		chatbox.style.display = chatbox.textContent ? 'block' : 'none'
 
 		// document.getElementById('info').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
 		// document.getElementById('fps').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
 		// document.getElementById('mem').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff
-		
-		// ev.preventDefault()
 	}
+	
+
+	menuSelfData.subscribe(val => {
+		if(chatbox && val?.color) {
+			chatbox.style.color = val.color
+			// const all = document.querySelectorAll('#Ctext > #labelRenderer > .label')
+			// log('all', all)
+		}
+	})
 
 </script>
 

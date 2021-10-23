@@ -228,7 +228,7 @@ export class SocketSys {
 					}
 
 					// Create player entity
-					log.info('loadSelf', arrivalSelf)
+					log('loadSelf', arrivalSelf)
 					const bSelf = true
 					const playerSelf = new Player(arrivalSelf, bSelf, this.babs)
 
@@ -280,7 +280,7 @@ export class SocketSys {
 					const chattyPlayer = this.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
 						log('said by chattyPlayer', chattyPlayer.id, data.text)
-						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text)
+						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, data.color)
 					}
 				break
 			}

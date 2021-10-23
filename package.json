@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite --host",
     "playerdev": "vite --mode playerdev",
-	"commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
+    "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
     "serve": "vite preview",
     "build": "vite build",
     "postbuild": "sh buildtime.sh",
@@ -32,6 +32,7 @@
     "vite": "^2.4.2"
   },
   "dependencies": {
+    "@jaames/iro": "^5.5.2",
     "js-cookie": "^3.0.1",
     "three": "^0.132.2"
   }

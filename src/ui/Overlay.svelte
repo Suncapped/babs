@@ -3,18 +3,47 @@
 	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
+	import iro from '@jaames/iro'
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
 			$topmenuVisible = !$topmenuVisible
+
+			if(!$topmenuVisible) { // If closing menu, hide picker too
+				document.getElementById('picker').style.display = 'none'
+			}
 		}
 	}
+
+
+	let colorPicker
+	onMount(async () => {
+		colorPicker = new iro.ColorPicker('#picker');
+		colorPicker.on('input:change', function(color) {
+			speechColorEl.style.color = color.hexString
+		})
+		// Save occasionally
+		setInterval(() => { // Simpler than a debounce
+			if(colorPicker.color.hexString != $menuSelfData.color) {
+				$menuSelfData.color = colorPicker.color.hexString
+				socketSend.set({
+					'savecolor': colorPicker.color.hexString,
+				})
+			}
+		}, 500)
+	})
 
 	let joinDate, joinMonth, joinYear
 	menuSelfData.subscribe(val => {
 		joinDate = new Date(Date.parse($menuSelfData.created_at))
 		joinMonth = joinDate.toLocaleString('default', { month: 'long' })
 		joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
+
+		// If we got color from socket, or from update and it's different
+		if($menuSelfData?.color && colorPicker.color.hexString != $menuSelfData.color) {
+			speechColorEl.style.color = $menuSelfData.color
+			colorPicker.color.hexString = $menuSelfData.color
+		}
 	})
 
 	let inputreason
@@ -30,6 +59,9 @@
 			savereason.innerText = 'Save'
 			savereason.disabled = false
 		}, 3000)
+
+		document.getElementById('picker').style.display = 'none' // Hide color picker in case they're confused about how it saves
+
 	}
 
 	function logout(ev) {
@@ -41,6 +73,14 @@
 		})
 		window.location.reload()
 	}
+
+
+	function clickColor(ev) {
+		const picker = document.getElementById('picker')
+		picker.style.display = picker.style.display === 'block' ? 'none' : 'block'
+	}
+
+
 
 </script>
 
@@ -79,6 +119,8 @@
 		</div>
 		<div style="clear:both" />
 	</div>
+
+	<div id="picker"></div>
 	<div class="topitem" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};">
 		<ul>
 			<li>Hold right-mouse plus: left, double-left, space, wasd, middle.</li>
@@ -87,8 +129,12 @@
 			<li>&nbsp;</li>
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
-				<li>&nbsp;</li>
 			{/if}
+			<li>
+				Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
+			</li>
+
+			<li>&nbsp;</li>
 			<li>What are you most excited to do in First Earth?</li>
 			<li>
 				<textarea bind:this={inputreason} id="inputreason" maxlength="10000">{$menuSelfData.reason}</textarea>
@@ -177,5 +223,18 @@
 	}
 	#topmenu #savereason, #topmenu #inputreason {
 		font-size: 18px;
+	}
+	
+	#picker {
+		display: none;
+		margin:auto;
+		float:right;
+		padding:5px;
+		background-color:#fff4bc;
+		border-left:1px solid white;
+	}
+	#speechColorEl{
+		color: white;
+		cursor: default;
 	}
 </style>

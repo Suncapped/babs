@@ -2,9 +2,10 @@ import Stats from 'three/examples/jsm/libs/stats.module'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
-import { toprightText, toprightReconnect, menuShowLink } from "../stores.js"
+import { toprightText, toprightReconnect, menuSelfData } from "../stores.js"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
+import { get } from 'svelte/store'
 
 export class UiSys {
 	babs
@@ -30,10 +31,16 @@ export class UiSys {
 		toprightText.set(this.toprightTextDefault)
     }
 
-	playerSaid(idPlayer, text) {
+	playerSaid(idPlayer, text, color) {
 		const chatDiv = document.createElement('div')
 		// this.ctext.appendChild(chatDiv)
-		chatDiv.className = 'label'
+		chatDiv.classList.add('label')
+		if(idPlayer === this.babs.idSelf) {
+			chatDiv.style.color = get(menuSelfData).color
+		}
+		else {
+			chatDiv.style.color = color
+		}
 		// chatDiv.style.width = '200px'
 		
 		const chatSpan = document.createElement('span')
@@ -95,7 +102,7 @@ export class UiSys {
 			const expires = chat.getAttribute('data-expires') // Could store objects with refs instead
 			// const player = this.babs.ents.get(parseInt(idPlayer))
 			if(Date.now() > expires) {
-				chat.innerText = ''
+				chat.innerText = '' // todo dispose (and in renderer) and use a pool 
 			}
 		})
 

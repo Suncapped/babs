@@ -18,6 +18,7 @@ export class Player extends Ent {
 	// Properties:
 	self
 	idzip
+	char
 
 	// References:
 	babs
@@ -26,6 +27,8 @@ export class Player extends Ent {
 		super(arrival.id, babs)
 
 		this.babs = babs
+
+		this.char = arrival.char
 
 		if(arrival.idzip) {
 			this.idzip = arrival.idzip
@@ -38,8 +41,8 @@ export class Player extends Ent {
 		}
 
 		Promise.all([ 
-			babs.loaderSys.loadRig(arrival.char.gender), 
-			babs.loaderSys.loadAnim(arrival.char.gender, 'idle') 
+			babs.loaderSys.loadRig(this.char.gender), 
+			babs.loaderSys.loadAnim(this.char.gender, 'idle') 
 		]).then(([fbxGroup, anim]) => {
 			fbxGroup.name = 'player-'+arrival.id
 			fbxGroup.feplayer = {

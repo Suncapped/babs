@@ -2,7 +2,6 @@ import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three
 import { Gob } from "../ent/Gob"
 import { topmenuVisible, rightMouseDown } from "../stores"
 import * as Utils from "../Utils"
-// import { get as sget } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -108,7 +107,7 @@ export class InputSys {
 		})
 
         document.addEventListener('keydown', async ev => {
-			log('target', ev.target.id)
+			// log('keydown target', ev.target.id)
 			// OS-level key repeat keeps sending down events; 
 			if(this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
 				if(ev.target.id !== 'chatbox') {
