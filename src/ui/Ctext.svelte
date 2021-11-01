@@ -118,7 +118,7 @@
 		font-weight:bold;
 		font-size: 18px;
         color: white;
-        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
+        /* text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;  */
 		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */
 
 		/* background-color:red; */

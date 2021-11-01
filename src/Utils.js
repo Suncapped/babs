@@ -102,6 +102,10 @@ export function* createTimeReporter() {
     }
 }
 
+export function arrayCoord(x, z, sideLength, dataSize = 1) {
+	return x*dataSize +(z *sideLength *dataSize)
+}
+
 
 // /* Use like:
 // let timeReporter = createTimeReporter(); timeReporter.next()

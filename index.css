@@ -8,20 +8,7 @@ body {
     font-size: 24px;
 }
 
-#fps, #mem {
-    position: absolute;
-    top: 63px;
-    left: 10px;
-}
-#mem {
-    top: 111px;
-}
-#info {
-    position: absolute;
-    top: 68px;
-    left: 100px;
-    text-align:left;
-}
+
 body > canvas {
     touch-action: none;
 }

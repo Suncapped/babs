@@ -31,11 +31,15 @@ import {
 	CameraHelper,
 	AmbientLight,
 	MathUtils,
+	BufferAttribute,
+	MeshStandardMaterial,
+	Float32BufferAttribute,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
+import { debugMode } from "../stores"
 
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js'
 
@@ -44,6 +48,8 @@ export class WorldSys {
     static ZoneLength = 1000
 
 	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
+
+	static ZoneSegments = 25
 	
     worldMesh
 
@@ -151,13 +157,7 @@ export class WorldSys {
 		// http://www.workwithcolor.com/hsl-color-picker-01.htm
 
 
-
-
-
-
-
 		// Directional light
-
         this.dirLight = new DirectionalLight(0xffffff, 0)
 		this.dirLight.target = player
         scene.add(this.dirLight)
@@ -201,6 +201,7 @@ export class WorldSys {
 		// May have to do like sun.material.fog = false ?  Not for sun since it's shader, but perhaps for other far things
 		// https://www.youtube.com/watch?v=k1zGz55EqfU Fog video, would be great for rain
 
+
     }
 
     update(delta, camera) {
@@ -226,27 +227,34 @@ export class WorldSys {
 
 
     async loadStatics(urlFiles, scene, zone) {
-        const geometry = new PlaneGeometry( 1000, 1000, 25, 25 )
+        let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
+		// geometry = geometry.toNonIndexed()
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
-        material.color.setHSL( 0.095, 0.5, 0.20 )
-        const ground = new Mesh( geometry, material )
-        ground.name = 'ground'
-        ground.castShadow = true
-        ground.receiveShadow = true
+        // const material = new MeshStandardMaterial({vertexColors: true})
+        // material.color.setHSL( 0.095, 0.5, 0.20 )
+		material.vertexColors = true
 
 
         await this.genTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
+        const ground = new Mesh( geometry, material )
+        ground.name = 'ground'
+        ground.castShadow = true
+        ground.receiveShadow = true
         scene.add( ground )
 
-		let wireframe = new WireframeGeometry( geometry )
-		let line = new LineSegments( wireframe )
-		line.material.color.setHex(0x000000)
-		scene.add(line)
+		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
+		groundGrid.material.color.setHex(0x333333)
+		scene.add(groundGrid)
+
+		debugMode.subscribe(on => {
+			log('debugMode change', on)
+			groundGrid.visible = on
+		})
 
     }
 
@@ -340,13 +348,47 @@ export class WorldSys {
         // timeReporter.next('Terrain new Uint8Array')
         // this.groundMesh = await Utils.terrainGenerate(this.terrainData, this.groundMesh)
 
+		// Vertex colors on BufferGeometry using a non-indexed array
+        const verticesRef = geometry.getAttribute('position').array
 
-        const vertices = geometry.getAttribute('position').array
-        for ( let i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
+		const nCoordsComponents = 3; // x,y,z
+		const nColorComponents = 3;  // r,g,b
+		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2;            // e.g. 6 for a pyramid (?)
+		// const nVerticesPerFace = 3;  // 3 for Triangle faces
+		
+		geometry.addAttribute( 'color', new Float32BufferAttribute(geometry.getAttribute('position').clone(), nColorComponents))
+		const colorsRef = geometry.getAttribute('color').array
+
+		log('genTerrain attrs', geometry.attributes, this.terrainData)
+        for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
-            vertices[ j + 1 ] = this.terrainData[ i ]
+			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
+            verticesRef[j +1] = this.terrainData[i]
 
+			let color = new Color().setHSL( 98/360, 100/100, 0.1 +this.terrainData[i] /100)//14/100 +this.terrainData[i] /100) // Lighten a bit with elevation
+			colorsRef[j +0] = color.r
+			colorsRef[j +1] = color.g
+			colorsRef[j +2] = color.b
         }
+
+		const colorPoint = (vPoint, color) => {
+			// colorsRef[0 +0] = 1
+			// colorsRef[0 +3] = 1
+			// colorsRef[26*3 +0] = 1
+			// colorsRef[26*3 +3] = 1
+			for(let x=0; x<=1; x++) {
+				for(let z=0; z<=1; z++) {
+					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +0] = color.r
+					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +1] = color.g
+					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +2] = color.b
+				}
+			}
+		}
+
+		const target = new Vector3(4, 0, 2)
+		const mudColor = new Color().setHSL(0.095, 0.5, 0.20)
+		colorPoint(target, mudColor)
+
 
         timeReporter.next('Terrain Utils.terrainGenerate')
     }

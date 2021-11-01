@@ -5,7 +5,7 @@ import Ctext from '../ui/Ctext.svelte'
 import { toprightText, toprightReconnect, menuSelfData } from "../stores.js"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
-import { get } from 'svelte/store'
+import { get as svelteGet } from 'svelte/store'
 
 export class UiSys {
 	babs
@@ -38,7 +38,7 @@ export class UiSys {
 
 		// Set color based on our menu or the color send with chat for other player
 		if(idPlayer === this.babs.idSelf) {
-			chatDiv.style.color = get(menuSelfData).color
+			chatDiv.style.color = svelteGet(menuSelfData).color
 		}
 		else {
 			chatDiv.style.color = color
@@ -115,7 +115,17 @@ export class UiSys {
         this[which].showPanel(which=="fps"?0:2)
         this[which].dom.id = which
         this[which].dom.style = ""
-        document.body.appendChild(this[which].dom)
+
+		const waitForReady = () => {
+			const el = document.getElementById('stats')
+			if(el) {
+				el.appendChild(this[which].dom)
+			} 
+			else {
+				setTimeout(waitForReady, 100)
+			}
+		}
+		waitForReady()
     }
 
 	oldPos = new Vector3()

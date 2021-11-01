@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd } from "../stores.js"
+	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 	import iro from '@jaames/iro'
@@ -81,6 +81,18 @@
 	}
 
 
+	let dmCallsCount = 0 // Don't send update on initialization
+	debugMode.subscribe(on => {
+		log('Overlay.svelte debugMode setting', on)
+		if(dmCallsCount > 0) {
+			socketSend.set({
+				'savedebugmode': on,
+			})
+		}
+		dmCallsCount++
+	})
+
+
 
 </script>
 
@@ -133,12 +145,8 @@
 			<li>
 				Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
 			</li>
-
-			<li>&nbsp;</li>
-			<li>What are you most excited to do in First Earth?</li>
 			<li>
-				<textarea bind:this={inputreason} id="inputreason" maxlength="10000">{$menuSelfData.reason}</textarea>
-				<button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button>
+				<label for="debugMode">Debug Mode?</label><input id="debugMode" type="checkbox" bind:checked={$debugMode}>
 			</li>
 
 			<li>&nbsp;</li>
@@ -148,11 +156,23 @@
 			<li>Credit Months: {$menuSelfData.credits}</li>
 			<li>Subscription: Credits</li> <!-- // Free / Credits / Paid / Paid (Credits) -->
 			<li>Until: (after release)</li>
+			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
 			
 			<li>&nbsp;</li>
-			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
+			<li>What are you most excited to do in First Earth?</li>
+			<li>
+				<textarea bind:this={inputreason} id="inputreason" maxlength="10000">{$menuSelfData.reason}</textarea>
+				<button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button>
+			</li>
 		</ul>
 	</div>
+
+	<div id="info" hidden="{!$debugMode}">
+		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
+		Built build_time (build_info).<br />
+		Forum: <a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a>. Pos: <span id="log"></span>
+	</div>
+	<div id="stats" hidden="{!$debugMode}"></div>
 </div>
 
 <style>
@@ -236,5 +256,21 @@
 	#speechColorEl{
 		color: white;
 		cursor: default;
+	}
+
+	/* Debug things */
+	:global #fps, :global #mem { /* Inserted by UiSys */
+		position: absolute;
+		top: 63px;
+		left: 10px;
+	}
+	:global #mem {
+		top: 111px;
+	}
+	#info {
+		position: absolute;
+		top: 68px;
+		left: 100px;
+		text-align:left;
 	}
 </style>

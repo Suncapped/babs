@@ -1,4 +1,4 @@
-import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend } from "../stores"
+import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend, debugMode } from "../stores"
 import Cookies from "js-cookie"
 import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
@@ -109,6 +109,7 @@ export class SocketSys {
 		}
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
+			// log('got socketSend.set', data)
 			if(Object.keys(data).length === 0) return
 			this.send(data)
 		})
@@ -209,6 +210,8 @@ export class SocketSys {
 					log.info('Welcome to', arrivalSelf.idzone, arrivalSelf.id, arrivalSelf.visitor)
 					toprightText.set(this.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
+
+					debugMode.set(arrivalSelf.debugmode === undefined ? true : arrivalSelf.debugmode) // Handle meta value creation
 					
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
