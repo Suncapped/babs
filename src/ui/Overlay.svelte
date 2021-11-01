@@ -83,7 +83,7 @@
 
 	let dmCallsCount = 0 // Don't send update on initialization
 	debugMode.subscribe(on => {
-		log('Overlay.svelte debugMode setting', on)
+		log.info('Overlay.svelte debugMode setting', on)
 		if(dmCallsCount > 0) {
 			socketSend.set({
 				'savedebugmode': on,
