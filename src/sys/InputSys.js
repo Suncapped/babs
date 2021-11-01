@@ -141,11 +141,35 @@ export class InputSys {
 			if(this.keys.cleft) {
 
 				// Spawn test character
-				if(this.keys.f === PRESS) {
+				if(this.keys.v === PRESS) {
 
-					// let obj = await Gob.Create(`/char/female/F_Bald_mesh_009.fbx`, this.babs.scene, 1)
-					// log('obj', obj)
-					// obj.mesh.position.copy(new Vector3(6,0,10))
+					// const childIndex = 0
+
+					// const loadItems = [
+					// 	'flower-lotus.fbx',
+					// 	'flowers-carnations.fbx', 'grass-basic.fbx',
+					// 	'grass.fbx',              'mushroom-boletus.fbx',
+					// 	'mushroom-toadstool.fbx', 'obj-chisel.fbx',
+					// 	'obj-tablet.fbx',         'obj-timber.fbx',
+					// 	'rock-crystal.fbx',       'rock-pillarsmall.fbx',
+					// 	'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
+					// 	'rocks-small.fbx',        'stone-diamond.fbx',
+					// 	'stump.fbx',              'tree-birchtall.fbx',
+					// 	'tree-dead.fbx',          'tree-fallenlog.fbx',
+					// 	'tree-forest-simple.fbx', 'tree-forest.fbx',
+					// 	'tree-oak.fbx',           'tree-old.fbx',
+					// 	'tree-park.fbx',          'tree-spruce.fbx'
+					// ]
+					// // log('loadItems', loadItems)
+
+					// let count=0
+					// for(let item of loadItems) {
+					// 	let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
+					// 	log.info('obj', obj)
+					// 	obj.mesh.position.copy(new Vector3(count*4*2 +2,1, 20 *4 +2))
+					// 	count++
+					// }
+					
 
 					// obj.mesh.scale.multiplyScalar(10)
 					// obj.mesh.scale.multiplyScalar(1/12) 
@@ -164,19 +188,6 @@ export class InputSys {
 					// obj.mesh.position.addScaledVector( _vector, distance )
 					*/
 
-				}
-
-				// Testing commanded movement
-				if(this.keys.v === PRESS) {
-					// let dest
-					// if(Math.random() > 0.5) {
-					// 	dest = new Vector3(1, 0, 1)
-					// } 
-					// else {
-					// 	dest = new Vector3(0, 0, 0)
-					// }
-					// log('dest', dest)
-					// this.player.controller.setDestination(dest, 'walk')
 				}
 			}
 			

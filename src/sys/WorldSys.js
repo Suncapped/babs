@@ -42,6 +42,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { debugMode } from "../stores"
 
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js'
+import { Gob } from '../ent/Gob'
 
 export class WorldSys {
 
@@ -53,7 +54,7 @@ export class WorldSys {
 	
     worldMesh
 
-	scene
+	babs
 
     dirLight
     dirLightHelper
@@ -73,12 +74,12 @@ export class WorldSys {
 	}
 
 	
-    constructor(renderer, scene, camera, player) {
+    constructor(renderer, babs, camera, player) {
 
-		this.scene = scene
+		this.babs = babs
 
         // Old sky
-        // scene.background = new Color().setHSL( 0.6, 0, 1 )
+        // this.babs.scene.background = new Color().setHSL( 0.6, 0, 1 )
         // const vertexShader = document.getElementById( 'vertexShader' ).textContent
         // const fragmentShader = document.getElementById( 'fragmentShader' ).textContent
         // const uniforms = {
@@ -88,7 +89,7 @@ export class WorldSys {
         //     "exponent": { value: 0.6 }
         // }
         // uniforms.topColor.value.copy( hemiLight.color )
-        // scene.fog.color.copy( uniforms[ "bottomColor" ].value )
+        // this.babs.scene.fog.color.copy( uniforms[ "bottomColor" ].value )
         // const skyGeo = new SphereGeometry( 4000, 32, 15 )
         // const skyMat = new ShaderMaterial( {
         //     uniforms: uniforms,
@@ -97,13 +98,13 @@ export class WorldSys {
         //     side: BackSide
         // } )
         // const sky = new Mesh( skyGeo, skyMat )
-        // scene.add( sky )
+        // this.babs.scene.add( sky )
 
 
 		// New sky (not lighting)
 		this.sky = new Sky()
 		this.sky.scale.setScalar(450000)
-		scene.add(this.sky)
+		this.babs.scene.add(this.sky)
 		
 		this.sunPosition = new Vector3()
 
@@ -125,7 +126,7 @@ export class WorldSys {
 			uniforms['sunPosition'].value.copy( this.sunPosition )
 
 			renderer.toneMappingExposure = this.effectController.exposure
-			renderer.render( scene, camera )
+			renderer.render( this.babs.scene, camera )
 
 		}
 
@@ -144,14 +145,14 @@ export class WorldSys {
 		// New lighting
 		// Might want ambient light in addition to hemispheric?  Maybe for indoors?
 		// let light = new AmbientLight(0xFFFFFF, 1)
-		// scene.add(light)
+		// this.babs.scene.add(light)
 
         this.hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0)
         const hemiLightHelper = new HemisphereLightHelper( this.hemiLight, 10 )
-        scene.add( hemiLightHelper )
+        this.babs.scene.add( hemiLightHelper )
         this.hemiLight.color.setHSL( 45/360, 1, 1)//92/100 )
         this.hemiLight.groundColor.setHSL( 245/360, 92/100, 1)
-        scene.add( this.hemiLight )
+        this.babs.scene.add( this.hemiLight )
 
 		// https://hslpicker.com/#fff5d6
 		// http://www.workwithcolor.com/hsl-color-picker-01.htm
@@ -160,9 +161,9 @@ export class WorldSys {
 		// Directional light
         this.dirLight = new DirectionalLight(0xffffff, 0)
 		this.dirLight.target = player
-        scene.add(this.dirLight)
+        this.babs.scene.add(this.dirLight)
         this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
-        scene.add( this.dirLightHelper )
+        this.babs.scene.add( this.dirLightHelper )
 
 		const hsl = { h: 45/360, s: 1, l: 1}//92/100 }
         this.dirLight.color.copy(new Color().setHSL(hsl.h, hsl.s, hsl.l))
@@ -187,13 +188,13 @@ export class WorldSys {
         // this.dirLight.shadow.bias = - 0.001
 
 		// var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
-		// scene.add( shadowHelper )
+		// this.babs.scene.add( shadowHelper )
 
         // renderer.shadowMap.enabled = true
 		// renderer.shadowMap.type = PCFSoftShadowMap
         // renderer.shadowMap.autoUpdate/needsUpdate // Maybe use when sun isn't moving every frame
 
-        scene.fog = new Fog(
+        this.babs.scene.fog = new Fog(
 			new Color(), 
 			1, 
 			this.MAX_VIEW_DISTANCE
@@ -209,12 +210,12 @@ export class WorldSys {
 		// Adjust fog lightness (white/black) to sun elevation
 		const elevationRatio = this.effectController.elevation /90
 		const elevationRatioCapped = Math.min(50, this.effectController.elevation) /90
-		this.scene.fog.color.setHSL(
+		this.babs.scene.fog.color.setHSL(
 			34/360, // Which color
 			0.1, // How much color
 			0.02 + (elevationRatioCapped *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
 		)
-		// this.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
+		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// Put directional light at sun position, just farther out
 		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))
@@ -226,7 +227,7 @@ export class WorldSys {
     }
 
 
-    async loadStatics(urlFiles, scene, zone) {
+    async loadStatics(urlFiles, zone) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
@@ -241,20 +242,48 @@ export class WorldSys {
         await this.genTerrain(urlFiles, geometry, zone)
         geometry.computeVertexNormals()
 
+
         const ground = new Mesh( geometry, material )
         ground.name = 'ground'
         ground.castShadow = true
         ground.receiveShadow = true
-        scene.add( ground )
+        this.babs.scene.add( ground )
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.material.color.setHex(0x333333)
-		scene.add(groundGrid)
-
+		this.babs.scene.add(groundGrid)
 		debugMode.subscribe(on => {
 			log('debugMode change', on)
 			groundGrid.visible = on
 		})
+
+
+		// Sampling of objects
+		const childIndex = 0
+		const loadItems = [
+			'flower-lotus.fbx',
+			'flowers-carnations.fbx', 'grass-basic.fbx',
+			'grass.fbx',              'mushroom-boletus.fbx',
+			'mushroom-toadstool.fbx', 'obj-chisel.fbx',
+			'obj-tablet.fbx',         'obj-timber.fbx',
+			'rock-crystal.fbx',       'rock-pillarsmall.fbx',
+			'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
+			'rocks-small.fbx',        'stone-diamond.fbx',
+			'stump.fbx',              'tree-birchtall.fbx',
+			'tree-dead.fbx',          'tree-fallenlog.fbx',
+			'tree-forest-simple.fbx', 'tree-forest.fbx',
+			'tree-oak.fbx',           'tree-old.fbx',
+			'tree-park.fbx',          'tree-spruce.fbx'
+		]
+		let count=0
+		for(let item of loadItems) {
+			let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
+			log.info('obj', obj)
+			obj.mesh.position.copy(new Vector3(count*4*2 +2,1, 20 *4 +2))
+			count++
+		}
+
+
 
     }
 
@@ -263,7 +292,7 @@ export class WorldSys {
     // rawTexture2
     // public groundMesh
     // waterMesh
-    // async loadStatics(urlFiles, scene) {
+    // async loadStatics(urlFiles, zone) {
 
     //     let timeReporter = Utils.createTimeReporter(); timeReporter.next()
     //     timeReporter.next('loadStatics:')

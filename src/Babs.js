@@ -132,7 +132,7 @@ class Babs {
 		this.scene.add( this.cube )
 		this.cube.name = 'cube'
 
-		this.worldSys = new WorldSys(this.renderSys.renderer, this.scene, this.camera, this.cube)
+		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera, this.cube)
 		
 		this.socketSys = new SocketSys(this)
 
