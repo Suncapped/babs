@@ -73,6 +73,12 @@ export class WorldSys {
 		// exposure: renderer.toneMappingExposure
 	}
 
+	LANDCOVER = {
+		56: 'grass',
+		64: 'dirt',
+		69: 'sand',
+	}
+
 	
     constructor(renderer, babs, camera, player) {
 
@@ -197,7 +203,7 @@ export class WorldSys {
         this.babs.scene.fog = new Fog(
 			new Color(), 
 			1, 
-			this.MAX_VIEW_DISTANCE
+			WorldSys.MAX_VIEW_DISTANCE *1.5
 		)
 		// May have to do like sun.material.fog = false ?  Not for sun since it's shader, but perhaps for other far things
 		// https://www.youtube.com/watch?v=k1zGz55EqfU Fog video, would be great for rain
@@ -230,7 +236,7 @@ export class WorldSys {
     async loadStatics(urlFiles, zone) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
-        geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
+        geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
@@ -240,6 +246,8 @@ export class WorldSys {
 
 
         await this.genTerrain(urlFiles, geometry, zone)
+        await this.genLandcover(urlFiles, geometry, zone)
+		
         geometry.computeVertexNormals()
 
 
@@ -257,37 +265,43 @@ export class WorldSys {
 			groundGrid.visible = on
 		})
 
+    }
 
-		// Sampling of objects
-		const childIndex = 0
-		const loadItems = [
-			'flower-lotus.fbx',
-			'flowers-carnations.fbx', 'grass-basic.fbx',
-			'grass.fbx',              'mushroom-boletus.fbx',
-			'mushroom-toadstool.fbx', 'obj-chisel.fbx',
-			'obj-tablet.fbx',         'obj-timber.fbx',
-			'rock-crystal.fbx',       'rock-pillarsmall.fbx',
-			'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
-			'rocks-small.fbx',        'stone-diamond.fbx',
-			'stump.fbx',              'tree-birchtall.fbx',
-			'tree-dead.fbx',          'tree-fallenlog.fbx',
-			'tree-forest-simple.fbx', 'tree-forest.fbx',
-			'tree-oak.fbx',           'tree-old.fbx',
-			'tree-park.fbx',          'tree-spruce.fbx'
-		]
-		let count=0
-		for(let item of loadItems) {
-			let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
-			log.info('obj', obj)
-			obj.mesh.position.copy(new Vector3(count*4*2 +2,1, 20 *4 +2))
-			count++
-		}
+    async loadObjects(zone) {
+        
+		setTimeout(async () => { // do on next event loop
+			// Sampling of objects
+			const childIndex = 0
+			const loadItems = [
+				'flower-lotus.fbx',
+				'flowers-carnations.fbx', 'grass-basic.fbx',
+				'grass.fbx',              'mushroom-boletus.fbx',
+				'mushroom-toadstool.fbx', 'obj-chisel.fbx',
+				'obj-tablet.fbx',         'obj-timber.fbx',
+				'rock-crystal.fbx',       'rock-pillarsmall.fbx',
+				'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
+				'rocks-small.fbx',        'stone-diamond.fbx',
+				'stump.fbx',              'tree-birchtall.fbx',
+				'tree-dead.fbx',          'tree-fallenlog.fbx',
+				'tree-forest-simple.fbx', 'tree-forest.fbx',
+				'tree-oak.fbx',           'tree-old.fbx',
+				'tree-park.fbx',          'tree-spruce.fbx',
 
-
+				'bush-basic.fbx', 'obj-mud.fbx', 'obj-blockmud.fbx', 
+			]
+			let count=0
+			for(let item of loadItems) {
+				let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
+				log.info('obj', obj)
+				obj.mesh.position.copy(new Vector3(count*4*2 +2, 5, 20 *4 +2))
+				count++
+			}
+		}, 1500)
 
     }
 
-    terrainData = null
+    terrainData
+    landcoverData
     // rawTexture1
     // rawTexture2
     // public groundMesh
@@ -359,13 +373,10 @@ export class WorldSys {
     // }
     async genTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
-
         timeReporter.next('Terrain start')
         this.terrainData = null
         timeReporter.next('Terrain unset')
         
-        // this.groundMesh.name = `ground` // dataUrl.split('/').slice(-1)[0]
-        // const data = await ky.get(dataUrl)
         // timeReporter.next('Terrain ky.get')
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
@@ -375,64 +386,99 @@ export class WorldSys {
         // timeReporter.next('Terrain data.arrayBuffer')
         this.terrainData = new Uint8Array(buff)
         // timeReporter.next('Terrain new Uint8Array')
-        // this.groundMesh = await Utils.terrainGenerate(this.terrainData, this.groundMesh)
+
+		const nCoordsComponents = 3; // x,y,z
+        const verticesRef = geometry.getAttribute('position').array
+		log(verticesRef)
+        for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
+            // j + 1 because it is the y component that we modify
+			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
+            verticesRef[j +1] = this.terrainData[i] // Set vertex height from elevations data
+        }
+
+        timeReporter.next('Terrain DONE')
+    }
+    async genLandcover(urlFiles, geometry, zone) {
+		// old updateLandcover()
+        // while(this.terrainData === null) await sleep(100)
+        // const lcBuffer = await ky.get(`${urlFiles}/terrain/LANDCOVER.bil`).arrayBuffer()
+        // const landcoverData = ndarray(new Uint8Array(lcBuffer), [ZONE.ARR_SIDE_LEN,ZONE.ARR_SIDE_LEN])
+        // const [landcoverRGBAs1, landcoverRGBAs2] = await Utils.landcoverGenerate(landcoverData)
+        // this.rawTexture1.update(landcoverRGBAs1)
+        // this.rawTexture2.update(landcoverRGBAs2)
+        // const water = Utils.waterGenerate(landcoverData, ndarray(this.terrainData, [251,251]))
+        // if(water) {
+        //     water.applyToMesh(this.waterMesh, true)
+        // }
+
+		// Get landcover data
+		let timeReporter = Utils.createTimeReporter(); timeReporter.next()
+        timeReporter.next('Landcover start')
+        this.landcoverData = null
+        timeReporter.next('Landcover unset')
+        
+        const fet = await fetch(`${urlFiles}/zone/${zone.id}/landcovers`)
+        const data = await fet.blob()
+        timeReporter.next('Landcover fetch.blob')
+
+        const buff = await data.arrayBuffer()
+        // timeReporter.next('Landcover data.arrayBuffer')
+        this.landcoverData = new Uint8Array(buff)
+        // timeReporter.next('Landcover new Uint8Array')
+
 
 		// Vertex colors on BufferGeometry using a non-indexed array
         const verticesRef = geometry.getAttribute('position').array
-
-		const nCoordsComponents = 3; // x,y,z
 		const nColorComponents = 3;  // r,g,b
 		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2;            // e.g. 6 for a pyramid (?)
 		// const nVerticesPerFace = 3;  // 3 for Triangle faces
 		
+		// Add color attribute to geometry, so that I can use vertex colors
 		geometry.addAttribute( 'color', new Float32BufferAttribute(geometry.getAttribute('position').clone(), nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array
-
-		log('genTerrain attrs', geometry.attributes, this.terrainData)
-        for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
-            // j + 1 because it is the y component that we modify
-			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-            verticesRef[j +1] = this.terrainData[i]
-
-			let color = new Color().setHSL( 98/360, 100/100, 0.1 +this.terrainData[i] /100)//14/100 +this.terrainData[i] /100) // Lighten a bit with elevation
-			colorsRef[j +0] = color.r
-			colorsRef[j +1] = color.g
-			colorsRef[j +2] = color.b
-        }
-
-		const colorPoint = (vPoint, color) => {
-			// colorsRef[0 +0] = 1
-			// colorsRef[0 +3] = 1
-			// colorsRef[26*3 +0] = 1
-			// colorsRef[26*3 +3] = 1
-			for(let x=0; x<=1; x++) {
-				for(let z=0; z<=1; z++) {
-					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +0] = color.r
-					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +1] = color.g
-					colorsRef[Utils.arrayCoord(vPoint.x +x, vPoint.z +z, 26, 3) +2] = color.b
-				}
-			}
+		
+		const grassColor = new Color().setHSL(98/360, 100/100, 0.1)
+		const dirtColor = new Color().setHSL(0.095, 0.5, 0.20)
+		const sandColor = new Color().setHSL(49/360, 37/100, 68/100)
+		const colorFromLc = {
+			[this.LANDCOVER[56]]: grassColor,
+			[this.LANDCOVER[64]]: dirtColor,
+			[this.LANDCOVER[69]]: sandColor,
 		}
 
-		const target = new Vector3(4, 0, 2)
-		const mudColor = new Color().setHSL(0.095, 0.5, 0.20)
-		colorPoint(target, mudColor)
+        timeReporter.next('Landcover loop colors')
+        for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
+			const lcType = this.LANDCOVER[this.landcoverData[index]]
+			// Spread color from this vertex as well as to its +1 forward vertices (ie over the piece, the 40x40ft)
+			const gridPointofVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
+			for(let x=0; x<=1; x++) {
+				for(let z=0; z<=1; z++) {
+					const colorsIndexOfGridPoint = Utils.coordToIndex(gridPointofVerticesIndex.x +x, gridPointofVerticesIndex.z +z, 26, 3)
+					
+					const color = colorFromLc[lcType]
+					if(!color) {
+						log.warn('Color not found!', this.landcoverData[index], lcType)
+					}
+					if(color === grassColor) {
+						 // Lighten slightly with elevation // Todo add instead of overwrite?
+						 grassColor.setHSL(98/360, 100/100, 0.1 +this.terrainData[index] /1000)
+					}
+					colorsRef[colorsIndexOfGridPoint +0] = color.r
+					colorsRef[colorsIndexOfGridPoint +1] = color.g
+					colorsRef[colorsIndexOfGridPoint +2] = color.b
+				}
+			}
+        }
+
+        timeReporter.next('Landcover DONE')
 
 
-        timeReporter.next('Terrain Utils.terrainGenerate')
+		// const target = new Vector3(4, 0, 2)
+		// const mudColor = new Color().setHSL(0.095, 0.5, 0.20)
+		// colorPiece(target, mudColor)
+
+
     }
-    // async updateLandcover(urlFiles) {
-    //     while(this.terrainData === null) await sleep(100)
-    //     const lcBuffer = await ky.get(`${urlFiles}/terrain/LANDCOVER.bil`).arrayBuffer()
-    //     const landcoverData = ndarray(new Uint8Array(lcBuffer), [ZONE.ARR_SIDE_LEN,ZONE.ARR_SIDE_LEN])
-    //     const [landcoverRGBAs1, landcoverRGBAs2] = await Utils.landcoverGenerate(landcoverData)
-    //     this.rawTexture1.update(landcoverRGBAs1)
-    //     this.rawTexture2.update(landcoverRGBAs2)
-    //     const water = Utils.waterGenerate(landcoverData, ndarray(this.terrainData, [251,251]))
-    //     if(water) {
-    //         water.applyToMesh(this.waterMesh, true)
-    //     }
-    // }
 
     
 

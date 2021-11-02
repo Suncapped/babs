@@ -200,11 +200,11 @@ class Babs {
 	}
 
 	makeCube() {
-		const geometry = new BoxGeometry( 6, 6, 6 )
+		const geometry = new BoxGeometry( 4, 4, 4 )
 		const material = new MeshPhongMaterial()
 		const cube = new Mesh(geometry, material)
 		cube.name = 'this.cameracube'
-		cube.position.copy(new Vector3(10,3,0))
+		cube.position.copy(new Vector3(2+8,2,2+8))
 		cube.castShadow = true
 		// cube.receiveShadow = true
 		return cube

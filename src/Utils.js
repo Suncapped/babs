@@ -107,8 +107,14 @@ export function* createTimeReporter() {
     }
 }
 
-export function arrayCoord(x, z, sideLength, dataSize = 1) {
-	return x*dataSize +(z *sideLength *dataSize)
+export function coordToIndex(x, z, sideLength, dataLength = 1) {
+	return x*dataLength +(z *sideLength *dataLength)
+}
+export function indexToCoord(i, sideLength) { // Don't currently have a need to remove dataLength
+	return {
+		x: i %26, 
+		z: Math.floor(i /26),
+	}
 }
 
 

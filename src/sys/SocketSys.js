@@ -224,6 +224,7 @@ export class SocketSys {
 
 					this.babsReady = true
 					await this.babs.worldSys.loadStatics(this.babs.urlFiles, zone)
+					await this.babs.worldSys.loadObjects(zone)
 
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
