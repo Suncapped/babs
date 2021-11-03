@@ -4,10 +4,10 @@ import { Vector3 } from "three"
 import { debugMode } from "./stores"
 
 let showInfoLogs = false// || import.meta.env.PROD // Always show in prod // Actually no lol, overload!
-// showInfoLogs = true
 
 debugMode.subscribe(on => {
 	showInfoLogs = on
+	// showInfoLogs = true
 })
 
 export const log = (function() {

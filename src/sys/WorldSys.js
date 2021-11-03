@@ -1,6 +1,4 @@
-
-import * as Utils from '../Utils'
-import ndarray from 'ndarray'
+import * as Utils from './../Utils'
 import { 
     PlaneGeometry, 
     MeshBasicMaterial, 
@@ -46,11 +44,15 @@ import { Gob } from '../ent/Gob'
 
 export class WorldSys {
 
-    static ZoneLength = 1000
+	static ZoneLength = 1000
 
 	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
 
 	static ZoneSegments = 25
+
+	static ZoneTerrainMin = new Vector3(0,0,0)
+	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
+
 	
     worldMesh
 
@@ -302,7 +304,10 @@ export class WorldSys {
 			for(let item of loadItems) {
 				let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
 				log.info('obj', obj)
-				obj.mesh.position.copy(new Vector3(count*4*2 +2, 5, 20 *4 +2))
+				const where = new Vector3(count*4*2 +2, 0, 20 *4 +2)
+				where.setY(this.rayGroundHeight(where.z, where.z))
+				// where.setY(10)
+				obj.mesh.position.copy(where)
 				count++
 			}
 		}, 1500)
@@ -499,6 +504,19 @@ export class WorldSys {
 
 
     }
+
+	rayGroundHeight(gx, gz) {
+		const raycaster = new Raycaster(
+			new Vector3(gx, WorldSys.ZoneTerrainMax.y, gz), 
+			new Vector3( 0, -1, 0 ), 0, 
+			WorldSys.ZoneTerrainMax.y
+		)
+
+		const ground = this.babs.scene.children.find(o=>o.name=='ground')
+		const [intersect] = raycaster.intersectObject(ground, true)
+		// log('intersect', groundIntersect)
+		return intersect.point.y
+	}
 
     
 

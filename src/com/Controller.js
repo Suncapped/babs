@@ -6,6 +6,7 @@ import { Euler, MathUtils, Quaternion, Raycaster } from 'three'
 import { Vector3 } from 'three'
 import { Com } from './Com'
 import { SocketSys } from '../sys/SocketSys'
+import { WorldSys } from '../sys/WorldSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
@@ -103,7 +104,7 @@ export class Controller extends Com {
 
 		
 
-		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, this.vTerrainMax.y )
+		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
 
 		// Set position warped
 		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
@@ -374,8 +375,8 @@ export class Controller extends Com {
 		// controlObject.position.add(sideways)
 
 		controlObject.position.clamp(
-			this.vTerrainMin,
-			this.vTerrainMax,
+			WorldSys.ZoneTerrainMin,
+			WorldSys.ZoneTerrainMax,
 		)
 
 		if (this._mixer) {
@@ -384,7 +385,7 @@ export class Controller extends Com {
 
 		// Keep above ground
 		this.raycaster.ray.origin.copy(controlObject.position)
-		this.raycaster.ray.origin.setY(this.vTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
+		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
 		const ground = this.scene.children.find(o=>o.name=='ground')
 		if(ground && this.raycaster) {
 			const groundIntersect = this.raycaster.intersectObject(ground, true)

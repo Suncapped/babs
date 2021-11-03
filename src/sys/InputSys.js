@@ -1,7 +1,6 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
 import { topmenuVisible, rightMouseDown } from "../stores"
-import * as Utils from "../Utils"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -11,6 +10,7 @@ import { DoubleSide } from "three"
 import { Matrix4 } from "three"
 import { Vector2 } from "three"
 import { Controller } from "../com/Controller"
+import { WorldSys } from "./WorldSys"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -520,7 +520,7 @@ export class InputSys {
 				gCurrentPos.setY(0) // Y needs a lot of work in this area...
 
 				const dest = gCurrentPos.clone().add(vector)
-				dest.clamp(this.player.controller.vTerrainMin, this.player.controller.vTerrainMax)
+				dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 
 				// Send to controller
 				log.info('InputSys: call controller.setDestination()', dest)
