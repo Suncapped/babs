@@ -77,6 +77,15 @@ export class WorldSys {
 		56: 'grass',
 		64: 'dirt',
 		69: 'sand',
+		76: 'cliff',
+		4: 'lake',
+		5: 'lakeshore',
+		6: 'river',
+		7: 'rivershore',
+		8: 'streamsmall',
+		9: 'streammedium',
+		10: 'streamlarge',
+		11: 'streamshore',
 	}
 
 	
@@ -440,10 +449,21 @@ export class WorldSys {
 		const grassColor = new Color().setHSL(98/360, 100/100, 0.1)
 		const dirtColor = new Color().setHSL(0.095, 0.5, 0.20)
 		const sandColor = new Color().setHSL(49/360, 37/100, 68/100)
+		const cliffColor = new Color().setHSL(13/360, 61/100, 24/100)
+		const waterColor = new Color().setHSL(222/360, 39/100, 34/100)
+		const shoreColor = new Color().setHSL(51/360, 39/100, 34/100)
 		const colorFromLc = {
 			[this.LANDCOVER[56]]: grassColor,
 			[this.LANDCOVER[64]]: dirtColor,
 			[this.LANDCOVER[69]]: sandColor,
+			[this.LANDCOVER[76]]: cliffColor,
+			[this.LANDCOVER[5]]: shoreColor,
+			[this.LANDCOVER[6]]: waterColor,
+			[this.LANDCOVER[7]]: shoreColor,
+			[this.LANDCOVER[8]]: waterColor,
+			[this.LANDCOVER[9]]: waterColor,
+			[this.LANDCOVER[10]]: waterColor,
+			[this.LANDCOVER[11]]: shoreColor,
 		}
 
         timeReporter.next('Landcover loop colors')
