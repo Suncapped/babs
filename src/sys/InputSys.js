@@ -1,6 +1,6 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible, rightMouseDown } from "../stores"
+import { topmenuVisible, rightMouseDown, debugMode } from "../stores"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -526,17 +526,21 @@ export class InputSys {
 				this.player.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
 
 				// Let's show a square in front of the player?  Their destination target square :)
-				if(!this.displayDestinationMesh) {
-					const geometry = new PlaneGeometry( 4, 4 )
-					const material = new MeshBasicMaterial( {color: 0xffaaaa, side: DoubleSide} )
-					geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
-					this.displayDestinationMesh = new Mesh( geometry, material )
-					scene.add( this.displayDestinationMesh )
+				if(this.babs.debugMode) {
+					if(!this.displayDestinationMesh) {
+						const geometry = new PlaneGeometry( 4, 4 )
+						const material = new MeshBasicMaterial( {color: 0xffaaaa, side: DoubleSide} )
+						geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
+						this.displayDestinationMesh = new Mesh( geometry, material )
+						scene.add( this.displayDestinationMesh )
+					}
+					this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
+					const easyRaiseAbove = 0.1
+					this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y-2 + easyRaiseAbove, 0))
 				}
-				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
-				const easyRaiseAbove = 0.1
-				this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y-2 + easyRaiseAbove, 0))
-
+				else {
+					this.displayDestinationMesh?.position.setY(-1000)
+				}
 			}
 
 		}

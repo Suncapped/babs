@@ -21,7 +21,7 @@ import { RenderSys } from './sys/RenderSys'
 import { Player } from './ent/Player'
 import { Controller } from './com/Controller'
 
-import { baseDomain, isProd } from "./stores"
+import { baseDomain, isProd, debugMode } from "./stores"
 
 class Babs {
 
@@ -51,6 +51,8 @@ class Babs {
 	zips = new Map() // idzip key, value idplayer
 
 	idSelf
+
+	debugMode
 
 
 	constructor() {
@@ -96,6 +98,10 @@ class Babs {
 				return false
 			}
 		})()
+
+		debugMode.subscribe(on => {
+			this.debugMode = on
+		})
 
 		this.loaderSys = new LoaderSys(this.urlFiles)
 
