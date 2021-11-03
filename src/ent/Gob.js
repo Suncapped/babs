@@ -24,7 +24,7 @@ export class Gob {
         // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
         // const object = new Mesh( geometry, material )
         gob.mesh = group.children[childIndex] // TODOO change back to [0]
-        log('Gob.Create fbx group', group, gob.mesh)
+        log.info('Gob.Create fbx group', group, gob.mesh)
 
 		if(Array.isArray(gob.mesh.material)) { // Fire
 			gob.mesh.material[2].side = DoubleSide

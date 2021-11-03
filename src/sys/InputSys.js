@@ -225,7 +225,6 @@ export class InputSys {
 
         document.addEventListener('mousedown', ev => {
 			log.info('mouseOnDown', ev.button, ev.target.id)
-			ev.preventDefault()
 
 			if(!this.topMenuVisibleLocal && (ev.target.id === 'canvas' )){
 				this.characterControlMode = true

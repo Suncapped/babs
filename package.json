@@ -29,6 +29,6 @@
   "dependencies": {
     "@jaames/iro": "^5.5.2",
     "js-cookie": "^3.0.1",
-    "three": "^0.132.2"
+    "three": "^0.134.0"
   }
 }
