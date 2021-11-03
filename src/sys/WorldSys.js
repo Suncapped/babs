@@ -403,11 +403,10 @@ export class WorldSys {
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
-		log(verticesRef)
         for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-            verticesRef[j +1] = this.terrainData[i] // Set vertex height from elevations data
+            verticesRef[j +1] = this.terrainData[i] * zone.yscale // Set vertex height from elevations data
         }
 
         timeReporter.next('Terrain DONE')

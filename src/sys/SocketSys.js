@@ -204,6 +204,8 @@ export class SocketSys {
 						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
+					log('data', data)
+
 					const arrivalSelf = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == arrivalSelf.idzone)
