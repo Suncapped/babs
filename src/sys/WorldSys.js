@@ -256,12 +256,10 @@ export class WorldSys {
         // material.color.setHSL( 0.095, 0.5, 0.20 )
 		material.vertexColors = true
 
-
         await this.genTerrain(urlFiles, geometry, zone)
         await this.genLandcover(urlFiles, geometry, zone)
 		
         geometry.computeVertexNormals()
-
 
         const ground = new Mesh( geometry, material )
         ground.name = 'ground'
@@ -283,7 +281,6 @@ export class WorldSys {
         
 		setTimeout(async () => { // do on next event loop
 			// Sampling of objects
-			const childIndex = 0
 			const loadItems = [
 				'flower-lotus.gltf',
 				'flowers-carnations.gltf', 'grass-basic.gltf',
@@ -301,12 +298,17 @@ export class WorldSys {
 
 				'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
 			]
-			let count=0
-			for(let item of loadItems) {
-				let obj = await Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
-				obj.mesh.position.copy(this.vRayGroundHeight(count*4*2 +2, 16 *4 +2))
-				count++
-			}
+			// let count=0
+			// for(let item of loadItems) {
+			// 	let pObj = Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
+			// 	obj.mesh.position.copy(this.vRayGroundHeight(count*4*2 +2, 16 *4 +2))
+			// 	count++
+			// }
+
+			const objs = await Promise.all(loadItems.map(item => Gob.Create(`/environment/gltf/${item}`, this.babs, 0)))
+			objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*4*2 +2, 16 *4 +2)))
+
+
 		}, 1500)
 
     }
