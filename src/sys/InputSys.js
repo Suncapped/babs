@@ -143,32 +143,23 @@ export class InputSys {
 				// Spawn test character
 				if(this.keys.v === PRESS) {
 
-					// const childIndex = 0
 
-					// const loadItems = [
-					// 	'flower-lotus.fbx',
-					// 	'flowers-carnations.fbx', 'grass-basic.fbx',
-					// 	'grass.fbx',              'mushroom-boletus.fbx',
-					// 	'mushroom-toadstool.fbx', 'obj-chisel.fbx',
-					// 	'obj-tablet.fbx',         'obj-timber.fbx',
-					// 	'rock-crystal.fbx',       'rock-pillarsmall.fbx',
-					// 	'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
-					// 	'rocks-small.fbx',        'stone-diamond.fbx',
-					// 	'stump.fbx',              'tree-birchtall.fbx',
-					// 	'tree-dead.fbx',          'tree-fallenlog.fbx',
-					// 	'tree-forest-simple.fbx', 'tree-forest.fbx',
-					// 	'tree-oak.fbx',           'tree-old.fbx',
-					// 	'tree-park.fbx',          'tree-spruce.fbx'
-					// ]
+					const childIndex = 0
+					const loadItems = [
+						'tree-birchtall.gltf',
+						'tree-spruce.gltf'
+					]
 					// // log('loadItems', loadItems)
 
-					// let count=0
-					// for(let item of loadItems) {
-					// 	let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
-					// 	log.info('obj', obj)
-					// 	obj.mesh.position.copy(new Vector3(count*4*2 +2,1, 20 *4 +2))
-					// 	count++
-					// }
+					let count=0
+					for(let item of loadItems) {
+						let obj = await Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
+						log('obj scale', obj.mesh.scale)
+						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
+						// obj.mesh.scale.multiplyScalar(3.3)
+						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*4*2 +2, 12 *4 +2))
+						count++
+					}
 					
 
 					// obj.mesh.scale.multiplyScalar(10)

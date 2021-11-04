@@ -70,7 +70,7 @@ export class WorldSys {
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
 		mieDirectionalG: 0.7,
-		elevation: 60,//2,
+		elevation: 75,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}
@@ -147,15 +147,17 @@ export class WorldSys {
 
 		}
 
-		// const gui = new GUI()
-		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+		const skyUi = false
+		if(skyUi) {
+			const gui = new GUI()
+			gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+			gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+		}
 		updateSkyValues()
 
 
@@ -164,12 +166,12 @@ export class WorldSys {
 		// let light = new AmbientLight(0xFFFFFF, 1)
 		// this.babs.scene.add(light)
 
-        this.hemiLight = new HemisphereLight( 0xffffff, 0xffffff, 0)
-        const hemiLightHelper = new HemisphereLightHelper( this.hemiLight, 10 )
-        this.babs.scene.add( hemiLightHelper )
-        this.hemiLight.color.setHSL( 45/360, 1, 1)//92/100 )
-        this.hemiLight.groundColor.setHSL( 245/360, 92/100, 1)
-        this.babs.scene.add( this.hemiLight )
+        this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
+        const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
+        this.babs.scene.add(hemiLightHelper)
+        this.hemiLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
+        this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
+        this.babs.scene.add(this.hemiLight)
 
 		// https://hslpicker.com/#fff5d6
 		// http://www.workwithcolor.com/hsl-color-picker-01.htm
@@ -179,11 +181,10 @@ export class WorldSys {
         this.dirLight = new DirectionalLight(0xffffff, 0)
 		this.dirLight.target = player
         this.babs.scene.add(this.dirLight)
-        this.dirLightHelper = new DirectionalLightHelper( this.dirLight, 10 )
-        this.babs.scene.add( this.dirLightHelper )
+        this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 10)
+        this.babs.scene.add(this.dirLightHelper)
 
-		const hsl = { h: 45/360, s: 1, l: 1}//92/100 }
-        this.dirLight.color.copy(new Color().setHSL(hsl.h, hsl.s, hsl.l))
+        this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
         // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
         // this.dirLight.position.multiplyScalar( 3 )
 
@@ -237,8 +238,8 @@ export class WorldSys {
 		// Put directional light at sun position, just farther out
 		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))
 
-		this.dirLight.intensity = MathUtils.lerp(0, 2, elevationRatio)
-		this.hemiLight.intensity = MathUtils.lerp(0.20, 0.75, elevationRatio)
+		this.dirLight.intensity = MathUtils.lerp(0.01, 0.75, elevationRatio)
+		this.hemiLight.intensity = MathUtils.lerp(0.05, 0.25, elevationRatio)
 		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
     }
@@ -269,7 +270,7 @@ export class WorldSys {
         this.babs.scene.add( ground )
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
-		groundGrid.material.color.setHex(0x333333)
+		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
 		this.babs.scene.add(groundGrid)
 		debugMode.subscribe(on => {
 			log('debugMode change', on)
@@ -284,30 +285,26 @@ export class WorldSys {
 			// Sampling of objects
 			const childIndex = 0
 			const loadItems = [
-				'flower-lotus.fbx',
-				'flowers-carnations.fbx', 'grass-basic.fbx',
-				'grass.fbx',              'mushroom-boletus.fbx',
-				'mushroom-toadstool.fbx', 'obj-chisel.fbx',
-				'obj-tablet.fbx',         'obj-timber.fbx',
-				'rock-crystal.fbx',       'rock-pillarsmall.fbx',
-				'rock-terrassesmall.fbx', 'rocks-sharpsmall.fbx',
-				'rocks-small.fbx',        'stone-diamond.fbx',
-				'stump.fbx',              'tree-birchtall.fbx',
-				'tree-dead.fbx',          'tree-fallenlog.fbx',
-				'tree-forest-simple.fbx', 'tree-forest.fbx',
-				'tree-oak.fbx',           'tree-old.fbx',
-				'tree-park.fbx',          'tree-spruce.fbx',
+				'flower-lotus.gltf',
+				'flowers-carnations.gltf', 'grass-basic.gltf',
+				'grass.gltf',              'mushroom-boletus.gltf',
+				'mushroom-toadstool.gltf', 'obj-chisel.gltf',
+				'obj-tablet.gltf',         'obj-timber.gltf',
+				'rock-crystal.gltf',       'rock-pillarsmall.gltf',
+				'rock-terrassesmall.gltf', 'rocks-sharpsmall.gltf',
+				'rocks-small.gltf',        'stone-diamond.gltf',
+				'stump.gltf',              'tree-birchtall.gltf',
+				'tree-dead.gltf',          'tree-fallenlog.gltf',
+				'tree-forest-simple.gltf', 'tree-forest.gltf',
+				'tree-oak.gltf',           'tree-old.gltf',
+				'tree-park.gltf',          'tree-spruce.gltf',
 
-				'bush-basic.fbx', 'obj-mud.fbx', 'obj-blockmud.fbx', 
+				'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
 			]
 			let count=0
 			for(let item of loadItems) {
-				let obj = await Gob.Create(`/environment/${item}`, this.babs, childIndex)
-				log.info('obj', obj)
-				const where = new Vector3(count*4*2 +2, 0, 20 *4 +2)
-				where.setY(this.rayGroundHeight(where.z, where.z))
-				// where.setY(10)
-				obj.mesh.position.copy(where)
+				let obj = await Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
+				obj.mesh.position.copy(this.vRayGroundHeight(count*4*2 +2, 16 *4 +2))
 				count++
 			}
 		}, 1500)
@@ -450,12 +447,12 @@ export class WorldSys {
 		geometry.addAttribute( 'color', new Float32BufferAttribute(geometry.getAttribute('position').clone(), nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array
 		
-		const grassColor = new Color().setHSL(98/360, 100/100, 0.1)
-		const dirtColor = new Color().setHSL(0.095, 0.5, 0.20)
-		const sandColor = new Color().setHSL(49/360, 37/100, 68/100)
-		const cliffColor = new Color().setHSL(13/360, 61/100, 24/100)
-		const waterColor = new Color().setHSL(222/360, 39/100, 34/100)
-		const shoreColor = new Color().setHSL(51/360, 39/100, 34/100)
+		const grassColor = new Color().setHSL(98/360, 100/100, 20/100).convertSRGBToLinear()
+		const dirtColor = new Color().setHSL(35/360, 40/100, 40/100).convertSRGBToLinear()
+		const sandColor = new Color().setHSL(49/360, 37/100, 68/100).convertSRGBToLinear()
+		const cliffColor = new Color().setHSL(13/360, 61/100, 24/100).convertSRGBToLinear()
+		const waterColor = new Color().setHSL(222/360, 39/100, 34/100).convertSRGBToLinear()
+		const shoreColor = new Color().setHSL(51/360, 39/100, 34/100).convertSRGBToLinear()
 		const colorFromLc = {
 			[this.LANDCOVER[56]]: grassColor,
 			[this.LANDCOVER[64]]: dirtColor,
@@ -485,7 +482,7 @@ export class WorldSys {
 					}
 					if(color === grassColor) {
 						 // Lighten slightly with elevation // Todo add instead of overwrite?
-						 grassColor.setHSL(98/360, 100/100, 0.1 +this.terrainData[index] /1000)
+						 grassColor.setHSL(98/360, 80/100, 0.2 +this.terrainData[index] /1000).convertSRGBToLinear()
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
@@ -504,7 +501,7 @@ export class WorldSys {
 
     }
 
-	rayGroundHeight(gx, gz) {
+	vRayGroundHeight(gx, gz) {
 		const raycaster = new Raycaster(
 			new Vector3(gx, WorldSys.ZoneTerrainMax.y, gz), 
 			new Vector3( 0, -1, 0 ), 0, 
@@ -513,8 +510,7 @@ export class WorldSys {
 
 		const ground = this.babs.scene.children.find(o=>o.name=='ground')
 		const [intersect] = raycaster.intersectObject(ground, true)
-		// log('intersect', groundIntersect)
-		return intersect.point.y
+		return intersect.point
 	}
 
     

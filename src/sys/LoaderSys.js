@@ -1,4 +1,4 @@
-import { sRGBEncoding, Vector2 } from "three"
+import { Color, FrontSide, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
@@ -13,24 +13,62 @@ import { Group } from "three"
 import { Bone } from "three"
 import { Vector4 } from "three"
 import { Matrix3 } from "three"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
 export class LoaderSys {
 
-	urlFiles
 
 	constructor(urlFiles) {
 		this.urlFiles = urlFiles
+
+		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
+			this.objectTexture = texture
+			this.objectTexture.encoding = sRGBEncoding // Should already be default
+			this.objectTexture.flipY = false 
+					// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
+			const material = new MeshPhongMaterial({
+				map: this.objectTexture,
+				// bumpMap: texture,
+				// bumpScale: bumpScale,
+				// color: diffuseColor,
+				specular: 0.16,
+				// reflectivity: 0.5,
+				shininess: 0.2,
+				// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
+				side: FrontSide,
+				// color: null,
+				// emissive: null,
+				// color: new Color(0,0,0).convertSRGBToLinear(),
+			})
+			// material.color.copy(material.color.convertSRGBToLinear())
+			// material.emissive.copy(material.emissive.convertSRGBToLinear())
+
+			log('objectMaterial', material)
+
+			this.objectMaterial = material
+			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?
+			
+		})
+
 	}
 
 	async loadFbx(path) {
 
-		return await new Promise( (resolve, reject) => {
+		return new Promise( (resolve, reject) => {
 			const loader = new FBXLoader()
 
 			loader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
 					log.info('Loaded FBX:', path, group)
+
+					group.traverse(child => {
+						if (child.isMesh) {
+							// log('FBX COLOR is', child.material.color)
+							child.material.color = new Color(1,1,1) // Unset any weird import colors beyond texture painting
+						}
+					})
+
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback
@@ -46,7 +84,7 @@ export class LoaderSys {
 
 	async loadTexture(path) {
 		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
-		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if loading gltf
+		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if using with gltf
 		texture.encoding = sRGBEncoding // This too, though the default seems right
 		// Ah, because of this https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/5
 		// texture.anisotropy = 16
@@ -58,8 +96,8 @@ export class LoaderSys {
 	async loadGltf(path) {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
 
-		return new Promise( (resolve, reject) => {
-			log.info('loading', path)
+		return new Promise((resolve, reject) => {
+			log.info('loading gltf', path)
 
 			loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
@@ -74,7 +112,21 @@ export class LoaderSys {
 					// // roughnessMipmapper.dispose()
 					// render()
 
+					// scene.add( gltf.scene );
+					// gltf.animations; // Array<THREE.AnimationClip>
+					// gltf.scene; // THREE.Group
+					// gltf.scenes; // Array<THREE.Group>
+					// gltf.cameras; // Array<THREE.Camera>
+					// gltf.asset; // Object
+
 					// let mesh = gltf.scene.children[0]
+
+
+					gltf.scene.traverse(child => {
+						if (child.isMesh) {
+							child.material = this.objectMaterial
+						}
+					})
 
 					resolve(gltf)
 				},
@@ -86,7 +138,7 @@ export class LoaderSys {
 				}
 			)
 
-		}); 
+		})
 
 	}
 
@@ -108,9 +160,10 @@ export class LoaderSys {
 			// reflectivity: 0.5,
 			shininess: 0.2,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
+			side: FrontSide,
 		})
-		const hsl = material.color.getHSL({h:0,s:0,l:0})
-		material.color.setHSL(hsl.h, hsl.s, 1)
+		// const hsl = material.color.getHSL({h:0,s:0,l:0})
+		// material.color.setHSL(hsl.h, hsl.s, 1)
 		
 		// const group = await LoaderSys.loadFbx(`/char/${gender}/female-rig-idle.fbx`) 
 		const group = await this.loadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 

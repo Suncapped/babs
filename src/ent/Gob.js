@@ -14,31 +14,33 @@ export class Gob {
 
     static async Create(path, babs, childIndex = 0) {
         let gob = new Gob
-        const group = await babs.loaderSys.loadFbx(path)
 
-
-        if(group.children.length > 1) {
-            log.warn(`Loaded FBX with more than one child.  Using children[${childIndex}]`, group)
-        }
-
-        // const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
-        // const object = new Mesh( geometry, material )
-        gob.mesh = group.children[childIndex] // TODOO change back to [0]
-        log.info('Gob.Create fbx group', group, gob.mesh)
-
-		if(Array.isArray(gob.mesh.material)) { // Fire
-			gob.mesh.material[2].side = DoubleSide
-			gob.mesh.material[2].color = new Color(0xFA942D) // albedo?  moderates .map?
-			gob.mesh.material[2].emissive = new Color(102, 0, 0) //  orange
+		const fbxLoader = path.endsWith('.fbx')
+		let group
+		if(fbxLoader) {
+			group = await babs.loaderSys.loadFbx(path)
 		}
-		else { // Player
-			// gob.mesh.material.side = DoubleSide
-			// gob.mesh.material.color = new Color(55, 200, 55)
-			// gob.mesh.material.emissive = new Color(0, 100, 0)
+		else {
+			group = (await babs.loaderSys.loadGltf(path)).scene
 		}
 
+		if(group.children.length > 1) {
+			log.warn(`Loaded object with more than one child.  Using children[${childIndex}]`, group)
+		}
 
-        babs.scene.add( gob.mesh )
+		log.info(`Gob.Create ${fbxLoader ? 'FBX' : 'GLTF'} group`, group.children[0].material)
+		gob.mesh = group.children[childIndex]
+		
+		// const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
+		// const object = new Mesh( geometry, material )
+		// if(Array.isArray(gob.mesh.material)) { // Fire
+			// gob.mesh.material[2].side = DoubleSide
+			// gob.mesh.material[2].color = new Color(0xFA942D).convertSRGBToLinear() // albedo?  moderates .map?
+			// gob.mesh.material[2].emissive = new Color(102, 0, 0).convertSRGBToLinear() //  orange
+		// }
+
+		babs.scene.add( gob.mesh )
+
         return gob
     }
 }
