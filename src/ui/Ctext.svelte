@@ -105,8 +105,8 @@
 	:global #Ctext > #labelRenderer > .label > span{
         display: inline-block;
 		text-align: left;
-		hyphens: auto;
-		-webkit-hyphens: auto;
+		/* hyphens: auto;
+		-webkit-hyphens: auto; */
 		margin-top:-50%; /* hmm; bottom-align paragraphs */
 
 		/* background-color:blue;

@@ -40,6 +40,7 @@ import {
 	Matrix4,
 	Quaternion,
 	Euler,
+	InstancedBufferAttribute,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -501,6 +502,7 @@ export class WorldSys {
 
 			const cubeSize = 4 // Must divide into 10
 			const waterCubePositions = []
+			const waterCubeColors = []
 
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 				const lcString = this.StringifyLandcover[this.landcoverData[index]]
@@ -513,11 +515,15 @@ export class WorldSys {
 						for(let x=0; x<10/cubeSize /Math.round(spacing); x++) {
 
 							const rayPosition = this.vRayGroundHeight(coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4, coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4)
-							// log('rayPosition', rayPosition)
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
 								// this.waterCubes.push(this.makeWaterCube(rayPosition, 4 *cubeSize)))
 								waterCubePositions.push(rayPosition)
+
+								const riverBaseColor = this.colorFromLc.river.clone()
+								riverBaseColor.offsetHSL(0, 0, (Math.random() -0.1) * 20/100) // -0.1 biases it toward dark
+
+								waterCubeColors.push(riverBaseColor.r, riverBaseColor.g, riverBaseColor.b)
 							}
 
 						}
@@ -526,14 +532,21 @@ export class WorldSys {
 			}
 
 			const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
-			const material = new MeshLambertMaterial({color: this.colorFromLc.river})
+			const material = new MeshLambertMaterial({})
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
 			this.waterInstancedMesh.instanceMatrix.setUsage( DynamicDrawUsage ) // So I don't have to call .needsUpdate
 			this.babs.scene.add(this.waterInstancedMesh)
 
+
+			const bufferAttr = new InstancedBufferAttribute( new Float32Array( waterCubeColors), 3 )
+			bufferAttr.needsUpdate = true
+			this.waterInstancedMesh.instanceColor = bufferAttr
+
+
 			for(let i=0, l=waterCubePositions.length; i<l; i++) {
 				let matrix = new Matrix4().setPosition(waterCubePositions[i].setY(waterCubePositions[i].y -(cubeSize *4)/2))
 				this.waterInstancedMesh.setMatrixAt(i, matrix)
+				// this.waterInstancedMesh.setColorAt(i, new Color(0xffffff))
 				this.waterInstancedRands[i] = Math.random() - 0.5
 			}
 
@@ -558,21 +571,21 @@ export class WorldSys {
 		return intersect?.point
 	}
 
-	waterMaterial = new MeshLambertMaterial()
-	waterGeometry
-	makeWaterCube(vPosition, size) {
-		if(!this.waterGeometry) this.waterGeometry = new BoxGeometry( size, size, size )
-
-		const cube = new Mesh(this.waterGeometry, this.waterMaterial)
-		// log(this.colorFromLc.river)
-		cube.material.color = this.colorFromLc.river
-		cube.position.copy(vPosition).setY(vPosition.y - size/2) // Sink partway into ground
-		// cube.material.castShadow = false
-		// cube.material.receiveShadow = false
-		// cube.material.disableLighting = true
-		cube.randFactor = Math.random()
-		this.babs.scene.add(cube)
-		return cube
-	}
+	// This has been replaced with an InstancedMesh!
+	// waterMaterial = new MeshLambertMaterial()
+	// waterGeometry
+	// makeWaterCube(vPosition, size) {
+	// 	if(!this.waterGeometry) this.waterGeometry = new BoxGeometry( size, size, size )
+	// 	const cube = new Mesh(this.waterGeometry, this.waterMaterial)
+	// 	// log(this.colorFromLc.river)
+	// 	cube.material.color = this.colorFromLc.river
+	// 	cube.position.copy(vPosition).setY(vPosition.y - size/2) // Sink partway into ground
+	// 	// cube.material.castShadow = false
+	// 	// cube.material.receiveShadow = false
+	// 	// cube.material.disableLighting = true
+	// 	cube.randFactor = Math.random()
+	// 	this.babs.scene.add(cube)
+	// 	return cube
+	// }
 
 }
