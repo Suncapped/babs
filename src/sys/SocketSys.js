@@ -141,7 +141,7 @@ export class SocketSys {
 			await this.ws.send(JSON.stringify(json))
 		}
 		else {
-			log.warn('Cannot send; WebSocket is in CLOSING or CLOSED state')
+			console.warn('Cannot send; WebSocket is in CLOSING or CLOSED state')
 			this.babs.uiSys.offerReconnect('Cannot reach server.')
 		}
 	}

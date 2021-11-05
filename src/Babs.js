@@ -56,7 +56,7 @@ class Babs {
 
 	constructor() {
 
-		log('Mode is', import.meta.env.MODE)
+		log('Mode is:', import.meta.env.MODE)
 
 
 		var preservedConsoleLog = console.warn

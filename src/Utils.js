@@ -10,23 +10,37 @@ debugMode.subscribe(on => {
 	// showInfoLogs = true
 })
 
+// export const log = (function() {
+//     function log(...params) { 
+//         console.log(...params)
+//     }
+// 	log.info = (...params) => {
+// 		if(showInfoLogs) {
+// 			params[0] = '{info} '+params[0]
+// 			console.log(...params)
+// 		}
+// 	}
+// 	console.warn = (...params) => {
+// 		console.warn(...params)
+// 	}
+// 	console.error = (...params) => {
+// 		console.error(...params)
+// 	}
+
+// 	return log
+// })() // IIFE
+
 export const log = (function() {
-    function log(...params) { 
-        console.log(...params)
-    }
-	log.info = (...params) => {
+	// Get real line numbers with log() calls https://news.ycombinator.com/item?id=5540716
+	const log = Function.prototype.bind.call(console.log, console)
+
+	// Can't figure out how to get line numbers for sub-objects
+	log.info = (...params) => { 
 		if(showInfoLogs) {
 			params[0] = '{info} '+params[0]
 			console.log(...params)
 		}
 	}
-	log.warn = (...params) => {
-		console.warn(...params)
-	}
-	log.err = (...params) => {
-		console.error(...params)
-	}
-
 	return log
 })() // IIFE
 

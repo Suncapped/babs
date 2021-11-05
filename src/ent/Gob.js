@@ -25,7 +25,7 @@ export class Gob {
 		}
 
 		if(group.children.length > 1) {
-			log.warn(`Loaded object with more than one child.  Using children[${childIndex}]`, group)
+			console.warn(`Loaded object with more than one child.  Using children[${childIndex}]`, group)
 		}
 
 		log.info(`Gob.Create ${fbxLoader ? 'FBX' : 'GLTF'} group`, group.children[0].material)

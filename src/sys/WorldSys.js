@@ -471,7 +471,7 @@ export class WorldSys {
 				for(let x=0; x<=1; x++) {
 					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
-						log.warn('Color not found!', this.landcoverData[index], lcString)
+						console.warn('Color not found!', this.landcoverData[index], lcString)
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?

@@ -73,7 +73,7 @@ export class LoaderSys {
 					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					log.err( 'An error happened', err )
+					console.error( 'An error happened', err )
 				}
 			)
 		}); 
