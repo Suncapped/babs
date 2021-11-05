@@ -32,6 +32,14 @@ import {
 	BufferAttribute,
 	MeshStandardMaterial,
 	Float32BufferAttribute,
+	BoxGeometry,
+	MeshLambertMaterial,
+	InstancedMesh,
+	Object3D,
+	DynamicDrawUsage,
+	Matrix4,
+	Quaternion,
+	Euler,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -41,6 +49,9 @@ import { debugMode } from "../stores"
 
 import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js'
 import { Gob } from '../ent/Gob'
+import { EventSys } from './EventSys'
+
+import * as BAS from 'three-bas'
 
 export class WorldSys {
 
@@ -75,7 +86,7 @@ export class WorldSys {
 		// exposure: renderer.toneMappingExposure
 	}
 
-	LANDCOVER = {
+	StringifyLandcover = {
 		56: 'grass',
 		64: 'dirt',
 		69: 'sand',
@@ -89,11 +100,45 @@ export class WorldSys {
 		10: 'streamlarge',
 		11: 'streamshore',
 	}
+	WaterTypes = [
+		'lake',
+		'river',
+		'streamsmall',
+		'streammedium',
+		'streamlarge',
+	]
+	ShoreTypes = [
+		'lakeshore',
+		'rivershore',
+		'streamshore',
+	]
+
+	colorFromLc = {
+		grass: new Color().setHSL(98/360, 100/100, 20/100),
+		dirt: new Color().setHSL(35/360, 40/100, 40/100),
+		sand: new Color().setHSL(49/360, 37/100, 68/100),
+		cliff: new Color().setHSL(13/360, 61/100, 24/100),
+		lakeshore: new Color().setHSL(51/360, 39/100, 34/100),
+		river: new Color().setHSL(222/360, 39/100, 34/100),
+		rivershore: new Color().setHSL(51/360, 39/100, 34/100),
+		streamsmall: new Color().setHSL(222/360, 39/100, 34/100),
+		streammedium: new Color().setHSL(222/360, 39/100, 34/100),
+		streamlarge: new Color().setHSL(222/360, 39/100, 34/100),
+		streamshore: new Color().setHSL(51/360, 39/100, 34/100),
+	}
+
+	waterCubes = []
+
 
 	
-    constructor(renderer, babs, camera, player) {
+    constructor(renderer, babs, camera) {
+		EventSys.Subscribe(this)
 
 		this.babs = babs
+
+
+		Object.keys(this.colorFromLc).forEach(key => this.colorFromLc[key].convertSRGBToLinear())
+
 
         // Old sky
         // this.babs.scene.background = new Color().setHSL( 0.6, 0, 1 )
@@ -177,18 +222,6 @@ export class WorldSys {
 		// http://www.workwithcolor.com/hsl-color-picker-01.htm
 
 
-		// Directional light
-        this.dirLight = new DirectionalLight(0xffffff, 0)
-		this.dirLight.target = player
-        this.babs.scene.add(this.dirLight)
-        this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 10)
-        this.babs.scene.add(this.dirLightHelper)
-
-        this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
-        // this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
-        // this.dirLight.position.multiplyScalar( 3 )
-
-
 
 
 		// Shadow
@@ -222,8 +255,32 @@ export class WorldSys {
 
 
     }
+	Event(type, data) {
+		if(type === 'controller-ready') {
+			if(!data.isSelf) return // Only add lights for self
+			// Directional light
+			const playerTarget = data.controller.target//this.babs.ents.get(this.babs.idSelf)?.controller?.target
 
-    update(delta, camera) {
+			// todo have this track not-the-player lol.  Perhaps an origin that doesn't move?  Used to be cube
+			this.dirLight = new DirectionalLight(0xffffff, 0)
+			this.dirLight.target = playerTarget
+			this.babs.scene.add(this.dirLight)
+			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 10)
+			this.babs.scene.add(this.dirLightHelper)
+
+			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
+			// this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
+			// this.dirLight.position.multiplyScalar( 3 )
+		}
+	}
+
+	updateCount = 0
+	rand = new Vector3().random()
+	waterMatrix = new Matrix4()
+	vectorPosition = new Vector3()
+	quatRotation = new Quaternion()
+
+    update(dt, camera) {
 		
 		// Adjust fog lightness (white/black) to sun elevation
 		const elevationRatio = this.effectController.elevation /90
@@ -236,12 +293,49 @@ export class WorldSys {
 		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// Put directional light at sun position, just farther out
-		this.dirLight.position.copy(this.sunPosition.clone().multiplyScalar(10000))
+		this.dirLight?.position.copy(this.sunPosition.clone().multiplyScalar(10000))
 
-		this.dirLight.intensity = MathUtils.lerp(0.01, 0.75, elevationRatio)
+		if(this.dirLight) this.dirLight.intensity = MathUtils.lerp(0.01, 0.75, elevationRatio)
 		this.hemiLight.intensity = MathUtils.lerp(0.05, 0.25, elevationRatio)
 		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
+		// Water randomized rotation
+		const waveSpeed = 5
+		if(this.updateCount % (60 * 1) === 0) {
+			const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
+			this.rand.add(updated).clampScalar(-0.5, 0.5)
+		}
+
+		// Instanced mesh version
+		// https://www.cs.uaf.edu/2015/spring/cs482/lecture/02_16_rotation.html
+		// https://medium.com/@joshmarinacci/quaternions-are-spooky-3a228444956d
+		for(let i=0, l=this.waterInstancedMesh?.count; i<l; i++) {
+			// Get
+			this.waterInstancedMesh.getMatrixAt(i, this.waterMatrix)
+			
+			// Extract
+			this.quatRotation.setFromRotationMatrix(this.waterMatrix)
+			this.vectorPosition.setFromMatrixPosition(this.waterMatrix)
+
+			// Rotate
+			const rot = new Quaternion().setFromEuler(new Euler(
+				waveSpeed *this.rand.x *this.waterInstancedRands[i] *dt,
+				waveSpeed *this.rand.y *this.waterInstancedRands[i] *dt,
+				waveSpeed *this.rand.z *this.waterInstancedRands[i] *dt,
+			))
+			this.quatRotation.multiply(rot)
+			.normalize() // Roundoff to prevent scaling
+
+			// Compile
+			this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
+			this.waterMatrix.setPosition(this.vectorPosition)
+			
+			// Update
+			this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
+			this.waterInstancedMesh.instanceMatrix.needsUpdate = true
+		}
+
+		this.updateCount++
     }
 
 
@@ -265,13 +359,13 @@ export class WorldSys {
         ground.name = 'ground'
         ground.castShadow = true
         ground.receiveShadow = true
+		// ground.visible= false
         this.babs.scene.add( ground )
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
 		this.babs.scene.add(groundGrid)
 		debugMode.subscribe(on => {
-			log('debugMode change', on)
 			groundGrid.visible = on
 		})
 
@@ -279,111 +373,35 @@ export class WorldSys {
 
     async loadObjects(zone) {
         
-		setTimeout(async () => { // do on next event loop
-			// Sampling of objects
-			const loadItems = [
-				'flower-lotus.gltf',
-				'flowers-carnations.gltf', 'grass-basic.gltf',
-				'grass.gltf',              'mushroom-boletus.gltf',
-				'mushroom-toadstool.gltf', 'obj-chisel.gltf',
-				'obj-tablet.gltf',         'obj-timber.gltf',
-				'rock-crystal.gltf',       'rock-pillarsmall.gltf',
-				'rock-terrassesmall.gltf', 'rocks-sharpsmall.gltf',
-				'rocks-small.gltf',        'stone-diamond.gltf',
-				'stump.gltf',              'tree-birchtall.gltf',
-				'tree-dead.gltf',          'tree-fallenlog.gltf',
-				'tree-forest-simple.gltf', 'tree-forest.gltf',
-				'tree-oak.gltf',           'tree-old.gltf',
-				'tree-park.gltf',          'tree-spruce.gltf',
+		// Sampling of objects
+		const loadItems = [
+			'flower-lotus.gltf',
+			'flowers-carnations.gltf', 'grass-basic.gltf',
+			'grass.gltf',              'mushroom-boletus.gltf',
+			'mushroom-toadstool.gltf', 'obj-chisel.gltf',
+			'obj-tablet.gltf',         'obj-timber.gltf',
+			'rock-crystal.gltf',       'rock-pillarsmall.gltf',
+			'rock-terrassesmall.gltf', 'rocks-sharpsmall.gltf',
+			'rocks-small.gltf',        'stone-diamond.gltf',
+			'stump.gltf',              'tree-birchtall.gltf',
+			'tree-dead.gltf',          'tree-fallenlog.gltf',
+			'tree-forest-simple.gltf', 'tree-forest.gltf',
+			'tree-oak.gltf',           'tree-old.gltf',
+			'tree-park.gltf',          'tree-spruce.gltf',
 
-				'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
-			]
-			// let count=0
-			// for(let item of loadItems) {
-			// 	let pObj = Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
-			// 	obj.mesh.position.copy(this.vRayGroundHeight(count*4*2 +2, 16 *4 +2))
-			// 	count++
-			// }
-
-			const objs = await Promise.all(loadItems.map(item => Gob.Create(`/environment/gltf/${item}`, this.babs, 0)))
-			objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*4*2 +2, 16 *4 +2)))
+			'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
+		]
+		const objs = await Promise.all(loadItems.map(item => Gob.Create(`/environment/gltf/${item}`, this.babs, 0)))
+		objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
 
 
-		}, 1500)
 
     }
 
     terrainData
     landcoverData
-    // rawTexture1
-    // rawTexture2
-    // public groundMesh
-    // waterMesh
-    // async loadStatics(urlFiles, zone) {
-
-    //     let timeReporter = Utils.createTimeReporter(); timeReporter.next()
-    //     timeReporter.next('loadStatics:')
-
-    //     log.info("loading~")
-    //     // const light = new HemisphericLight('light1', new Vector3(0, 1, 0), scene) // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    //     const light = new DirectionalLight("DirectionalLight", new Vector3(0.5, -1, 0.5), scene)
-    //     light.intensity = 1
-
-    //         // Skybox
-    //     var skybox = Mesh.CreateBox("skyBox", 10000.0, scene)
-    //     skybox.position = new Vector3(500, -100, 500)
-    //     var skyboxMaterial = new StandardMaterial("skyBox", scene)
-    //     skyboxMaterial.backFaceCulling = false
-    //     skyboxMaterial.reflectionTexture = new CubeTexture(`${urlFiles}/texture/TropicalSunnyDay`, scene)
-    //     skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE
-    //     skyboxMaterial.diffuseColor = new Color3(0, 0, 0)
-    //     skyboxMaterial.specularColor = new Color3(0, 0, 0)
-    //     skyboxMaterial.disableLighting = true
-    //     skybox.material = skyboxMaterial
-
-    //     let mixMaterial = Utils.getMixMaterial(urlFiles, scene)
-    //     // mixMaterial.wireframe = true
-    //     this.rawTexture1 = new RawTexture( new Uint8Array(250*250*4),
-    //         ZONE.ZONE_DATUMS, ZONE.ZONE_DATUMS, Engine.TEXTUREFORMAT_RGBA, scene,
-    //         Utils.ZONE_TEXTURE_GEN_MIPMAPS, Utils.ZONE_TEXTURE_INVERTY, 
-    //         Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_INT
-    //     )
-    //     mixMaterial.mixTexture1 = this.rawTexture1
-    //     this.rawTexture2 = new RawTexture( new Uint8Array(250*250*4),
-    //         ZONE.ZONE_DATUMS, ZONE.ZONE_DATUMS, Engine.TEXTUREFORMAT_RGBA, scene,
-    //         Utils.ZONE_TEXTURE_GEN_MIPMAPS, Utils.ZONE_TEXTURE_INVERTY, 
-    //         Texture.TRILINEAR_SAMPLINGMODE, Engine.TEXTURETYPE_UNSIGNED_INT
-    //     )
-    //     mixMaterial.mixTexture2 = this.rawTexture2
-
-    //     this.groundMesh = Mesh.CreateGround('ground', 1000, 1000, 1)
-    //     this.groundMesh.setParent(this.worldMesh)
-    //     this.groundMesh.material = mixMaterial
-
-    //     this.waterMesh = new Mesh(`Waters`, scene)
-    //     this.waterMesh.setParent(this.worldMesh)
-    //     this.waterMesh.position = new Vector3(0,0,0) 
-    //     this.waterMesh.scaling = new Vector3(1,1,1)
-
-    //     var waterMaterial = new WaterMaterial("water_material", scene, new Vector2(1, 1))
-    //     waterMaterial.bumpTexture = new Texture(`${urlFiles}/texture/waterbump.png`, scene)
-    //     waterMaterial.windForce = 30
-    //     waterMaterial.waveHeight = 0//0.05
-    //     waterMaterial.windDirection = new Vector2(1, 1)
-    //     waterMaterial.waterColor = new Color3(0.1, 0.1, 0.6)
-    //     waterMaterial.colorBlendFactor = 0.3
-    //     waterMaterial.bumpHeight = 1
-    //     waterMaterial.waveLength = 0 //1
-    //     // waterMaterial.addToRenderList(skybox) // TODO seems a bit broken
-    //     // waterMaterial.addToRenderList(ground)
-    //     this.waterMesh.material = waterMaterial
-
-    //     timeReporter.next('updateTerrain:')
-    //     await this.updateTerrain(urlFiles)
-    //     timeReporter.next('updateLandcover:')
-    //     await this.updateLandcover(urlFiles)
-    //     timeReporter.next('Done')
-    // }
+	waterInstancedMesh
+	waterInstancedRands = []
     async genTerrain(urlFiles, geometry, zone) {
         let timeReporter = Utils.createTimeReporter(); timeReporter.next()
         timeReporter.next('Terrain start')
@@ -411,17 +429,6 @@ export class WorldSys {
         timeReporter.next('Terrain DONE')
     }
     async genLandcover(urlFiles, geometry, zone) {
-		// old updateLandcover()
-        // while(this.terrainData === null) await sleep(100)
-        // const lcBuffer = await ky.get(`${urlFiles}/terrain/LANDCOVER.bil`).arrayBuffer()
-        // const landcoverData = ndarray(new Uint8Array(lcBuffer), [ZONE.ARR_SIDE_LEN,ZONE.ARR_SIDE_LEN])
-        // const [landcoverRGBAs1, landcoverRGBAs2] = await Utils.landcoverGenerate(landcoverData)
-        // this.rawTexture1.update(landcoverRGBAs1)
-        // this.rawTexture2.update(landcoverRGBAs2)
-        // const water = Utils.waterGenerate(landcoverData, ndarray(this.terrainData, [251,251]))
-        // if(water) {
-        //     water.applyToMesh(this.waterMesh, true)
-        // }
 
 		// Get landcover data
 		let timeReporter = Utils.createTimeReporter(); timeReporter.next()
@@ -442,79 +449,130 @@ export class WorldSys {
 		// Vertex colors on BufferGeometry using a non-indexed array
         const verticesRef = geometry.getAttribute('position').array
 		const nColorComponents = 3;  // r,g,b
-		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2;            // e.g. 6 for a pyramid (?)
-		// const nVerticesPerFace = 3;  // 3 for Triangle faces
+		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2; // e.g. 6 for a pyramid (?)
+		// const nVerticesPerFace = 3; // 3 for Triangle faces
 		
 		// Add color attribute to geometry, so that I can use vertex colors
 		geometry.addAttribute( 'color', new Float32BufferAttribute(geometry.getAttribute('position').clone(), nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array
-		
-		const grassColor = new Color().setHSL(98/360, 100/100, 20/100).convertSRGBToLinear()
-		const dirtColor = new Color().setHSL(35/360, 40/100, 40/100).convertSRGBToLinear()
-		const sandColor = new Color().setHSL(49/360, 37/100, 68/100).convertSRGBToLinear()
-		const cliffColor = new Color().setHSL(13/360, 61/100, 24/100).convertSRGBToLinear()
-		const waterColor = new Color().setHSL(222/360, 39/100, 34/100).convertSRGBToLinear()
-		const shoreColor = new Color().setHSL(51/360, 39/100, 34/100).convertSRGBToLinear()
-		const colorFromLc = {
-			[this.LANDCOVER[56]]: grassColor,
-			[this.LANDCOVER[64]]: dirtColor,
-			[this.LANDCOVER[69]]: sandColor,
-			[this.LANDCOVER[76]]: cliffColor,
-			[this.LANDCOVER[5]]: shoreColor,
-			[this.LANDCOVER[6]]: waterColor,
-			[this.LANDCOVER[7]]: shoreColor,
-			[this.LANDCOVER[8]]: waterColor,
-			[this.LANDCOVER[9]]: waterColor,
-			[this.LANDCOVER[10]]: waterColor,
-			[this.LANDCOVER[11]]: shoreColor,
-		}
+	
+
+		let waterNearbyIndex = new Array(26*26).fill(0)
 
         timeReporter.next('Landcover loop colors')
         for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
-			const lcType = this.LANDCOVER[this.landcoverData[index]]
+			const lcString = this.StringifyLandcover[this.landcoverData[index]]
+			const color = this.colorFromLc[lcString]
+
 			// Spread color from this vertex as well as to its +1 forward vertices (ie over the piece, the 40x40ft)
-			const gridPointofVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
-			for(let x=0; x<=1; x++) {
-				for(let z=0; z<=1; z++) {
-					const colorsIndexOfGridPoint = Utils.coordToIndex(gridPointofVerticesIndex.x +x, gridPointofVerticesIndex.z +z, 26, 3)
-					
-					const color = colorFromLc[lcType]
+			const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
+			for(let z=0; z<=1; z++) {
+				for(let x=0; x<=1; x++) {
+					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
-						log.warn('Color not found!', this.landcoverData[index], lcType)
+						log.warn('Color not found!', this.landcoverData[index], lcString)
 					}
-					if(color === grassColor) {
-						 // Lighten slightly with elevation // Todo add instead of overwrite?
-						 grassColor.setHSL(98/360, 80/100, 0.2 +this.terrainData[index] /1000).convertSRGBToLinear()
+					if(lcString === 'grass') {
+						// Lighten slightly with elevation // Todo add instead of overwrite?
+						color.setHSL(98/360, 80/100, 0.2 +this.terrainData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
 					colorsRef[colorsIndexOfGridPoint +2] = color.b
 				}
 			}
+
+
+			// Find water nearby
+			for(let z=-1; z<=1; z++) {
+				for(let x=-1; x<=1; x++) {
+					const offsetIndex = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
+					if(this.StringifyLandcover[this.landcoverData[offsetIndex]] === 'river') {
+
+						waterNearbyIndex[index]++
+					}
+
+				}
+			}
         }
+
+		// Water?  Delayed?
+		setTimeout(() => {
+
+			const cubeSize = 4 // Must divide into 10
+			const waterCubePositions = []
+
+			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
+				const lcString = this.StringifyLandcover[this.landcoverData[index]]
+				const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
+				// log('gridPointofVerticesIndex', coordOfVerticesIndex)
+				// Create cubes on all spots in between
+				if(this.WaterTypes.includes(lcString)) {
+					const spacing = 1
+					for(let z=0; z<10 /cubeSize /Math.round(spacing); z++) {
+						for(let x=0; x<10/cubeSize /Math.round(spacing); x++) {
+
+							const rayPosition = this.vRayGroundHeight(coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4, coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4)
+							// log('rayPosition', rayPosition)
+
+							if(waterNearbyIndex[index] > 7 && rayPosition) {
+								// this.waterCubes.push(this.makeWaterCube(rayPosition, 4 *cubeSize)))
+								waterCubePositions.push(rayPosition)
+							}
+
+						}
+					}
+				}
+			}
+
+			const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
+			const material = new MeshLambertMaterial({color: this.colorFromLc.river})
+			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
+			this.waterInstancedMesh.instanceMatrix.setUsage( DynamicDrawUsage ) // So I don't have to call .needsUpdate
+			this.babs.scene.add(this.waterInstancedMesh)
+
+			for(let i=0, l=waterCubePositions.length; i<l; i++) {
+				let matrix = new Matrix4().setPosition(waterCubePositions[i].setY(waterCubePositions[i].y -(cubeSize *4)/2))
+				this.waterInstancedMesh.setMatrixAt(i, matrix)
+				this.waterInstancedRands[i] = Math.random() - 0.5
+			}
+
+		}, 10)
 
         timeReporter.next('Landcover DONE')
 
-
-		// const target = new Vector3(4, 0, 2)
-		// const mudColor = new Color().setHSL(0.095, 0.5, 0.20)
-		// colorPiece(target, mudColor)
-
-
     }
 
-	vRayGroundHeight(gx, gz) {
+	vRayGroundHeight(gx, gz) { // Return engine height
 		const raycaster = new Raycaster(
-			new Vector3(gx, WorldSys.ZoneTerrainMax.y, gz), 
+			new Vector3(gx *4, WorldSys.ZoneTerrainMax.y, gz*4), 
 			new Vector3( 0, -1, 0 ), 0, 
 			WorldSys.ZoneTerrainMax.y
 		)
 
 		const ground = this.babs.scene.children.find(o=>o.name=='ground')
 		const [intersect] = raycaster.intersectObject(ground, true)
-		return intersect.point
+		if(!intersect) {
+			log.info('no ground intersect!', intersect, raycaster, gx, gz)
+		}
+		return intersect?.point
 	}
 
-    
+	waterMaterial = new MeshLambertMaterial()
+	waterGeometry
+	makeWaterCube(vPosition, size) {
+		if(!this.waterGeometry) this.waterGeometry = new BoxGeometry( size, size, size )
+
+		const cube = new Mesh(this.waterGeometry, this.waterMaterial)
+		// log(this.colorFromLc.river)
+		cube.material.color = this.colorFromLc.river
+		cube.position.copy(vPosition).setY(vPosition.y - size/2) // Sink partway into ground
+		// cube.material.castShadow = false
+		// cube.material.receiveShadow = false
+		// cube.material.disableLighting = true
+		cube.randFactor = Math.random()
+		this.babs.scene.add(cube)
+		return cube
+	}
 
 }

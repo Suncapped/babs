@@ -157,7 +157,7 @@ export class InputSys {
 						log('obj scale', obj.mesh.scale)
 						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
 						// obj.mesh.scale.multiplyScalar(3.3)
-						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*4*2 +2, 12 *4 +2))
+						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*2 +2, 12 +2))
 						count++
 					}
 					

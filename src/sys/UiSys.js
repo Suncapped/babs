@@ -9,7 +9,7 @@ import { get as svelteGet } from 'svelte/store'
 
 export class UiSys {
 	babs
-	toprightTextDefault = 'Works best in Chrome-like browsers'
+	toprightTextDefault = 'Made for Chrome on Mac/PC'
 	ctext
 	labelElements = []
 
@@ -128,7 +128,8 @@ export class UiSys {
 		waitForReady()
     }
 
-	oldPos = new Vector3()
+	oldPos = new Vector3(0,0,0)
+	logText = ''
 	updateBegin() {
 		this['fps']?.begin()
 		this['mem']?.begin()
@@ -136,9 +137,14 @@ export class UiSys {
 		if(this.babs?.idSelf) { // Player is loaded
 			const playerPos = this.babs.ents.get(this.babs.idSelf)?.controller?.target?.position
 			if(playerPos && !this.oldPos.equals(playerPos)) {
-				window.document.getElementById('log').innerText = `${Math.floor(playerPos.x/4)}, ${Math.floor(playerPos.y/4)}, ${Math.floor(playerPos.z/4)}`
+				// window.document.getElementById('log').innerText = `${Math.floor(playerPos.x/4)}.${Math.floor(playerPos.y/4)}.${Math.floor(playerPos.z/4)} / ${this.babs.renderSys.renderer.info.render.calls}d ${this.babs.renderSys.renderer.info.render.triangles}t ${this.babs.renderSys.renderer.info.memory.geometries}g ${this.babs.renderSys.renderer.info.memory.textures}x ${this.babs.renderSys.renderer.info.programs.length}p`
 				this.oldPos = playerPos.clone()
 			}
+		}
+		const newLogText = `${Math.floor(this.oldPos.x/4)}.${Math.floor(this.oldPos.y/4)}.${Math.floor(this.oldPos.z/4)} / d${this.babs.renderSys.renderer.info.render.calls} t${this.babs.renderSys.renderer.info.render.triangles} g${this.babs.renderSys.renderer.info.memory.geometries} x${this.babs.renderSys.renderer.info.memory.textures} p${this.babs.renderSys.renderer.info.programs.length}`
+		if(this.logText !== newLogText) {
+			this.logText = newLogText
+			window.document.getElementById('log').innerText = this.logText
 		}
 
 		this.labelElements.forEach(chat => {

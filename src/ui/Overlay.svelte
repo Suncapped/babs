@@ -20,6 +20,7 @@
 	onMount(async () => {
 		colorPicker = new iro.ColorPicker('#picker');
 		colorPicker.on('input:change', function(color) {
+			log('onchange!', color)
 			speechColorEl.style.color = color.hexString
 		})
 		// Save occasionally
@@ -30,7 +31,7 @@
 					'savecolor': colorPicker.color.hexString,
 				})
 			}
-		}, 500)
+		}, 2000)
 	})
 
 	let joinDate, joinMonth, joinYear
@@ -83,8 +84,10 @@
 
 	let dmCallsCount = 0 // Don't send update on initialization
 	debugMode.subscribe(on => {
-		log.info('Overlay.svelte debugMode setting', on)
-		if(dmCallsCount > 0) {
+		log('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
+
+		// Don't send on init, and don't send on player arrival data either
+		if(dmCallsCount >= 2) { 
 			socketSend.set({
 				'savedebugmode': on,
 			})
@@ -170,7 +173,7 @@
 	<div id="info" hidden="{!$debugMode}">
 		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
 		Built build_time (build_info).<br />
-		Forum: <a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a>. Pos: <span id="log"></span>
+		<a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a> <span id="log"></span>
 	</div>
 	<div id="stats" hidden="{!$debugMode}"></div>
 </div>

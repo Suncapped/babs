@@ -43,8 +43,6 @@ export class LoaderSys {
 			// material.color.copy(material.color.convertSRGBToLinear())
 			// material.emissive.copy(material.emissive.convertSRGBToLinear())
 
-			log('objectMaterial', material)
-
 			this.objectMaterial = material
 			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?
 			

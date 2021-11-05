@@ -5,6 +5,7 @@ import { Controller } from '../com/Controller'
 import { LoaderSys } from '../sys/LoaderSys'
 import { log } from '../Utils'
 import { Ent } from './Ent'
+import { EventSys } from '../sys/EventSys'
 
 // Player Character
 export class Player extends Ent {
@@ -56,6 +57,11 @@ export class Player extends Ent {
 
 			this.controller = new Controller(arrival, fbxGroup, this.babs)
 
+			EventSys.Dispatch('controller-ready', {
+				controller: this.controller,
+				isSelf: this.self,
+			})
+
 			if(bSelf) {
 				// Setup camera and input systems for self
 				this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, this.controller)
@@ -64,7 +70,7 @@ export class Player extends Ent {
 		})
 
 		
-		log('New Player:', this)
+		log.info('New Player:', this)
 		
 	}
 

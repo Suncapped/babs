@@ -204,8 +204,6 @@ export class SocketSys {
 						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
-					log('data', data)
-
 					const arrivalSelf = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == arrivalSelf.idzone)
@@ -213,7 +211,7 @@ export class SocketSys {
 					toprightText.set(this.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 
-					debugMode.set(arrivalSelf.debugmode === undefined ? true : arrivalSelf.debugmode) // Handle meta value creation
+					debugMode.set(arrivalSelf.debugmode === undefined ? false : arrivalSelf.debugmode) // Handle meta value creation
 					
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
@@ -233,7 +231,7 @@ export class SocketSys {
 					}
 
 					// Create player entity
-					log('loadSelf', arrivalSelf)
+					log.info('loadSelf', arrivalSelf)
 					const bSelf = true
 					const playerSelf = new Player(arrivalSelf, bSelf, this.babs)
 
@@ -246,7 +244,7 @@ export class SocketSys {
 
 				break
 				case 'playersarrive':
-					log('playersarrive', data)
+					log.info('playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 

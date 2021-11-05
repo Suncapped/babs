@@ -35,7 +35,6 @@ class Babs {
 	camera
 	scene
 	renderer
-	cube
 
 	cameraSys
 	inputSys
@@ -62,7 +61,11 @@ class Babs {
 
 		var preservedConsoleLog = console.warn
 		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
-			if(!arguments[0]?.startsWith('THREE.FBXLoader')) {
+			if(
+				!arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
+				&& !arguments[0]?.includes('.length has been deprecated. Use .count instead') // threejs gltf loader issues?
+				&& !arguments[0]?.includes('.addAttribute() has been renamed')
+			) {
 				preservedConsoleLog.apply(console, arguments)
 			}
 		}
@@ -134,11 +137,7 @@ class Babs {
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
 
-		this.cube = this.makeCube()
-		this.scene.add( this.cube )
-		this.cube.name = 'cube'
-
-		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera, this.cube)
+		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 		
 		this.socketSys = new SocketSys(this)
 
@@ -180,9 +179,6 @@ class Babs {
 		// log.info(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
 		this.uiSys.updateBegin(dt)
-
-		// this.cube.rotation.x = time /4000
-		// this.cube.rotation.y = time /1000
 		
 		// LoaderSys.update(dt)
 		this.inputSys?.update(dt, this.scene)
@@ -203,17 +199,6 @@ class Babs {
 
 		this.prevTime = time
 		this.uiSys.updateEnd(dt)
-	}
-
-	makeCube() {
-		const geometry = new BoxGeometry( 4, 4, 4 )
-		const material = new MeshPhongMaterial()
-		const cube = new Mesh(geometry, material)
-		cube.name = 'this.cameracube'
-		cube.position.copy(new Vector3(2+8,2,2+8))
-		cube.castShadow = true
-		// cube.receiveShadow = true
-		return cube
 	}
 
 }
