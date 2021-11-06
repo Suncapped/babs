@@ -215,7 +215,12 @@ export class InputSys {
         })
 
         document.addEventListener('mousedown', ev => {
-			log.info('mouseOnDown', ev.button, ev.target.id)
+			log('mouseOnDown', ev.button, ev.target.id, ev.target)
+
+			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
+				log('setfalse')
+				topmenuVisible.set(false)
+			}
 
 			if(!this.topMenuVisibleLocal && (ev.target.id === 'canvas' )){
 				this.characterControlMode = true
@@ -427,114 +432,114 @@ export class InputSys {
 		// The reason for doing head rotation is to visually indicate to the player when their character is about to turn
 		this.player.controller.setHeadRotationX((this.mouse.accumx /this.mouseAccumThreshold) / 100 *this.headTurnMaxDegrees)
 
-		if(!this.topMenuVisibleLocal) {
+		// Vertical mouse look
+		if(!this.topMenuVisibleLocal && this.mouse.right) {
+			// log('dz', this.mouse.dy)
 
-			// Vertical mouse look
-			if(this.mouse.right) {
-				// log('dz', this.mouse.dy)
+			// const _Q = new Quaternion()
+			// const _A = new Vector3()
+			// const _R = this.babs.cameraSys.camera.quaternion.clone()
+			// // Naive version
+			// _A.set(1, 0, 1) //this.mouse.dy > 0 ? -1 : 1
+			// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
+			// _R.multiply(_Q)
+			// this.babs.camera.quaternion.setRotation(_R)
 
-				// const _Q = new Quaternion()
-				// const _A = new Vector3()
-				// const _R = this.babs.cameraSys.camera.quaternion.clone()
-				// // Naive version
-				// _A.set(1, 0, 1) //this.mouse.dy > 0 ? -1 : 1
-				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-				// _R.multiply(_Q)
-				// this.babs.camera.quaternion.setRotation(_R)
+			// const minPolarAngle = 0; // radians
+			// const maxPolarAngle = Math.PI; // radians
 
-				// const minPolarAngle = 0; // radians
-				// const maxPolarAngle = Math.PI; // radians
+			// From PointerLockControls
+			// const _euler = new Euler( 0, 0, 0, 'YXZ' )
+			// _euler.setFromQuaternion( this.babs.camera.quaternion )
+			// _euler.y -= mouse.dx * 0.002
+			// _euler.x -= mouse.dy * 0.002
+			// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) )
+			// this.babs.camera.quaternion.setFromEuler( _euler )
 
-				// From PointerLockControls
-				// const _euler = new Euler( 0, 0, 0, 'YXZ' )
-				// _euler.setFromQuaternion( this.babs.camera.quaternion )
-				// _euler.y -= mouse.dx * 0.002
-				// _euler.x -= mouse.dy * 0.002
-				// _euler.x = Math.max( _PI_2 - scope.maxPolarAngle, Math.min( _PI_2 - scope.minPolarAngle, _euler.x ) )
-				// this.babs.camera.quaternion.setFromEuler( _euler )
-
-				// This kinda works but maybe let's not even have this?
-				// Might need it for mountains, later.
-				// this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.10
-			}
-
-			// Handle arrow keys turns // Move above keys with mouse stuff?
-			if(this.keys.left || this.keys.right) {
-				if(!this.arrowHoldStartTime || Date.now() -this.arrowHoldStartTime > this.doubleClickMs) {
-					this.arrowHoldStartTime = Date.now()
-					
-					// Rotate player
-					const _Q = new Quaternion()
-					const _A = new Vector3()
-					const _R = this.player.controller.idealTargetQuaternion.clone()
-					
-					// Naive version
-					_A.set(0, this.keys.right ? -1 : 1, 0)
-					// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-					_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
-					_R.multiply(_Q)
-					this.player.controller.setRotation(_R)
-				}
-			}
-			
-			// Runs every frame, selecting grid position for setDestination
-			if(
-				(this.mouse.right && (this.keys.w || this.keys.s || this.mouse.left)) //  || this.keys.a || this.keys.d
-				|| (this.keys.up || this.keys.down)
-				|| this.movelock
-				|| this.touchmove
-				) {
-				log.info(this.keys.w ? 'w':'-', this.keys.s ? 's':'-', this.keys.a ? 'a':'-', this.keys.d ? 'd':'-')
-
-				let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.player.controller.idealTargetQuaternion)
-				let vector = new Vector3().setFromMatrixColumn( tempMatrix, 0 )  // get X column of matrix
-				log.info('vector!', tempMatrix, vector)
-
-				if(this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
-					vector.crossVectors( this.player.controller.target.up, vector ) // camera.up
-				}
-
-				// Get direction
-				vector.round()
-				if(this.keys.w || this.keys.up || this.mouse.left || this.movelock || this.touchmove === 1 || this.touchmove === 'auto') {
-					vector.negate() // Why is negate needed?
-				}
-
-				// Okay, that was direction.  Now get distance
-				let gCurrentPos = this.player.controller.target.position.clone() 
-				const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1/4)
-				const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
-				log.info('InputSys: update(), gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
-
-				gCurrentPos = gCurrentPosFloored
-				gCurrentPos.setY(0) // Y needs a lot of work in this area...
-
-				const dest = gCurrentPos.clone().add(vector)
-				dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
-
-				// Send to controller
-				log.info('InputSys: call controller.setDestination()', dest)
-				this.player.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
-
-				// Let's show a square in front of the player?  Their destination target square :)
-				if(this.babs.debugMode) {
-					if(!this.displayDestinationMesh) {
-						const geometry = new PlaneGeometry( 4, 4 )
-						const material = new MeshBasicMaterial( {color: 0xffaaaa, side: DoubleSide} )
-						geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
-						this.displayDestinationMesh = new Mesh( geometry, material )
-						scene.add( this.displayDestinationMesh )
-					}
-					this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
-					const easyRaiseAbove = 0.1
-					this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y-2 + easyRaiseAbove, 0))
-				}
-				else {
-					this.displayDestinationMesh?.position.setY(-1000)
-				}
-			}
-
+			// This kinda works but maybe let's not even have this?
+			// Might need it for mountains, later.
+			// this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.10
 		}
+
+		// Handle arrow keys turns // Move above keys with mouse stuff?
+		if(!this.topMenuVisibleLocal && (this.keys.left || this.keys.right)) {
+			if(!this.arrowHoldStartTime || Date.now() -this.arrowHoldStartTime > this.doubleClickMs) {
+				this.arrowHoldStartTime = Date.now()
+				
+				// Rotate player
+				const _Q = new Quaternion()
+				const _A = new Vector3()
+				const _R = this.player.controller.idealTargetQuaternion.clone()
+				
+				// Naive version
+				_A.set(0, this.keys.right ? -1 : 1, 0)
+				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
+				_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
+				_R.multiply(_Q)
+				this.player.controller.setRotation(_R)
+			}
+		}
+		
+		// Runs every frame, selecting grid position for setDestination
+		if((this.movelock || this.touchmove || 
+				(!this.topMenuVisibleLocal && 
+					((this.mouse.right && (this.keys.w || this.keys.s || this.mouse.left)) //  || this.keys.a || this.keys.d
+						|| this.keys.up || this.keys.down
+						|| this.movelock
+						
+					)
+				)
+			)) {
+			log.info(this.keys.w ? 'w':'-', this.keys.s ? 's':'-', this.keys.a ? 'a':'-', this.keys.d ? 'd':'-')
+
+			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.player.controller.idealTargetQuaternion)
+			let vector = new Vector3().setFromMatrixColumn( tempMatrix, 0 )  // get X column of matrix
+			log.info('vector!', tempMatrix, vector)
+
+			if(this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
+				vector.crossVectors( this.player.controller.target.up, vector ) // camera.up
+			}
+
+			// Get direction
+			vector.round()
+			if(this.keys.w || this.keys.up || this.mouse.left || this.movelock || this.touchmove === 1 || this.touchmove === 'auto') {
+				vector.negate() // Why is negate needed?
+			}
+
+			// Okay, that was direction.  Now get distance
+			let gCurrentPos = this.player.controller.target.position.clone() 
+			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1/4)
+			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
+			log.info('InputSys: update(), gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
+
+			gCurrentPos = gCurrentPosFloored
+			gCurrentPos.setY(0) // Y needs a lot of work in this area...
+
+			const dest = gCurrentPos.clone().add(vector)
+			dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
+
+			// Send to controller
+			log.info('InputSys: call controller.setDestination()', dest)
+			this.player.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
+
+			// Let's show a square in front of the player?  Their destination target square :)
+			if(this.babs.debugMode) {
+				if(!this.displayDestinationMesh) {
+					const geometry = new PlaneGeometry( 4, 4 )
+					const material = new MeshBasicMaterial( {color: 0xffaaaa, side: DoubleSide} )
+					geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
+					this.displayDestinationMesh = new Mesh( geometry, material )
+					scene.add( this.displayDestinationMesh )
+				}
+				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
+				const easyRaiseAbove = 0.1
+				this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y-2 + easyRaiseAbove, 0))
+			}
+			else {
+				this.displayDestinationMesh?.position.setY(-1000)
+			}
+		}
+
 
 		// Decay some stuff down over time
 		[this.mouse.scrollaccumy, this.mouse.zoom] = new Vector2(this.mouse.scrollaccumy, this.mouse.zoom)

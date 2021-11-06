@@ -112,7 +112,7 @@
 			{#if $toprightReconnect}
 				{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]
 			{:else if $menuShowLink}
-				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Menu</a> (esc key)</div>
+				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Meta</a> (esc key)</div>
 			{:else}
 				{$toprightText}
 			{/if}
@@ -192,6 +192,10 @@
 		position: absolute;
 		top: 0px;
 		width: 100%;
+		pointer-events: none; /* Clicks go through it */
+	}
+	.Overlay > * {
+		pointer-events: auto; /* Everything else receives */
 	}
 	.topitem {
 		background-color: #fdfbd3; /* FFF4BC */
