@@ -7,8 +7,18 @@ let showInfoLogs = false// || import.meta.env.PROD // Always show in prod // Act
 
 debugMode.subscribe(on => {
 	showInfoLogs = on
-	// showInfoLogs = true
 })
+// ;(async () => {
+// 	let { debugMode } = await import('./stores')
+// 	console.log('what dbm', debugMode)
+// 	debugMode.subscribe(on => {
+// 		console.log('setdbm')
+// 		showInfoLogs = on
+// 	})
+// })()
+
+// showInfoLogs = true
+
 
 // export const log = (function() {
 //     function log(...params) { 
@@ -43,6 +53,16 @@ export const log = (function() {
 	}
 	return log
 })() // IIFE
+
+// Console props
+/*
+  var methods = [
+      'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+      'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+      'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+      'timeStamp', 'trace', 'warn'
+  ];
+*/
 
 
 export function clamp(n, min, max){

@@ -74,10 +74,14 @@ export class RenderSys {
 		// this._scene.add(light)
 
 		this.labelRenderer = new CSS2DRenderer()
-		this.labelRenderer.domElement.style.position = 'absolute'
+		// this.labelRenderer.domElement.style.position = 'absolute'
 		this.labelRenderer.domElement.id = 'labelRenderer'
-		this.labelRenderer.domElement.style.top = '0px'
+		// this.labelRenderer.domElement.style.top = '0px'
 		// this.labelRenderer.domElement.style['pointer-events'] = 'none'
+		this.labelRenderer.domElement.style = {
+			'background-color': 'green',
+		}
+
 		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
 
 		this.windowResize()

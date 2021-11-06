@@ -107,10 +107,10 @@ export class InputSys {
 		})
 
         document.addEventListener('keydown', async ev => {
-			// log('keydown target', ev.target.id)
+			log.info('keydown:', ev.code)
 			// OS-level key repeat keeps sending down events; 
 			if(this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
-				if(ev.target.id !== 'chatbox') {
+				if(ev.target.id !== 'chatbox') { // Except do it allow it when editing chatbox
 					this.keys[inputCodeMap[ev.code]] = PRESS
 				}
 			}

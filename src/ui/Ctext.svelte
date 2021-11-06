@@ -72,8 +72,6 @@
 	menuSelfData.subscribe(val => {
 		if(chatbox && val?.color) {
 			chatbox.style.color = val.color
-			// const all = document.querySelectorAll('#Ctext > #labelRenderer > .label')
-			// log('all', all)
 		}
 	})
 
@@ -94,13 +92,19 @@
 		height: 100%;
 		z-index: 1;
 		pointer-events: none; /* Clicks go through it */
+		
 	}
 	
 	:global #Ctext > #labelRenderer > .label{
-		width: 200px;
+		width: 300px;
 		text-align: center;
+		/* vertical-align: top; */
+		/* position:absolute; */
+		/* top: 100px; */
 
-		/* background-color:red; */
+		/* background-color:red; opacity: 0.5; */
+		/* border: 2px solid green; */
+		
 	}
 	:global #Ctext > #labelRenderer > .label > span{
         display: inline-block;
@@ -109,19 +113,19 @@
 		-webkit-hyphens: auto; */
 		margin-top:-50%; /* hmm; bottom-align paragraphs */
 
-		/* background-color:blue;
-		border:1px solid red; */
+		/* background-color:blue; opacity: 0.5; */
+		/* border:1px solid red; */
 	}
 
-	#chatbox, :global #Ctext > #labelRenderer > .label {
+	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
         font-family: "Nunito", sans-serif;
 		font-weight:bold;
-		font-size: 18px;
+		font-size: 16px;
         color: white;
         /* text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;  */
 		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */
-
-		/* background-color:red; */
+		position: absolute; /* UiSys counts on this for placement */
+		/* background-color:green; */
 	}
 
 	#chatbox{

@@ -9,14 +9,18 @@
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
 			$topmenuVisible = !$topmenuVisible
 
-			if(!$topmenuVisible) { // If closing menu, hide picker too
+			if(!$topmenuVisible) { // If closing menu, hide picker and stuff too
 				document.getElementById('picker').style.display = 'none'
+				movementTips = false
 			}
 		}
 	}
 
 
 	let colorPicker
+	let joinDate, joinMonth, joinYear
+	let dmCallsCount = 0 // Don't send update on initialization
+	let excitedReason
 	onMount(async () => {
 		colorPicker = new iro.ColorPicker('#picker');
 		colorPicker.on('input:change', function(color) {
@@ -27,43 +31,56 @@
 		setInterval(() => { // Simpler than a debounce
 			if(colorPicker.color.hexString != $menuSelfData.color) {
 				$menuSelfData.color = colorPicker.color.hexString
+				log.info('save color')
 				socketSend.set({
 					'savecolor': colorPicker.color.hexString,
 				})
 			}
+
+			// If they typed into the reason box, save it after a bit
+			if(excitedReason !== $menuSelfData.reason) {
+				if(excitedReason !== undefined) { // Ignore on first update from server
+					log.info('save reason')
+					socketSend.set({
+						'savereason': $menuSelfData.reason,
+					})
+				}
+				excitedReason = $menuSelfData.reason
+			}
 		}, 2000)
-	})
 
-	let joinDate, joinMonth, joinYear
-	menuSelfData.subscribe(val => {
-		joinDate = new Date(Date.parse($menuSelfData.created_at))
-		joinMonth = joinDate.toLocaleString('default', { month: 'long' })
-		joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
+		// Watch joindate and color
+		menuSelfData.subscribe(val => {
+			log.info('menuSelfData change', val)
+			joinDate = new Date(Date.parse($menuSelfData.created_at))
+			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
+			joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
 
-		// If we got color from socket, or from update and it's different
-		if($menuSelfData?.color && colorPicker.color.hexString != $menuSelfData.color) {
-			speechColorEl.style.color = $menuSelfData.color
-			colorPicker.color.hexString = $menuSelfData.color
-		}
-	})
+			// If we got color from socket, or from update and it's different
+			if($menuSelfData?.color && colorPicker.color.hexString != $menuSelfData.color) {
+				speechColorEl.style.color = $menuSelfData.color
+				colorPicker.color.hexString = $menuSelfData.color
+			}
 
-	let inputreason
-	let savereason
-	async function saveReason(ev) {
-		$menuSelfData.reason = inputreason.value
-		socketSend.set({
-			'savereason': $menuSelfData.reason,
 		})
-		savereason.innerText = '> Saved!'
-		savereason.disabled = true
-		setTimeout(() => {
-			savereason.innerText = 'Save'
-			savereason.disabled = false
-		}, 3000)
 
-		document.getElementById('picker').style.display = 'none' // Hide color picker in case they're confused about how it saves
+		// Watch debugMode
+		debugMode.subscribe(on => {
+			log.info('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
 
-	}
+			// Don't send on init, and don't send on player arrival data either
+			if(dmCallsCount >= 2) { 
+				socketSend.set({
+					'savedebugmode': on,
+				})
+			}
+			dmCallsCount++
+		})
+	})
+
+
+
+
 
 	function logout(ev) {
 		log.info('logging out', $baseDomain, $isProd)
@@ -81,19 +98,7 @@
 		picker.style.display = picker.style.display === 'block' ? 'none' : 'block'
 	}
 
-
-	let dmCallsCount = 0 // Don't send update on initialization
-	debugMode.subscribe(on => {
-		log('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
-
-		// Don't send on init, and don't send on player arrival data either
-		if(dmCallsCount >= 2) { 
-			socketSend.set({
-				'savedebugmode': on,
-			})
-		}
-		dmCallsCount++
-	})
+	let movementTips = false
 
 
 
@@ -137,11 +142,7 @@
 
 	<div id="picker"></div>
 	<div class="topitem" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};">
-		<ul>
-			<li>Hold right-mouse plus: left, double-left, space, wasd, middle.</li>
-			<li>Touchpad: Two finger touch, click, swipe, pinch.</li>
-			
-			<li>&nbsp;</li>
+		<ul>			
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
 			{/if}
@@ -151,8 +152,15 @@
 			<li>
 				<label for="debugMode">Debug Mode?</label><input id="debugMode" type="checkbox" bind:checked={$debugMode}>
 			</li>
+			<li><a href on:click|preventDefault={()=>movementTips = !movementTips}>Movement Tips</a>
+				<div hidden="{!movementTips}">
+					<li>To move, hold right-mouse plus:<br/>left, double-left, space, wasd, middle</li>
+					<li>Or on laptop touchpad:<br/>Two finger touch, click, swipe, pinch</li>
+				</div>
+			</li>
 
 			<li>&nbsp;</li>
+
 			<li><b>Account</b></li>
 			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
 			<li>{$menuSelfData.email}</li>
@@ -162,10 +170,11 @@
 			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
 			
 			<li>&nbsp;</li>
-			<li>What are you most excited to do in First Earth?</li>
+
+			<li>What are you most excited<br/>to do in First Earth?</li>
 			<li>
-				<textarea bind:this={inputreason} id="inputreason" maxlength="10000">{$menuSelfData.reason}</textarea>
-				<button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button>
+				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
+				<!-- <button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button> -->
 			</li>
 		</ul>
 	</div>
@@ -186,6 +195,7 @@
 	}
 	.topitem {
 		background-color: #fdfbd3; /* FFF4BC */
+		opacity: 0.8;
 		padding: 10px;
 		padding-top: 12px;
 	}
@@ -226,6 +236,7 @@
 	#topmenu {
 		display: none;
 		background-color: #fff4bc;
+		opacity: 0.8;
 		width: auto;
 		float: right;
 	}
@@ -238,13 +249,13 @@
 
 	#topmenu #inputreason {
 		width: 90%;
-		height: 4em;
+		height: 6em;
 		margin-top: 8px;
 		margin-right: 0;
 		margin-bottom: 0;
 		padding: 8px;
 	}
-	#topmenu #savereason, #topmenu #inputreason {
+	#topmenu #inputreason {
 		font-size: 18px;
 	}
 	

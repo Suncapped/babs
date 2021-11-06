@@ -26,14 +26,13 @@ export class UiSys {
 		this.ctext = document.getElementById('Ctext')
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
-			this.toprightTextDefault = 'Welcome to First Earth!'
+			this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
 		}
 		toprightText.set(this.toprightTextDefault)
     }
 
 	playerSaid(idPlayer, text, color) {
 		const chatDiv = document.createElement('div')
-
 		chatDiv.classList.add('label')
 
 		// Set color based on our menu or the color send with chat for other player
@@ -52,7 +51,7 @@ export class UiSys {
 		// 200-300 wpm is normal for high school through adults // https://scholarwithin.com/average-reading-speed
 		// But since it's not continuous reading, it takes time to move eyes to it and read.  200 way too fast.
 		// Also it's nice to have time to read it 2-3x
-		const wpm = 75
+		const wpm = 120
 		const wps = wpm/60 // 200wpm/60s=3.3wps
 		const countWords = text.trim().split(/\s+/).length
 		const startingTimeMin = 3 // Give 3 seconds at start for everything (to refocus), then add onto it
@@ -64,32 +63,33 @@ export class UiSys {
 		chatDiv.style.visibility = 'hidden'
 		this.labelElements.push(chatDiv)
 
-
 		const chatLabel = new CSS2DObject( chatDiv )
 		const chatStartingHeight = idPlayer === this.babs.idSelf ? 85 : 110
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
 		const moveUpCheck = () => {
 			if(chatDiv.clientHeight !== 0) {
-				const newDivHeight = chatDiv.firstChild.offsetHeight // gets span
+				const newSpanHeight = chatDiv.firstChild.offsetHeight // gets span
 				// It's added to DOM; now move everything up and then make this one visible
 
+				// Move older divs upward
 				for(let div of this.labelElements) {
 					if(parseInt(div.getAttribute('data-idPlayer')) === idPlayer){
 						if(chatDiv === div) continue // Skip self
-
-						const pad = 5
-						const extraDistanceUp = newDivHeight*2 +pad // *2 why?  Vertical centering perhaps?
-
-						const currentPaddingBottom = parseInt(div.style.paddingBottom) || 0
-						log(extraDistanceUp, newDivHeight, div.clientHeight, div.style.paddingBottom, currentPaddingBottom)
-						div.style.paddingBottom = `${currentPaddingBottom +extraDistanceUp}px`
-
-						// todo there is still a bug with very long texts fast in a row, stacking badly.
+						const currentDistanceUp = Math.abs(parseInt(div.style.top)) || 0
+						const pad = 3
+						div.style.top = `-${currentDistanceUp +newSpanHeight +pad}px`
 					}
 				}
 
-				chatDiv.style.visibility = 'visible' // Make new one visible
+				// Indent multiline instead of using hyphens
+				const singleLineTypicalHeight = 18
+				if(newSpanHeight > singleLineTypicalHeight *1.5) { // *1.5 just in case font change etc
+					chatDiv.style.left = `${chatDiv.offsetWidth * 0.05}px` // % of width
+				}
+
+				// Make new one visible finally
+				chatDiv.style.visibility = 'visible' 
 			}
 			else {
 				setTimeout(moveUpCheck, 10)
@@ -151,8 +151,9 @@ export class UiSys {
 			const expires = chat.getAttribute('data-expires') // Could store objects with refs instead
 			// const player = this.babs.ents.get(parseInt(idPlayer))
 			if(Date.now() > expires) {
-				chat.innerText = '' // todo dispose (and in renderer) and use a pool 
-				this.labelElements = this.labelElements.filter(e => e.innerText !== '')
+				chat.hidden = true
+				this.labelElements = this.labelElements.filter(e => !e.hidden)
+				chat.remove()
 			}
 		})
 
