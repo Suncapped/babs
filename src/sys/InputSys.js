@@ -137,6 +137,26 @@ export class InputSys {
 				}
 			}
 
+
+			// Chat shortcut combos
+			if(this.keys.mleft && this.keys.a) {
+				const box = document.getElementById('chatbox')
+				box.textContent = box.textContent.slice(0, -1) // remove 'a' :-P
+				box.focus()
+			}
+			if(this.keys.aleft) {
+				var el = document.getElementById('chatbox')
+				el.focus()
+				var range = document.createRange()
+				var sel = window.getSelection()
+				
+				range.setStart(el.childNodes[0], el.textContent.length)
+				range.collapse(true)
+				
+				sel.removeAllRanges()
+				sel.addRange(range)
+			}
+
 			// Testing commands
 			if(this.keys.cleft) {
 
@@ -215,7 +235,7 @@ export class InputSys {
         })
 
         document.addEventListener('mousedown', ev => {
-			log('mouseOnDown', ev.button, ev.target.id, ev.target)
+			log.info('mouseOnDown', ev.button, ev.target.id, ev.target)
 
 			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
 				log('setfalse')
