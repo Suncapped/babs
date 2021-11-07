@@ -107,6 +107,7 @@ export class InputSys {
 		})
 
         document.addEventListener('keydown', async ev => {
+			this.activityTimestamp = Date.now()
 			log.info('keydown:', ev.code)
 			// OS-level key repeat keeps sending down events; 
 			if(this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
@@ -216,7 +217,20 @@ export class InputSys {
 		// No 'click' handling; we do it manually via mousedown/mouseup for more control
 		// document.addEventListener( 'click', mouseOnClick )
 
+		document.addEventListener("visibilitychange", (ev) => {
+			
+			log('vis change', ev)
+			
+		});
+
+		document.getElementById('canvas').addEventListener('focusout', ev => {
+
+			log('focusout')
+
+		})
+
 		document.addEventListener('mousemove', ev => { // :MouseEvent
+			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
 			
 			// Note I get MULTIPLE mousemove calls of this func in between a single update frame!
@@ -361,12 +375,18 @@ export class InputSys {
 			}
 		})
 
+		this.activityTimestamp = Date.now()
+
         return this
     }
 
 
 	displayDestinationMesh
     async update(dt, scene) {
+
+		if(Date.now() -this.activityTimestamp > 1000 *60 *5) {
+			log('afk!')
+		}
 
 		// log('scroll', this.mouse.zoom, this.mouse.scrolldy.toFixed(1), this.mouse.scrollaccumy.toFixed(1))
 

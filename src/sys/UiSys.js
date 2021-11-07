@@ -9,7 +9,7 @@ import { get as svelteGet } from 'svelte/store'
 
 export class UiSys {
 	babs
-	toprightTextDefault = 'Made for Chrome on Mac/PC'
+	toprightTextDefault = 'Made for Chrome on Mac/PC <a href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a>'
 	ctext
 	labelElements = []
 
@@ -26,7 +26,8 @@ export class UiSys {
 		this.ctext = document.getElementById('Ctext')
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
-			this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
+			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
+			this.toprightTextDefault = 'Welcome! <a href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a>'
 		}
 		toprightText.set(this.toprightTextDefault)
     }

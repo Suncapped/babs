@@ -113,7 +113,7 @@
 			{:else if $menuShowLink}
 				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Meta</a> (esc key)</div>
 			{:else}
-				{$toprightText}
+				{@html $toprightText}
 			{/if}
 		</div>
 		<div id="topleft">
@@ -157,6 +157,7 @@
 					<li>Or on laptop touchpad:<br/>Two finger touch, click, swipe, pinch</li>
 				</div>
 			</li>
+			<li><a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a></li>
 
 			<li>&nbsp;</li>
 
