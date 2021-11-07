@@ -8,7 +8,6 @@ body {
     font-size: 24px;
 }
 
-
-body > canvas {
+body {
     touch-action: none;
 }

@@ -44,6 +44,12 @@ export class InputSys {
 		scrollaccumy: 0, // Manual scroll rate tracking, for gesture touchmove
 		istouchpad: false, // a little uncertain; set based on horizontal scroll that's unlikely on mouse
 		zoom: 0,
+		
+		// Finger handling
+		isfingers: false, // certain; whether it's a finger touch device such as a phone or tablet
+		fingerlastx: 0,
+		fingerlasty: 0,
+		finger2downstart: 0,
 	}
 	keys = {
 		w: OFF,
@@ -219,19 +225,98 @@ export class InputSys {
 		// No 'click' handling; we do it manually via mousedown/mouseup for more control
 		// document.addEventListener( 'click', mouseOnClick )
 
-		document.addEventListener("visibilitychange", (ev) => {
+		// This fails to detect window switches, and we don't want window switch auto-afk anyway
+		// document.addEventListener("visibilitychange", (ev) => {
+			// 	log('vis change', ev)
+			// })
+		const touchHandler = (event) => {
+			this.mouse.isfingers = true // Only finger devices should fire these touch events
+			if(event.target.id !== 'canvas') return
+			event.preventDefault();
+
+			// log(event)
 			
-			log('vis change', ev)
-			
-		});
+			// log(event)
+			// let touches = event.changedTouches
 
-		document.getElementById('canvas').addEventListener('focusout', ev => {
+			let finger1 = event.changedTouches[0]
+			let finger2 = event.changedTouches[1]
+			let type = "";
+			switch(event.type) {
+				case "touchstart": type = "mousedown"; break;
+				case "touchmove":  type = "mousemove"; break;        
+				case "touchend":   type = "mouseup";   break;
+				default:           return;
+			}
+			const newEvent = new MouseEvent(type, {
+				bubbles: true, 
+				cancelable: true, 
+				view: window, 
+				detail: 1, 
+				screenX: finger1?.screenX || this.mouse.fingerlastx, 
+				screenY: finger1?.screenY || this.mouse.fingerlasty, 
+				
+				clientX: finger1?.clientX || this.mouse.fingerlastx, 
+				clientY: finger1?.clientY || this.mouse.fingerlasty, 
+				ctrlKey: false, 
+				shiftKey: false, 
+				metaKey: false, 
+				altKey: false, 
+				button: finger2 ? MOUSE_RIGHT_CODE : MOUSE_LEFT_CODE, 
+				relatedTarget: null,
 
-			log('focusout')
+			})
 
-		})
+			if(event.touches.length === 2) {
+				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
+				// Probably like touchpad.
+				if(event.type === 'touchstart' || event.type === 'touchend') {
+					this.mouse.fingerlastx = event.touches[0].clientX
+					this.mouse.fingerlasty = event.touches[0].clientY
+				}
+				// Oh dear, axes movement is flipped because it's a "drag" concept rather than a touchpad "direction" concept.
+				// But, since user should use fingers below character, like a record player, regular x axis should be ok!
+				this.mouse.scrolldx += event.touches[0].clientX -this.mouse.fingerlastx
+				this.mouse.fingerlastx = event.touches[0].clientX
+
+				// If turning, don't move forward/back as easily
+				const sidewaysMovementLots = 5 // Tested on iPad
+				const moveMultiplierMax = 20
+				const moveLerp = MathUtils.lerp(moveMultiplierMax, 0, Math.min(1, Math.abs(this.mouse.scrolldx) /sidewaysMovementLots))
+				// log(`${this.mouse.scrolldx}, ${moveLerp}`)
+				this.mouse.scrolldy -= moveLerp *(event.touches[0].clientY -this.mouse.fingerlasty)
+				this.mouse.fingerlasty = event.touches[0].clientY
+			}
+
+			// Handle double finger double tap
+			if(event.type === 'touchstart' && event.touches.length === 2) {
+				if(Date.now() -this.mouse.finger2downstart < this.doubleClickMs) { // Quick down them up, autorun
+					// log('finger2 runmode')
+					this.movelock = !this.movelock
+					this.mouse.finger2downstart = Date.now() -this.doubleClickMs*3 // Make made change impossible for a second
+				}
+				else {
+					this.mouse.finger2downstart = Date.now()
+				}
+			}
+			if(event.type === 'touchend' && event.touches.length === 1) { // Second finger removed, first finger remains
+				// log('touchend')
+			}
+			// todo zoom for jump etc, like .onwheel
+
+			// Or maybe treat like mouse?
+			// newEvent.movementX = finger1.clientX -this.mouse.x
+			// newEvent.movementY = finger1.clientY -this.mouse.y
+			// finger2?.target.dispatchEvent(newEvent)
+			// document.dispatchEvent(newEvent)
+		}
+		document.addEventListener('touchstart', touchHandler, true)
+		document.addEventListener('touchmove', touchHandler, true)
+		document.addEventListener('touchend', touchHandler, true)
+		document.addEventListener('touchcancel', touchHandler, true);
 
 		document.addEventListener('mousemove', ev => { // :MouseEvent
+			log.info('mousemove', ev)
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
 			
@@ -241,6 +326,8 @@ export class InputSys {
 			// Done.  What I notice is, with devtools open, events come in a lot faster than updates() (RAFs)
 
 			// Mouse movement since last frame (including during pointer lock)
+			// These are set by browser during real mouse move, but not by touchpad or touch events.
+			// Touchpad instead uses .onwheel for gestures.
 			this.mouse.dx += ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
 			this.mouse.dy += ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
 
@@ -340,7 +427,7 @@ export class InputSys {
 
 				this.mouse.ldouble = 0
 
-				document.exitPointerLock()
+				document.exitPointerLock?.()
 				document.getElementById('canvas').style.cursor = 'auto'
 			}
 			if(ev.button == 1) {
@@ -369,7 +456,7 @@ export class InputSys {
 
 			if(vis) {
 				this.characterControlMode = false
-				document.exitPointerLock()
+				document.exitPointerLock?.()
 				document.getElementById('canvas').style.cursor = 'auto'
 			} 
 			else {
