@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuVisible, socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores.js"
+	import { topmenuVisible, socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, inputCmd } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 
@@ -10,11 +10,18 @@
 
 	const sendChat = () => {
 		if(!chatbox.textContent) return
-		socketSend.set({
-			'chat': {
-				text: chatbox.textContent
-			},
-		})
+
+		if(chatbox.textContent.startsWith('/')) { // Slash command
+			const cmd = chatbox.textContent.substring(1)
+			inputCmd.set(cmd)
+		}
+		else { // Regular chat
+			socketSend.set({
+				'chat': {
+					text: chatbox.textContent
+				},
+			})
+		}
 		chatbox.textContent = ''
 	}
 	function chatKeydown(ev) {

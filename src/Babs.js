@@ -54,6 +54,7 @@ class Babs {
 	debugMode
 
 
+
 	constructor() {
 
 		log('Mode is:', import.meta.env.MODE)

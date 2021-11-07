@@ -1,6 +1,6 @@
 import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible, rightMouseDown, debugMode } from "../stores"
+import { topmenuVisible, rightMouseDown, debugMode, inputCmd } from "../stores"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -78,6 +78,8 @@ export class InputSys {
 	runmode = true // Run mode, as opposed to walk mode
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
+
+	isAfk = false
 
     constructor(babs, player) {
 		this.babs = babs
@@ -377,6 +379,12 @@ export class InputSys {
 
 		this.activityTimestamp = Date.now()
 
+		inputCmd.subscribe(cmd => { // Used by eg Ctext.svelte 
+			if(cmd === 'afk') {
+				this.isAfk = true
+			}
+		})
+
         return this
     }
 
@@ -384,9 +392,13 @@ export class InputSys {
 	displayDestinationMesh
     async update(dt, scene) {
 
-		if(Date.now() -this.activityTimestamp > 1000 *60 *5) {
-			log('afk!')
+		if(!this.isAfk && Date.now() -this.activityTimestamp > 1000 *60 *5) { // 5 min
+			this.isAfk = true
 		}
+		// if(this.isAfk) { // todo let's send it to server, then have server notify zone
+		// 	this.player.controller.target.children[0].material.transparent = true
+		// 	this.player.controller.target.children[0].material.opacity = 0.2
+		// }
 
 		// log('scroll', this.mouse.zoom, this.mouse.scrolldy.toFixed(1), this.mouse.scrollaccumy.toFixed(1))
 
@@ -616,5 +628,6 @@ export class InputSys {
 			this.movelock = false
 		}
 	}
+
 
 }
