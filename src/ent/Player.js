@@ -81,9 +81,7 @@ export class Player extends Ent {
 		// const fbx = this.controller.target
 		this.babs.scene.remove(this.controller.target) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
 
-		log('before', this.babs.comcats.get('controller'))
 		this.babs.comcats.set('controller', this.babs.comcats.get('controller').filter(c => c.arrival.id !== this.id))
-		log('after', this.babs.comcats.get('controller'))
 
 		// for(let [cat, coms] of this.babs.comcats) {
 		// 	for(let com of coms) {

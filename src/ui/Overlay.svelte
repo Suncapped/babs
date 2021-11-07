@@ -24,7 +24,6 @@
 	onMount(async () => {
 		colorPicker = new iro.ColorPicker('#picker');
 		colorPicker.on('input:change', function(color) {
-			log('onchange!', color)
 			speechColorEl.style.color = color.hexString
 		})
 		// Save occasionally

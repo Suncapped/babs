@@ -18,7 +18,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.12",
     "@tsconfig/svelte": "^2.0.1",
-    "@types/three": "^0.131.0",
+    "@types/three": "^0.133.1",
     "bicubic-interpolate": "^1.0.4",
     "svelte": "^3.38.3",
     "svelte-check": "^2.2.2",
@@ -29,7 +29,6 @@
   "dependencies": {
     "@jaames/iro": "^5.5.2",
     "js-cookie": "^3.0.1",
-    "three": "^0.134.0",
-    "three-bas": "^2.13.0"
+    "three": "^0.134.0"
   }
 }

@@ -269,7 +269,7 @@ export class SocketSys {
 				break
 				case 'playerdepart':
 					const departPlayer = this.babs.ents.get(data)
-					log('departPlayer', data, departPlayer, this.babs.scene)
+					log.info('departPlayer', data, departPlayer, this.babs.scene)
 
 					if(departPlayer && departPlayer.id !== this.babs.idSelf) {
 						// Could be self departing from a previous session, or person already otherwise departed?

@@ -138,7 +138,7 @@ export class InputSys {
 			}
 
 
-			// Chat shortcut combos
+			// Chat shortcut combos // Todo see about these on Windows - need OS detection?
 			if(this.keys.mleft && this.keys.a) {
 				const box = document.getElementById('chatbox')
 				box.textContent = box.textContent.slice(0, -1) // remove 'a' :-P
@@ -235,7 +235,7 @@ export class InputSys {
         })
 
         document.addEventListener('mousedown', ev => {
-			log.info('mouseOnDown', ev.button, ev.target.id, ev.target)
+			log.info('mouseOnDown', ev.button, ev.target.id)
 
 			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
 				log('setfalse')

@@ -325,9 +325,9 @@ export class Controller extends Com {
 				velocity.x -= acc.x * dt
 			}
 
-			if(!velocity.equals(new Vector3())) {
-				log.info('vel', velocity)
-			}
+			// if(!velocity.equals(new Vector3())) {
+			// 	log.info('vel', velocity)
+			// }
 
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {

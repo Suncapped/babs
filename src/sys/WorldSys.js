@@ -52,8 +52,6 @@ import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js'
 import { Gob } from '../ent/Gob'
 import { EventSys } from './EventSys'
 
-import * as BAS from 'three-bas'
-
 export class WorldSys {
 
 	static ZoneLength = 1000
@@ -301,8 +299,10 @@ export class WorldSys {
 		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
 		// Water randomized rotation
-		const waveSpeed = 5
-		if(this.updateCount % (60 * 1) === 0) {
+		const spinSpeedMult = 5
+		const secondsFrequency = 1
+		const normalFps = 60
+		if(this.updateCount % (normalFps *secondsFrequency) === 0) {
 			const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
 			this.rand.add(updated).clampScalar(-0.5, 0.5)
 		}
@@ -320,9 +320,9 @@ export class WorldSys {
 
 			// Rotate
 			const rot = new Quaternion().setFromEuler(new Euler(
-				waveSpeed *this.rand.x *this.waterInstancedRands[i] *dt,
-				waveSpeed *this.rand.y *this.waterInstancedRands[i] *dt,
-				waveSpeed *this.rand.z *this.waterInstancedRands[i] *dt,
+				spinSpeedMult *this.rand.x *this.waterInstancedRands[i] *dt,
+				spinSpeedMult *this.rand.y *this.waterInstancedRands[i] *dt,
+				spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
 			))
 			this.quatRotation.multiply(rot)
 			.normalize() // Roundoff to prevent scaling
