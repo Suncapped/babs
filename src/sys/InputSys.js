@@ -341,7 +341,6 @@ export class InputSys {
 			log.info('mouseOnDown', ev.button, ev.target.id)
 
 			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
-				log('setfalse')
 				topmenuVisible.set(false)
 			}
 

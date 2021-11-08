@@ -20,6 +20,38 @@ export class SocketSys {
 
 	static pingSeconds = 30
 
+	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
+		// log('attemping to move player, attempt', attempts)
+		const idPlayer = this.babs.zips.get(idzip)
+		const player = this.babs.ents.get(idPlayer)	
+		if(player) {
+			if(player.id !== this.babs.idSelf) { // Skip self movements
+				// log('finally actually moving player after attept', attempts, idzip)
+				const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
+				if(movestateName === 'run' || movestateName == 'walk') {
+					player.controller.setDestination(new Vector3(a, 0, b), movestateName)
+				}
+				else if(movestateName === 'jump') {
+					player.controller.jump(Controller.JUMP_HEIGHT)
+				}
+				else if(movestateName === 'rotate') {
+					const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
+					const quat = new Quaternion()
+					quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
+					player.controller.setRotation(quat)
+				}
+			}
+		}
+		else { // Player not yet defined; probably still loading // todo check for defuncts
+			setTimeout(() => {
+				this.movePlayer(idzip, movestate, a, b, attempts +1)
+			}, 500)
+		}
+			
+
+
+	}
+
 	constructor(babs) {
 		this.babs = babs
 
@@ -55,13 +87,15 @@ export class SocketSys {
 		}
 		this.ws.onmessage = (event) => {
 			log.info('Socket rec:', event.data)
+			if(!(event.data instanceof ArrayBuffer)) {
 
 
-			if(event.data instanceof ArrayBuffer) { // Movement
-
+				const payload = JSON.parse(event.data)
+				this.process(payload)
+			}
+			else { // Movement
 				// todo make this per-zone
 				// We'll have to have server send zone ids 'headers' per zone for a group of ints
-
 				let playerMoves = new Uint32Array(event.data)
 
 				// Shift the values out from binary data
@@ -88,34 +122,12 @@ export class SocketSys {
 					// "Once you start moving into the range of 64-128 simultaneous timers, you’re pretty much out of luck in most browsers."
 					// Let's try a literal queue.
 					// Anyway there's really only two types of updates; player updates, and object updates.
-
-					// this.babs.playerSys.movementUpdate()
+					// Hmm there aren't that many, maybe timeouts are okay.
 					
-					const idPlayer = this.babs.zips.get(idzip)
-					const player = this.babs.ents.get(idPlayer)
-					log('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
-					if(player && player.id !== this.babs.idSelf) { // Skip self movements
+					// log.info('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
 
-						const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
-						if(movestateName === 'run' || movestateName == 'walk') {
-							player.controller.setDestination(new Vector3(a, 0, b), movestateName)
-						}
-						else if(movestateName === 'jump') {
-							player.controller.jump(Controller.JUMP_HEIGHT)
-						}
-						else if(movestateName === 'rotate') {
-							const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
-							const quat = new Quaternion()
-							quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
-							player.controller.setRotation(quat)
-						}
-					}
+					this.movePlayer(idzip, movestate, a, b)
 				}
-
-			}
-			else {
-				const payload = JSON.parse(event.data)
-				this.process(payload)
 			}
 		}
 		this.ws.onerror = (event) => {
@@ -252,9 +264,7 @@ export class SocketSys {
 					// Create player entity
 					log.info('loadSelf', arrivalSelf)
 					const bSelf = true
-					const playerSelf = new Player(arrivalSelf, bSelf, this.babs)
-
-					// EventSys.Dispatch('load-self', arrivalSelf)
+					const playerSelf = await Player.New(arrivalSelf, bSelf, this.babs)
 
 					this.send({
 						ready: arrivalSelf.id,
@@ -263,12 +273,13 @@ export class SocketSys {
 
 				break
 				case 'playersarrive':
-					log('playersarrive', data)
+					log.info('playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 
 					for(let arrival of data) {
 						const existingPlayer = this.babs.ents.get(arrival.id)
+						log.info('existing player', existingPlayer)
 						if(existingPlayer) {
 							// If we already have that player, such as self, be sure to update it.
 							// This is primarily for getting movestate and .idzip, which server delays to set during tick.
@@ -281,7 +292,7 @@ export class SocketSys {
 						}
 						else {
 							const bSelf = false
-							const player = new Player(arrival, bSelf, this.babs)
+							const player = await Player.New(arrival, bSelf, this.babs)
 						}
 
 					}

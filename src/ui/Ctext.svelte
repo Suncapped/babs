@@ -35,7 +35,6 @@
 			if(ev.code === 'Enter') {
 				sendChat()
 				// No return, so that style visibility gets updated
-				log('prevent')
 				ev.preventDefault()
 			}
 			else if(ev.code === 'Escape') {

@@ -26,59 +26,63 @@ export class Player extends Ent {
 
 	constructor(arrival, bSelf, babs) {
 		super(arrival.id, babs)
+	}
+	static async New(arrival, bSelf, babs) {
 
-		this.babs = babs
+		const plr = new Player(arrival, bSelf, babs)
+		plr.babs = babs
+		plr.char = arrival.char
 
-		this.char = arrival.char
+		
+		plr.self = bSelf
 
-		if(arrival.idzip) {
-			this.idzip = arrival.idzip
-			this.babs.zips.set(arrival.idzip, this.id)
+
+		log.info('New Player:', plr)
+
+		const [fbxGroup, anim] = await Promise.all([ 
+			babs.loaderSys.loadRig(plr.char.gender), 
+			babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
+		])
+		fbxGroup.name = 'player-'+arrival.id
+		fbxGroup.feplayer = {
+			id: arrival.id,
+			idzip: arrival.idzip,
+			idzone: arrival.idzone,
+			gender: arrival.gender,
 		}
+		fbxGroup.visible = false
+		plr.babs.scene.add(fbxGroup)
 
-		this.self = bSelf
-		if(this.self) {
-			this.babs.idSelf = this.id
-			EventSys.Subscribe(this)
-		}
+		plr.controller = await Controller.New(arrival, fbxGroup, plr.babs)
 
-		log.info('New Player:', this)
-
-		Promise.all([ 
-			babs.loaderSys.loadRig(this.char.gender), 
-			babs.loaderSys.loadAnim(this.char.gender, 'idle') 
-		]).then(async ([fbxGroup, anim]) => {
-			fbxGroup.name = 'player-'+arrival.id
-			fbxGroup.feplayer = {
-				id: arrival.id,
-				idzip: arrival.idzip,
-				idzone: arrival.idzone,
-				gender: arrival.gender,
-			}
-			fbxGroup.visible = false
-			this.babs.scene.add(fbxGroup)
-
-			this.controller = await Controller.New(arrival, fbxGroup, this.babs)
-
-			log('CONT', this.controller, fbxGroup)
-
-			EventSys.Dispatch('controller-ready', {
-				controller: this.controller,
-				isSelf: this.self,
-			})
+		EventSys.Dispatch('controller-ready', {
+			controller: plr.controller,
+			isSelf: plr.self,
 		})
 
+		if(plr.self) {
+			// Setup camera and input systems for self
+			plr.babs.cameraSys = new CameraSys(plr.babs.renderSys._camera, plr.controller)
+			plr.babs.inputSys = new InputSys(plr.babs, plr)
+		}
+
+		if(arrival.idzip) {
+			plr.idzip = arrival.idzip
+			plr.babs.zips.set(arrival.idzip, plr.id)
+		}
+		if(plr.self) {
+			plr.babs.idSelf = plr.id
+		}
+
+		return plr
 		
 	}
 
-	Event(type, data) {
-		if(type === 'controller-ready') { 
-			if(!data.isSelf) return // Currently only used for self
-			// Setup camera and input systems for self
-			this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, this.controller)
-			this.babs.inputSys = new InputSys(this.babs, this)
-		}
-	}
+	// Event(type, data) {
+	// 	if(type === 'controller-ready') { 
+
+	// 	}
+	// }
 
 	remove() {
 		this.babs.ents.delete(this.id)
