@@ -1,4 +1,4 @@
-import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend, debugMode } from "../stores"
+import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from "../stores"
 import Cookies from "js-cookie"
 import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
@@ -112,8 +112,8 @@ export class SocketSys {
 					// Maybe I should be sending moves when the arrivals haven't happened yet?
 					// Hmm, we could be receiving both at once in the same tick.
 					// Really this is no big deal.  If they're moving, they'll move again.  If they're not...well their location could be wrong though.  So it is a big deal
-					// This would apply to objects and stuff to; at least, updates to them.
-					// Anything that 'updates' existing stuff, needs to be queued for when that stuff is still loading.
+					// This would apply to objects and stuff too; at least, updates to them.
+					// Anything that 'updates' existing stuff, needs to be queued for while that stuff is still loading.
 					// I can either make a literal queue, or make some kind of setInterval/await queue, or a virtual object (slow).
 					// Literal queue seems cleanest but requires thinking in data instead of functions.
 					// setInterval/await queue is easiest to implement but perhaps hard to debug.
@@ -122,10 +122,8 @@ export class SocketSys {
 					// "Once you start moving into the range of 64-128 simultaneous timers, you’re pretty much out of luck in most browsers."
 					// Let's try a literal queue.
 					// Anyway there's really only two types of updates; player updates, and object updates.
-					// Hmm there aren't that many, maybe timeouts are okay.
+					// Hmm there aren't that many of these happening, just on load, maybe timeouts are okay:
 					
-					// log.info('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
-
 					this.movePlayer(idzip, movestate, a, b)
 				}
 			}
@@ -243,7 +241,8 @@ export class SocketSys {
 					document.getElementById('topleft').style.visibility = 'visible'
 
 					debugMode.set(arrivalSelf.debugmode === undefined ? false : arrivalSelf.debugmode) // Handle meta value creation
-					
+					if(arrivalSelf.divider) dividerOffset.set(arrivalSelf.divider)
+
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
 						document.getElementById('topleft').textContent = 'Waking up...'

@@ -1,9 +1,10 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode } from "../stores.js"
+	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode, dividerOffset, urlFiles } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 	import iro from '@jaames/iro'
+import { MathUtils } from 'three';
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
@@ -75,10 +76,74 @@
 			}
 			dmCallsCount++
 		})
+
+
+
+		// Divider panel things
+		let isResizing = false
+		let container = document.getElementById('container')
+		let left = document.getElementById('canvas')
+		let right = document.getElementById('right_panel')
+		let handle = document.getElementById('drag')
+
+		handle.addEventListener('mousedown', function (e) {
+			isResizing = true;
+		})
+		document.addEventListener('mouseup', function (e) {
+			isResizing = false
+		})
+
+		const doResize = (offsetRight) => {
+			log.info('doResize', offsetRight, window.innerWidth)
+
+			if(offsetRight > window.innerWidth /2) {
+				dividerOffset.set(window.innerWidth /2)
+				return // Will get called again on update to continue with new width
+			}
+
+			left.style.right = offsetRight+'px'
+			right.style.width = offsetRight+'px'
+			left.style.width = (window.innerWidth -offsetRight) +'px'
+			left.style.height = window.innerHeight+'px'
+		}
+		document.addEventListener('mousemove', function (ev) {
+			if(!isResizing) return // we don't want to do anything if we aren't resizing.
+			ev.preventDefault()
+
+			const containerWidth = parseFloat(getComputedStyle(container, null).width)
+			var offsetRight = containerWidth -(ev.clientX -container.getBoundingClientRect().left)
+
+			offsetRight = MathUtils.clamp(offsetRight, 5, window.innerWidth /2)
+			dividerOffset.set(offsetRight)
+		})
+		window.addEventListener('resize', () => {
+			doResize($dividerOffset)
+		}, false)
+		dividerOffset.subscribe(offset => {
+			log.info('subscribed offset is', offset)
+			if(offset === undefined) { // First time or too big
+				offset = window.innerWidth /4 // default
+			}
+			else { // Actually resized by player, or received
+				socketSend.set({
+					'savedivider': offset, // Sends to server on first set ugh
+				})
+			}
+			setTimeout(() => doResize(offset), 1) // hax
+		})
+		// Border
+		// right.style.border = '40px solid'
+		// right.style.borderImage = `url(${$urlFiles}/icon/knot.png)`
+		// right.style.borderImageRepeat = 'repeat'
+
+		right.style.backgroundImage = `url(${$urlFiles}/icon/knotlight.png)`
+		right.style.backgroundRepeat = 'repeat-y'
+		right.style.backgroundSize = '9px'
+
+		// var styleElem = document.head.appendChild(document.createElement("style"));
+		// styleElem.innerHTML = `#right_panel:before {content:''; border: 20px solid; border-image:url(${$urlFiles}/icon/knot.png) 27; border-image-repeat:repeat;}`
+
 	})
-
-
-
 
 
 	function logout(ev) {
@@ -179,12 +244,15 @@
 		</ul>
 	</div>
 
+
 	<div id="info" hidden="{!$debugMode}">
 		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
 		Built build_time (build_info).<br />
 		<a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a> <span id="log"></span>
 	</div>
 	<div id="stats" hidden="{!$debugMode}"></div>
+
+	
 </div>
 
 <style>
@@ -199,7 +267,7 @@
 	}
 	.topitem {
 		background-color: #fdfbd3; /* FFF4BC */
-		opacity: 0.8;
+		opacity: 1.0;
 		padding: 10px;
 		padding-top: 12px;
 	}
@@ -290,5 +358,38 @@
 		top: 68px;
 		left: 100px;
 		text-align:left;
+	}
+
+	
+	/* Divider panel things */
+	:global #container {
+		width: 100%;
+		height: 100%;
+	}
+	:global #canvas {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		right: 100px;
+		background: grey;
+	}
+
+	:global #right_panel {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 200px;
+		color:#fff;
+		background: black;
+	}
+	:global #drag {
+		position: absolute;
+		left: 2px;
+		top: 0;
+		bottom: 0;
+		width: 8px;
+		cursor: w-resize;
 	}
 </style>

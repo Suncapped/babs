@@ -21,7 +21,7 @@ import { RenderSys } from './sys/RenderSys'
 import { Player } from './ent/Player'
 import { Controller } from './com/Controller'
 
-import { baseDomain, isProd, debugMode } from "./stores"
+import { baseDomain, isProd, debugMode, urlFiles } from "./stores"
 
 class Babs {
 
@@ -88,6 +88,7 @@ class Babs {
 
 		// Send to Svelte
 		baseDomain.set(this.baseDomain)
+		urlFiles.set(this.urlFiles)
 		isProd.set(this.isProd)
 
 		// Cookies are required

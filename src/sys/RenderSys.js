@@ -3,6 +3,7 @@ import { log } from './../Utils'
 import { ACESFilmicToneMapping, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { dividerOffset } from '../stores'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -16,6 +17,7 @@ export class RenderSys {
 		this.renderer = new WebGLRenderer({ 
 			antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
 			// powerPreference: 'high-performance',
+			canvas: document.getElementById('canvas')
 		})
 		// this.renderer.outputEncoding = LinearEncoding
 		this.renderer.outputEncoding = sRGBEncoding
@@ -33,22 +35,17 @@ export class RenderSys {
 		// this.renderer.shadowMap.type = THREE.PCFSoftShadowMap // todo shadows re-add?  or use in WorldSys?
 
 		this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
-		this.renderer.setSize(window.innerWidth, window.innerHeight)
+		this.renderer.setSize(0,0)
 
-		document.body.appendChild(this.renderer.domElement)
+		// document.body.appendChild(this.renderer.domElement) // Now done in html
+		// this.renderer.domElement.id = 'canvas'
 
-		this.renderer.domElement.id = 'canvas'
-		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()); // todo move to ui
+		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
 
-		window.addEventListener('resize', () => {
-			this.windowResize()
-		}, false)
-
 		const fov = 60
-		const aspect = window.innerWidth / window.innerHeight
 		const near = 1.0
-		this._camera = new PerspectiveCamera(fov, aspect, near, WorldSys.MAX_VIEW_DISTANCE*2)
+		this._camera = new PerspectiveCamera(fov, undefined, near, WorldSys.MAX_VIEW_DISTANCE*2)
 		this._camera.position.set(12, 8, 12)
 
 		this._scene = new Scene()
@@ -84,14 +81,41 @@ export class RenderSys {
 
 		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
 
-		this.windowResize()
+		window.addEventListener('resize', () => {
+			this.handleResize()
+		}, false)
+		dividerOffset.subscribe(offset => {
+			this.handleResize()
+		})
+		// var ro = new ResizeObserver(entries => {
+		// 	for (let entry of entries) {
+		// 		// const cr = entry.contentRect;
+		// 		// console.log('Element:', entry.target);
+		// 		// console.log(`Element size: ${cr.width}px x ${cr.height}px`);
+		// 		// console.log(`Element padding: ${cr.top}px ; ${cr.left}px`);
+		// 		this.handleResize()
+		// 	}
+		// });
+		// ro.observe(this.renderer.domElement);
+		// this.handleResize()
 	}
 
-	windowResize() {
-		this._camera.aspect = window.innerWidth / window.innerHeight
-		this._camera.updateProjectionMatrix()
-		this.renderer.setSize(window.innerWidth, window.innerHeight)
-		this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
+	handleResize() {
+		setTimeout(() => {
+			const width = parseFloat(getComputedStyle(this.renderer.domElement, null).width)
+			const height = parseFloat(getComputedStyle(this.renderer.domElement, null).height)
+			log.info('handleResize', width, height)
+			if(!width) {
+				this.handleResize()
+			}
+			else {
+				this.renderer.setSize(width, height)
+				this.labelRenderer.setSize(width, height)
+				this._camera.aspect = width / height
+				this._camera.updateProjectionMatrix()
+			}
+
+		}, 1) // More hax to deal with Overlay.svelte update happening 'too early'
 	}
 
 	update(dt) {
