@@ -72,12 +72,31 @@ export class SocketSys {
 					const a = 			(move <<16) >>>(16 	+(0+8))
 					const b = 			(move <<24) >>>(24 	+(0))
 
+					// We're going to need to store these up until the player.controller is loaded.
+					// Because after receiving a player arrival, we also start receiving their moves, before we've loaded the model etc.
+					// In fact, the Player doesn't even exist yet.  Wait what?
+					// Maybe I should be sending moves when the arrivals haven't happened yet?
+					// Hmm, we could be receiving both at once in the same tick.
+					// Really this is no big deal.  If they're moving, they'll move again.  If they're not...well their location could be wrong though.  So it is a big deal
+					// This would apply to objects and stuff to; at least, updates to them.
+					// Anything that 'updates' existing stuff, needs to be queued for when that stuff is still loading.
+					// I can either make a literal queue, or make some kind of setInterval/await queue, or a virtual object (slow).
+					// Literal queue seems cleanest but requires thinking in data instead of functions.
+					// setInterval/await queue is easiest to implement but perhaps hard to debug.
+					// Literal queue, I could queue the function call and its arg values.
+					// For objects, this is going to need to be super efficient.
+					// "Once you start moving into the range of 64-128 simultaneous timers, you’re pretty much out of luck in most browsers."
+					// Let's try a literal queue.
+					// Anyway there's really only two types of updates; player updates, and object updates.
+
+					// this.babs.playerSys.movementUpdate()
+					
 					const idPlayer = this.babs.zips.get(idzip)
 					const player = this.babs.ents.get(idPlayer)
-					log.info('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
+					log('socket moveplayer', idPlayer, player, [idzip, movestate, a, b])
 					if(player && player.id !== this.babs.idSelf) { // Skip self movements
-						const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
 
+						const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
 						if(movestateName === 'run' || movestateName == 'walk') {
 							player.controller.setDestination(new Vector3(a, 0, b), movestateName)
 						}
@@ -244,7 +263,7 @@ export class SocketSys {
 
 				break
 				case 'playersarrive':
-					log.info('playersarrive', data)
+					log('playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 

@@ -52,73 +52,64 @@ export class Controller extends Com {
 
 	constructor(arrival, fbx, babs) {
 		super(arrival.id, Controller, babs)
+	}
+
+	static async New(arrival, fbx, babs) {
+		const cont = new Controller(arrival, fbx, babs)
 		log.info('new Controller()', arrival)
-		this.arrival = arrival
-		this.scene = babs.scene
+		cont.arrival = arrival
+		cont.scene = babs.scene
 
-		this.vTerrainMin = new THREE.Vector3(0,0,0)
-		this.vTerrainMax = new THREE.Vector3(1000,10_000,1000)
-		this._decceleration = new THREE.Vector3(-5.0, 0, -5.0) // friction, basically
-		this.acceleration = new THREE.Vector3(100, 0, 100)
-		this.rotationSpeed = 1
-		this.velocity = new THREE.Vector3(0, 0, 0)
-		this.groundDistance = 0
-		this.run = false
+		cont.vTerrainMin = new THREE.Vector3(0,0,0)
+		cont.vTerrainMax = new THREE.Vector3(1000,10_000,1000)
+		cont._decceleration = new THREE.Vector3(-5.0, 0, -5.0) // friction, basically
+		cont.acceleration = new THREE.Vector3(100, 0, 100)
+		cont.rotationSpeed = 1
+		cont.velocity = new THREE.Vector3(0, 0, 0)
+		cont.groundDistance = 0
+		cont.run = false
 
-		this._animations = {}
-		this._stateMachine = new CharacterFSM(
-			new BasicCharacterControllerProxy(this._animations)
+		cont._animations = {}
+		cont._stateMachine = new CharacterFSM(
+			new BasicCharacterControllerProxy(cont._animations)
 		)
 
 		// Init
-		this.target = fbx
-		this.idealTargetQuaternion = fbx.quaternion.clone()
-		this._mixer = new THREE.AnimationMixer(this.target)
+		cont.target = fbx
+		cont.idealTargetQuaternion = fbx.quaternion.clone()
+		cont._mixer = new THREE.AnimationMixer(cont.target)
 		
 		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
-		Promise.all(animList.map(async animName => {
-			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
+		await Promise.all(animList.map(async animName => {
+			const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, animName)
 			const clip = anim.animations[0]
-			const action = this._mixer.clipAction(clip)
+			const action = cont._mixer.clipAction(clip)
 
-			this._animations[animName] = {
+			cont._animations[animName] = {
 				clip: clip,
 				action: action,
 			}
-		})).then(() => {
-			this._stateMachine.setState('idle')
-		})
-
-		// const animList = ['run', 'backward', 'walk', 'idle', 'dance']
-		// animList.map(animName => {
-		// 	LoaderSys.loadAnim(this.arrival.char.gender, animName).then(animResult => {
-		// 		const clip = animResult.animations[0]
-		// 		// log('animResult', animResult)
-		// 		this._animations[animName] = {
-		// 			clip: clip,
-		// 			action: this._mixer.clipAction(clip),
-		// 		}
-		// 	})
-		// })
-
-
-		
-
-		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
-
-		// Set position warped
-		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
-		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
-		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
-
-		// Set rotation
-		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why?  Who knows! :p
-		const quat = new Quaternion()
-		quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
-		this.setRotation(quat)
+		}))
+		cont._stateMachine.setState('idle')
 
 		// Finally show the character
-		this.target.visible = true
+		cont.target.visible = true
+
+
+		cont.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
+
+		// Set position warped
+		log.info('controller init done, warp player to', cont.arrival.x, cont.arrival.z, cont.target)
+		cont.gDestination = new Vector3(cont.arrival.x, 0, cont.arrival.z)
+		cont.target.position.copy(cont.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+
+		// Set rotation
+		const degrees = Controller.ROTATION_ANGLE_MAP[cont.arrival.r] -45 // Why -45?  Who knows! :p
+		const quat = new Quaternion()
+		quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
+		cont.setRotation(quat)
+
+		return cont
 	}
 
 	get Position() {

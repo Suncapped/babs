@@ -39,12 +39,15 @@ export class Player extends Ent {
 		this.self = bSelf
 		if(this.self) {
 			this.babs.idSelf = this.id
+			EventSys.Subscribe(this)
 		}
+
+		log.info('New Player:', this)
 
 		Promise.all([ 
 			babs.loaderSys.loadRig(this.char.gender), 
 			babs.loaderSys.loadAnim(this.char.gender, 'idle') 
-		]).then(([fbxGroup, anim]) => {
+		]).then(async ([fbxGroup, anim]) => {
 			fbxGroup.name = 'player-'+arrival.id
 			fbxGroup.feplayer = {
 				id: arrival.id,
@@ -55,23 +58,26 @@ export class Player extends Ent {
 			fbxGroup.visible = false
 			this.babs.scene.add(fbxGroup)
 
-			this.controller = new Controller(arrival, fbxGroup, this.babs)
+			this.controller = await Controller.New(arrival, fbxGroup, this.babs)
+
+			log('CONT', this.controller, fbxGroup)
 
 			EventSys.Dispatch('controller-ready', {
 				controller: this.controller,
 				isSelf: this.self,
 			})
-
-			if(bSelf) {
-				// Setup camera and input systems for self
-				this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, this.controller)
-				this.babs.inputSys = new InputSys(this.babs, this)
-			}
 		})
 
 		
-		log.info('New Player:', this)
-		
+	}
+
+	Event(type, data) {
+		if(type === 'controller-ready') { 
+			if(!data.isSelf) return // Currently only used for self
+			// Setup camera and input systems for self
+			this.babs.cameraSys = new CameraSys(this.babs.renderSys._camera, this.controller)
+			this.babs.inputSys = new InputSys(this.babs, this)
+		}
 	}
 
 	remove() {
