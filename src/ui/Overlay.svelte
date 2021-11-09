@@ -4,7 +4,8 @@
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 	import iro from '@jaames/iro'
-import { MathUtils } from 'three';
+	import { MathUtils } from 'three';
+	import { debounce } from 'debounce'
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
@@ -28,7 +29,7 @@ import { MathUtils } from 'three';
 			speechColorEl.style.color = color.hexString
 		})
 		// Save occasionally
-		setInterval(() => { // Simpler than a debounce
+		setTimeout(() => {
 			if(colorPicker.color.hexString != $menuSelfData.color) {
 				$menuSelfData.color = colorPicker.color.hexString
 				log.info('save color')
@@ -114,37 +115,32 @@ import { MathUtils } from 'three';
 			var offsetRight = containerWidth -(ev.clientX -container.getBoundingClientRect().left)
 
 			offsetRight = MathUtils.clamp(offsetRight, 5, window.innerWidth /2)
-			dividerOffset.set(offsetRight)
+			dividerOffset.set({save: offsetRight})
 		})
-		window.addEventListener('resize', () => {
+		window.addEventListener('resize', (ev) => {
 			doResize($dividerOffset)
 		}, false)
-		dividerOffset.subscribe(offset => {
-			log.info('subscribed offset is', offset)
-			if(offset === undefined) { // First time or too big
-				offset = window.innerWidth /4 // default
+		dividerOffset.subscribe(offsetOrObj => {
+			log.info('subscribed offsetOrObj is', offsetOrObj)
+			if(offsetOrObj === undefined) { // First time or too big
+				dividerOffset.set(window.innerWidth /4) // default
 			}
-			else { // Actually resized by player, or received
+			else if(offsetOrObj.save) { // Actually resized by player, or received
 				socketSend.set({
-					'savedivider': offset, // Sends to server on first set ugh
+					'savedivider': offsetOrObj.save, // Sends to server on first set ugh
 				})
+				dividerOffset.set(offsetOrObj.save)
 			}
-			setTimeout(() => doResize(offset), 1) // hax
+			// setTimeout(() => doResize(offsetOrObj), 1) // hax // no longer needed?
+			doResize(offsetOrObj)
 		})
-		// Border
-		// right.style.border = '40px solid'
-		// right.style.borderImage = `url(${$urlFiles}/icon/knot.png)`
-		// right.style.borderImageRepeat = 'repeat'
 
 		right.style.backgroundImage = `url(${$urlFiles}/icon/knotlight.png)`
 		right.style.backgroundRepeat = 'repeat-y'
 		right.style.backgroundSize = '9px'
-
-		// var styleElem = document.head.appendChild(document.createElement("style"));
-		// styleElem.innerHTML = `#right_panel:before {content:''; border: 20px solid; border-image:url(${$urlFiles}/icon/knot.png) 27; border-image-repeat:repeat;}`
-
+		right.style.backgroundPositionX = '0px'
+		right.style.overflow = 'visible'
 	})
-
 
 	function logout(ev) {
 		log.info('logging out', $baseDomain, $isProd)
@@ -156,15 +152,12 @@ import { MathUtils } from 'three';
 		window.location.reload()
 	}
 
-
 	function clickColor(ev) {
 		const picker = document.getElementById('picker')
 		picker.style.display = picker.style.display === 'block' ? 'none' : 'block'
 	}
 
 	let movementTips = false
-
-
 
 </script>
 
@@ -261,13 +254,13 @@ import { MathUtils } from 'three';
 		top: 0px;
 		width: 100%;
 		pointer-events: none; /* Clicks go through it */
+		z-index: 1;
 	}
 	.Overlay > * {
 		pointer-events: auto; /* Everything else receives */
 	}
 	.topitem {
 		background-color: #fdfbd3; /* FFF4BC */
-		opacity: 1.0;
 		padding: 10px;
 		padding-top: 12px;
 	}
@@ -308,7 +301,6 @@ import { MathUtils } from 'three';
 	#topmenu {
 		display: none;
 		background-color: #fff4bc;
-		opacity: 0.8;
 		width: auto;
 		float: right;
 	}
@@ -380,16 +372,16 @@ import { MathUtils } from 'three';
 		right: 0;
 		top: 0;
 		bottom: 0;
-		width: 200px;
+		/* width: 200px; */
 		color:#fff;
 		background: black;
 	}
 	:global #drag {
 		position: absolute;
-		left: 2px;
+		left: -1px;
 		top: 0;
 		bottom: 0;
-		width: 8px;
+		width: 12px;
 		cursor: w-resize;
 	}
 </style>

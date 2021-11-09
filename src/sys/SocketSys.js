@@ -229,6 +229,7 @@ export class SocketSys {
 					
 				break
 				case 'load':
+					log.info('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
@@ -241,7 +242,7 @@ export class SocketSys {
 					document.getElementById('topleft').style.visibility = 'visible'
 
 					debugMode.set(arrivalSelf.debugmode === undefined ? false : arrivalSelf.debugmode) // Handle meta value creation
-					if(arrivalSelf.divider) dividerOffset.set(arrivalSelf.divider)
+					dividerOffset.set(arrivalSelf.divider)
 
 					if(arrivalSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
@@ -261,9 +262,12 @@ export class SocketSys {
 					}
 
 					// Create player entity
-					log.info('loadSelf', arrivalSelf)
 					const bSelf = true
 					const playerSelf = await Player.New(arrivalSelf, bSelf, this.babs)
+
+					// Set up UIs
+					this.babs.uiSys.loadUis(data.uis)
+
 
 					this.send({
 						ready: arrivalSelf.id,

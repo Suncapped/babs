@@ -4,6 +4,7 @@ import { ACESFilmicToneMapping, LinearEncoding, LinearToneMapping, NoToneMapping
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
+import { debounce } from 'debounce'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -84,7 +85,7 @@ export class RenderSys {
 		window.addEventListener('resize', () => {
 			this.handleResize()
 		}, false)
-		dividerOffset.subscribe(offset => {
+		dividerOffset.subscribe(offsetOrObj => {
 			this.handleResize()
 		})
 		// var ro = new ResizeObserver(entries => {
@@ -100,22 +101,34 @@ export class RenderSys {
 		// this.handleResize()
 	}
 
+	firstTime = true
 	handleResize() {
-		setTimeout(() => {
-			const width = parseFloat(getComputedStyle(this.renderer.domElement, null).width)
-			const height = parseFloat(getComputedStyle(this.renderer.domElement, null).height)
-			log.info('handleResize', width, height)
+		// const resizeStuff = () => {
+			let width
+			if(!this.renderer?.domElement) {
+				setTimeout(this.handleResize, 10) 
+				return
+			}
+			width = parseFloat(getComputedStyle(this.renderer.domElement, null)?.width)			
 			if(!width) {
-				this.handleResize()
+				setTimeout(this.handleResize, 10) 
+				return
 			}
-			else {
-				this.renderer.setSize(width, height)
-				this.labelRenderer.setSize(width, height)
-				this._camera.aspect = width / height
-				this._camera.updateProjectionMatrix()
-			}
-
-		}, 1) // More hax to deal with Overlay.svelte update happening 'too early'
+			
+			const height = parseFloat(getComputedStyle(this.renderer.domElement, null)?.height)
+			this.renderer.setSize(width, height)
+			this.labelRenderer.setSize(width, height)
+			this._camera.aspect = width / height
+			this._camera.updateProjectionMatrix()
+			// setTimeout(this.handleResize, 10) 
+		// }
+		// if(this.firstTime) { // Hax to deal with Overlay.svelte update happening 'too early'
+		// 	this.firstTime = false
+		// 	setTimeout(() => resizeStuff, 1) 
+		// }
+		// else { 
+		// 	resizeStuff()
+		// }
 	}
 
 	update(dt) {

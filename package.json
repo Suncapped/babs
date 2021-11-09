@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
+    "debounce": "^1.2.1",
     "js-cookie": "^3.0.1",
+    "svelte-drag": "github:Suncapped/svelte-drag#main",
     "three": "^0.134.0"
   }
 }

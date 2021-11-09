@@ -2,6 +2,7 @@ import Stats from 'three/examples/jsm/libs/stats.module'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
+import Journal from '../ui/Journal.svelte'
 import { toprightText, toprightReconnect, menuSelfData } from "../stores.js"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
@@ -128,6 +129,21 @@ export class UiSys {
 		}
 		waitForReady()
     }
+
+	loadUis(uis) {
+		for(let ui of uis) {
+			if(ui.type === 'journal') {
+				new Journal({
+					target: document.body,
+					props: {
+						ui,
+					},
+				})
+
+			}
+		}
+
+	}
 
 	oldPos = new Vector3(0,0,0)
 	logText = ''
