@@ -32,9 +32,10 @@ export class Player extends Ent {
 		const plr = new Player(arrival, bSelf, babs)
 		plr.babs = babs
 		plr.char = arrival.char
-
 		
 		plr.self = bSelf
+
+		plr.nick = arrival.meta?.nick
 
 
 		log.info('New Player:', plr)

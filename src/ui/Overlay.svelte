@@ -29,10 +29,9 @@
 			speechColorEl.style.color = color.hexString
 		})
 		// Save occasionally
-		setTimeout(() => {
+		setInterval(() => {
 			if(colorPicker.color.hexString != $menuSelfData.color) {
 				$menuSelfData.color = colorPicker.color.hexString
-				log.info('save color')
 				socketSend.set({
 					'savecolor': colorPicker.color.hexString,
 				})
@@ -41,7 +40,6 @@
 			// If they typed into the reason box, save it after a bit
 			if(excitedReason !== $menuSelfData.reason) {
 				if(excitedReason !== undefined) { // Ignore on first update from server
-					log.info('save reason')
 					socketSend.set({
 						'savereason': $menuSelfData.reason,
 					})

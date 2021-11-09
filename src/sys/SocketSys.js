@@ -286,6 +286,7 @@ export class SocketSys {
 						if(existingPlayer) {
 							// If we already have that player, such as self, be sure to update it.
 							// This is primarily for getting movestate and .idzip, which server delays to set during tick.
+							// Self data is set on 'load'
 							existingPlayer.movestate = arrival.movestate
 
 							// This is also where self gets added to zips?
@@ -296,6 +297,7 @@ export class SocketSys {
 						else {
 							const bSelf = false
 							const player = await Player.New(arrival, bSelf, this.babs)
+							this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.')
 						}
 
 					}
@@ -307,7 +309,9 @@ export class SocketSys {
 					if(departPlayer && departPlayer.id !== this.babs.idSelf) {
 						// Could be self departing from a previous session, or person already otherwise departed?
 						if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
+							this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'An unfamiliar person')+' has departed.')
 							departPlayer.remove()
+
 						}
 
 					}

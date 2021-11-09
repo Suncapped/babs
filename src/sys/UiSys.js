@@ -13,6 +13,7 @@ export class UiSys {
 	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a>'
 	ctext
 	labelElements = []
+	svJournal
 
     constructor(babs) {
 		this.babs = babs
@@ -37,6 +38,8 @@ export class UiSys {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
+		const player = this.babs.ents.get(idPlayer)
+
 		// Set color based on our menu or the color send with chat for other player
 		if(idPlayer === this.babs.idSelf) {
 			chatDiv.style.color = svelteGet(menuSelfData).color
@@ -48,6 +51,8 @@ export class UiSys {
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = text
 		chatDiv.appendChild(chatSpan)
+
+		this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', color)
 
 		// Decide how long to display for
 		// 200-300 wpm is normal for high school through adults // https://scholarwithin.com/average-reading-speed
@@ -99,7 +104,6 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		const player = this.babs.ents.get(idPlayer)
 		player.controller.target.add( chatLabel )
 
 	}
@@ -133,16 +137,14 @@ export class UiSys {
 	loadUis(uis) {
 		for(let ui of uis) {
 			if(ui.type === 'journal') {
-				new Journal({
+				this.svJournal = new Journal({
 					target: document.body,
 					props: {
 						ui,
 					},
 				})
-
 			}
 		}
-
 	}
 
 	oldPos = new Vector3(0,0,0)

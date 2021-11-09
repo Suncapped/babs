@@ -32,7 +32,6 @@
 
 
 	const dragEnd = (ev) => {
-		appendText(ev.detail.offsetX +','+ ev.detail.offsetY)
 		ui.x = ev.detail.offsetX
 		ui.y = ev.detail.offsetY
 		socketSend.set({
@@ -46,10 +45,11 @@
 		Journal.style.height = 	ui.h+'px'
 	})
 
-	export function appendText(text) {
+	export function appendText(text, color) {
 		const textNode = document.createTextNode(text)
 		const p = document.createElement('p')
 		p.appendChild(textNode)
+		p.style.color = color
 		content.appendChild(p)
 		content.scrollTop = content.scrollHeight
 	}
@@ -73,12 +73,19 @@
 		background-color: green;
 	}
 	#Journal > .handle {
+		padding: 4px 8px;
+		font-size: 20px;
+
 		background-color: red;
 	}
 	#Journal > .content {
-		background-color: gray;
+		padding: 4px 8px;
 		overflow: auto;
 		height: 100%;
+		font-size: 18px;
+		user-select: text;
+
+		background-color: gray;
 	}
 
 	:global #Journal p {
