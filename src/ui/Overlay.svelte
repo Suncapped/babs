@@ -181,6 +181,7 @@
 					type="email"
 					autocomplete="email"
 					placeholder="Email - no spam"
+					class="border border-2 border-primary"
 				/>
 				<input
 					id="password"
@@ -188,6 +189,7 @@
 					type="password"
 					autocomplete="new-password"
 					placeholder="Password"
+					class="border border-4 border-primary"
 				/>
 				<button id="charsave" type="submit">Enter</button>
 			</form>
@@ -278,6 +280,7 @@
 		font-size: 20px;
 		padding: 3px;
 		margin: 2px;
+		padding-top:6px;
 	}
 	#topleft form {
 		display: inline;

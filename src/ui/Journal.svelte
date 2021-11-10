@@ -59,7 +59,7 @@
 
 <svelte/>
 
-<div bind:this={Journal} id="Journal" use:draggable={options} on:svelte-drag:end={dragEnd} class="card border border-primary">
+<div bind:this={Journal} id="Journal" use:draggable={options} on:svelte-drag:end={dragEnd} class="card border border-1 border-primary">
 	<div class="handle card-header">Journal</div>
 	<div bind:this={content} class="content card-body"></div>
 </div>
