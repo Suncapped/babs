@@ -124,12 +124,12 @@
 	}
 
 	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
-        font-family: "Nunito", sans-serif;
-		font-weight:bold;
-		font-size: 16px;
-        color: white;
+        /* font-family: "Nunito", sans-serif; */
+		/* font-weight:bold; */
+		font-size: 18px;
+        /* color: white; */
         /* text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;  */
-		-webkit-text-stroke: 1px #333; /* Actually works on chrome/ff too */
+		/* -webkit-text-stroke: 1px #333; */ /* Actually works on chrome/ff too */
 		position: absolute; /* UiSys counts on this for placement */
 		/* background-color:green; */
 	}

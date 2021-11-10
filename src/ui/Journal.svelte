@@ -59,9 +59,9 @@
 
 <svelte/>
 
-<div bind:this={Journal} id="Journal" use:draggable={options} on:svelte-drag:end={dragEnd}>
-	<div class="handle">Journal</div>
-	<div bind:this={content} class="content"></div>
+<div bind:this={Journal} id="Journal" use:draggable={options} on:svelte-drag:end={dragEnd} class="card border border-primary">
+	<div class="handle card-header">Journal</div>
+	<div bind:this={content} class="content card-body"></div>
 </div>
 
 <style>
@@ -70,26 +70,33 @@
 		top: 0px;
 		height: 200px;
 
-		background-color: green;
+		/* background-color: green; */
 	}
 	#Journal > .handle {
-		padding: 4px 8px;
-		font-size: 20px;
+		padding: 6px 8px;
+		padding-bottom:4px;
+		font-size: 22px;
 
-		background-color: red;
+		/* background-color: red; */
 	}
 	#Journal > .content {
-		padding: 4px 8px;
-		overflow: auto;
-		height: 100%;
+		padding: 8px;
+		padding-left: 12px;
 		font-size: 18px;
 		user-select: text;
+		
+		overflow-y: scroll;
+		scrollbar-width:none;
 
-		background-color: gray;
+		/* border: 1px solid #333; */
+
+		/* background-color: #000; */
+	}
+	#Journal > .content::-webkit-scrollbar {
+		display: none; /* for Chrome, Safari, and Opera */
 	}
 
 	:global #Journal p {
-		/* line-height: 0; */
 		margin:0;
 		padding:0;
 	}

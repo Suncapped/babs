@@ -11,3 +11,35 @@ body {
     touch-action: none;
 	user-select: none;
 }
+
+.card {
+    transition: none; /* Overriding papercss for perf */
+    background-color:rgba(12, 12, 12, 0.8);
+    box-shadow: none;
+}
+.card:hover{
+    box-shadow: none; /* 15px 28px 25px -18px rgb(0 0 0 / 20%);  Grabbed from paper.min */
+}
+.card > .card-header {
+    text-align: center;
+    width: 50%;
+    margin: auto;
+    border: none;
+    border-radius: 30px;
+    background: none;
+}
+.card > .card-body {
+    /* width:80%; */
+    /* border-radius: 30px; */
+}
+
+html.dark {
+    --white-dark: rgb(22, 19, 14);
+}
+a {
+    background-image: none;
+    border-bottom: 2px dotted lightblue;
+}
+a:hover{
+    border-bottom: 2px solid lightblue;
+}

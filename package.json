@@ -30,6 +30,7 @@
     "@jaames/iro": "^5.5.2",
     "debounce": "^1.2.1",
     "js-cookie": "^3.0.1",
+    "papercss": "^1.8.2",
     "svelte-drag": "github:Suncapped/svelte-drag#main",
     "three": "^0.134.0"
   }

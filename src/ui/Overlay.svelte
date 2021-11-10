@@ -167,7 +167,7 @@
 			{#if $toprightReconnect}
 				{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]
 			{:else if $menuShowLink}
-				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Meta</a> (esc key)</div>
+				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Menu (esc key)</a></div>
 			{:else}
 				{@html $toprightText}
 			{/if}
@@ -196,7 +196,7 @@
 	</div>
 
 	<div id="picker"></div>
-	<div class="topitem" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};">
+	<div class="topitem border border-5 border-primary" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};" >
 		<ul>			
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
@@ -205,7 +205,15 @@
 				Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
 			</li>
 			<li>
-				<label for="debugMode">Debug Mode?</label><input id="debugMode" type="checkbox" bind:checked={$debugMode}>
+				<fieldset class="form-group">
+					<label class="paper-switch">
+						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch6" class="paper-switch-label">
+						Debug Mode
+					</label>
+				</fieldset>
 			</li>
 			<li><a href on:click|preventDefault={()=>movementTips = !movementTips}>Movement Tips</a>
 				<div hidden="{!movementTips}">
@@ -217,7 +225,7 @@
 
 			<li>&nbsp;</li>
 
-			<li><b>Account</b></li>
+			<li><b>Account:</b></li>
 			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
 			<li>{$menuSelfData.email}</li>
 			<li>Credit Months: {$menuSelfData.credits}</li>
@@ -239,7 +247,7 @@
 	<div id="info" hidden="{!$debugMode}">
 		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
 		Built build_time (build_info).<br />
-		<a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a> <span id="log"></span>
+		<span id="log"></span>
 	</div>
 	<div id="stats" hidden="{!$debugMode}"></div>
 
@@ -258,9 +266,10 @@
 		pointer-events: auto; /* Everything else receives */
 	}
 	.topitem {
-		background-color: #fdfbd3; /* FFF4BC */
+		background-color: rgb(33, 33, 33); /* #fdfbd3; */ /* FFF4BC */
 		padding: 10px;
-		padding-top: 12px;
+		padding-top: 9px;
+		padding-bottom:0px;
 	}
 
 	/* topitem topleft */
@@ -272,18 +281,25 @@
 	}
 	#topleft form {
 		display: inline;
+		top: -4px;
+		position:relative;
 	}
 	#topleft {
 		width: 100%;
 	}
+	#topleft > *, #topleft > form > * {
+		float: left;
+		margin-right: 6px;
+	}
 	#topleft input[type="email"] {
-		width: 25%;
+		width: 250px;
 	}
 	#topleft input[type="password"] {
-		width: 15%;
+		/* width: 15%; */
 	}
-
-	/* topitem topright */
+	#topleft > span {
+		padding-top:2px;
+	}
 	#topright {
 		float: right;
 		position: absolulte;
@@ -298,15 +314,25 @@
 	/* topmenu modal */
 	#topmenu {
 		display: none;
-		background-color: #fff4bc;
+		background-color: rgb(33, 33, 33);
+		/* border: 2px solid white; */
+		/* border-top: none; */
 		width: auto;
 		float: right;
+		font-size: 20px;
+		color:inherit;
 	}
 	#topmenu ul {
 		list-style-type: none;
 		padding: 0;
 		margin: 10px;
 		text-align: right;
+	}
+	#topmenu ul li {
+		margin-bottom: 2px;
+	}
+	#topmenu ul li:before{
+		content:'';
 	}
 
 	#topmenu #inputreason {
@@ -326,8 +352,8 @@
 		margin:auto;
 		float:right;
 		padding:5px;
-		background-color:#fff4bc;
-		border-left:1px solid white;
+		background-color:rgb(33, 33, 33);
+		/* border-left:1px solid white; */
 	}
 	#speechColorEl{
 		color: white;
@@ -348,6 +374,9 @@
 		top: 68px;
 		left: 100px;
 		text-align:left;
+	}
+	#info, #info a{
+		color:black;
 	}
 
 	
@@ -371,7 +400,7 @@
 		top: 0;
 		bottom: 0;
 		/* width: 200px; */
-		color:#fff;
+		color:#ddd;
 		background: black;
 	}
 	:global #drag {
@@ -381,5 +410,18 @@
 		bottom: 0;
 		width: 12px;
 		cursor: w-resize;
+	}
+
+
+	fieldset.form-group{
+		margin-bottom: 0px;
+		margin-top: 8px;
+	}
+	fieldset.form-group > * {
+		float:right;
+	}
+	fieldset.form-group > label {
+		margin-right: 0;
+    	margin-left: 10px;
 	}
 </style>
