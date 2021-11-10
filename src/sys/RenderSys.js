@@ -106,12 +106,12 @@ export class RenderSys {
 		// const resizeStuff = () => {
 			let width
 			if(!this.renderer?.domElement) {
-				setTimeout(this.handleResize, 10) 
+				setTimeout(() => this.handleResize(), 10) 
 				return
 			}
 			width = parseFloat(getComputedStyle(this.renderer.domElement, null)?.width)			
 			if(!width) {
-				setTimeout(this.handleResize, 10) 
+				setTimeout(() => this.handleResize(), 10) 
 				return
 			}
 			
