@@ -1,4 +1,4 @@
-import { Color, FrontSide, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
+import { BoxGeometry, Color, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
@@ -27,6 +27,7 @@ export class LoaderSys {
 			this.objectTexture.flipY = false 
 					// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
 			const material = new MeshPhongMaterial({
+				name: 'megamaterial',
 				map: this.objectTexture,
 				// bumpMap: texture,
 				// bumpScale: bumpScale,
@@ -171,6 +172,8 @@ export class LoaderSys {
 		const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
+
+
 		// // fbx.scale.multiplyScalar(0.1)
 		// // Permanently scale matrix (rather than Object3d.scale, which interferes with cross products etc)
 		// // const scalevector = new Vector3(1, 1, 1).multiplyScalar(0.1)
@@ -247,6 +250,13 @@ export class LoaderSys {
 		
 		// Well, couldn't figure that one out :p  Better to scale it before import.
 		group.scale.set(0.1,0.1,0.1)
+		// Put in a box for raycast bounding // must adjust with scale
+		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
+		cube.name = 'player_bbox'
+		cube.scale.multiplyScalar(1 /group.scale.x)
+		cube.position.setY(3*(1 /group.scale.x))
+		cube.visible = false
+		group.add(cube)
 
 		group.traverse(c => c.castShadow = true)
 		// this.cachedChar.set(gender, fbx)

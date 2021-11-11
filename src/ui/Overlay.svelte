@@ -378,7 +378,7 @@
 		left: 100px;
 		text-align:left;
 	}
-	#info, #info a{
+	#info{
 		color:black;
 	}
 

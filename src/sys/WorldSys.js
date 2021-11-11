@@ -55,6 +55,10 @@ import { EventSys } from './EventSys'
 export class WorldSys {
 
 	static ZoneLength = 1000
+	
+	static Yard = 4
+	static Acre = 200
+	static Piece = 40
 
 	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
 
@@ -164,6 +168,7 @@ export class WorldSys {
 
 		// New sky (not lighting)
 		this.sky = new Sky()
+		this.sky.name = 'sky'
 		this.sky.scale.setScalar(450000)
 		this.babs.scene.add(this.sky)
 		
@@ -404,20 +409,13 @@ export class WorldSys {
 	waterInstancedMesh
 	waterInstancedRands = []
     async genTerrain(urlFiles, geometry, zone) {
-        let timeReporter = Utils.createTimeReporter(); timeReporter.next()
-        timeReporter.next('Terrain start')
         this.terrainData = null
-        timeReporter.next('Terrain unset')
         
-        // timeReporter.next('Terrain ky.get')
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
-        timeReporter.next('Terrain fetch.blob')
 
         const buff = await data.arrayBuffer()
-        // timeReporter.next('Terrain data.arrayBuffer')
         this.terrainData = new Uint8Array(buff)
-        // timeReporter.next('Terrain new Uint8Array')
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
@@ -426,25 +424,16 @@ export class WorldSys {
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
             verticesRef[j +1] = this.terrainData[i] * zone.yscale // Set vertex height from elevations data
         }
-
-        timeReporter.next('Terrain DONE')
     }
     async genLandcover(urlFiles, geometry, zone) {
-
 		// Get landcover data
-		let timeReporter = Utils.createTimeReporter(); timeReporter.next()
-        timeReporter.next('Landcover start')
         this.landcoverData = null
-        timeReporter.next('Landcover unset')
         
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/landcovers`)
         const data = await fet.blob()
-        timeReporter.next('Landcover fetch.blob')
 
         const buff = await data.arrayBuffer()
-        // timeReporter.next('Landcover data.arrayBuffer')
         this.landcoverData = new Uint8Array(buff)
-        // timeReporter.next('Landcover new Uint8Array')
 
 
 		// Vertex colors on BufferGeometry using a non-indexed array
@@ -460,7 +449,6 @@ export class WorldSys {
 
 		let waterNearbyIndex = new Array(26*26).fill(0)
 
-        timeReporter.next('Landcover loop colors')
         for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 			const lcString = this.StringifyLandcover[this.landcoverData[index]]
 			const color = this.colorFromLc[lcString]
@@ -534,6 +522,7 @@ export class WorldSys {
 			const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
 			const material = new MeshLambertMaterial({})
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
+			this.waterInstancedMesh.name = 'water'
 			this.waterInstancedMesh.instanceMatrix.setUsage( DynamicDrawUsage ) // So I don't have to call .needsUpdate
 			this.babs.scene.add(this.waterInstancedMesh)
 
@@ -551,8 +540,6 @@ export class WorldSys {
 			}
 
 		}, 10)
-
-        timeReporter.next('Landcover DONE')
 
     }
 

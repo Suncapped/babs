@@ -1,4 +1,4 @@
-import { Camera, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
+import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
 import { topmenuVisible, rightMouseDown, debugMode, inputCmd } from "../stores"
 import { log } from './../Utils'
@@ -50,6 +50,12 @@ export class InputSys {
 		fingerlastx: 0,
 		fingerlasty: 0,
 		finger2downstart: 0,
+
+		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre),
+		xy: new Vector2(0,0),
+
+		movetarget: undefined,
+
 	}
 	keys = {
 		w: OFF,
@@ -85,11 +91,14 @@ export class InputSys {
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
 
+	
+
 	isAfk = false
 
     constructor(babs, player) {
 		this.babs = babs
 		this.player = player
+		this.canvas = document.getElementById('canvas')
 
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
@@ -317,6 +326,7 @@ export class InputSys {
 
 		document.addEventListener('mousemove', ev => { // :MouseEvent
 			log.info('mousemove', ev)
+			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
 			
@@ -335,6 +345,14 @@ export class InputSys {
 			// 'offsetX' means offset from screen origin, not offset from last event/frame
 			this.mouse.x = ev.offsetX || ev.mozOffsetX || ev.webkitOffsetX || 0
 			this.mouse.y = ev.offsetY || ev.mozOffsetY || ev.webkitOffsetY || 0
+
+
+			// From threejs:
+			// calculate mouse position in normalized device coordinates
+			// (-1 to +1) for both components
+			this.mouse.xy.x = ( ev.clientX / parseInt(this.canvas.style.width) ) * 2 - 1
+			this.mouse.xy.y = - ( ev.clientY / parseInt(this.canvas.style.height) ) * 2 + 1
+			// log(this.mouse.xy)
         })
 
         document.addEventListener('mousedown', ev => {
@@ -400,8 +418,8 @@ export class InputSys {
 					}
 					else { 
 						// If not touchpad, do pointer lock.  Touchpad doesn't need it because look is via gestures
-						document.getElementById('canvas').requestPointerLock()
-						document.getElementById('canvas').style.cursor = 'none'
+						this.canvas.requestPointerLock()
+						this.canvas.style.cursor = 'none'
 					}
 				}
 
@@ -427,14 +445,14 @@ export class InputSys {
 				this.mouse.ldouble = 0
 
 				document.exitPointerLock?.()
-				document.getElementById('canvas').style.cursor = 'auto'
+				this.canvas.style.cursor = 'auto'
 			}
 			if(ev.button == 1) {
 				this.mouse.middle = LIFT
 			}
         })
 
-		document.getElementById('canvas').onwheel = ev => {
+		this.canvas.onwheel = ev => {
 			ev.preventDefault()
 			
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
@@ -456,7 +474,7 @@ export class InputSys {
 			if(vis) {
 				this.characterControlMode = false
 				document.exitPointerLock?.()
-				document.getElementById('canvas').style.cursor = 'auto'
+				this.canvas.style.cursor = 'auto'
 			} 
 			else {
 				// Doesn't go back to this.characterControlMode until they mouse-right-hold
@@ -475,7 +493,11 @@ export class InputSys {
     }
 
 
+	mouseRayTargets = []
 	displayDestinationMesh
+	pickedObject
+	pickedObjectSavedColor
+	pickedObjectSavedMaterial
     async update(dt, scene) {
 
 		if(!this.isAfk && Date.now() -this.activityTimestamp > 1000 *60 *5) { // 5 min
@@ -486,7 +508,74 @@ export class InputSys {
 		// 	this.player.controller.target.children[0].material.opacity = 0.2
 		// }
 
-		// log('scroll', this.mouse.zoom, this.mouse.scrolldy.toFixed(1), this.mouse.scrollaccumy.toFixed(1))
+		if(this.pickedObject) {
+			if(this.pickedObjectSavedMaterial) { // For everything using mega color material
+				this.pickedObject.material = this.pickedObjectSavedMaterial
+				this.pickedObjectSavedMaterial = undefined
+			}
+			else {
+				this.pickedObject.material.emissive.copy(this.pickedObjectSavedColor)
+			}
+			this.pickedObject = undefined;
+		}
+
+		if(this.mouse.movetarget?.id === 'canvas') { // Only highlight things in canvas, not css ui
+			this.mouseRayTargets = []
+			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
+			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
+			
+			if(this.mouseRayTargets.length) {
+				const i=0
+
+				if(this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
+					this.pickedObject = this.mouseRayTargets[i].object
+					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
+					this.pickedObject = this.pickedObject.parent.children[0]
+				}
+				else if(this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
+
+				}
+				else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
+
+				}
+				else if(this.mouseRayTargets[i].object?.name === 'water') { // InstancedMesh
+
+				}
+				else if(this.mouseRayTargets[i].object?.type === 'LineSegments') { // Wireframe
+
+				}
+				else if(this.mouseRayTargets[i].object?.type === 'SkinnedMesh') { // Player
+
+				}
+				else if(this.mouseRayTargets[i].object?.type === 'Mesh') { // Objects...and others?
+					this.pickedObject = this.mouseRayTargets[i].object
+
+				}
+				else { // Everything else
+
+					log('ray to unknown:', this.mouseRayTargets[i].object)
+				}
+
+				if(this.pickedObject) { // We've set a picked object in ifs above
+					// Highlight it
+
+					// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
+					// We can clone the material temporarily?
+					if(this.pickedObject.material.name === 'megamaterial') {
+						this.pickedObjectSavedMaterial = this.pickedObject.material
+						this.pickedObject.material = this.pickedObject.material.clone()
+					}
+
+					// Save old color and set new one
+					if(this.pickedObject.material.emissive?.r) { // Handle uninit emissive color
+						this.pickedObject.material.emissive = new Color(0,0,0)
+					}
+					this.pickedObjectSavedColor = this.pickedObject.material.emissive.clone() // Unused for megamaterial above
+					this.pickedObject.material.emissive.setHSL(55/360, 100/100, 20/100).convertSRGBToLinear()
+
+				}
+			}
+		}
 
 		if(!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse
@@ -648,7 +737,7 @@ export class InputSys {
 			let gCurrentPos = this.player.controller.target.position.clone() 
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1/4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
-			log.info('InputSys: update(), gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
+			log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
 
 			gCurrentPos = gCurrentPosFloored
 			gCurrentPos.setY(0) // Y needs a lot of work in this area...

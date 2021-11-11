@@ -129,17 +129,6 @@ export function degrees(radians) {
 	return radians * RATIO_DEGREES
 }
 
-// // Timer:
-export function* createTimeReporter() {
-    let lastTime = new Date().getTime()
-    let marker = 'start'
-    while(true){
-        const newTime = new Date().getTime()
-        log.info(`Time @${marker}: ${newTime - lastTime}ms`)
-        lastTime = newTime
-        marker = yield null
-    }
-}
 
 export function coordToIndex(x, z, sideLength, dataLength = 1) {
 	return x*dataLength +(z *sideLength *dataLength)
@@ -152,12 +141,6 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 }
 
 
-// /* Use like:
-// let timeReporter = createTimeReporter(); timeReporter.next()
-// timeReporter.next('blue')
-// timeReporter.next('green')
-// timeReporter.next('end')
-// */
 
 // // export async function terrainGenerate(terrainData:Uint8Array, ground:Mesh) {
 //     // const terrainDataFloat = Array.from(terrainData).map((ele:number) => ele /ZONE.TR_MULT)
