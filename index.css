@@ -28,10 +28,10 @@ body {
     border-radius: 30px;
     background: none;
 }
-.card > .card-body {
+/* .card > .card-body { */
     /* width:80%; */
     /* border-radius: 30px; */
-}
+/* } */
 
 html.dark {
     --white-dark: rgb(22, 19, 14);

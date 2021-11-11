@@ -297,9 +297,6 @@
 	#topleft input[type="email"] {
 		width: 250px;
 	}
-	#topleft input[type="password"] {
-		/* width: 15%; */
-	}
 	#topleft > span {
 		padding-top:2px;
 	}

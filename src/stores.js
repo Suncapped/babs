@@ -14,3 +14,4 @@ export const debugMode = writable()
 export const inputCmd = writable()
 export const dividerOffset = writable()
 export const urlFiles = writable()
+export const nickTargetId = writable() // Temporary state when naming someone via chatbox

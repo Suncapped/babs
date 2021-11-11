@@ -1,6 +1,6 @@
 import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible, rightMouseDown, debugMode, inputCmd } from "../stores"
+import { topmenuVisible, rightMouseDown, debugMode, inputCmd, nickTargetId } from "../stores"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -23,6 +23,8 @@ const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
 export class InputSys {
+
+	static NickPromptStart = '> Name for'
     
 	mouse = {
 		left: OFF, 
@@ -91,8 +93,6 @@ export class InputSys {
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
 
-	
-
 	isAfk = false
 
     constructor(babs, player) {
@@ -117,6 +117,7 @@ export class InputSys {
 			'MetaRight': 'mright',
 			'Escape': 'esc',
 			'Enter': 'return',
+			'Backspace': 'backspace',
 		}
 		// Special case: 'KeyW' style letter events
 		'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
@@ -157,19 +158,22 @@ export class InputSys {
 
 
 			// Chat shortcut combos // Todo see about these on Windows - need OS detection?
+			// Select all
 			if(this.keys.mleft && this.keys.a) {
 				const box = document.getElementById('chatbox')
 				box.textContent = box.textContent.slice(0, -1) // remove 'a' :-P
 				box.focus()
 			}
-			if(this.keys.aleft) {
+			if(this.keys.aleft && this.keys.backspace) {
 				var el = document.getElementById('chatbox')
 				el.focus()
 				var range = document.createRange()
 				var sel = window.getSelection()
 				
-				range.setStart(el.childNodes[0], el.textContent.length)
-				range.collapse(true)
+				if(el.childNodes?.[0]) {
+					range.setStart(el.childNodes[0], el.textContent.length)
+					range.collapse(true)
+				}
 				
 				sel.removeAllRanges()
 				sel.addRange(range)
@@ -358,6 +362,7 @@ export class InputSys {
         document.addEventListener('mousedown', ev => {
 			log.info('mouseOnDown', ev.button, ev.target.id)
 
+			// Close top menu if it's open
 			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
 				topmenuVisible.set(false)
 			}
@@ -378,15 +383,34 @@ export class InputSys {
 						this.movelock = false
 					}
 
+
+
 					// Double click handling
 					if(this.mouse.ldouble === false) { // First click
 						this.mouse.ldouble = Date.now()
+
+						// Single click player, get their name or nick
+						if(this.pickedObject?.type === 'SkinnedMesh') {
+							const player = this.babs.ents.get(this.pickedObject.idplayer)
+							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', '0xffffff', false)
+						}
+						
 					}
 					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 						// Double clicking mouse right turns on movelock
 						if(this.mouse.right) {
 							this.movelock = true
-						}	
+						}
+
+						if(this.pickedObject?.type === 'SkinnedMesh') {
+							const player = this.babs.ents.get(this.pickedObject.idplayer)
+							nickTargetId.set(player.id)
+
+							const box = document.getElementById('chatbox')
+							box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
+							box.style.display = 'block'
+							box.focus()
+						}
 					}
 
 				}

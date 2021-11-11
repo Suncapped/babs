@@ -76,6 +76,7 @@ export class Controller extends Com {
 
 		// Init
 		cont.target = fbx
+		cont.target.children[0].idplayer = arrival.id // SkinnedMesh name
 		cont.idealTargetQuaternion = fbx.quaternion.clone()
 		cont._mixer = new THREE.AnimationMixer(cont.target)
 		

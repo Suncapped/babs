@@ -34,7 +34,7 @@ export class UiSys {
 		toprightText.set(this.toprightTextDefault)
     }
 
-	playerSaid(idPlayer, text, color) {
+	playerSaid(idPlayer, text, color, journal = true) {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
@@ -52,7 +52,9 @@ export class UiSys {
 		chatSpan.innerText = text
 		chatDiv.appendChild(chatSpan)
 
-		this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', color)
+		if(journal) {
+			this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', color)
+		}
 
 		// Decide how long to display for
 		// 200-300 wpm is normal for high school through adults // https://scholarwithin.com/average-reading-speed
@@ -71,7 +73,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject( chatDiv )
-		const chatStartingHeight = idPlayer === this.babs.idSelf ? 85 : 110
+		const chatStartingHeight = idPlayer === this.babs.idSelf ? 85 : 90
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
 		const moveUpCheck = () => {

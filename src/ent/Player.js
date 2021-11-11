@@ -45,12 +45,7 @@ export class Player extends Ent {
 			babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		])
 		fbxGroup.name = 'player-'+arrival.id
-		fbxGroup.feplayer = {
-			id: arrival.id,
-			idzip: arrival.idzip,
-			idzone: arrival.idzone,
-			gender: arrival.gender,
-		}
+		fbxGroup.idplayer = arrival.id
 		fbxGroup.visible = false
 		plr.babs.scene.add(fbxGroup)
 

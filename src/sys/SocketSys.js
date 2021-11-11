@@ -323,6 +323,16 @@ export class SocketSys {
 						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, data.color)
 					}
 				break
+				case 'nicklist':
+					const nicklist = data
+					for(let i=0; i<nicklist.length; i+=2) {
+						const idplayer = nicklist[i]
+						const nick = nicklist[i +1]
+
+						const player = this.babs.ents.get(idplayer)
+						player.nick = nick
+					}
+				break
 			}
 		})
 	}
