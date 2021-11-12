@@ -79,11 +79,14 @@ export class Controller extends Com {
 		cont.idealTargetQuaternion = cont.target.quaternion.clone()
 		cont._mixer = new THREE.AnimationMixer(cont.target)
 		
-		const animList = ['idle', 'walk', 'run', 'backward', 'dance']
+		// const animList = ['idle', 'walk', 'run', 'backward', 'dance']
+		const animList = ['idle', 'run', 'walk']
 		await Promise.all(animList.map(async animName => {
 			const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = cont._mixer.clipAction(clip)
+
+			log('loaded', anim, animName)
 
 			cont._animations[animName] = {
 				clip: clip,

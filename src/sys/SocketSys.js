@@ -324,11 +324,12 @@ export class SocketSys {
 					}
 				break
 				case 'nicklist':
+					log('nicklist', data)
 					const nicklist = data
 					for(let pair of nicklist) {
 						const player = this.babs.ents.get(pair.idtarget)
-						player.nick = pair.nick
-						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick)
+						if(player) player.nick = pair.nick
+						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.New players
 					}
 				break
 			}

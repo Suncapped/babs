@@ -74,7 +74,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject( chatDiv )
-		const chatStartingHeight = 8//(idPlayer === this.babs.idSelf ? 190 : 340) 
+		const chatStartingHeight = (idPlayer === this.babs.idSelf ? 26 : 29) 
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
 		const moveUpCheck = () => {

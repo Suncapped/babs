@@ -258,6 +258,7 @@ export class LoaderSys {
 		
 		// Well, couldn't figure that one out :p  Better to scale it before import.
 		// group.scale.set(0.1,0.1,0.1) // gltf - disabled
+		group.scene.scale.multiplyScalar(0.1 * 3.28) // gltf - trying from scratch fbxes
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
@@ -272,7 +273,9 @@ export class LoaderSys {
 	}
 	async loadAnim(gender, anim) {
 		// const fbx = await this.loadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
-		const fbx = await this.loadGltf(`/char/${gender}/female-anim-idle.glb`)
+		const fbx = await this.loadGltf(`/char/${gender}/female-anim-${anim}.glb`)
+
+		// fbx.scene.scale.multiplyScalar(100 *3.28) //ugggh
 
 		log('anim', fbx)
 		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)
