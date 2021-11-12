@@ -50,12 +50,12 @@ export class Controller extends Com {
 	raycaster
 	gDestination
 
-	constructor(arrival, fbx, babs) {
+	constructor(arrival, babs) {
 		super(arrival.id, Controller, babs)
 	}
 
-	static async New(arrival, fbx, babs) {
-		const cont = new Controller(arrival, fbx, babs)
+	static async New(arrival, babs, fbxScene) {
+		const cont = new Controller(arrival, babs)
 		log.info('new Controller()', arrival)
 		cont.arrival = arrival
 		cont.scene = babs.scene
@@ -75,12 +75,11 @@ export class Controller extends Com {
 		)
 
 		// Init
-		cont.target = fbx
-		cont.target.children[0].idplayer = arrival.id // SkinnedMesh name
-		cont.idealTargetQuaternion = fbx.quaternion.clone()
+		cont.target = fbxScene
+		cont.idealTargetQuaternion = cont.target.quaternion.clone()
 		cont._mixer = new THREE.AnimationMixer(cont.target)
 		
-		const animList = ['run', 'backward', 'walk', 'idle', 'dance']
+		const animList = ['idle', 'walk', 'run', 'backward', 'dance']
 		await Promise.all(animList.map(async animName => {
 			const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, animName)
 			const clip = anim.animations[0]
@@ -91,6 +90,15 @@ export class Controller extends Com {
 				action: action,
 			}
 		}))
+		// gltf
+		// const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, 'idle')
+		// const clip = anim.animations[0]
+		// const action = cont._mixer.clipAction(clip)
+		// cont._animations['idle'] = {
+		// 	clip: clip,
+		// 	action: action,
+		// }
+
 		cont._stateMachine.setState('idle')
 
 		// Finally show the character
@@ -392,10 +400,10 @@ export class Controller extends Com {
 		}
 		
 		if(this.headRotationX) {
-			this.modelHead = this.modelHead || this.target.getObjectByName( 'Neck_M' )
-			this.modelHead.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
-			this.modelNeck = this.modelNeck || this.target.getObjectByName( 'Head_M' )
-			this.modelNeck.setRotationFromAxisAngle(new Vector3(-1,0,0), this.headRotationX/2)
+			// this.modelHead ||= this.target.getObjectByName( 'Head_M' )
+			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
+			this.modelNeck ||= this.target.getObjectByName( 'Neck_M' )
+			this.modelNeck.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX*0.75)
 		}
 
 		

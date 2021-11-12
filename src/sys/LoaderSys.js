@@ -148,8 +148,8 @@ export class LoaderSys {
 		// 	return this.cachedChar?.get(gender)
 		// }
 
-		const texture = await this.loadTexture(`/char/${gender}/color-atlas-new2.png`)
-		texture.flipY = true
+		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
+		texture.flipY = false // gltf flipped boolean
 		const material = new MeshPhongMaterial({
 			map: texture,
 			// bumpMap: texture,
@@ -165,11 +165,18 @@ export class LoaderSys {
 		// material.color.setHSL(hsl.h, hsl.s, 1)
 		
 		// const group = await LoaderSys.loadFbx(`/char/${gender}/female-rig-idle.fbx`) 
-		const group = await this.loadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
+		// const group = await this.loadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
+		let group = await this.loadGltf(`/char/${gender}/female-rig.glb`)
+		// gltf
+		log('group', group)
+		// group = group.scene
 
-		log.info('loadRig group', group)
+		
+		// const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
+		// gltf
+		const skinnedMesh = group.scene.children[0].children[1]//group.traverse(c => c instanceof SkinnedMesh)
 
-		const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
+		log('loadRig group', group, skinnedMesh)
 		skinnedMesh.material = material
 
 
@@ -194,8 +201,9 @@ export class LoaderSys {
 		log.info('fbx group', group)
 		log.info('skinnedMesh', skinnedMesh)
 
-		const boneRoot = group.children.find(c => c instanceof Group).children.find(c => c instanceof Bone)
-
+		// const boneRoot = group.children.find(c => c instanceof Group).children.find(c => c instanceof Bone)
+		// gltf
+		const boneRoot = group.scene.children[0].children[0]
 
 		// skinnedMesh.scale.set(1,1,1)
 
@@ -249,24 +257,24 @@ export class LoaderSys {
 		  ////////////
 		
 		// Well, couldn't figure that one out :p  Better to scale it before import.
-		group.scale.set(0.1,0.1,0.1)
+		// group.scale.set(0.1,0.1,0.1) // gltf - disabled
+		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
-		cube.scale.multiplyScalar(1 /group.scale.x)
-		cube.position.setY(3*(1 /group.scale.x))
+		cube.scale.multiplyScalar(1 /group.scene.scale.x)
+		cube.position.setY(3*(1 /group.scene.scale.x))
 		cube.visible = false
-		group.add(cube)
-
-		group.traverse(c => c.castShadow = true)
-		// this.cachedChar.set(gender, fbx)
+		group.scene.add(cube)
+		// group.traverse(c => c.castShadow = true)
 
 		return group
 	}
 	async loadAnim(gender, anim) {
-		const fbx = await this.loadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
+		// const fbx = await this.loadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
+		const fbx = await this.loadGltf(`/char/${gender}/female-anim-idle.glb`)
 
-		log.info('anim', fbx)
+		log('anim', fbx)
 		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)
 		// fbx.scale.set(0.1, 0.1, 0.1)
 		// fbx.updateMatrix()

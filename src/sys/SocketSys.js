@@ -229,7 +229,7 @@ export class SocketSys {
 					
 				break
 				case 'load':
-					log.info('socket: load', data)
+					log('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
@@ -325,12 +325,10 @@ export class SocketSys {
 				break
 				case 'nicklist':
 					const nicklist = data
-					for(let i=0; i<nicklist.length; i+=2) {
-						const idplayer = nicklist[i]
-						const nick = nicklist[i +1]
-
-						const player = this.babs.ents.get(idplayer)
-						player.nick = nick
+					for(let pair of nicklist) {
+						const player = this.babs.ents.get(pair.idtarget)
+						player.nick = pair.nick
+						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick)
 					}
 				break
 			}

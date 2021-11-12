@@ -35,21 +35,21 @@ export class Player extends Ent {
 		
 		plr.self = bSelf
 
-		plr.nick = arrival.meta?.nick
+		plr.nick = babs.uiSys.nicklist.get(arrival.id) || arrival.meta?.nick // Set from saved nicklist, otherwise meta
 
 
 		log.info('New Player:', plr)
 
-		const [fbxGroup, anim] = await Promise.all([ 
+		const [fbxGroup] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
-			babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
+			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		])
-		fbxGroup.name = 'player-'+arrival.id
-		fbxGroup.idplayer = arrival.id
-		fbxGroup.visible = false
-		plr.babs.scene.add(fbxGroup)
+		fbxGroup.scene.name = 'player'
+		fbxGroup.scene.idplayer = arrival.id
+		fbxGroup.scene.visible = false
+		plr.babs.scene.add(fbxGroup.scene)
 
-		plr.controller = await Controller.New(arrival, fbxGroup, plr.babs)
+		plr.controller = await Controller.New(arrival, plr.babs, fbxGroup.scene)
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -59,7 +59,7 @@ export class Player extends Ent {
 		if(plr.self) {
 			// Setup camera and input systems for self
 			plr.babs.cameraSys = new CameraSys(plr.babs.renderSys._camera, plr.controller)
-			plr.babs.inputSys = new InputSys(plr.babs, plr)
+			plr.babs.inputSys = new InputSys(plr.babs, plr, arrival.meta?.mousedevice)
 		}
 
 		if(arrival.idzip) {

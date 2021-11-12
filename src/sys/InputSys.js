@@ -44,7 +44,7 @@ export class InputSys {
 		scrolldy: 0,
 		// scrollaccumx: 0,
 		scrollaccumy: 0, // Manual scroll rate tracking, for gesture touchmove
-		istouchpad: false, // a little uncertain; set based on horizontal scroll that's unlikely on mouse
+		device: undefined, // mouse, touchpad, fingers
 		zoom: 0,
 		
 		// Finger handling
@@ -95,10 +95,12 @@ export class InputSys {
 
 	isAfk = false
 
-    constructor(babs, player) {
+    constructor(babs, player, mousedevice) {
 		this.babs = babs
 		this.player = player
 		this.canvas = document.getElementById('canvas')
+		this.mouse.device = mousedevice
+		log('Mouse device init: ', mousedevice)
 
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
@@ -243,7 +245,7 @@ export class InputSys {
 			// 	log('vis change', ev)
 			// })
 		const touchHandler = (event) => {
-			this.mouse.isfingers = true // Only finger devices should fire these touch events
+			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 			if(event.target.id !== 'canvas') return
 			event.preventDefault();
 
@@ -329,7 +331,7 @@ export class InputSys {
 		document.addEventListener('touchcancel', touchHandler, true);
 
 		document.addEventListener('mousemove', ev => { // :MouseEvent
-			log.info('mousemove', ev)
+			// log.info('mousemove', ev)
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
@@ -374,8 +376,8 @@ export class InputSys {
 					this.mouse.left = PRESS
 
 					if(this.mouse.right) {
-						// If using touchpad then switch to mouse; modern touchpads don't have both buttons to click at once
-						if(this.mouse.istouchpad) this.setTouchpad(false)
+						// Modern touchpads don't have both buttons to click at once; it's a mouse
+						this.setMouseDevice('mouse')
 					}
 
 					// Turn off movelock if hitting left (while right) after a delay
@@ -391,19 +393,21 @@ export class InputSys {
 
 						// Single click player, get their name or nick
 						if(this.pickedObject?.type === 'SkinnedMesh') {
-							const player = this.babs.ents.get(this.pickedObject.idplayer)
+							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+							log('single', player)
 							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', '0xffffff', false)
 						}
 						
 					}
 					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 						// Double clicking mouse right turns on movelock
-						if(this.mouse.right) {
-							this.movelock = true
-						}
+						// Not anymore!  Too annoying, moved to scroll wheel click
+						// if(this.mouse.right) {
+						// 	this.movelock = true
+						// }
 
 						if(this.pickedObject?.type === 'SkinnedMesh') {
-							const player = this.babs.ents.get(this.pickedObject.idplayer)
+							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							nickTargetId.set(player.id)
 
 							const box = document.getElementById('chatbox')
@@ -421,8 +425,8 @@ export class InputSys {
 					rightMouseDown.set(true)
 
 					if(this.mouse.left) {
-						// If using touchpad then switch to mouse; modern touchpads don't have both buttons to click at once
-						if(this.mouse.istouchpad) this.setTouchpad(false) 
+						// Modern touchpads don't have both buttons to click at once; it's a mouse
+						this.setMouseDevice('mouse') 
 					}
 
 					// Right+left mouse during movelock, stops movement
@@ -430,7 +434,7 @@ export class InputSys {
 						this.movelock = false
 					}
 
-					if(this.mouse.istouchpad) {
+					if(this.mouse.device === 'touchpad') {
 						// Two-finger click on touchpad toggles touchmove (similar to movelock)
 						if(this.touchmove === 0) { 
 							this.touchmove = 'auto'
@@ -447,10 +451,12 @@ export class InputSys {
 					}
 				}
 
-				// Middle mouse toggles run/walk
+				// Middle mouse toggles autorun
 				if(ev.button == 1) { 
+					// PS it's a mouse
+					this.setMouseDevice('mouse')
 					this.mouse.middle = PRESS
-					this.runmode = !this.runmode
+					this.movelock = !this.movelock
 				}
 
 			}
@@ -478,17 +484,29 @@ export class InputSys {
 
 		this.canvas.onwheel = ev => {
 			ev.preventDefault()
+
+			if(this.mouse.device === 'mouse') {
+				if(ev.deltaY < 0) {
+					this.runmode = true
+				}
+				else if(ev.deltaY > 0) {
+					this.runmode = false
+				}
+				return // Do not move on wheel, if we know it's a mouse.
+			}
 			
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
 			if (ev.ctrlKey) { 
 				// Doesn't actually require control keypress!  It's a hack that enables pinch zoom
-				if(!this.mouse.istouchpad) this.setTouchpad(true) // Only a touchpad would use x scrolling or zoom.
+				this.setMouseDevice('touchpad') // Only a touchpad would use zoom.
 				this.mouse.zoom -= ev.deltaY
 			} else {
-				if(ev.deltaX && !this.mouse.istouchpad) this.setTouchpad(true)
+				if(ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
 				this.mouse.scrolldx -= ev.deltaX
 				this.mouse.scrolldy += ev.deltaY
 			}
+
+			
 
 		}
 
@@ -543,7 +561,9 @@ export class InputSys {
 			this.pickedObject = undefined;
 		}
 
-		if(this.mouse.movetarget?.id === 'canvas') { // Only highlight things in canvas, not css ui
+		if(this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
+			&& !this.mouse.right // And not when mouselooking
+			) { 
 			this.mouseRayTargets = []
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
@@ -554,7 +574,8 @@ export class InputSys {
 				if(this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
 					this.pickedObject = this.mouseRayTargets[i].object
 					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
-					this.pickedObject = this.pickedObject.parent.children[0]
+					// log('player_bbox', this.pickedObject)
+					this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
 				}
 				else if(this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 
@@ -814,18 +835,26 @@ export class InputSys {
     }
 
 	
-	setTouchpad(isTouchpad) {
-		this.mouse.istouchpad = isTouchpad
-		log.info(this.mouse.istouchpad ? 'Is touchpad' : 'Not touchpad')
+	setMouseDevice(newDevice) {
+		if(this.mouse.device === newDevice) return
+		log('Device detected: ', newDevice)
 
-		// If switching from touch mode to mouse, disable touchmove
-		// Otherwise there's no way to stop moving hah!
-		if(!this.mouse.istouchpad) {
+		// Device has changed.
+		
+		
+		if(this.mouse.device === 'mouse') { // Switching away from mouse
+			this.movelock = false // Stop mouse autorun
+		}
+		else if(this.mouse.device === 'touchpad') { // If switching away from touch
+			// disable touchmove. Otherwise there's no way to stop moving hah!
 			this.touchmove = 0
 		}
-		else { // And vice-versa!
-			this.movelock = false
-		}
+
+		this.babs.socketSys.send({
+			savemousedevice: newDevice,
+		})
+
+		this.mouse.device = newDevice
 	}
 
 

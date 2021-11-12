@@ -14,6 +14,7 @@ export class UiSys {
 	ctext
 	labelElements = []
 	svJournal
+	nicklist = new Map()
 
     constructor(babs) {
 		this.babs = babs
@@ -73,7 +74,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject( chatDiv )
-		const chatStartingHeight = idPlayer === this.babs.idSelf ? 85 : 90
+		const chatStartingHeight = 8//(idPlayer === this.babs.idSelf ? 190 : 340) 
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
 		const moveUpCheck = () => {
@@ -106,6 +107,7 @@ export class UiSys {
 		}
 		moveUpCheck()
 
+		log('tar', player.controller.target)
 		player.controller.target.add( chatLabel )
 
 	}
