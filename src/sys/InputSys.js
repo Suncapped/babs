@@ -395,7 +395,7 @@ export class InputSys {
 						if(this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							log('single', player)
-							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', '0xffffff', false)
+							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', {journal: false, isname: true})
 						}
 						
 					}

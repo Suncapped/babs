@@ -320,7 +320,7 @@ export class SocketSys {
 					const chattyPlayer = this.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
 						log.info('said by chattyPlayer', chattyPlayer.id, data.text)
-						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, data.color)
+						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color})
 					}
 				break
 				case 'nicklist':
@@ -330,7 +330,7 @@ export class SocketSys {
 						const player = this.babs.ents.get(pair.idtarget)
 						if(player) {
 							player.nick = pair.nick
-							this.babs.uiSys.playerSaid(player.id, player.nick, '0xffffff', false) // Show above head
+							this.babs.uiSys.playerSaid(player.id, player.nick, {journal: false, isname: true}) // Show above head
 						}
 						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.New players
 					}

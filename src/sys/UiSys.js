@@ -35,9 +35,20 @@ export class UiSys {
 		toprightText.set(this.toprightTextDefault)
     }
 
-	playerSaid(idPlayer, text, color, journal = true) {
+	playerSaid(idPlayer, text, options) {
+		options = {
+			color: 0xEEEEEE,
+			journal: true,
+			isname: false,
+			...options,
+		}
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
+
+		log('opt', options)
+		if(options.isname) {
+			text = `{ ${text} }`
+		}
 
 		const player = this.babs.ents.get(idPlayer)
 
@@ -46,15 +57,15 @@ export class UiSys {
 			chatDiv.style.color = svelteGet(menuSelfData).color
 		}
 		else {
-			chatDiv.style.color = color
+			chatDiv.style.color = options.color
 		}
 		
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = text
 		chatDiv.appendChild(chatSpan)
 
-		if(journal) {
-			this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', color)
+		if(options.journal) {
+			this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', options.color)
 		}
 
 		// Decide how long to display for
