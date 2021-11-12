@@ -396,6 +396,8 @@ export class WorldSys {
 			'tree-park.gltf',          'tree-spruce.gltf',
 
 			'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
+
+			// 'F_Bald_mesh_009.gltf',
 		]
 		const objs = await Promise.all(loadItems.map(item => Gob.Create(`/environment/gltf/${item}`, this.babs, 0)))
 		objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
