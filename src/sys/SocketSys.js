@@ -234,43 +234,43 @@ export class SocketSys {
 						this.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
-					const arrivalSelf = data.self
+					const loadSelf = data.self
 					const zones = data.zones
-					const zone = zones.find(z => z.id == arrivalSelf.idzone)
-					log.info('Welcome to', arrivalSelf.idzone, arrivalSelf.id, arrivalSelf.visitor)
+					const zone = zones.find(z => z.id == loadSelf.idzone)
+					log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
 					toprightText.set(this.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 
-					debugMode.set(arrivalSelf.debugmode === undefined ? false : arrivalSelf.debugmode) // Handle meta value creation
-					dividerOffset.set(arrivalSelf.divider)
+					debugMode.set(loadSelf.debugmode === undefined ? false : loadSelf.debugmode) // Handle meta value creation
+					dividerOffset.set(loadSelf.divider)
 
-					if(arrivalSelf.visitor !== true) {
+					if(loadSelf.visitor !== true) {
 						document.getElementById('topleft').style.visibility = 'visible'
 						document.getElementById('topleft').textContent = 'Waking up...'
 
 						menuShowLink.set(true)
 
-						menuSelfData.set(arrivalSelf)
+						menuSelfData.set(loadSelf)
 					}
 
 					this.babsReady = true
 					await this.babs.worldSys.loadStatics(this.babs.urlFiles, zone)
 					await this.babs.worldSys.loadObjects(zone)
 
-					if(arrivalSelf.visitor !== true) {
+					if(loadSelf.visitor !== true) {
 						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
 					}
 
 					// Create player entity
 					const bSelf = true
-					const playerSelf = await Player.New(arrivalSelf, bSelf, this.babs)
+					const playerSelf = await Player.New(loadSelf, bSelf, this.babs)
 
 					// Set up UIs
 					this.babs.uiSys.loadUis(data.uis)
 
 
 					this.send({
-						ready: arrivalSelf.id,
+						ready: loadSelf.id,
 					})
 
 
