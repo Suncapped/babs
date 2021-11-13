@@ -1,6 +1,6 @@
 import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible, rightMouseDown, debugMode, inputCmd, nickTargetId } from "../stores"
+import { topmenuVisible, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset } from "../stores"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -835,13 +835,17 @@ export class InputSys {
 
 	
 	setMouseDevice(newDevice) {
-		if(this.mouse.device === newDevice) return
+		if(newDevice === 'fingers') { // Exception hax, show more screen on mobile devices
+			if(window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
+				document.getElementById('Journal').style.display = 'none'
+				dividerOffset.set(5)
+			}
+		}
+
+		if(this.mouse.device === newDevice) return // Only detect new device if device is changing
+
 		log('Device detected: ', newDevice)
-
-		this.babs.uiSys.svJournal.visible = false
-
 		// Device has changed.
-		
 		
 		if(this.mouse.device === 'mouse') { // Switching away from mouse
 			this.movelock = false // Stop mouse autorun
@@ -852,10 +856,6 @@ export class InputSys {
 			this.touchmove = 0
 		}
 
-		if(newDevice === 'fingers') {
-			this.babs.uiSys.svJournal.visible = false
-
-		}
 
 		this.babs.socketSys.send({
 			savemousedevice: newDevice,
