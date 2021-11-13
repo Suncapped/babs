@@ -35,8 +35,11 @@ export class Player extends Ent {
 		
 		plr.self = bSelf
 
-		plr.nick = babs.uiSys.nicklist.get(arrival.id) || arrival.meta?.nick // Set from saved nicklist, otherwise meta
-
+		plr.nick = arrival.meta?.nick
+		const existingNick = babs.uiSys.nicklist.get(arrival.id)
+		if(existingNick) {
+			plr.setNick(existingNick)
+		} 
 
 		log.info('New Player:', plr)
 
@@ -79,6 +82,12 @@ export class Player extends Ent {
 
 	// 	}
 	// }
+
+	setNick(newNick) {
+		if(this.nick == newNick) return // Only show once
+		this.nick = newNick
+		this.babs.uiSys.playerSaid(this.id, this.nick, {journal: false, isname: true}) // Show above head
+	}
 
 	remove() {
 		this.babs.ents.delete(this.id)

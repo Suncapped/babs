@@ -328,9 +328,9 @@ export class SocketSys {
 					const nicklist = data
 					for(let pair of nicklist) {
 						const player = this.babs.ents.get(pair.idtarget)
+						log.info('nicklist player', player)
 						if(player) {
-							player.nick = pair.nick
-							this.babs.uiSys.playerSaid(player.id, player.nick, {journal: false, isname: true}) // Show above head
+							player.setNick(pair.nick)
 						}
 						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.New players
 					}

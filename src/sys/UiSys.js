@@ -46,7 +46,7 @@ export class UiSys {
 		chatDiv.classList.add('label')
 
 		if(options.isname) {
-			text = `{ ${text} }`
+			text = `< ${text} >`
 		}
 
 		const player = this.babs.ents.get(idPlayer)
