@@ -12,10 +12,10 @@
 
 	// Defaults
 	let ui = $$props.ui
-	ui.w ||= 300
-	ui.h ||= 300
+	ui.w ||= 250
+	ui.h ||= 250
 	ui.x ||= window.innerWidth -ui.w
-	ui.y ||= 60
+	ui.y ||= 2000
 	ui.unfurled ||= true
 	// If doesn't fit in window, snap to edge at least.  Maybe don't need to update ui.
 	// This can't be done in resize, since it is defaultPosition which only works on init in svelte-drag

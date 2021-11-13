@@ -45,7 +45,6 @@ export class UiSys {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
-		log('opt', options)
 		if(options.isname) {
 			text = `{ ${text} }`
 		}
@@ -118,9 +117,12 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		log('tar', player.controller.target)
-		player.controller.target.add( chatLabel )
-
+		let waitForMesh = setInterval(() => {
+			if(player.controller.target) {
+				player.controller.target.add( chatLabel )
+				clearInterval(waitForMesh)
+			}
+		}, 200)
 	}
 
 

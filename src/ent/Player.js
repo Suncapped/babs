@@ -40,16 +40,16 @@ export class Player extends Ent {
 
 		log.info('New Player:', plr)
 
-		const [fbxGroup] = await Promise.all([ 
+		const [gltfScene] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		])
-		fbxGroup.scene.name = 'player'
-		fbxGroup.scene.idplayer = arrival.id
-		fbxGroup.scene.visible = false
-		plr.babs.scene.add(fbxGroup.scene)
+		gltfScene.name = 'player'
+		gltfScene.idplayer = arrival.id
+		gltfScene.visible = false
+		plr.babs.scene.add(gltfScene)
 
-		plr.controller = await Controller.New(arrival, plr.babs, fbxGroup.scene)
+		plr.controller = await Controller.New(arrival, plr.babs, gltfScene)
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,

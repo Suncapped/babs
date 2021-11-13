@@ -12,6 +12,7 @@ export class Gob {
 
     mesh
 
+	static mapPathObjectCache = new Map()
     static async Create(path, babs, childIndex = 0) {
         let gob = new Gob
 
@@ -21,6 +22,21 @@ export class Gob {
 			group = await babs.loaderSys.loadFbx(path)
 		}
 		else {
+			// Caching
+			// Assumes no object animation!
+			const cached = Gob.mapPathObjectCache.get(path)
+			let scene
+			if(cached) {
+				log.info('cached object', path)
+				scene = cached.clone()
+			}
+			else {
+				log.info('download object', path)
+				let group = await babs.loaderSys.loadGltf(path)
+				Gob.mapPathObjectCache.set(path, group.scene)
+				scene = group.scene.clone()
+			}
+
 			group = (await babs.loaderSys.loadGltf(path)).scene
 		}
 

@@ -198,7 +198,7 @@ export class InputSys {
 					let count=0
 					for(let item of loadItems) {
 						let obj = await Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
-						log('obj scale', obj.mesh.scale)
+						log.info('obj scale', obj.mesh.scale)
 						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
 						// obj.mesh.scale.multiplyScalar(3.3)
 						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*2 +2, 12 +2))
@@ -394,7 +394,6 @@ export class InputSys {
 						// Single click player, get their name or nick
 						if(this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
-							log('single', player)
 							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', {journal: false, isname: true})
 						}
 						
@@ -839,15 +838,23 @@ export class InputSys {
 		if(this.mouse.device === newDevice) return
 		log('Device detected: ', newDevice)
 
+		this.babs.uiSys.svJournal.visible = false
+
 		// Device has changed.
 		
 		
 		if(this.mouse.device === 'mouse') { // Switching away from mouse
 			this.movelock = false // Stop mouse autorun
+			
 		}
 		else if(this.mouse.device === 'touchpad') { // If switching away from touch
 			// disable touchmove. Otherwise there's no way to stop moving hah!
 			this.touchmove = 0
+		}
+
+		if(newDevice === 'fingers') {
+			this.babs.uiSys.svJournal.visible = false
+
 		}
 
 		this.babs.socketSys.send({

@@ -77,37 +77,26 @@ export class Controller extends Com {
 		// Init
 		cont.target = fbxScene
 		cont.idealTargetQuaternion = cont.target.quaternion.clone()
+
 		cont._mixer = new THREE.AnimationMixer(cont.target)
-		
-		// const animList = ['idle', 'walk', 'run', 'backward', 'dance']
 		const animList = ['idle', 'run', 'walk']
 		await Promise.all(animList.map(async animName => {
 			const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, animName)
 			const clip = anim.animations[0]
 			const action = cont._mixer.clipAction(clip)
 
-			log('loaded', anim, animName)
-
 			cont._animations[animName] = {
 				clip: clip,
 				action: action,
 			}
 		}))
-		// gltf
-		// const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, 'idle')
-		// const clip = anim.animations[0]
-		// const action = cont._mixer.clipAction(clip)
-		// cont._animations['idle'] = {
-		// 	clip: clip,
-		// 	action: action,
-		// }
 
 		cont._stateMachine.setState('idle')
 
 		// Finally show the character
 		cont.target.visible = true
 
-
+		// Raycast for ground snapping
 		cont.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
 
 		// Set position warped

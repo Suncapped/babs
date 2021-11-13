@@ -13,6 +13,7 @@ import { Group } from "three"
 import { Bone } from "three"
 import { Vector4 } from "three"
 import { Matrix3 } from "three"
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
 export class LoaderSys {
@@ -91,7 +92,6 @@ export class LoaderSys {
 
 	}
 
-
 	async loadGltf(path) {
 		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
 
@@ -101,25 +101,6 @@ export class LoaderSys {
 			loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
 					log.info('Loaded GLTF:', gltf)
-
-					// gltf.scene.traverse( function ( child ) {
-					// 	if ( child.isMesh ) {
-					// 		roughnessMipmapper.generateMipmaps( child.material )
-					// 	}
-					// } )
-					// scene.add( gltf.scene )
-					// // roughnessMipmapper.dispose()
-					// render()
-
-					// scene.add( gltf.scene );
-					// gltf.animations; // Array<THREE.AnimationClip>
-					// gltf.scene; // THREE.Group
-					// gltf.scenes; // Array<THREE.Group>
-					// gltf.cameras; // Array<THREE.Camera>
-					// gltf.asset; // Object
-
-					// let mesh = gltf.scene.children[0]
-
 
 					gltf.scene.traverse(child => {
 						if (child.isMesh) {
@@ -141,13 +122,9 @@ export class LoaderSys {
 
 	}
 
-	// static cachedChar = new Map
+	mapPathRigCache = new Map()
 	async loadRig(gender) {
-		// if(this.cachedChar?.get(gender)) {  // Doesn't work due to ref
-		// 	log('character is cached', gender)
-		// 	return this.cachedChar?.get(gender)
-		// }
-
+		// Todo when we switch to mega atlas, use global material (this.objectMaterial)
 		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
 		texture.flipY = false // gltf flipped boolean
 		const material = new MeshPhongMaterial({
@@ -161,131 +138,57 @@ export class LoaderSys {
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 			side: FrontSide,
 		})
-		// const hsl = material.color.getHSL({h:0,s:0,l:0})
-		// material.color.setHSL(hsl.h, hsl.s, 1)
 		
-		// const group = await LoaderSys.loadFbx(`/char/${gender}/female-rig-idle.fbx`) 
-		// const group = await this.loadFbx(`/char/${gender}/female-rig-unitstest.fbx`) 
-		let group = await this.loadGltf(`/char/${gender}/female-rig.glb`)
-		// gltf
-		log('group', group)
-		// group = group.scene
-
+		// Either get from previous load (cache), or download for the first time.  Clone either way.
+		const path = `/char/${gender}/female-rig.glb`
+		const cached = this.mapPathRigCache.get(path)
+		let scene
+		if(cached) {
+			log.info('cached rig', path)
+			scene = SkeletonUtils.clone(cached)
+		}
+		else {
+			log.info('download rig', path)
+			let group = await this.loadGltf(path)
+			this.mapPathRigCache.set(path, group.scene)
+			scene = SkeletonUtils.clone(group.scene)
+		}
 		
-		// const skinnedMesh = group.children.find(c => c instanceof SkinnedMesh)
-		// gltf
-		const skinnedMesh = group.scene.children[0].children[1]//group.traverse(c => c instanceof SkinnedMesh)
-
-		log('loadRig group', group, skinnedMesh)
+		const skinnedMesh = scene.children[0].children[1]//group.traverse(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
-
-
-		// // fbx.scale.multiplyScalar(0.1)
-		// // Permanently scale matrix (rather than Object3d.scale, which interferes with cross products etc)
-		// // const scalevector = new Vector3(1, 1, 1).multiplyScalar(0.1)
-		// const newMatrixScaled = new Matrix4()
-		// newMatrixScaled.copy(fbx.matrix.clone())
-		// log('fbx.matrix, newMatrixScaled pre', fbx.matrix.clone(), newMatrixScaled.clone())
-		// newMatrixScaled.makeScale(0.1, 0.1, 0.1)
-		// log('then', newMatrixScaled)
-		// newMatrixScaled.multiply(fbx.matrix)
-		// log('annnnnd after thing', newMatrixScaled)
-		// fbx.matrix.copy(newMatrixScaled.clone())
-		// // fbx.updateMatrix( true )
-		// // fbx.updateMatrixWorld( true )
-		// // fbx.matrixWorldNeedsUpdate = true
-		// log('scaled', fbx.matrix.clone())
 		// Okay let's try this https://stackoverflow.com/questions/27022160/three-js-can-i-apply-position-rotation-and-scale-to-the-geometry/27023024#27023024
+		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
+		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
-		log.info('fbx group', group)
-		log.info('skinnedMesh', skinnedMesh)
-
-		// const boneRoot = group.children.find(c => c instanceof Group).children.find(c => c instanceof Bone)
-		// gltf
-		const boneRoot = group.scene.children[0].children[0]
-
-		// skinnedMesh.scale.set(1,1,1)
-
-		// group.scale.set(0.1, 0.1, 0.1)
-		// group.updateMatrix()
-
-		// skinnedMesh.updateMatrix()
-		// skinnedMesh.geometry.applyMatrix(group.matrix)
-		// // skinnedMesh.updateMatrix()
-
-		// group.applyMatrix(group.matrix)
-		// group.scale.set(1,1,1)
-		// group.updateMatrix()
-
-		// boneRoot.applyMatrix(group.matrix)
-		
-		// skinnedMesh.scale.multiplyScalar(0.1)
-		// skinnedMesh.updateMatrix()
-		// skinnedMesh.geometry.applyMatrix(skinnedMesh.matrix)
-		// skinnedMesh.scale.set(1,1,1)
-		// skinnedMesh.updateMatrix()
-
-		// myGroup.applyMatrix( new THREE.Matrix4().makeTranslation(x, y, z) )
-
-		// const scaleContainer = new Group()
-		// scaleContainer.add(group)
-		// scaleContainer.scale.set(0.1, 0.1, 0.1)
-
-
-
-		
-		
-		
-		/////////////
-
-		  
-		  
-
-
-		  // bakeSkeleton(skinnedMesh)
-		  
-		//   group.scale.set(0.1, 0.1, 0.1)
-		//   group.updateMatrix()
-		//   skinnedMesh.geometry.applyMatrix(group.matrix.clone())
-		//   group.scale.set(1,1,1)
-		//   group.updateMatrix()
-		//   skinnedMesh.skeleton.bones.forEach(bone => bone.scale.set(0.1,0.1,0.1))
-		  
-		// skinnedMesh.scale.set(1,1,1)
-
-		  ////////////
-		
-		// Well, couldn't figure that one out :p  Better to scale it before import.
-		// group.scale.set(0.1,0.1,0.1) // gltf - disabled
-		group.scene.scale.multiplyScalar(0.1 * 3.28) // gltf - trying from scratch fbxes
+		scene.scale.multiplyScalar(0.1 * 3.28) // hax for temp character
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
-		cube.scale.multiplyScalar(1 /group.scene.scale.x)
-		cube.position.setY(3*(1 /group.scene.scale.x))
+		cube.scale.multiplyScalar(1 /scene.scale.x)
+		cube.position.setY(3*(1 /scene.scale.x))
 		cube.visible = false
-		group.scene.add(cube)
-		// group.traverse(c => c.castShadow = true)
+		scene.add(cube)
+		// scene.traverse(c => c.castShadow = true)
 
-		return group
+		return scene
 	}
+
+	mapPathAnimCache = new Map()
 	async loadAnim(gender, anim) {
-		// const fbx = await this.loadFbx(`/char/${gender}/${gender}-anim-${anim}.fbx`)
-		const fbx = await this.loadGltf(`/char/${gender}/female-anim-${anim}.glb`)
-
-		// fbx.scene.scale.multiplyScalar(100 *3.28) //ugggh
-
-		log('anim', fbx)
-		// fbx.traverse(c => c.scale ? c.scale.set(0.1, 0.1, 0.1) :null)
-		// fbx.scale.set(0.1, 0.1, 0.1)
-		// fbx.updateMatrix()
-		// skinnedMesh.geometry.applyMatrix(fbx.matrix)
-		// fbx.scale.set(1,1,1)
-		// fbx.updateMatrix()
-
-		return fbx
+		const path = `/char/${gender}/female-anim-${anim}.glb`
+		const cached = this.mapPathAnimCache.get(path)
+		if(cached) {
+			log.info('cached anim', path)
+			return cached // With animations, we don't need to clone, can just use the same ones!
+		}
+		else {
+			log.info('download anim', path)
+			let group = await this.loadGltf(path)
+			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
+			return group
+		}
 	}
 
 
