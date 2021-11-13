@@ -57,8 +57,9 @@ export class WorldSys {
 	static ZoneLength = 1000
 	
 	static Yard = 4
-	static Acre = 200
-	static Piece = 40
+	static Piece = WorldSys.Yard *10 // 40; 10 tiles
+	static Acre = WorldSys.Piece *5 // 200; 5 pieces
+
 
 	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
 
@@ -66,9 +67,6 @@ export class WorldSys {
 
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
-
-	
-    worldMesh
 
 	babs
 
@@ -344,7 +342,7 @@ export class WorldSys {
 		this.updateCount++
     }
 
-
+	ground
     async loadStatics(urlFiles, zone) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
@@ -361,12 +359,12 @@ export class WorldSys {
 		
         geometry.computeVertexNormals()
 
-        const ground = new Mesh( geometry, material )
-        ground.name = 'ground'
-        ground.castShadow = true
-        ground.receiveShadow = true
-		// ground.visible= false
-        this.babs.scene.add( ground )
+        this.ground = new Mesh( geometry, material )
+        this.ground.name = 'ground'
+        this.ground.castShadow = true
+        this.ground.receiveShadow = true
+		// ground.visible = false
+        this.babs.scene.add(this.ground)
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()

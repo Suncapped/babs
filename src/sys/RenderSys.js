@@ -76,9 +76,9 @@ export class RenderSys {
 		this.labelRenderer.domElement.id = 'labelRenderer'
 		// this.labelRenderer.domElement.style.top = '0px'
 		// this.labelRenderer.domElement.style['pointer-events'] = 'none'
-		this.labelRenderer.domElement.style = {
-			'background-color': 'green',
-		}
+		// this.labelRenderer.domElement.style = {
+		// 	'background-color': 'green',
+		// }
 
 		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
 

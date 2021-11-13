@@ -11,6 +11,7 @@ import { Matrix4 } from "three"
 import { Vector2 } from "three"
 import { Controller } from "../com/Controller"
 import { WorldSys } from "./WorldSys"
+import * as Utils from './../Utils'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -53,10 +54,14 @@ export class InputSys {
 		fingerlasty: 0,
 		finger2downstart: 0,
 
-		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre),
+		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre *2),
 		xy: new Vector2(0,0),
 
 		movetarget: undefined,
+		landtarget: {
+			text: '',
+			point: new Vector3(0,0,0)
+		},
 
 	}
 	keys = {
@@ -396,6 +401,11 @@ export class InputSys {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', {journal: false, isname: true})
 						}
+
+						if(this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
+							// Create text here above the land.
+							this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
+						}
 						
 					}
 					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
@@ -559,6 +569,10 @@ export class InputSys {
 			}
 			this.pickedObject = undefined;
 		}
+		if(this.mouse.landtarget.text) {
+			this.mouse.landtarget.text = ''
+			this.mouse.landtarget.point.set(0,0,0)
+		}
 
 		if(this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
@@ -567,8 +581,11 @@ export class InputSys {
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
 			
-			if(this.mouseRayTargets.length) {
-				const i=0
+			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) {
+
+				if(this.mouseRayTargets[i].object?.type === 'LineSegments') { // Wireframe
+					continue // Skip
+				}
 
 				if(this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
 					this.pickedObject = this.mouseRayTargets[i].object
@@ -577,22 +594,30 @@ export class InputSys {
 					this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
 				}
 				else if(this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
+					// log('ground', this.mouseRayTargets[i].point)
+					const point = this.mouseRayTargets[i].point
+					const landPoint = point.clone().divideScalar(1000/25).round()
 
+					const index = Utils.coordToIndex(landPoint.x, landPoint.z, 26)
+					const lcString = this.babs.worldSys.StringifyLandcover[this.babs.worldSys.landcoverData[index]]
+
+					this.mouse.landtarget.text = lcString
+					this.mouse.landtarget.point = point
 				}
 				else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
-
+					// log('sky')
 				}
 				else if(this.mouseRayTargets[i].object?.name === 'water') { // InstancedMesh
-
-				}
-				else if(this.mouseRayTargets[i].object?.type === 'LineSegments') { // Wireframe
+					// log('instancedmesh')
 
 				}
 				else if(this.mouseRayTargets[i].object?.type === 'SkinnedMesh') { // Player
+					// log('skinnedmesh')
 
 				}
 				else if(this.mouseRayTargets[i].object?.type === 'Mesh') { // Objects...and others?
 					this.pickedObject = this.mouseRayTargets[i].object
+					// log('mesh')
 
 				}
 				else { // Everything else
@@ -618,6 +643,8 @@ export class InputSys {
 					this.pickedObject.material.emissive.setHSL(55/360, 100/100, 20/100).convertSRGBToLinear()
 
 				}
+
+				break // Only run loop once (except for continues)
 			}
 		}
 

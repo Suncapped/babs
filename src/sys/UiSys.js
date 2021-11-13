@@ -117,12 +117,42 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		let waitForMesh = setInterval(() => {
-			if(player.controller.target) {
-				player.controller.target.add( chatLabel )
-				clearInterval(waitForMesh)
-			}
-		}, 200)
+		if(player.controller.target) { 
+			// Needed to avoid latency of interval below
+			player.controller.target.add(chatLabel)
+		}
+		else {
+			let waitForMesh = setInterval(() => {
+				log('waiting')
+				if(player.controller.target) {
+					player.controller.target.add(chatLabel)
+					clearInterval(waitForMesh)
+				}
+			}, 200)
+		}
+	}
+
+
+	landSaid(text, point) {
+		const chatDiv = document.createElement('div')
+		chatDiv.classList.add('label')
+
+		const chatSpan = document.createElement('span')
+		chatSpan.innerText = text
+		chatDiv.appendChild(chatSpan)
+		
+		chatDiv.style.color = '#ffffff'
+		this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color)
+
+		const expiresInSeconds = 3
+		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
+		this.labelElements.push(chatDiv)
+
+		const chatLabel = new CSS2DObject( chatDiv )
+
+		chatLabel.position.copy(point.setY(point.y +1))
+
+		this.babs.worldSys.ground.add(chatLabel)
 	}
 
 

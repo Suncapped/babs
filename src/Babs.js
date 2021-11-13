@@ -23,6 +23,7 @@ import { Controller } from './com/Controller'
 
 import { baseDomain, isProd, debugMode, urlFiles } from "./stores"
 
+
 class Babs {
 
 	isProd = window.location.href.startsWith('https://earth.suncapped.com')
@@ -139,6 +140,7 @@ class Babs {
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
 
+		/** @type {WorldSys} */
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 		
 		this.socketSys = new SocketSys(this)
