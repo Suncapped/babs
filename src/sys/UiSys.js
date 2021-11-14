@@ -117,7 +117,7 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		if(player.controller.target) { 
+		if(player.controller?.target) { 
 			// Needed to avoid latency of interval below
 			player.controller.target.add(chatLabel)
 		}

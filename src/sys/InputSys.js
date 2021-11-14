@@ -583,7 +583,8 @@ export class InputSys {
 			
 			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) {
 
-				if(this.mouseRayTargets[i].object?.type === 'LineSegments') { // Wireframe
+				if(this.mouseRayTargets[i].object?.type === 'LineSegments' 
+				|| this.mouseRayTargets[i].object?.name === 'destinationmesh') { // Wireframe
 					continue // Skip
 				}
 
@@ -618,6 +619,7 @@ export class InputSys {
 				else if(this.mouseRayTargets[i].object?.type === 'Mesh') { // Objects...and others?
 					this.pickedObject = this.mouseRayTargets[i].object
 					// log('mesh')
+					// BUG found by Andrew!  Could be the debug square..hmm should disable it.  Above
 
 				}
 				else { // Everything else
@@ -827,6 +829,7 @@ export class InputSys {
 					const material = new MeshBasicMaterial( {color: 0xffaaaa, side: DoubleSide} )
 					geometry.rotateX( - Math.PI / 2 ); // Make the plane horizontal
 					this.displayDestinationMesh = new Mesh( geometry, material )
+					this.displayDestinationMesh.name = 'destinationmesh'
 					scene.add( this.displayDestinationMesh )
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)

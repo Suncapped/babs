@@ -90,8 +90,20 @@ export class Player extends Ent {
 		this.babs.ents.delete(this.id)
 		this.babs.zips.delete(this.idzip)
 
-		// const fbx = this.controller.target
-		this.babs.scene.remove(this.controller.target) // todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
+		if(this.controller?.target) {
+			this.babs.scene.remove(this.controller.target) 
+			// Needed to avoid latency of interval below
+		}
+		else {
+			let waitForMesh = setInterval(() => {
+				log('waiting')
+				if(player.controller.target) {
+					this.babs.scene.remove(this.controller.target) 
+					clearInterval(waitForMesh)
+				}
+			}, 200)
+		}
+		// todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
 
 		this.babs.comcats.set('controller', this.babs.comcats.get('controller').filter(c => c.arrival.id !== this.id))
 
