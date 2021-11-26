@@ -134,13 +134,12 @@ export class Controller extends Com {
 		return this.headRotationX
 	}
 
-	// Women runners do about 10 ft/s over 4 mi, so 1ft/100ms, 4ft/400ms
 	setDestination(gVector3, movestate) {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gVector3.equals(this.gDestination)) {
 			return
 		}
-		
+
 		this.gDestination = gVector3.clone()
 		log.info('setDestination changed', this.gDestination, movestate)
 		this.run = movestate === 'run'
@@ -245,13 +244,47 @@ export class Controller extends Com {
 		}
 	}
 
+	gPrevDestination // aka origin
 	update(dt) {
+
 		if (!this._stateMachine._currentState) {
 			return
 		}
-		// if(!this.velocity.equals(new Vector3(0,0,0))) {
-		// 	log.info('Controller: update(), velocity:', this.velocity)
+
+		// Handle if frames dropped / tabout return / etc; if not close enough to destination,
+		//   warp them to the previous position so they'll be able to reach it during next updates.
+		// const eDest = gVector3.clone().multiplyScalar(4).addScalar(4/2)
+		// const eDiff = eDest.clone().sub(this.target.position) // Distance from CENTER
+		// const farAway = Math.abs(eDiff.x) > 2 *4 || Math.abs(eDiff.z) > 2 *4
+		// if(farAway) {
+		// 	const eWarpTarget = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
+		// 	log('warping', eDiff.z, eWarpTarget.z, this.target)
+		// 	this.target.position.copy(eWarpTarget)
 		// }
+		/*
+		This sort of worked in setDestination (awkwardly), but still doesn't fix when you tab back in after they stopped moving; 
+		since it's not receiving calls here, it doesn't warp.  Warp into update and save last position?
+		What if instead of setting destinations, I set current+direction?  Because that's what's really happening.
+		I mean, destination really just is current+direction.  You could get current by negating dest direction.
+		That's hard to reason about, though.
+		Anyway, overall I need to either: 
+		  1) When dt doesn't work, manually make things skip forward.  Relies on measurement to detect large dt.
+		  2) or Make all updates absolute rather than relative.  Seems best.
+		  3) Manually detect a tab-in and do manually catch up (warp etc).  Seems buggy, not load compatible.
+		#2 is the proper way.  In this case, what we'd want is...
+		Right now it gets dest, determines direction from that, normalizes to 1, then moves one.
+		We could say, if you're more than 1 away from dest (#1 measurement), then warp you to one away.
+		Or, set dest, and raise velocity to reach it - but causes velocity problems.
+		Or, take dest and reverse it to ...but that still requires determineing >1 (#1).
+		So how about we call movement a special (messed up lol) case and do #1.  But do it in update with an oldDest.
+
+		// doing this below during velocity sets 
+
+		*/
+
+
+
+
 
 		this._stateMachine.update(dt, this._input)
 
@@ -269,6 +302,7 @@ export class Controller extends Com {
 		controlObject.quaternion.copy(this.idealTargetQuaternion)
 
 		// Now movement physics
+		// Women runners do about 10 ft/s over 4 mi, so should be made to do 1ft/100ms, 4ft/400ms
 		const velocity = this.velocity
 		const frameDecceleration = new THREE.Vector3(
 			velocity.x * this._decceleration.x,
@@ -289,37 +323,49 @@ export class Controller extends Com {
 
 		// Move toward destination
 		if(this.gDestination) {
+
 			const eDest = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
-			// log('tDestination', tDestination)
 			const eDiff = eDest.clone().sub(controlObject.position) // Distance from CENTER
 
-			if (Math.abs(eDiff.z) < 1) {
-				velocity.z = 0
-				controlObject.position.setZ(eDest.z)
-			}
-			else if (eDiff.z > 0) {
-				log.info('Controller: update(), addZ based on', eDiff)
-				velocity.z += acc.z * dt
-			}
-			else if (eDiff.z < 0) {
-				velocity.z -= acc.z * dt
-			}
-
-			if (Math.abs(eDiff.x) < 1) {
+			// Far away due to frame drops (tab-in/out etc)
+			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 1
+			const zFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 1
+			if(xFar) {
 				velocity.x = 0
 				controlObject.position.setX(eDest.x)
 			}
-			else if (eDiff.x > 0) {
-				log.info('Controller: update(), addX based on', eDiff)
-				velocity.x += acc.x * dt
+			if(zFar) {
+				velocity.z = 0
+				controlObject.position.setZ(eDest.z)
 			}
-			else if (eDiff.x < 0) {
-				velocity.x -= acc.x * dt
-			}
+			if(!xFar && !zFar) {
 
-			// if(!velocity.equals(new Vector3())) {
-			// 	log.info('vel', velocity)
-			// }
+				if (Math.abs(eDiff.z) < 1) {
+					// If within tile, center it.  If far away (back from tabout), also warp and center.
+					velocity.z = 0
+					controlObject.position.setZ(eDest.z)
+				}
+				else if (eDiff.z > 0) {
+					log.info('Controller: update(), addZ based on', eDiff)
+					velocity.z += acc.z * dt
+				}
+				else if (eDiff.z < 0) {
+					velocity.z -= acc.z * dt
+				}
+
+				if (Math.abs(eDiff.x) < 1) {
+					velocity.x = 0
+					controlObject.position.setX(eDest.x)
+				}
+				else if (eDiff.x > 0) {
+					log.info('Controller: update(), addX based on', eDiff)
+					velocity.x += acc.x * dt
+				}
+				else if (eDiff.x < 0) {
+					velocity.x -= acc.x * dt
+				}
+
+			}
 
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
@@ -349,10 +395,25 @@ export class Controller extends Com {
 		// }
 		// controlObject.quaternion.copy(_R)
 
-		// I need to fix forward so that it's player-forward instead of world-forward, maybe?
 		const forward = new THREE.Vector3(1, 1, 1)
-		// forward.applyQuaternion(this.idealTargetQuaternion) // This was making rotation absolute; impossible to walk -z or -x
-		// forward.normalize()
+		// What if I change forward to include distance to destination, rather than just toward it?
+		// Hard, because velocity is used for movement.
+		// Another simpler approach is, if they're more than 1 block away from destination 
+		//   (due to frames skipped from tabbing out), snap them there.
+		// Hmm I probably need something generally, where if dt is large, stuff gets skipped.
+		// In this case though, network sent a ton of setDestination, it's just only the last one is being run.
+		// dt isn't necessarily very large, could just have missed 1 frame; can't easily detect with dt.
+		// Could detect by multiple setDestinations stacking up.  
+		// Perhaps let them queue then pop, (but that breaks InputSys many-sets?)
+		// Well if setD is run many times before an update, update should warp to 2nd latest then velocity move?
+		// (this is kind of a problem of, multiple inputs between single frame; not handling dt correctly)
+		// Like, shouldn't dt take care of this?  
+		// The reason it doesn't is dt is used for velocity, so it's relative :/ Also then forward normalized.
+		// So without changing THAT, we need a way to know to warp.
+		// Perhaps when destination is more than one away.  Should work up to like half server framerate tiles/sec?
+		// So let's see how far we are from desintation.
+
+
 
 		// Sideeways needs doing for strafe
 		// const sideways = new THREE.Vector3(1, 0, 0)
@@ -396,6 +457,11 @@ export class Controller extends Com {
 			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
 			this.modelNeck ||= this.target.getObjectByName( 'Neck_M' )
 			this.modelNeck.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX*0.75)
+		}
+
+
+		if(!this.gPrevDestination?.equals(this.gDestination)) {
+			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
 		}
 
 		
