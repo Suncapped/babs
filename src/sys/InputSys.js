@@ -492,18 +492,9 @@ export class InputSys {
         })
 
 		this.canvas.onwheel = ev => {
+			log('onwheel')
 			ev.preventDefault()
 
-			if(this.mouse.device === 'mouse') {
-				if(ev.deltaY < 0) {
-					this.runmode = true
-				}
-				else if(ev.deltaY > 0) {
-					this.runmode = false
-				}
-				return // Do not move on wheel, if we know it's a mouse.
-			}
-			
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
 			if (ev.ctrlKey) { 
 				// Doesn't actually require control keypress!  It's a hack that enables pinch zoom
@@ -512,10 +503,20 @@ export class InputSys {
 			} else {
 				if(ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
 				this.mouse.scrolldx -= ev.deltaX
-				this.mouse.scrolldy += ev.deltaY
-			}
 
-			
+				if(this.mouse.device !== 'mouse') { // Do not move on wheel, if we know it's a mouse.
+					this.mouse.scrolldy += ev.deltaY
+				}
+			}
+						
+			if(this.mouse.device === 'mouse') {
+				if(ev.deltaY < 0) {
+					this.runmode = true
+				}
+				else if(ev.deltaY > 0) {
+					this.runmode = false
+				}
+			}
 
 		}
 
