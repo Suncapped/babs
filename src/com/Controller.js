@@ -328,8 +328,8 @@ export class Controller extends Com {
 			const eDiff = eDest.clone().sub(controlObject.position) // Distance from CENTER
 
 			// Far away due to frame drops (tab-in/out etc)
-			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 1
-			const zFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 1
+			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
+			const zFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
 			if(xFar) {
 				velocity.x = 0
 				controlObject.position.setX(eDest.x)

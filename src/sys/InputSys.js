@@ -492,7 +492,6 @@ export class InputSys {
         })
 
 		this.canvas.onwheel = ev => {
-			log('onwheel')
 			ev.preventDefault()
 
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
@@ -585,7 +584,8 @@ export class InputSys {
 			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) {
 
 				if(this.mouseRayTargets[i].object?.type === 'LineSegments' 
-				|| this.mouseRayTargets[i].object?.name === 'destinationmesh') { // Wireframe
+				|| this.mouseRayTargets[i].object?.name === 'destinationmesh'
+				|| this.mouseRayTargets[i].object?.name === 'water') { // Wireframe
 					continue // Skip
 				}
 
@@ -609,10 +609,9 @@ export class InputSys {
 				else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
 					// log('sky')
 				}
-				else if(this.mouseRayTargets[i].object?.name === 'water') { // InstancedMesh
-					// log('instancedmesh')
-
-				}
+				// else if(this.mouseRayTargets[i].object?.type === 'InstancedMesh') { // InstancedMesh
+				// 	// log('instancedmesh')
+				// }
 				else if(this.mouseRayTargets[i].object?.type === 'SkinnedMesh') { // Player
 					// log('skinnedmesh')
 
