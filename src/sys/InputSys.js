@@ -409,13 +409,18 @@ export class InputSys {
 						
 					}
 					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
-						// Double clicking mouse right turns on movelock
-						// Not anymore!  Too annoying, moved to scroll wheel click
-						// if(this.mouse.right) {
-						// 	this.movelock = true
-						// }
 
 						if(this.pickedObject?.type === 'SkinnedMesh') {
+							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+							nickTargetId.set(player.id)
+
+							const box = document.getElementById('chatbox')
+							box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
+							box.style.display = 'block'
+							box.focus()
+						}
+						else if(this.mouse.landtarget.text && this.pickedObject?.name === 'ground') { 
+							// If terrain intersect is set, and clicked it a secont time
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							nickTargetId.set(player.id)
 
@@ -457,6 +462,12 @@ export class InputSys {
 						// If not touchpad, do pointer lock.  Touchpad doesn't need it because look is via gestures
 						this.canvas.requestPointerLock()
 						this.canvas.style.cursor = 'none'
+
+						// If you started pressing w before mouse, chat now has annoying 'w's in it; clear them.
+						const box = document.getElementById('chatbox')
+						if(box.textContent === 'w' || box.textContent?.[1] === 'w') {
+							box.textContent = ''
+						}
 					}
 				}
 

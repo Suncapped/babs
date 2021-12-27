@@ -55,7 +55,7 @@ import { InputSys } from '../sys/InputSys.js';
 			else { // Skip all character keys when manually editing
 				return
 			}
-			chatbox.style.display = chatbox.textContent ? 'block' : 'none' // Needed because next return catchines in-box edits
+			chatbox.style.display = chatbox.textContent ? 'block' : 'none' // Needed because next return catches in-box edits
 		}
 
 		if(ev.target !== document.body) return // Only active if on main game window, not login forms etc
@@ -63,6 +63,11 @@ import { InputSys } from '../sys/InputSys.js';
 		// Only enter keys that are talking keys
 		const singleCharacter = ev.key.length === 1
 		if(singleCharacter) { // Normal key or spacebar
+
+			if(ev.key === 'w' && chatbox.textContent === 'w') {
+				return // Skip held down W
+			}
+
 			chatbox.textContent += ev.key // .innerText didn't work with ' '
 		}
 		else { // Not a normal key
