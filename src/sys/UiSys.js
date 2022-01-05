@@ -141,7 +141,7 @@ export class UiSys {
 		chatSpan.innerText = text
 		chatDiv.appendChild(chatSpan)
 		
-		chatDiv.style.color = '#ffffff'
+		chatDiv.style.color = '#999999'
 		this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color)
 
 		const expiresInSeconds = 3
