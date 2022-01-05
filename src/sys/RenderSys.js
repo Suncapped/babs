@@ -4,7 +4,6 @@ import { ACESFilmicToneMapping, LinearEncoding, LinearToneMapping, NoToneMapping
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
-import { debounce } from 'debounce'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html

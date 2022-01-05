@@ -27,11 +27,13 @@ import { InputSys } from '../sys/InputSys.js';
 			})
 		}
 		else { // Regular chat
-			socketSend.set({
-				'chat': {
-					text: chatbox.textContent
-				},
-			})
+			if(chatbox.textContent !== 'w') {
+				socketSend.set({
+					'chat': {
+						text: chatbox.textContent
+					},
+				})
+			}
 		}
 		chatbox.textContent = ''
 	}

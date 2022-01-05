@@ -48,7 +48,7 @@ import { LineSegments } from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { debugMode } from "../stores"
 
-import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js'
+import { GUI } from 'dat.gui'
 import { Gob } from '../ent/Gob'
 import { EventSys } from './EventSys'
 

@@ -5,7 +5,6 @@
 	import { log } from '../Utils.js'
 	import iro from '@jaames/iro'
 	import { MathUtils } from 'three';
-	import { debounce } from 'debounce'
 
 	function toggleMenu(ev) {
 		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {

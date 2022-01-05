@@ -18,8 +18,8 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.12",
-    "@tsconfig/svelte": "^2.0.1",
-    "@types/three": "^0.133.1",
+    "@tsconfig/svelte": "^3.0.0",
+    "@types/three": "^0.136.0",
     "bicubic-interpolate": "^1.0.4",
     "svelte": "^3.38.3",
     "svelte-check": "^2.2.2",
@@ -29,10 +29,11 @@
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
-    "debounce": "^1.2.1",
+    "@types/dat.gui": "^0.7.7",
+    "dat.gui": "^0.7.7",
     "js-cookie": "^3.0.1",
     "papercss": "^1.8.2",
     "svelte-drag": "github:Suncapped/svelte-drag#main",
-    "three": "^0.134.0"
+    "three": "^0.136.0"
   }
 }
