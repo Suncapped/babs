@@ -105,7 +105,7 @@ export class Player extends Ent {
 		}
 		// todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
 
-		this.babs.comcats.set('controller', this.babs.comcats.get('controller').filter(c => c.arrival.id !== this.id))
+		this.babs.comcats.set('Controller', this.babs.comcats.get('Controller').filter(c => c.arrival.id !== this.id))
 
 		// for(let [cat, coms] of this.babs.comcats) {
 		// 	for(let com of coms) {

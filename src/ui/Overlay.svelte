@@ -166,7 +166,7 @@
 			{#if $toprightReconnect}
 				{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]
 			{:else if $menuShowLink}
-				<div id="menulink"><a on:click|preventDefault={toggleMenu} href>Menu (esc key)</a></div>
+				<div id="menulink"><span on:click|preventDefault={toggleMenu}>Menu (esc key)</span></div>
 			{:else}
 				{@html $toprightText}
 			{/if}
@@ -261,14 +261,14 @@
 		top: 0px;
 		width: 100%;
 		pointer-events: none; /* Clicks go through it */
-		z-index: 1;
+		z-index: 40;
 	}
 	.Overlay > * {
 		pointer-events: auto; /* Everything else receives */
 	}
 	.topitem {
 		background-color: rgb(33, 33, 33); /* #fdfbd3; */ /* FFF4BC */
-		padding: 10px;
+		padding: 6px;
 		padding-top: 9px;
 		padding-bottom:0px;
 	}
@@ -297,7 +297,7 @@
 		width: 250px;
 	}
 	#topleft > span {
-		padding-top:2px;
+		padding-top:4px;
 	}
 	#topright {
 		float: right;
@@ -401,6 +401,7 @@
 		/* width: 200px; */
 		color:#ddd;
 		background: black;
+		z-index: 20;
 	}
 	:global #drag {
 		position: absolute;

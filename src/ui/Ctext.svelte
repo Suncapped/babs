@@ -114,7 +114,6 @@ import { InputSys } from '../sys/InputSys.js';
 		top: 0px;
 		width: 100%;
 		height: 100%;
-		z-index: 2;
 		pointer-events: none; /* Clicks go through it */
 		
 	}
@@ -163,6 +162,7 @@ import { InputSys } from '../sys/InputSys.js';
 		pointer-events: auto; /* Clicks affect it */
 
 		padding: 5px 10px;
+		z-index: 40;
 	}
 
 	#Ctext [contenteditable]:focus {

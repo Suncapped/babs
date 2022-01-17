@@ -24,7 +24,6 @@ class BasicCharacterControllerProxy {
 }
 
 export class Controller extends Com {
-	static name = 'controller'
 
 	static MOVESTATE = {
 		Idle: 0,

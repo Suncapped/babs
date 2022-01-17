@@ -69,7 +69,7 @@
 		position: absolute;
 		top: 0px;
 		height: 200px;
-
+		z-index: 30;
 		/* background-color: green; */
 	}
 	#Journal > .handle {
