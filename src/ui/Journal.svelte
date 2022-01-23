@@ -45,11 +45,12 @@
 		Journal.style.height = 	ui.h+'px'
 	})
 
-	export function appendText(text, color) {
+	export function appendText(text, color, align) {
 		const textNode = document.createTextNode(text)
 		const p = document.createElement('p')
 		p.appendChild(textNode)
 		p.style.color = color
+		p.style.textAlign = align
 		content.appendChild(p)
 		content.scrollTop = content.scrollHeight
 	}

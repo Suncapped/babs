@@ -419,15 +419,31 @@ export class InputSys {
 							box.style.display = 'block'
 							box.focus()
 						}
-						else if(this.mouse.landtarget.text && this.pickedObject?.name === 'ground') { 
-							// If terrain intersect is set, and clicked it a secont time
-							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
-							nickTargetId.set(player.id)
+						else if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
-							const box = document.getElementById('chatbox')
-							box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
-							box.style.display = 'block'
-							box.focus()
+							log('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
+
+							const point = this.mouse.landtarget.point.clone().divideScalar(1000/25).round()
+							const index = Utils.coordToIndex(point.x, point.z, 26)
+
+							this.babs.socketSys.send({
+								action: {
+									verb: 'used',
+									noun: 'ground',
+									data: {
+										point,
+									},
+								}
+							})
+
+							// If terrain intersect is set, and clicked it a second time
+							// const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+							// nickTargetId.set(player.id)
+
+							// const box = document.getElementById('chatbox')
+							// box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
+							// box.style.display = 'block'
+							// box.focus()
 						}
 					}
 

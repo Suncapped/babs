@@ -297,7 +297,7 @@ export class SocketSys {
 						else {
 							const bSelf = false
 							const player = await Player.New(arrival, bSelf, this.babs)
-							this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.')
+							this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.', null, 'right')
 						}
 
 					}
@@ -309,7 +309,7 @@ export class SocketSys {
 					if(departPlayer && departPlayer.id !== this.babs.idSelf) {
 						// Could be self departing from a previous session, or person already otherwise departed?
 						if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-							this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'An unfamiliar person')+' has departed.')
+							this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'An unfamiliar person')+' has departed.', null, 'right')
 							departPlayer.remove()
 
 						}

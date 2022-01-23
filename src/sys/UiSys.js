@@ -142,7 +142,7 @@ export class UiSys {
 		chatDiv.appendChild(chatSpan)
 		
 		chatDiv.style.color = '#aaaaaa'
-		this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color)
+		this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
 
 		const expiresInSeconds = 3
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))

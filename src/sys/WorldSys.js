@@ -354,7 +354,7 @@ export class WorldSys {
         // material.color.setHSL( 0.095, 0.5, 0.20 )
 		material.vertexColors = true
 
-        await this.genTerrain(urlFiles, geometry, zone)
+        await this.genElevation(urlFiles, geometry, zone)
         await this.genLandcover(urlFiles, geometry, zone)
 		
         geometry.computeVertexNormals()
@@ -404,25 +404,25 @@ export class WorldSys {
 
     }
 
-    terrainData
+    elevationData
     landcoverData
 	waterInstancedMesh
 	waterInstancedRands = []
-    async genTerrain(urlFiles, geometry, zone) {
-        this.terrainData = null
+    async genElevation(urlFiles, geometry, zone) {
+        this.elevationData = null
         
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
 
         const buff = await data.arrayBuffer()
-        this.terrainData = new Uint8Array(buff)
+        this.elevationData = new Uint8Array(buff)
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
         for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-            verticesRef[j +1] = this.terrainData[i] * zone.yscale // Set vertex height from elevations data
+            verticesRef[j +1] = this.elevationData[i] * zone.yscale // Set vertex height from elevations data
         }
     }
     async genLandcover(urlFiles, geometry, zone) {
@@ -463,7 +463,7 @@ export class WorldSys {
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?
-						color.setHSL(98/360, 80/100, 0.2 +this.terrainData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
+						color.setHSL(98/360, 80/100, 0.2 +this.elevationData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
