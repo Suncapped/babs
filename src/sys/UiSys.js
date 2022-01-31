@@ -3,7 +3,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
-import { toprightText, toprightReconnect, menuSelfData } from "../stores.js"
+import { toprightText, toprightReconnect, menuSelfData, uiWindows } from "../stores.js"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -190,6 +190,7 @@ export class UiSys {
 						ui,
 					},
 				})
+				uiWindows.set([...svelteGet(uiWindows), this.svJournal])
 			}
 		}
 	}

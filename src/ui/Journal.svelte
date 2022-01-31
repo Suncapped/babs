@@ -4,9 +4,6 @@
 	import { log } from '../Utils.js'
 	import { draggable } from 'svelte-drag'
 
-
-
-
 	let Journal
 	let content
 

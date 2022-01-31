@@ -268,7 +268,6 @@ export class SocketSys {
 					// Set up UIs
 					this.babs.uiSys.loadUis(data.uis)
 
-
 					this.send({
 						ready: loadSelf.id,
 					})

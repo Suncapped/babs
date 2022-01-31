@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode, dividerOffset, urlFiles } from "../stores.js"
+	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode, dividerOffset, urlFiles, uiWindows } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 	import iro from '@jaames/iro'
@@ -164,7 +164,7 @@
 	<div class="topitem">
 		<div id="topright">
 			{#if $toprightReconnect}
-				{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]
+				<div>{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]</div>
 			{:else if $menuShowLink}
 				<div id="menulink"><span on:click|preventDefault={toggleMenu}>Menu (esc key)</span></div>
 			{:else}
@@ -222,20 +222,21 @@
 					<li>Or on laptop touchpad:<br/>Two finger touch, click, swipe, pinch</li>
 				</div>
 			</li>
-			<li><a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a></li>
+			<!-- <li>
+				{#each $uiWindows as window}
+				{/each}
+			</li> -->
 
 			<li>&nbsp;</li>
 
-			<li><b>Account:</b></li>
-			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
 			<li>{$menuSelfData.email}</li>
-			<li>Credit Months: {$menuSelfData.credits}</li>
-			<li>Subscription: Credits</li> <!-- // Free / Credits / Paid / Paid (Credits) -->
-			<li>Until: (after release)</li>
+			<li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> <!-- // Free / Credit Months: 2 / _Monthly Sub_ / _Yearly Sub_ -->
+			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
 			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
 			
 			<li>&nbsp;</li>
-
+			
+			<li><a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a></li>
 			<li>What are you most excited<br/>to do in First Earth?</li>
 			<li>
 				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
@@ -305,7 +306,7 @@
 		right: 0px;
 		margin-top: 5px;
 	}
-	#topright #menulink {
+	#topright > div {
 		position: relative;
 		top: -5px;
 	}

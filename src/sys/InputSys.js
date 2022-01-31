@@ -247,15 +247,14 @@ export class InputSys {
 
 		// This fails to detect window switches, and we don't want window switch auto-afk anyway
 		// document.addEventListener("visibilitychange", (ev) => {
-			// 	log('vis change', ev)
-			// })
+		// 	log('vis change', ev)
+		// })
+
 		const touchHandler = (event) => {
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 			if(event.target.id !== 'canvas') return
 			event.preventDefault();
 
-			// log(event)
-			
 			// log(event)
 			// let touches = event.changedTouches
 
@@ -287,7 +286,8 @@ export class InputSys {
 
 			})
 
-			if(event.touches.length === 2) {
+			// Two finger touch to look
+			if(event.touches.length === 2) { 
 				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
 				// Probably like touchpad.
 				if(event.type === 'touchstart' || event.type === 'touchend') {
