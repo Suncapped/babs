@@ -95,7 +95,8 @@
 	onMount(async () => {
 		updateDimensions()
 
-		colorPicker = new iro.ColorPicker('#picker', {width: '200px'});
+		colorPicker = new iro.ColorPicker('#picker');
+		colorPicker.resize(200) // Must use this, not in init options above // todo send a patch?
 		colorPicker.on('input:change', function(color) {
 			speechColorEl.style.color = color.hexString
 		})
@@ -160,7 +161,15 @@
 	function clickColor(ev) {
 		const picker = document.getElementById('picker')
 		picker.style.display = picker.style.display === 'block' ? 'none' : 'block'
-		updateDimensions()
+
+		const menuRect = Menu.getBoundingClientRect()
+		const pickerRect = Menu.getBoundingClientRect()
+		picker.style.left = pickerRect.width+'px'
+
+		if(ui.virtx +menuRect.width +pickerRect.width > window.innerWidth) {
+			ui.virtx -= ui.virtx +menuRect.width +pickerRect.width -window.innerWidth
+		}
+
 	}
 
 	let movementTips = false
@@ -174,26 +183,26 @@
 
 <svelte:window on:resize={updateDimensions} on:keydown={(ev) => setFurl(ev, !ui.unfurled)}/>
 
-	<div on:contextmenu={(ev) => ev.preventDefault()} use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="display:{$topmenuAvailable ? 'block' : 'none'}">
+	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="display:{$topmenuAvailable ? 'block' : 'none'}">
 
-		<div class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
+		<div on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
 		<div class="content card-body">
+			<div id="picker"></div>
 			<ul>			
 			<li>Welcome to First Earth</li>
 			<li>
 					Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
-					<div id="picker"></div>
 			</li>
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
 			{/if}
-			<li>
+			<li style="margin-top: 8px; margin-left: 30px;">
 				<fieldset class="form-group">
 					<label class="paper-switch">
 						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
 						<span class="paper-switch-slider round"></span>
 					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
+					<label for="paperSwitch6" class="paper-switch-label" style="margin-right:0;">
 						Debug Mode
 					</label>
 				</fieldset>
@@ -270,6 +279,8 @@
 		float:right;
 		padding:5px;
 		background-color:rgb(33, 33, 33);
+		position:absolute;
+		/* left: 250px; */
 	}
 	#speechColorEl{
 		color: white;

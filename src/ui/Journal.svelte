@@ -96,8 +96,8 @@
 
 <svelte:window on:resize={updateDimensions} />
 
-<div on:contextmenu={(ev) => ev.preventDefault()} use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
-	<div class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Journal</div>
+<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
+	<div on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Journal</div>
 	<div bind:this={content} class="content card-body"></div>
 </div>
 
@@ -114,7 +114,7 @@
 	#Journal > .content::-webkit-scrollbar {
 		display: none; /* for Chrome, Safari, and Opera */
 	}
-	#Journal p {
+	:global #Journal p { /* Global needed since p's are inserted by ui? */
 		margin:0;
 		padding:0;
 	}
