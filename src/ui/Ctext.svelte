@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuVisible, socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, inputCmd, nickTargetId } from "../stores.js"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, inputCmd, nickTargetId } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 import { InputSys } from '../sys/InputSys.js';

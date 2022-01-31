@@ -13,6 +13,9 @@ body {
 }
 
 .card {
+    position: absolute;
+    top: 0px;
+    z-index: 30;
     transition: none; /* Overriding papercss for perf */
     background-color:rgba(12, 12, 12, 0.8);
     box-shadow: none;
@@ -20,18 +23,33 @@ body {
 .card:hover{
     box-shadow: none; /* 15px 28px 25px -18px rgb(0 0 0 / 20%);  Grabbed from paper.min */
 }
+
+.card.unfurled { /* When unfurled, paper css is wider, which makes corner cuts cut across the header; so move card up during that */
+    /* No longer applies; only applied when header was left aligned */
+    /* margin-top:-8px; */
+    /* padding-top: 8px; */
+}
+
+.card .card-body {
+    display: none;
+}
+.card.unfurled .card-body { /* Display body, when unfurled */
+    display: block;
+}
+
 .card > .card-header {
     text-align: center;
-    width: 50%;
+    width: 100%;
     margin: auto;
     border: none;
     border-radius: 30px;
     background: none;
+
+    padding: 6px 8px;
+    padding-bottom:4px;
+
+    font-size: 22px;
 }
-/* .card > .card-body { */
-    /* width:80%; */
-    /* border-radius: 30px; */
-/* } */
 
 html.dark {
     --white-dark: rgb(22, 19, 14);

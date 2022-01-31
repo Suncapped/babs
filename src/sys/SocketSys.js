@@ -1,4 +1,4 @@
-import { menuSelfData, menuShowLink, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from "../stores"
+import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from "../stores"
 import Cookies from "js-cookie"
 import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
@@ -248,7 +248,7 @@ export class SocketSys {
 						document.getElementById('topleft').style.visibility = 'visible'
 						document.getElementById('topleft').textContent = 'Waking up...'
 
-						menuShowLink.set(true)
+						topmenuAvailable.set(true)
 
 						menuSelfData.set(loadSelf)
 					}
@@ -258,7 +258,7 @@ export class SocketSys {
 					await this.babs.worldSys.loadObjects(zone)
 
 					if(loadSelf.visitor !== true) {
-						document.getElementById('topleft').innerHTML = 'Welcome to First Earth (pre-alpha)'
+						document.getElementById('welcomebar').style.display = 'none' 
 					}
 
 					// Create player entity

@@ -1,6 +1,6 @@
 import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuVisible, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset } from "../stores"
+import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset } from "../stores"
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -371,7 +371,7 @@ export class InputSys {
 
 			// Close top menu if it's open
 			if(ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
-				topmenuVisible.set(false)
+				topmenuUnfurled.set(false)
 			}
 
 			if(!this.topMenuVisibleLocal && (ev.target.id === 'canvas' )){
@@ -546,7 +546,7 @@ export class InputSys {
 
 		}
 
-		topmenuVisible.subscribe(vis => { // Menu becomes visible
+		topmenuUnfurled.subscribe(vis => { // Menu becomes visible
 			this.topMenuVisibleLocal = vis
 
 			if(vis) {

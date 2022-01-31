@@ -1,81 +1,12 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { toprightText, menuShowLink, menuSelfData, toprightReconnect, topmenuVisible, socketSend, baseDomain, isProd, debugMode, dividerOffset, urlFiles, uiWindows } from "../stores.js"
-	import Cookies from 'js-cookie'
+	import { toprightText, toprightReconnect, socketSend, baseDomain, isProd, debugMode, dividerOffset, urlFiles, uiWindows } from "../stores.js"
 	import { log } from '../Utils.js'
-	import iro from '@jaames/iro'
 	import { MathUtils } from 'three';
 
-	function toggleMenu(ev) {
-		if($menuShowLink && (ev.code == 'Escape' || ev.type == 'click')) {
-			$topmenuVisible = !$topmenuVisible
-
-			if(!$topmenuVisible) { // If closing menu, hide picker and stuff too
-				document.getElementById('picker').style.display = 'none'
-				movementTips = false
-			}
-		}
-	}
 
 
-	let colorPicker
-	let joinDate, joinMonth, joinYear
-	let dmCallsCount = 0 // Don't send update on initialization
-	let excitedReason
 	onMount(async () => {
-		colorPicker = new iro.ColorPicker('#picker');
-		colorPicker.on('input:change', function(color) {
-			speechColorEl.style.color = color.hexString
-		})
-		// Save occasionally
-		setInterval(() => {
-			if(colorPicker.color.hexString != $menuSelfData.color) {
-				$menuSelfData.color = colorPicker.color.hexString
-				socketSend.set({
-					'savecolor': colorPicker.color.hexString,
-				})
-			}
-
-			// If they typed into the reason box, save it after a bit
-			if(excitedReason !== $menuSelfData.reason) {
-				if(excitedReason !== undefined) { // Ignore on first update from server
-					socketSend.set({
-						'savereason': $menuSelfData.reason,
-					})
-				}
-				excitedReason = $menuSelfData.reason
-			}
-		}, 2000)
-
-		// Watch joindate and color
-		menuSelfData.subscribe(val => {
-			log.info('menuSelfData change', val)
-			joinDate = new Date(Date.parse($menuSelfData.created_at))
-			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
-			joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
-
-			// If we got color from socket, or from update and it's different
-			if($menuSelfData?.color && colorPicker.color.hexString != $menuSelfData.color) {
-				speechColorEl.style.color = $menuSelfData.color
-				colorPicker.color.hexString = $menuSelfData.color
-			}
-
-		})
-
-		// Watch debugMode
-		debugMode.subscribe(on => {
-			log.info('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
-
-			// Don't send on init, and don't send on player arrival data either
-			if(dmCallsCount >= 2) { 
-				socketSend.set({
-					'savedebugmode': on,
-				})
-			}
-			dmCallsCount++
-		})
-
-
 
 		// Divider panel things
 		let isResizing = false
@@ -139,34 +70,16 @@
 		right.style.overflow = 'visible'
 	})
 
-	function logout(ev) {
-		log.info('logging out', $baseDomain, $isProd)
-		Cookies.remove('session', { 
-			domain: $baseDomain,
-			secure: $isProd,
-			sameSite: 'strict',
-		})
-		window.location.reload()
-	}
-
-	function clickColor(ev) {
-		const picker = document.getElementById('picker')
-		picker.style.display = picker.style.display === 'block' ? 'none' : 'block'
-	}
-
-	let movementTips = false
 
 </script>
 
-<svelte:window on:keydown={toggleMenu}/>
+<svelte/>
 
 <div class="Overlay">
-	<div class="topitem">
+	<div class="topitem" id="welcomebar">
 		<div id="topright">
 			{#if $toprightReconnect}
 				<div>{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]</div>
-			{:else if $menuShowLink}
-				<div id="menulink"><span on:click|preventDefault={toggleMenu}>Menu (esc key)</span></div>
 			{:else}
 				{@html $toprightText}
 			{/if}
@@ -196,63 +109,12 @@
 		<div style="clear:both" />
 	</div>
 
-	<div id="picker"></div>
-	<div class="topitem border border-5 border-primary" id="topmenu" style="display: {$topmenuVisible ? 'block' : 'none'};" >
-		<ul>			
-			{#if $menuSelfData.nick}
-				<li>Known as: {$menuSelfData.nick}</li>
-			{/if}
-			<li>
-				Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
-			</li>
-			<li>
-				<fieldset class="form-group">
-					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
-						<span class="paper-switch-slider round"></span>
-					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
-						Debug Mode
-					</label>
-				</fieldset>
-			</li>
-			<li><a href on:click|preventDefault={()=>movementTips = !movementTips}>Movement Tips</a>
-				<div hidden="{!movementTips}">
-					<li>To move, hold right-mouse plus:<br/>left, double-left, space, wasd, middle</li>
-					<li>Or on laptop touchpad:<br/>Two finger touch, click, swipe, pinch</li>
-				</div>
-			</li>
-			<!-- <li>
-				{#each $uiWindows as window}
-				{/each}
-			</li> -->
-
-			<li>&nbsp;</li>
-
-			<li>{$menuSelfData.email}</li>
-			<li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> <!-- // Free / Credit Months: 2 / _Monthly Sub_ / _Yearly Sub_ -->
-			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
-			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
-			
-			<li>&nbsp;</li>
-			
-			<li><a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a></li>
-			<li>What are you most excited<br/>to do in First Earth?</li>
-			<li>
-				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
-				<!-- <button bind:this={savereason} id="savereason" type="submit" on:click|preventDefault={saveReason} >Save</button> -->
-			</li>
-		</ul>
-	</div>
-
-
 	<div id="info" hidden="{!$debugMode}">
 		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
 		Built build_time (build_info).<br />
 		<span id="log"></span>
 	</div>
 	<div id="stats" hidden="{!$debugMode}"></div>
-
 	
 </div>
 
@@ -309,55 +171,6 @@
 	#topright > div {
 		position: relative;
 		top: -5px;
-	}
-
-	/* topmenu modal */
-	#topmenu {
-		display: none;
-		background-color: rgb(33, 33, 33);
-		/* border: 2px solid white; */
-		/* border-top: none; */
-		width: auto;
-		float: right;
-		font-size: 20px;
-		color:inherit;
-	}
-	#topmenu ul {
-		list-style-type: none;
-		padding: 0;
-		margin: 10px;
-		text-align: right;
-	}
-	#topmenu ul li {
-		margin-bottom: 2px;
-	}
-	#topmenu ul li:before{
-		content:'';
-	}
-
-	#topmenu #inputreason {
-		width: 90%;
-		height: 6em;
-		margin-top: 8px;
-		margin-right: 0;
-		margin-bottom: 0;
-		padding: 8px;
-	}
-	#topmenu #inputreason {
-		font-size: 18px;
-	}
-	
-	#picker {
-		display: none;
-		margin:auto;
-		float:right;
-		padding:5px;
-		background-color:rgb(33, 33, 33);
-		/* border-left:1px solid white; */
-	}
-	#speechColorEl{
-		color: white;
-		cursor: default;
 	}
 
 	/* Debug things */
