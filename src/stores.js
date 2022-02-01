@@ -16,3 +16,4 @@ export const dividerOffset = writable()
 export const urlFiles = writable()
 export const nickTargetId = writable() // Temporary state when naming someone via chatbox
 export const uiWindows = writable([])
+export const settings = writable({})

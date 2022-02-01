@@ -1,6 +1,7 @@
 import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
 import { Gob } from "../ent/Gob"
-import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset } from "../stores"
+import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
+import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from "three"
 import { PlaneGeometry } from "three"
@@ -104,8 +105,9 @@ export class InputSys {
 		this.babs = babs
 		this.player = player
 		this.canvas = document.getElementById('canvas')
-		this.mouse.device = mousedevice
-		log('Mouse device init: ', mousedevice)
+
+		this.mouse.device = mousedevice || 'mouse' // Default to mouse; because touchpad user has to figure out two finger touch either way.
+		this.setMouseDevice(this.mouse.device)
 
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
@@ -558,6 +560,15 @@ export class InputSys {
 				// Doesn't go back to this.characterControlMode until they mouse-right-hold
 			}
 		})
+		settings.subscribe(sets => { // Menu becomes visible
+
+			for(const key in sets) {
+				if(key === 'inputdevice'){
+					this.setMouseDevice(sets[key])
+				}
+			}
+			
+		})
 
 		this.activityTimestamp = Date.now()
 
@@ -903,6 +914,7 @@ export class InputSys {
 
 		log('Device detected: ', newDevice)
 		// Device has changed.
+
 		
 		if(this.mouse.device === 'mouse') { // Switching away from mouse
 			this.movelock = false // Stop mouse autorun
@@ -919,6 +931,10 @@ export class InputSys {
 		})
 
 		this.mouse.device = newDevice
+		settings.set({
+			...svelteGet(settings),
+			inputdevice: this.mouse.device, 
+		})
 	}
 
 

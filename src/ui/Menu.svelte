@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode } from "../stores.js"
+	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings } from "../stores.js"
 	import { log } from '../Utils.js'
 	import { draggable } from '@neodrag/svelte'
 	import Cookies from 'js-cookie'
@@ -206,6 +206,20 @@
 					</label>
 					<label for="paperSwitch6" class="paper-switch-label">
 						Debug Mode
+					</label>
+				</fieldset>
+			</li>
+			<li>
+				<fieldset class="form-group">
+					<label for="paperSwitch6" class="paper-switch-label">
+						Touchpad
+					</label>
+					<label class="paper-switch">
+						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={ev => ev.target.checked ? $settings.inputdevice = 'touchpad' : 'mouse'} checked="{$settings?.inputdevice === 'touchpad' ? 'checked':''}" />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch6" class="paper-switch-label">
+						Mouse
 					</label>
 				</fieldset>
 			</li>
