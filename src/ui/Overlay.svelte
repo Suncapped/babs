@@ -226,16 +226,4 @@
 		cursor: w-resize;
 	}
 
-
-	fieldset.form-group{
-		margin-bottom: 0px;
-		margin-top: 8px;
-	}
-	fieldset.form-group > * {
-		float:right;
-	}
-	fieldset.form-group > label {
-		margin-right: 0;
-    	margin-left: 10px;
-	}
 </style>

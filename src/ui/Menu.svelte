@@ -76,9 +76,11 @@
 			return // Don't toggle if they were just dragging
 		}
 		ui.unfurled = furl
-		socketSend.set({
-			'saveui': ui,
-		})
+
+		// Unfurling of menu does not get saved
+		// socketSend.set({
+		// 	'saveui': ui,
+		// })
 		updateDimensions()
 
 		$topmenuUnfurled = ui.unfurled
@@ -196,13 +198,13 @@
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
 			{/if}
-			<li style="margin-top: 8px; margin-left: 30px;">
+			<li>
 				<fieldset class="form-group">
 					<label class="paper-switch">
 						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
 						<span class="paper-switch-slider round"></span>
 					</label>
-					<label for="paperSwitch6" class="paper-switch-label" style="margin-right:0;">
+					<label for="paperSwitch6" class="paper-switch-label">
 						Debug Mode
 					</label>
 				</fieldset>
@@ -285,6 +287,19 @@
 	#speechColorEl{
 		color: white;
 		cursor: default;
+	}
+
+
+	fieldset.form-group{
+		margin-bottom: 0px;
+		margin-top: 8px;
+	}
+	fieldset.form-group > * {
+		float:right;
+	}
+	fieldset.form-group > label {
+		margin-right: 0;
+    	margin-left: 10px;
 	}
 
 </style>
