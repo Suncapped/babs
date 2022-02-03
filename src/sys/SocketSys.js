@@ -11,6 +11,7 @@ import { Player } from "../ent/Player"
 import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
 import { InputSys } from "./InputSys"
+import { Wob } from "../ent/Wob"
 
 export class SocketSys {
 
@@ -225,7 +226,7 @@ export class SocketSys {
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
-					this.babs.uiSys.offerReconnect('Logged out your other session.  Try again! ->')
+					this.babs.uiSys.offerReconnect('Closed other session.')
 					
 				break
 				case 'load':
@@ -333,6 +334,14 @@ export class SocketSys {
 						}
 						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.New players
 					}
+				break
+				case 'wobjectsarrive':
+					log('wobjectsarrive', data)
+
+					// Create new wobject, then spawn the graphic at the right place.
+
+					// const wob = await Wob.New(arrival, bSelf, this.babs)
+					// this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.', null, 'right')
 				break
 			}
 		})

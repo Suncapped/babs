@@ -161,7 +161,7 @@ export class UiSys {
 	offerReconnect(reason) {
 		toprightReconnect.set(reason)
 		document.getElementById('welcomebar').style.display = 'block' 
-		document.getElementById('welcomebar').style.zindex = '1000' 
+		document.getElementById('Overlay').style.zIndex = '1000'
 		document.getElementById('topleft').style.display = 'none' 
 	}
 

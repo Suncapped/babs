@@ -1,5 +1,5 @@
 import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
-import { Gob } from "../ent/Gob"
+import { Wob } from "../ent/Wob"
 import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
@@ -204,7 +204,7 @@ export class InputSys {
 
 					let count=0
 					for(let item of loadItems) {
-						let obj = await Gob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
+						let obj = await Wob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
 						log.info('obj scale', obj.mesh.scale)
 						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
 						// obj.mesh.scale.multiplyScalar(3.3)

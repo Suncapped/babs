@@ -49,7 +49,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { debugMode } from "../stores"
 
 import { GUI } from 'dat.gui'
-import { Gob } from '../ent/Gob'
+import { Wob } from '../ent/Wob'
 import { EventSys } from './EventSys'
 
 export class WorldSys {
@@ -397,7 +397,7 @@ export class WorldSys {
 
 			// 'F_Bald_mesh_009.gltf',
 		]
-		const objs = await Promise.all(loadItems.map(item => Gob.Create(`/environment/gltf/${item}`, this.babs, 0)))
+		const objs = await Promise.all(loadItems.map(item => Wob.Create(`/environment/gltf/${item}`, this.babs, 0)))
 		objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
 
 

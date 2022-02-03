@@ -75,7 +75,7 @@
 
 <svelte/>
 
-<div class="Overlay">
+<div id="Overlay">
 	<div class="topitem" id="welcomebar">
 		<div id="topright">
 			{#if $toprightReconnect}
@@ -119,14 +119,14 @@
 </div>
 
 <style>
-	.Overlay {
+	#Overlay {
 		position: absolute;
 		top: 0px;
 		width: 100%;
 		pointer-events: none; /* Clicks go through it */
 		z-index: 40;
 	}
-	.Overlay > * {
+	#Overlay > * {
 		pointer-events: auto; /* Everything else receives */
 	}
 	.topitem {
@@ -164,7 +164,7 @@
 	}
 	#topright {
 		float: right;
-		position: absolulte;
+		/* position: absolute; */
 		right: 0px;
 		margin-top: 5px;
 	}
