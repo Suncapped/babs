@@ -298,6 +298,7 @@ export class InputSys {
 				}
 				// Oh dear, axes movement is flipped because it's a "drag" concept rather than a touchpad "direction" concept.
 				// But, since user should use fingers below character, like a record player, regular x axis should be ok!
+				// Actually, feels more intuitive if they drag in the direction of camera movement.
 				this.mouse.scrolldx += event.touches[0].clientX -this.mouse.fingerlastx
 				this.mouse.fingerlastx = event.touches[0].clientX
 
