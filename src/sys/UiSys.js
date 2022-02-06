@@ -172,7 +172,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 		
 		const chatLabel = new CSS2DObject(chatDiv)
-		point.setY(point.y +1) // Raise up
+		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
 		this.babs.worldSys.ground.add(chatLabel) // todo not ground
 		

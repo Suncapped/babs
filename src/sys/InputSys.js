@@ -401,6 +401,10 @@ export class InputSys {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', {journal: false, isname: true})
 						}
+						else if(this.pickedObject?.instanced) {
+							this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
+						}
+
 						if(this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
 							// Create text here above the land.
 							this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
@@ -596,11 +600,15 @@ export class InputSys {
 		// }
 
 		if(this.pickedObject) {
-			if(this.pickedObjectSavedMaterial) { // For everything using mega color material
+			if(this.pickedObject.instanced) { // InstancedMesh picks
+				this.pickedObject.instanced.setColorAt(this.pickedObject.instancedIndex, new Color(1,1,1))
+				this.pickedObject.instanced.instanceColor.needsUpdate = true
+			}
+			else if(this.pickedObjectSavedMaterial) { // For everything else using mega color material
 				this.pickedObject.material = this.pickedObjectSavedMaterial
 				this.pickedObjectSavedMaterial = undefined
 			}
-			else {
+			else { // non-mega color materials?  Should there even be any anymore? :)
 				this.pickedObject.material.emissive.copy(this.pickedObjectSavedColor)
 			}
 			this.pickedObject = undefined;
@@ -617,53 +625,79 @@ export class InputSys {
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
 			
-			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) {
+			// if(this.mouseRayTargets.length > 1) {
+			// 	log(this.mouseRayTargets)
+			// }
 
-				if(this.mouseRayTargets[i].object?.type === 'LineSegments' 
-				|| this.mouseRayTargets[i].object?.name === 'destinationmesh'
-				|| this.mouseRayTargets[i].object?.name === 'water') { // Wireframe
+			// Ensure ground is last.  It was getting in the way of objects on the ground
+			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) {
+				if(this.mouseRayTargets[i].object?.name === 'ground') {
+					const temp = this.mouseRayTargets[this.mouseRayTargets.length -1]
+					this.mouseRayTargets[this.mouseRayTargets.length -1] = this.mouseRayTargets[i]
+					this.mouseRayTargets[i] = temp
+				}
+			}
+			for(let i=0, l=this.mouseRayTargets.length; i<l; i++) { // Nearest object last
+
+				if(this.mouseRayTargets[i].object?.type === 'LineSegments' // Wireframe
+				|| this.mouseRayTargets[i].object?.name === 'destinationmesh' // debug dest mesh
+				|| this.mouseRayTargets[i].object?.name === 'water') { // water cubes IM
 					continue // Skip
 				}
 
-				if(this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
-					this.pickedObject = this.mouseRayTargets[i].object
-					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
-					// log('player_bbox', this.pickedObject)
-					this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
-				}
-				else if(this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
-					// log('ground', this.mouseRayTargets[i].point)
-					const point = this.mouseRayTargets[i].point
-					const landPoint = point.clone().divideScalar(1000/25).round()
 
-					const index = Utils.coordToIndex(landPoint.x, landPoint.z, 26)
-					const lcString = this.babs.worldSys.StringifyLandcover[this.babs.worldSys.landcoverData[index]]
-
-					this.mouse.landtarget.text = lcString
-					this.mouse.landtarget.point = point
-				}
-				else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
-					// log('sky')
-				}
 				else if(this.mouseRayTargets[i].object?.type instanceof SkinnedMesh) { // Player
 					// log('skinnedmesh')
 
 				}
-				else if(this.mouseRayTargets[i].object instanceof InstancedMesh) {  // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
+				else if(this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
 					const instanced = Wob.wobInstMeshes.get(name)
 					const index = this.mouseRayTargets[i].instanceId
-					log('InstancedMesh', name, index)
+					const matrix = new Matrix4()
+					instanced.getMatrixAt(index, matrix)
+					const quat = new Quaternion()
+					const position = new Vector3()
+					quat.setFromRotationMatrix(matrix)
+					position.setFromMatrixPosition(matrix)
 
+					// How to highlight with IM?  Need to have a color thing on it, like with water.
+					this.pickedObject = {
+						// object: this.mouseRayTargets[i].object,
+						instanced: instanced,
+						instancedName: name,
+						instancedIndex: index,
+						instancedPosition: position,
+					}
 
 				}
 				else if(this.mouseRayTargets[i].object instanceof Mesh) { // Must go after more specific mesh types
-					//  non-instanced Wobjects...and others?
-					this.pickedObject = this.mouseRayTargets[i].object
-					// log('mesh')
-					// BUG found by Andrew!  Could be the debug square..hmm should disable it.  Above
 
+
+					if(this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
+						this.pickedObject = this.mouseRayTargets[i].object
+						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
+						// log('player_bbox', this.pickedObject)
+						this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
+					}
+					else if(this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
+						// log('ground', this.mouseRayTargets[i].point)
+						const point = this.mouseRayTargets[i].point
+						const landPoint = point.clone().divideScalar(1000/25).round()
+
+						const index = Utils.coordToIndex(landPoint.x, landPoint.z, 26)
+						const lcString = this.babs.worldSys.StringifyLandcover[this.babs.worldSys.landcoverData[index]]
+
+						this.mouse.landtarget.text = lcString
+						this.mouse.landtarget.point = point
+					}
+					else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
+						log('ray to sky')
+					}
+					else { // All other meshes
+						this.pickedObject = this.mouseRayTargets[i].object
+					}
 				}
 				else { // Everything else
 
@@ -671,22 +705,32 @@ export class InputSys {
 				}
 
 				if(this.pickedObject) { // We've set a picked object in ifs above
-					// Highlight it
 
-					// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
-					// We can clone the material temporarily?
-					if(this.pickedObject.material.name === 'megamaterial') {
-						this.pickedObjectSavedMaterial = this.pickedObject.material
-						this.pickedObject.material = this.pickedObject.material.clone()
+					if(this.pickedObject.instanced) { // InstancedMesh 
+						let oldColor = new Color()
+						this.pickedObject.instanced.getColorAt(this.pickedObject.instancedIndex, oldColor)
+						let hsl = new Color() // This indirection prevents accumulation across frames
+						oldColor.getHSL(hsl)
+						const highlight = hsl.multiplyScalar(3)
+							
+						this.pickedObject.instanced.setColorAt(this.pickedObject.instancedIndex, highlight)
+						this.pickedObject.instanced.instanceColor.needsUpdate = true
 					}
+					else {
+						// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
+						// We can clone the material temporarily?
+						if(this.pickedObject.material.name === 'megamaterial') {
+							this.pickedObjectSavedMaterial = this.pickedObject.material
+							this.pickedObject.material = this.pickedObject.material.clone()
+						}
 
-					// Save old color and set new one
-					if(this.pickedObject.material.emissive?.r) { // Handle uninit emissive color
-						this.pickedObject.material.emissive = new Color(0,0,0)
+						// Save old color and set new one
+						if(this.pickedObject.material.emissive?.r) { // Handle uninit emissive color
+							this.pickedObject.material.emissive = new Color(0,0,0)
+						}
+						this.pickedObjectSavedColor = this.pickedObject.material.emissive.clone() // Unused for megamaterial above
+						this.pickedObject.material.emissive.setHSL(55/360, 100/100, 20/100).convertSRGBToLinear()
 					}
-					this.pickedObjectSavedColor = this.pickedObject.material.emissive.clone() // Unused for megamaterial above
-					this.pickedObject.material.emissive.setHSL(55/360, 100/100, 20/100).convertSRGBToLinear()
-
 				}
 
 				break // Only run loop once (except for continues)

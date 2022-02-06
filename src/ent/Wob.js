@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4 } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute } from "three"
 import { SocketSys } from "../sys/SocketSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
@@ -93,6 +93,17 @@ export class Wob extends Ent {
 		instanced.setMatrixAt(wob.instanceIndex, new Matrix4().setPosition(position))
 		instanced.count += 1
 		instanced.instanceMatrix.needsUpdate = true
+
+		log('setting color')
+		const mudColors = []
+		const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
+		for(let i=0; i<instanced.count; i++) {
+			mudColors.push(color.r, color.g, color.b)
+		}
+		log('instanced attr', mudColors.length, mudColors)
+		const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
+		bufferAttr.needsUpdate = true
+		instanced.instanceColor = bufferAttr
 
 		log('log wob', wob)
 		babs.uiSys.wobSaid(wob.name, position)

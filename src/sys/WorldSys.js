@@ -528,7 +528,7 @@ export class WorldSys {
 			this.babs.scene.add(this.waterInstancedMesh)
 
 
-			const bufferAttr = new InstancedBufferAttribute( new Float32Array( waterCubeColors), 3 )
+			const bufferAttr = new InstancedBufferAttribute(new Float32Array( waterCubeColors), 3)
 			bufferAttr.needsUpdate = true
 			this.waterInstancedMesh.instanceColor = bufferAttr
 
