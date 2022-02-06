@@ -41,14 +41,14 @@ export class Wob extends Ent {
 		const countMax = 3
 		let currentCount = 0
 		if(!instanced) {
-			log('object instance new, instantiate', path)
-			log.info('download and load object', path)
+			log.info('download, load, instantiate wobject', path)
 			const ob = await babs.loaderSys.loadGltf(path)
 			let scene = ob.scene
 			if(scene.children.length > 1) {
 				console.warn(`Loaded object with more than one child.`, scene)//  Using children[${childIndex}]`, group)
 			}
 			const mesh = scene.children[childIndex]
+			mesh.geometry.rotateX( - Math.PI / 2 ) // Make the plane horizontal
 
 			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
@@ -56,14 +56,12 @@ export class Wob extends Ent {
 			instanced.name = wob.name
 			instanced.instanceMatrix.setUsage(StreamDrawUsage) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 
-			log('instance', instanced)
-
 			Wob.wobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
 			
 		}
 		else if(instanced.count >= instanced.countMax -1) { // Overflowing instance limit, need a larger one
-			log('enlarging', instanced.count)
+			log('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
 			babs.scene.remove(instanced)
 			instanced.dispose()
@@ -87,25 +85,25 @@ export class Wob extends Ent {
 			
 		}
 
-		log('positioning index')
+		// log('positioning index')
 		let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
+		position.setY(position.y +0.8)
 		wob.instanceIndex = instanced.count
 		instanced.setMatrixAt(wob.instanceIndex, new Matrix4().setPosition(position))
 		instanced.count += 1
 		instanced.instanceMatrix.needsUpdate = true
 
-		log('setting color')
+		// log('setting color')
 		const mudColors = []
 		const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
 		for(let i=0; i<instanced.count; i++) {
 			mudColors.push(color.r, color.g, color.b)
 		}
-		log('instanced attr', mudColors.length, mudColors)
+		// log('instanced attr', mudColors.length, mudColors)
 		const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
 		bufferAttr.needsUpdate = true
 		instanced.instanceColor = bufferAttr
 
-		log('log wob', wob)
 		babs.uiSys.wobSaid(wob.name, position)
 
 		return wob

@@ -336,11 +336,10 @@ export class SocketSys {
 					}
 				break
 				case 'wobjectsarrive':
-					log('wobjectsarrive', data)
+					log.info('wobjectsarrive', data)
 
 					// Create new wobject, then spawn the graphic at the right place.
 					for(let arrival of data) {
-						log('arrival', arrival)
 						const wob = await Wob.Arrive(arrival, this.babs)
 					}
 				break

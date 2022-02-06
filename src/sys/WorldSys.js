@@ -216,6 +216,7 @@ export class WorldSys {
 
         this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
         const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
+		hemiLightHelper.name = 'three-helper'
         this.babs.scene.add(hemiLightHelper)
         this.hemiLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
         this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
@@ -242,6 +243,7 @@ export class WorldSys {
         // this.dirLight.shadow.bias = - 0.001
 
 		// var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
+		// shadowHelper.name = 'three-helper'
 		// this.babs.scene.add( shadowHelper )
 
         // renderer.shadowMap.enabled = true
@@ -269,6 +271,7 @@ export class WorldSys {
 			this.dirLight.target = playerTarget
 			this.babs.scene.add(this.dirLight)
 			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 10)
+			this.dirLightHelper.name = 'three-helper'
 			this.babs.scene.add(this.dirLightHelper)
 
 			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()

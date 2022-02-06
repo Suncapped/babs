@@ -395,7 +395,6 @@ export class InputSys {
 
 					// Single click
 					if(this.mouse.ldouble === false) { // First click
-						log('picked', this.pickedObject)
 						// Single click player, get their name or nick
 						if(this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
@@ -425,7 +424,7 @@ export class InputSys {
 						}
 						else if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
-							log('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
+							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
 							const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
 							const index = Utils.coordToIndex(point.x, point.z, 26)
@@ -641,6 +640,8 @@ export class InputSys {
 
 				if(this.mouseRayTargets[i].object?.type === 'LineSegments' // Wireframe
 				|| this.mouseRayTargets[i].object?.name === 'destinationmesh' // debug dest mesh
+				|| this.mouseRayTargets[i].object?.name === 'three-helper' // debug dest mesh
+				|| this.mouseRayTargets[i].object?.parent?.name === 'three-helper' // debug dest mesh
 				|| this.mouseRayTargets[i].object?.name === 'water') { // water cubes IM
 					continue // Skip
 				}
