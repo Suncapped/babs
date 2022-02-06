@@ -1,4 +1,4 @@
-import { Camera, Color, PerspectiveCamera, Quaternion, Raycaster, Vector3 } from "three"
+import { Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
 import { Wob } from "../ent/Wob"
 import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
@@ -195,22 +195,22 @@ export class InputSys {
 				if(this.keys.v === PRESS) {
 
 
+					/* 
 					const childIndex = 0
 					const loadItems = [
 						'tree-birchtall.gltf',
 						'tree-spruce.gltf'
 					]
-					// // log('loadItems', loadItems)
-
 					let count=0
 					for(let item of loadItems) {
-						let obj = await Wob.Create(`/environment/gltf/${item}`, this.babs, childIndex)
+						let obj = await Wob.New(`/environment/gltf/${item}`, this.babs, childIndex)
 						log.info('obj scale', obj.mesh.scale)
 						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
 						// obj.mesh.scale.multiplyScalar(3.3)
 						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*2 +2, 12 +2))
 						count++
 					}
+					*/
 					
 
 					// obj.mesh.scale.multiplyScalar(10)
@@ -393,26 +393,23 @@ export class InputSys {
 						this.movelock = false
 					}
 
-
-
-					// Double click handling
+					// Single click
 					if(this.mouse.ldouble === false) { // First click
-						this.mouse.ldouble = Date.now()
-
+						log('picked', this.pickedObject)
 						// Single click player, get their name or nick
 						if(this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', {journal: false, isname: true})
 						}
-
 						if(this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
 							// Create text here above the land.
 							this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
 						}
-						
-					}
-					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 
+						this.mouse.ldouble = Date.now()
+					} // Double click
+					else if(Date.now() -this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
+						this.mouse.ldouble = 0
 						if(this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 							nickTargetId.set(player.id)
@@ -426,7 +423,7 @@ export class InputSys {
 
 							log('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
-							const point = this.mouse.landtarget.point.clone().divideScalar(1000/25).round()
+							const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
 							const index = Utils.coordToIndex(point.x, point.z, 26)
 
 							this.babs.socketSys.send({
@@ -648,14 +645,21 @@ export class InputSys {
 				else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
 					// log('sky')
 				}
-				// else if(this.mouseRayTargets[i].object?.type === 'InstancedMesh') { // InstancedMesh
-				// 	// log('instancedmesh')
-				// }
-				else if(this.mouseRayTargets[i].object?.type === 'SkinnedMesh') { // Player
+				else if(this.mouseRayTargets[i].object?.type instanceof SkinnedMesh) { // Player
 					// log('skinnedmesh')
 
 				}
-				else if(this.mouseRayTargets[i].object?.type === 'Mesh') { // Objects...and others?
+				else if(this.mouseRayTargets[i].object instanceof InstancedMesh) {  // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
+					// Instanced things like wobjects, water, trees, etc unless caught above
+					const name = this.mouseRayTargets[i].object.name
+					const instanced = Wob.wobInstMeshes.get(name)
+					const index = this.mouseRayTargets[i].instanceId
+					log('InstancedMesh', name, index)
+
+
+				}
+				else if(this.mouseRayTargets[i].object instanceof Mesh) { // Must go after more specific mesh types
+					//  non-instanced Wobjects...and others?
 					this.pickedObject = this.mouseRayTargets[i].object
 					// log('mesh')
 					// BUG found by Andrew!  Could be the debug square..hmm should disable it.  Above

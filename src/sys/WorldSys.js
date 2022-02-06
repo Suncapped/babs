@@ -41,6 +41,7 @@ import {
 	Quaternion,
 	Euler,
 	InstancedBufferAttribute,
+	StreamDrawUsage,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -397,8 +398,8 @@ export class WorldSys {
 
 			// 'F_Bald_mesh_009.gltf',
 		]
-		const objs = await Promise.all(loadItems.map(item => Wob.Create(`/environment/gltf/${item}`, this.babs, 0)))
-		objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
+		// const objs = await Promise.all(loadItems.map(item => Wob.New(`/environment/gltf/${item}`, this.babs, 0)))
+		// objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
 
 
 
@@ -523,7 +524,7 @@ export class WorldSys {
 			const material = new MeshLambertMaterial({})
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
 			this.waterInstancedMesh.name = 'water'
-			this.waterInstancedMesh.instanceMatrix.setUsage( DynamicDrawUsage ) // So I don't have to call .needsUpdate
+			this.waterInstancedMesh.instanceMatrix.setUsage( StreamDrawUsage ) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 			this.babs.scene.add(this.waterInstancedMesh)
 
 
@@ -545,9 +546,9 @@ export class WorldSys {
 
 	vRayGroundHeight(gx, gz) { // Return engine height
 		const raycaster = new Raycaster(
-			new Vector3(gx *4, WorldSys.ZoneTerrainMax.y, gz*4), 
-			new Vector3( 0, -1, 0 ), 0, 
-			WorldSys.ZoneTerrainMax.y
+			new Vector3(gx *4 +2, WorldSys.ZoneTerrainMax.y, gz*4 +2), // +2 makes it center of grid instead of corner
+			new Vector3( 0, -1, 0 ), 
+			0, WorldSys.ZoneTerrainMax.y
 		)
 
 		const ground = this.babs.scene.children.find(o=>o.name=='ground')

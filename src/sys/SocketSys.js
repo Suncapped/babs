@@ -264,7 +264,7 @@ export class SocketSys {
 
 					// Create player entity
 					const bSelf = true
-					const playerSelf = await Player.New(loadSelf, bSelf, this.babs)
+					const playerSelf = await Player.Arrive(loadSelf, bSelf, this.babs)
 
 					// Set up UIs
 					this.babs.uiSys.loadUis(data.uis)
@@ -296,7 +296,7 @@ export class SocketSys {
 						}
 						else {
 							const bSelf = false
-							const player = await Player.New(arrival, bSelf, this.babs)
+							const player = await Player.Arrive(arrival, bSelf, this.babs)
 							this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.', null, 'right')
 						}
 
@@ -332,16 +332,17 @@ export class SocketSys {
 						if(player) {
 							player.setNick(pair.nick)
 						}
-						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.New players
+						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 					}
 				break
 				case 'wobjectsarrive':
 					log('wobjectsarrive', data)
 
 					// Create new wobject, then spawn the graphic at the right place.
-
-					// const wob = await Wob.New(arrival, bSelf, this.babs)
-					// this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'an unfamiliar person')+' nearby.', null, 'right')
+					for(let arrival of data) {
+						log('arrival', arrival)
+						const wob = await Wob.Arrive(arrival, this.babs)
+					}
 				break
 			}
 		})

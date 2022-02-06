@@ -85,7 +85,7 @@ export class UiSys {
 		chatDiv.style.visibility = 'hidden'
 		this.labelElements.push(chatDiv)
 
-		const chatLabel = new CSS2DObject( chatDiv )
+		const chatLabel = new CSS2DObject(chatDiv)
 		const chatStartingHeight = (idPlayer === this.babs.idSelf ? 26 : 29) 
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
@@ -150,11 +150,32 @@ export class UiSys {
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
 		this.labelElements.push(chatDiv)
 
-		const chatLabel = new CSS2DObject( chatDiv )
-
-		chatLabel.position.copy(point.setY(point.y +1))
-
+		const chatLabel = new CSS2DObject(chatDiv)
+		point.setY(point.y +1) // Raise up
+		chatLabel.position.copy(point)
 		this.babs.worldSys.ground.add(chatLabel)
+	}
+
+	wobSaid(text, point) {
+		const chatDiv = document.createElement('div')
+		chatDiv.classList.add('label')
+
+		const chatSpan = document.createElement('span')
+		chatSpan.innerText = text
+		chatDiv.appendChild(chatSpan)
+		
+		chatDiv.style.color = '#aaaaaa'
+		this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
+
+		const expiresInSeconds = 3
+		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
+		this.labelElements.push(chatDiv)
+		
+		const chatLabel = new CSS2DObject(chatDiv)
+		point.setY(point.y +1) // Raise up
+		chatLabel.position.copy(point)
+		this.babs.worldSys.ground.add(chatLabel) // todo not ground
+		
 	}
 
 

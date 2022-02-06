@@ -22,14 +22,15 @@ export class Player extends Ent {
 	char
 
 	// References:
-	babs
 
-	constructor(arrival, bSelf, babs) {
-		super(arrival.id, babs)
+	
+	/** @private */
+	constructor(id, babs) {
+		super(id, babs)
 	}
-	static async New(arrival, bSelf, babs) {
+	static async Arrive(arrival, bSelf, babs) {
 
-		const plr = new Player(arrival, bSelf, babs)
+		const plr = new Player(arrival.id, babs)
 		plr.babs = babs
 		plr.char = arrival.char
 		
