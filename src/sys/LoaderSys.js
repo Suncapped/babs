@@ -114,7 +114,8 @@ export class LoaderSys {
 					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					log.info( 'An error happened', err )
+					log.info('loadGltf error:', err) // info because can just be missing model
+					reject(err)
 				}
 			)
 

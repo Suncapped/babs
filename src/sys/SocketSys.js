@@ -339,9 +339,13 @@ export class SocketSys {
 					log.info('wobjectsarrive', data)
 
 					// Create new wobject, then spawn the graphic at the right place.
-					for(let arrival of data) {
-						const wob = await Wob.Arrive(arrival, this.babs)
+					for(let wob of data.wobs) {
+						const result = await Wob.Arrive(wob, this.babs, data.shownames)
 					}
+				break
+				case 'journal':
+					log.info('journal', data)
+					this.babs.uiSys.serverSaid(data.text)
 				break
 			}
 		})

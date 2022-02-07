@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial } from "three"
 import { SocketSys } from "../sys/SocketSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
@@ -24,13 +24,13 @@ export class Wob extends Ent {
 	instanceIndex
 	
 	static wobInstMeshes = new Map()
-	static async Arrive(arrival, babs) {
-		const wob = new Wob(arrival.id, babs)
-		wob.idzone = arrival.idzone
-		wob.x = arrival.x
-		wob.z = arrival.z
-		wob.name = arrival.name
-		wob.color = arrival.color
+	static async Arrive(arrivalWob, babs, shownames) {
+		const wob = new Wob(arrivalWob.id, babs)
+		wob.idzone = arrivalWob.idzone
+		wob.x = arrivalWob.x
+		wob.z = arrivalWob.z
+		wob.name = arrivalWob.name
+		wob.color = arrivalWob.color
 
 		// Load gltf
 		// Assumes no object animation!
@@ -42,12 +42,21 @@ export class Wob extends Ent {
 		let currentCount = 0
 		if(!instanced) {
 			log.info('download, load, instantiate wobject', path)
-			const ob = await babs.loaderSys.loadGltf(path)
-			let scene = ob.scene
-			if(scene.children.length > 1) {
-				console.warn(`Loaded object with more than one child.`, scene)//  Using children[${childIndex}]`, group)
+
+			let mesh
+			try {
+				const ob = await babs.loaderSys.loadGltf(path)
+				if(ob.scene.children.length > 1) {
+					console.warn(`Loaded object with more than one child.`, scene)
+				}
+				mesh = ob.scene.children[childIndex]
 			}
-			const mesh = scene.children[childIndex]
+			catch(e) { // Object doesn't exist.  Make a sphere
+				const geometry = new SphereGeometry(1, 12, 12)
+				const material = new MeshBasicMaterial({ color: 0xffff00 })
+				mesh = new Mesh(geometry, material)
+			}
+
 			mesh.geometry.rotateX( - Math.PI / 2 ) // Make the plane horizontal
 
 			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
@@ -61,7 +70,7 @@ export class Wob extends Ent {
 			
 		}
 		else if(instanced.count >= instanced.countMax -1) { // Overflowing instance limit, need a larger one
-			log('enlarging IM '+instanced.name, instanced.count)
+			log.info('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
 			babs.scene.remove(instanced)
 			instanced.dispose()
@@ -104,7 +113,9 @@ export class Wob extends Ent {
 		bufferAttr.needsUpdate = true
 		instanced.instanceColor = bufferAttr
 
-		babs.uiSys.wobSaid(wob.name, position)
+		if(shownames) {
+			babs.uiSys.wobSaid(wob.name, position)
+		}
 
 		return wob
 
