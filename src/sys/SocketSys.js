@@ -4,7 +4,7 @@ import { UiSys } from '../sys/UiSys'
 import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
-import { log } from './../Utils'
+import { log, randIntInclusive } from './../Utils'
 import { AnimationMixer, MathUtils, Quaternion, Vector3 } from "three"
 import { Controller } from "../com/Controller"
 import { Player } from "../ent/Player"
@@ -242,7 +242,6 @@ export class SocketSys {
 					toprightText.set(this.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 
-					log('loadself meta', loadSelf.meta)
 					debugMode.set(loadSelf.meta.debugmode === undefined ? false : loadSelf.meta.debugmode) // Handle meta value creation
 					dividerOffset.set(loadSelf.divider)
 
@@ -336,8 +335,8 @@ export class SocketSys {
 						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 					}
 				break
-				case 'wobjectsarrive':
-					log.info('wobjectsarrive', data)
+				case 'wobsupdate':
+					log.info('wobsupdate', data)
 
 					// Create new wobject, then spawn the graphic at the right place.
 					for(let wob of data.wobs) {
@@ -347,6 +346,17 @@ export class SocketSys {
 				case 'journal':
 					log.info('journal', data)
 					this.babs.uiSys.serverSaid(data.text)
+				break
+				case 'serverrestart':
+					log('serverrestart', data)
+					if(this.babs.isProd) {
+						setTimeout(() => {
+							this.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
+						}, 200)
+					}
+					setTimeout(() => {
+						window.location.reload()
+					}, this.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 				break
 			}
 		})

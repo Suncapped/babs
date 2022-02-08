@@ -138,7 +138,7 @@
 
 		// Watch debugMode
 		debugMode.subscribe(on => {
-			log('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
+			log.info('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
 
 			// Don't send on init, or on receive first update
 			if(on !== undefined && dmCallsCount > 0) { 
