@@ -138,10 +138,10 @@
 
 		// Watch debugMode
 		debugMode.subscribe(on => {
-			log.info('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
+			log('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
 
-			// Don't send on init, and don't send on player arrival data either
-			if(dmCallsCount >= 2) { 
+			// Don't send on init, or on receive first update
+			if(on !== undefined && dmCallsCount > 0) { 
 				socketSend.set({
 					'savedebugmode': on,
 				})

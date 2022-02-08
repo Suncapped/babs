@@ -203,6 +203,8 @@ export class UiSys {
 		document.getElementById('welcomebar').style.display = 'block' 
 		document.getElementById('Overlay').style.zIndex = '1000'
 		document.getElementById('topleft').style.display = 'none' 
+
+		this.svJournal.appendText(reason, '#ff0000', 'right')
 	}
 
     /** 
