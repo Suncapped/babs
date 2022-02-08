@@ -57,7 +57,7 @@ export class Wob extends Ent {
 				mesh = new Mesh(geometry, material)
 			}
 
-			mesh.geometry.rotateX( - Math.PI / 2 ) // Make the plane horizontal
+			mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
 
 			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
