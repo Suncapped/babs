@@ -2,12 +2,24 @@
 
 import { Vector3 } from "three"
 import { debugMode } from "./stores"
+import { get as svelteGet } from 'svelte/store'
 
-let showInfoLogs = false// || import.meta.env.PROD // Always show in prod // Actually no lol, overload!
 
-debugMode.subscribe(on => {
-	showInfoLogs = on
-})
+
+let showInfoLogs = false
+// Get debugMode set as soon as available
+const waitDebugMode = () => {
+	try {
+		showInfoLogs = svelteGet(debugMode)
+		debugMode.subscribe(toggle => showInfoLogs = toggle)
+	}
+	catch {
+		setTimeout(waitDebugMode, 10)
+	}
+}
+waitDebugMode()
+
+
 // ;(async () => {
 // 	let { debugMode } = await import('./stores')
 // 	console.log('what dbm', debugMode)
