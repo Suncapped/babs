@@ -3,25 +3,26 @@
 	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, inputCmd } from "../stores.js"
 	import { log } from '../Utils.js'
 	import { draggable } from '@neodrag/svelte'
+	import { UiSys } from '../sys/UiSys.js';
 
 	const DRAG_THRESHOLD = 2
 	let Container
 	let content
-
+	
 	// Defaults
 	let ui = $$props.ui
 	ui.w ||= 250
 	ui.h ||= 250
-	ui.x ||= 0
-	ui.y ||= 0
-	ui.unfurled = ui.unfurled === undefined ? true : ui.unfurled
+	ui.x ||= window.innerWidth -ui.w *2
+	ui.y ||= window.innerHeight
+	ui.unfurled = ui.unfurled === undefined ? false : ui.unfurled
 
 	ui.virtx = ui.x // Virtual x, for use here
-	ui.virty = ui.y 
+	ui.virty = ui.y
 
 	// Set up draggable	
 	let options = {
-		handle: '#Container > .handle',
+		handle: '.Container > .handle',
 		bounds: 'parent',
 	}
 	log.info('init, options, ui:', options, ui)
@@ -85,9 +86,9 @@
 	let containerName = 'Bag'
 	let header
 	export function addWob(wob, renderedIcon) {
-		log('Container addWob', wob, renderedIcon, this)
+		log.info('Container addWob', wob, renderedIcon, this)
 
-		const size = 30
+		const size = UiSys.ICON_SIZE
 		const p = document.createElement('img')
 		p.style.position = 'absolute'
 		p.style.width = size+'px'
@@ -98,19 +99,24 @@
 		content.appendChild(p)
 	}
 
+
 </script>
 
 <svelte:window on:resize={updateDimensions} />
 
-<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Container} id="Container" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
+<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Container} id="container-for-{ui.idobject}" class="Container card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
 	<div bind:this={header} on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>{containerName}</div>
 	<div bind:this={content} class="content card-body">
 	</div>
 </div>
 
 <style>
-	#Container > .content {
+	.Container {
+		background-color:rgba(12, 12, 12, 1);
+	}
+	.Container > .content {
 		padding: 0px;
 	}
+
 
 </style>

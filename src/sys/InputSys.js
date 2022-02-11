@@ -13,6 +13,7 @@ import { Vector2 } from "three"
 import { Controller } from "../com/Controller"
 import { WorldSys } from "./WorldSys"
 import * as Utils from './../Utils'
+import { UiSys } from "./UiSys"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -338,6 +339,8 @@ export class InputSys {
 		document.addEventListener('touchend', touchHandler, true)
 		document.addEventListener('touchcancel', touchHandler, true);
 
+		this.lastMoveHoldPicked
+		this.carrying = null
 		document.addEventListener('mousemove', ev => { // :MouseEvent
 			// log.info('mousemove', ev)
 			this.mouse.movetarget = ev.target
@@ -367,6 +370,34 @@ export class InputSys {
 			this.mouse.xy.x = ( ev.clientX / parseInt(this.canvas.style.width) ) * 2 - 1
 			this.mouse.xy.y = - ( ev.clientY / parseInt(this.canvas.style.height) ) * 2 + 1
 			// log(this.mouse.xy)
+
+			// Determine if dragging a wobject
+			if(this.mouse.left && !this.carrying){ // Holding down, and not already carrying something
+				const isSameAsPrevious = 
+					this.lastMoveHoldPicked?.instanced
+					this.lastMoveHoldPicked?.instanced?.uuid === this.pickedObject?.instanced?.uuid // Ensures it's comparable object
+					 && this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
+				log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
+				if(this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) { // Over a wob in the world, and if already over a wob, it must be the same wob
+					this.lastMoveHoldPicked = this.pickedObject // Save that wob
+					log('saving')
+				}
+				else { // Holding down not over a wob, or over a different wob than the one previously saved
+					log('else')
+					if(this.lastMoveHoldPicked) { // And there is one previously saved
+						// Now we could lift that dragged wob
+						log('carrying')
+						this.carrying = this.lastMoveHoldPicked
+						this.lastMoveHoldPicked = null
+						// Now in update, we'll keep carrying on the mouse intersect to ground
+					}
+				}
+			}
+			else {
+				this.lastMoveHoldPicked = null
+			}
+
+
         })
 
         document.addEventListener('mousedown', ev => {
@@ -427,7 +458,7 @@ export class InputSys {
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
 							const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-							const index = Utils.coordToIndex(point.x, point.z, 26)
+							// const index = Utils.coordToIndex(point.x, point.z, 26)
 
 							this.babs.socketSys.send({
 								action: {
@@ -480,7 +511,7 @@ export class InputSys {
 					else { 
 						// If not touchpad, do pointer lock.  Touchpad doesn't need it because look is via gestures
 						this.canvas.requestPointerLock()
-						this.canvas.style.cursor = 'none'
+						// this.canvas.style.cursor = 'none'
 
 						// If you started pressing w before mouse, chat now has annoying 'w's in it; clear them.
 						const box = document.getElementById('chatbox')
@@ -505,6 +536,66 @@ export class InputSys {
 			log.info('mouseOnUp', ev.button, ev.target.id)
 			if(ev.button === MOUSE_LEFT_CODE) {
 				this.mouse.left = LIFT
+
+				this.lastMoveHoldPicked = null
+				// Handle carry drop
+				if(this.carrying) {
+					log('carry drop', this.carrying, this.mouse.landtarget, this.pickedObject, this.mouse.movetarget.parentElement)
+					if(this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`){ // UI main bag
+						log('Main bag drop', this.mouse.movetarget)
+						// const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
+						// let wob
+						// for (let [key, ent] of this.babs.ents) {
+						// 	if(ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
+						// 		wob = ent
+						// 		break
+						// 	}
+						// }
+						// log('Found', wob)
+						// this.babs.socketSys.send({
+						// 	action: {
+						// 		verb: 'moved',
+						// 		noun: wob.id,
+						// 		data: {
+						// 			point,
+						// 		},
+						// 	}
+						// })
+
+					}
+					else if(this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
+						log('landdrop', this.mouse.landtarget.point)
+						const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
+						// Todo put distance limits, here and server
+						let wob
+						for (let [key, ent] of this.babs.ents) {
+							if(ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
+								wob = ent
+								break
+							}
+						}
+						log('Found', wob)
+						this.babs.socketSys.send({
+							action: {
+								verb: 'moved',
+								noun: wob.id,
+								data: {
+									point,
+								},
+							}
+						})
+					}
+					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
+						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
+						log.info('Other drop', this.carrying)
+						this.babs.uiSys.clientSaid(`Cannot place ${this.carrying.instancedName} there.`)
+					}
+
+					this.carrying = null
+					document.body.style.cursor = 'auto'
+				}
+
+
 			}
 			if(ev.button === MOUSE_RIGHT_CODE) {
 				this.mouse.right = LIFT
@@ -514,7 +605,7 @@ export class InputSys {
 				this.mouse.ldouble = 0
 
 				document.exitPointerLock?.()
-				this.canvas.style.cursor = 'auto'
+				this.canvas.style.cursor = 'inherit'
 			}
 			if(ev.button == 1) {
 				this.mouse.middle = LIFT
@@ -555,7 +646,7 @@ export class InputSys {
 			if(vis) {
 				this.characterControlMode = false
 				document.exitPointerLock?.()
-				this.canvas.style.cursor = 'auto'
+				this.canvas.style.cursor = 'inherit'
 			} 
 			else {
 				// Doesn't go back to this.characterControlMode until they mouse-right-hold
@@ -617,6 +708,7 @@ export class InputSys {
 			this.mouse.landtarget.point.set(0,0,0)
 		}
 
+		// log('mt', this.mouse.movetarget)
 		if(this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
 			) { 
@@ -656,12 +748,7 @@ export class InputSys {
 					const name = this.mouseRayTargets[i].object.name
 					const instanced = Wob.WobInstMeshes.get(name)
 					const index = this.mouseRayTargets[i].instanceId
-					const matrix = new Matrix4()
-					instanced.getMatrixAt(index, matrix)
-					const quat = new Quaternion()
-					const position = new Vector3()
-					quat.setFromRotationMatrix(matrix)
-					position.setFromMatrixPosition(matrix)
+					const position = Wob.GetPositionFromIndex(instanced, index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
 					this.pickedObject = {
@@ -736,6 +823,12 @@ export class InputSys {
 
 				break // Only run loop once (except for continues)
 			}
+		}
+
+		if(this.carrying) {
+			log('update carrying')
+			document.body.style.cursor = `url(${this.carrying.instanced.renderedIcon}) ${UiSys.ICON_SIZE /2} ${UiSys.ICON_SIZE /2}, auto`
+			
 		}
 
 		if(!this.topMenuVisibleLocal) {

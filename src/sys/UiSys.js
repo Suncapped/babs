@@ -20,6 +20,8 @@ export class UiSys {
 	svContainers = []
 	nicklist = new Map()
 
+	static ICON_SIZE = 50
+
     constructor(babs) {
 		this.babs = babs
 
@@ -137,7 +139,7 @@ export class UiSys {
 	}
 
 
-	landSaid(text, point) {
+	landSaid(text, point) { // todo abstract all this creation for all the said()s into one
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
@@ -157,25 +159,11 @@ export class UiSys {
 		chatLabel.position.copy(point)
 		this.babs.worldSys.ground.add(chatLabel)
 	}
-	serverSaid(text, point) { // todo abstract all this creation for all the said()s into one
-		// const chatDiv = document.createElement('div')
-		// chatDiv.classList.add('label')
-
-		// const chatSpan = document.createElement('span')
-		// chatSpan.innerText = text
-		// chatDiv.appendChild(chatSpan)
-		
-		// chatDiv.style.color = '#aaaaaa'
+	serverSaid(text, point) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
-
-		// const expiresInSeconds = 3
-		// chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
-		// this.labelElements.push(chatDiv)
-
-		// const chatLabel = new CSS2DObject(chatDiv)
-		// point.setY(point.y +1) // Raise up
-		// chatLabel.position.copy(point)
-		// this.babs.worldSys.ground.add(chatLabel)
+	}
+	clientSaid(text, point) {
+		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
 
 	wobSaid(text, point) {

@@ -1,5 +1,6 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion } from "three"
 import { SocketSys } from "../sys/SocketSys"
+import { UiSys } from "../sys/UiSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
 import { Appearance } from "../com/Appearance"
@@ -21,7 +22,7 @@ export class Wob extends Ent {
 	z
 	name
 	color
-	instanceIndex
+	instancedIndex
 
 
 	static HiddenScene = null
@@ -30,9 +31,9 @@ export class Wob extends Ent {
 			const container = document.getElementById('HiddenRenderFrame')
 
 			// create your renderer
-			const renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
+			const renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true, })
 			// renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( 100, 100 );
+			renderer.setSize( UiSys.ICON_SIZE, UiSys.ICON_SIZE );
 
 			// apply the internal canvas of the renderer to the DOM
 			container.appendChild( renderer.domElement );
@@ -94,7 +95,6 @@ export class Wob extends Ent {
 				Wob.HiddenScene.scene.remove(child); 
 			}
 		}
-		log('now add',Wob.HiddenScene.scene.children)
 
 		// if(mesh.name) {
 			const localMesh = mesh.clone()
@@ -103,7 +103,6 @@ export class Wob extends Ent {
 			// localMesh.position.set(1,1,1)
 			localMesh.position.set(0,-1.5,-0.5)
 			localMesh.geometry.rotateX(-Math.PI /2)
-			log('added', localMesh)
 
 			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
 			Wob.HiddenScene.renderer.domElement.toDataURL()
@@ -158,7 +157,6 @@ export class Wob extends Ent {
 			let mesh
 			try {
 				const ob = await babs.loaderSys.loadGltf(path)
-				log('LOADED', path)
 				if(ob.scene.children.length > 1) {
 					console.warn(`Loaded object with more than one child.`, scene)
 				}
@@ -186,7 +184,7 @@ export class Wob extends Ent {
 			babs.scene.add(instanced)
 			
 		}
-		else if(instanced.count >= instanced.countMax -1) { // Overflowing instance limit, need a larger one
+		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Overflowing instance limit, need a larger one
 			log.info('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
 			babs.scene.remove(instanced)
@@ -214,21 +212,18 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			// log('positioning index')
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 			position.setY(position.y +0.8)
-			wob.instanceIndex = instanced.count
-			instanced.setMatrixAt(wob.instanceIndex, new Matrix4().setPosition(position))
+			wob.instancedIndex = instanced.count
+			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(position))
 			instanced.count += 1
 			instanced.instanceMatrix.needsUpdate = true
 
-			// log('setting color')
 			const mudColors = []
 			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
 			for(let i=0; i<instanced.count; i++) {
 				mudColors.push(color.r, color.g, color.b)
 			}
-			// log('instanced attr', mudColors.length, mudColors)
 			const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
 			bufferAttr.needsUpdate = true
 			instanced.instanceColor = bufferAttr
@@ -241,11 +236,20 @@ export class Wob extends Ent {
 		else {	// Send to bag
 			babs.uiSys.svContainers[0].addWob(wob, instanced.renderedIcon)
 
-
 		}
 
 		return wob
 		
+	}
+
+	static GetPositionFromIndex(instanced, index) {
+		const matrix = new Matrix4()
+		instanced.getMatrixAt(index, matrix)
+		const quat = new Quaternion()
+		const position = new Vector3()
+		quat.setFromRotationMatrix(matrix)
+		position.setFromMatrixPosition(matrix)
+		return position
 	}
 	
 	// mesh

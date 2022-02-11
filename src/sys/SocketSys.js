@@ -5,7 +5,7 @@ import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
 import { log, randIntInclusive } from './../Utils'
-import { AnimationMixer, MathUtils, Quaternion, Vector3 } from "three"
+import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from "three"
 import { Controller } from "../com/Controller"
 import { Player } from "../ent/Player"
 import { CameraSys } from "./CameraSys"
@@ -188,7 +188,7 @@ export class SocketSys {
 		this.processQueue = []
 	}
 	processEnqueue(payload){
-		if(payload.load) { // First one happens immediately, to jumpstart babsReady
+		if(payload.load || payload.visitor || payload.session) { // First one happens immediately, to jumpstart babsReady
 			this.process(this, payload)
 		}
 		else {
@@ -355,11 +355,27 @@ export class SocketSys {
 					}
 				break
 				case 'wobsupdate':
-					log.info('wobsupdate', data)
+					log('wobsupdate', data)
 
 					// Create new wobject, then spawn the graphic at the right place.
-					for(let wob of data.wobs) {
-						const result = await Wob.Arrive(wob, context.babs, data.shownames)
+					for(let wobFresh of data.wobs) {
+						const wobExisting = context.babs.ents.get(wobFresh.id)
+						if(wobExisting) {
+							log('existing')
+							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+							// const currentPosition = Wob.GetPositionFromIndex(instanced, wob.instancedIndex)
+
+							let positionNew = context.babs.worldSys.vRayGroundHeight(wobFresh.x, wobFresh.z)
+							positionNew.setY(positionNew.y +0.8)
+							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(positionNew))
+							instanced.instanceMatrix.needsUpdate = true
+							if(data.shownames) {
+								context.babs.uiSys.wobSaid(wobExisting.name, positionNew)
+							}
+						}
+						else {
+							const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
+						}
 					}
 				break
 				case 'journal':
