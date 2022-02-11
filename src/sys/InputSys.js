@@ -654,7 +654,7 @@ export class InputSys {
 				else if(this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
-					const instanced = Wob.wobInstMeshes.get(name)
+					const instanced = Wob.WobInstMeshes.get(name)
 					const index = this.mouseRayTargets[i].instanceId
 					const matrix = new Matrix4()
 					instanced.getMatrixAt(index, matrix)

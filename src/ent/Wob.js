@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight } from "three"
 import { SocketSys } from "../sys/SocketSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
@@ -22,8 +22,120 @@ export class Wob extends Ent {
 	name
 	color
 	instanceIndex
+
+
+	static HiddenScene = null
+	static HiddenSceneRender(mesh) {
+		if(!Wob.HiddenScene) {
+			const container = document.getElementById('HiddenRenderFrame')
+
+			// create your renderer
+			const renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
+			// renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( 100, 100 );
+
+			// apply the internal canvas of the renderer to the DOM
+			container.appendChild( renderer.domElement );
+
+
+			// Scene?
+			const scene = new Scene()
 	
-	static wobInstMeshes = new Map()
+			const fov = 45
+			const aspect = 1  // the canvas default
+			const near = 0.1
+			const far = 1000
+			// const camera = new PerspectiveCamera(fov, aspect, near, far)
+			const d = 2
+			const camera = new OrthographicCamera( - d * aspect, d * aspect, d, - d, near, far)
+			// camera.position.set(0,0,0)
+			// camera.position.set(0,0,0)
+			// camera.lookAt(1, 0, 1)
+			// camera.lookAt( new Vector3(20,20,20) ); // or the origin
+
+			camera.position.set( 20, 20, 20 );
+			// camera.rotation.order = 'YXZ';
+			// camera.rotation.y = - Math.PI / 4;
+			// camera.rotation.x = Math.atan( - 1 / Math.sqrt( 2 ) );
+
+			camera.lookAt(scene.position)
+		
+			const color = 0xFFFFFF
+			const intensity = 1
+			const light = new DirectionalLight(color, intensity)
+			// light.position.set(0,2,0)
+			light.position.set( 10,20,15 )
+			
+			
+			scene.add(light)
+			
+			Wob.HiddenScene = {scene, renderer, camera}
+
+
+
+
+			// const geometry = new BoxGeometry(1,1,1)
+			// const material = new MeshPhongMaterial
+			// ambient: 0x555555
+			// color: 0x555555
+			// specular: 0xffffff
+			// shininess: 50
+			// shading: SmoothShading
+
+			// const cube = new Mesh(geometry, material)
+			// scene.add(cube)
+
+			// scene.add( new AmbientLight(0x4000ff) )
+
+		}
+		
+		for(let child of Wob.HiddenScene.scene.children){ 
+			if(child instanceof Mesh) {
+				Wob.HiddenScene.scene.remove(child); 
+			}
+		}
+		log('now add',Wob.HiddenScene.scene.children)
+
+		// if(mesh.name) {
+			const localMesh = mesh.clone()
+			localMesh.geometry = mesh.geometry.clone()
+			Wob.HiddenScene.scene.add(localMesh)
+			// localMesh.position.set(1,1,1)
+			localMesh.position.set(0,-1.5,-0.5)
+			localMesh.geometry.rotateX(-Math.PI /2)
+			log('added', localMesh)
+
+			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
+			Wob.HiddenScene.renderer.domElement.toDataURL()
+		// }
+
+		return Wob.HiddenScene.renderer.domElement.toDataURL()
+	}
+	// static HiddenSceneRender(mesh, renderer) {
+	// 	const scene = new Scene()
+	   
+	// 	const fov = 45
+	// 	const aspect = 2  // the canvas default
+	// 	const near = 0.1
+	// 	const far = 5
+	// 	const camera = new PerspectiveCamera(fov, aspect, near, far)
+	// 	camera.position.z = 2
+	// 	camera.position.set(0, 1, 2)
+	// 	camera.lookAt(0, 0, 0)
+	   
+	// 	const color = 0xFFFFFF
+	// 	const intensity = 1
+	// 	const light = new DirectionalLight(color, intensity)
+	// 	light.position.set(-1, 2, 4)
+	// 	scene.add(light)
+
+	// 	scene.add(mesh)
+
+	// 	renderer.render(scene, camera) // Hmm what does it do? lol
+	//   }
+	   
+	
+	static WobInstMeshes = new Map()
 	static async Arrive(arrivalWob, babs, shownames) {
 		const wob = new Wob(arrivalWob.id, babs)
 		wob.idzone = arrivalWob.idzone
@@ -35,7 +147,7 @@ export class Wob extends Ent {
 		// Load gltf
 		// Assumes no object animation!
 		const path = `/environment/gltf/obj-${wob.name}.gltf`
-		let instanced = Wob.wobInstMeshes.get(wob.name)
+		let instanced = Wob.WobInstMeshes.get(wob.name)
 
 		const childIndex = 0 // stub
 		const countMax = 3
@@ -46,6 +158,7 @@ export class Wob extends Ent {
 			let mesh
 			try {
 				const ob = await babs.loaderSys.loadGltf(path)
+				log('LOADED', path)
 				if(ob.scene.children.length > 1) {
 					console.warn(`Loaded object with more than one child.`, scene)
 				}
@@ -65,7 +178,11 @@ export class Wob extends Ent {
 			instanced.name = wob.name
 			instanced.instanceMatrix.setUsage(StreamDrawUsage) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 
-			Wob.wobInstMeshes.set(wob.name, instanced)
+			// Also add renderedIcon for later
+			instanced.renderedIcon = Wob.HiddenSceneRender(mesh)
+
+
+			Wob.WobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
 			
 		}
@@ -85,72 +202,54 @@ export class Wob extends Ent {
 				instanced.getMatrixAt(i, transferMatrix)
 				newInstance.setMatrixAt(i, transferMatrix)
 			}
+			newInstance.renderedIcon = instanced.renderedIcon
 			
 			instanced.dispose()
 			instanced = newInstance
 
-			Wob.wobInstMeshes.set(wob.name, instanced)
+			Wob.WobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
 			
 		}
 
-		// log('positioning index')
-		let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
-		position.setY(position.y +0.8)
-		wob.instanceIndex = instanced.count
-		instanced.setMatrixAt(wob.instanceIndex, new Matrix4().setPosition(position))
-		instanced.count += 1
-		instanced.instanceMatrix.needsUpdate = true
+		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
+		if(wob.idzone) { // Place in zone
+			// log('positioning index')
+			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
+			position.setY(position.y +0.8)
+			wob.instanceIndex = instanced.count
+			instanced.setMatrixAt(wob.instanceIndex, new Matrix4().setPosition(position))
+			instanced.count += 1
+			instanced.instanceMatrix.needsUpdate = true
 
-		// log('setting color')
-		const mudColors = []
-		const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
-		for(let i=0; i<instanced.count; i++) {
-			mudColors.push(color.r, color.g, color.b)
+			// log('setting color')
+			const mudColors = []
+			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
+			for(let i=0; i<instanced.count; i++) {
+				mudColors.push(color.r, color.g, color.b)
+			}
+			// log('instanced attr', mudColors.length, mudColors)
+			const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
+			bufferAttr.needsUpdate = true
+			instanced.instanceColor = bufferAttr
+
+			if(shownames) {
+				babs.uiSys.wobSaid(wob.name, position)
+			}
+
 		}
-		// log('instanced attr', mudColors.length, mudColors)
-		const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
-		bufferAttr.needsUpdate = true
-		instanced.instanceColor = bufferAttr
+		else {	// Send to bag
+			babs.uiSys.svContainers[0].addWob(wob, instanced.renderedIcon)
 
-		if(shownames) {
-			babs.uiSys.wobSaid(wob.name, position)
+
 		}
 
 		return wob
-
-
-
-		// Mesh method
-		// Load gltf // Assumes no object animation!
-		// const path = `/environment/gltf/obj-${arrival.name}.gltf`
-		// const cached = Wob.mapPathObjectCache.get(path)
-		// let scene
-		// const childIndex = 0 // stub
-		// if(cached) {
-		// 	log.info('cached object', path)
-		// 	scene = cached.clone()
-		// }
-		// else {
-		// 	log.info('download object', path)
-		// 	const ob = await babs.loaderSys.loadGltf(path)
-		// 	scene = ob.scene
-		// 	if(scene.children.length > 1) {
-		// 		console.warn(`Loaded object with more than one child.`, scene)//  Using children[${childIndex}]`, group)
-		// 	}
-		// 	Wob.mapPathObjectCache.set(path, scene)
-		// 	scene = scene.clone()
-		// }
-		// wob.mesh = scene.children[childIndex]
-		// babs.scene.add(wob.mesh)
-		// wob.mesh.position.copy(babs.worldSys.vRayGroundHeight(arrival.x, arrival.z))
-
-
 		
 	}
 	
 	// mesh
-	// static wobInstMeshes = new Map()
+	// static WobInstMeshes = new Map()
     // static async Load(path, babs, childIndex = 0) {
     //     let wob = new Wob
 	// 	const fbxLoader = path.endsWith('.fbx')
@@ -161,7 +260,7 @@ export class Wob extends Ent {
 	// 	else {
 	// 		// Caching
 	// 		// Assumes no object animation!
-	// 		const cached = Wob.wobInstMeshes.get(path)
+	// 		const cached = Wob.WobInstMeshes.get(path)
 	// 		let scene
 	// 		if(cached) {
 	// 			log.info('cached object', path)
@@ -170,7 +269,7 @@ export class Wob extends Ent {
 	// 		else {
 	// 			log.info('download object', path)
 	// 			let group = await babs.loaderSys.loadGltf(path)
-	// 			Wob.wobInstMeshes.set(path, group.scene)
+	// 			Wob.WobInstMeshes.set(path, group.scene)
 	// 			scene = group.scene.clone()
 	// 		}
 

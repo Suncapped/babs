@@ -92,7 +92,7 @@ export class SocketSys {
 
 
 				const payload = JSON.parse(event.data)
-				this.process(payload)
+				const result = this.processEnqueue(payload)
 			}
 			else { // Movement
 				// todo make this per-zone
@@ -176,8 +176,27 @@ export class SocketSys {
 		}
 	}
 
-	process(payload){
-		Object.entries(payload).forEach(async ([op, data]) => {
+	processQueue = []
+	item
+	update(dt) {
+		const callTasks = async () => {
+		  for (const [task, payload] of this.processQueue) {
+			await task(this, payload);
+		  }
+		}
+		callTasks()
+		this.processQueue = []
+	}
+	processEnqueue(payload){
+		if(payload.load) { // First one happens immediately, to jumpstart babsReady
+			this.process(this, payload)
+		}
+		else {
+			this.processQueue.push([this.process, payload])
+		}
+	}
+	async process(context, payload){
+		for(const [op, data] of Object.entries(payload)) {
 			switch(op) {
 				case 'auth':
 					document.getElementById('charsave').disabled = false
@@ -200,46 +219,46 @@ export class SocketSys {
 					}
 				break
 				case 'visitor':
-					this.session = data
-					log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
-					Cookies.set('session', this.session, { 
-						domain: this.babs.baseDomain,
-						secure: this.babs.isProd,
+					context.session = data
+					log('setting cookie, visitor', context.babs.baseDomain, context.babs.isProd)
+					Cookies.set('session', context.session, { 
+						domain: context.babs.baseDomain,
+						secure: context.babs.isProd,
 						sameSite: 'strict',
 					}) // Non-set expires means it's a session cookie only, not saved across sessions
 					toprightText.set('Visiting...')
-					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
+					window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
 				break
 				case 'session':
-					this.session = data
-					log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
-					const result = Cookies.set('session', this.session, { 
+					context.session = data
+					log('setting cookie, session', context.babs.baseDomain, context.babs.isProd)
+					const result = Cookies.set('session', context.session, { 
 						expires: 365,
-						domain: this.babs.baseDomain,
-						secure: this.babs.isProd,
+						domain: context.babs.baseDomain,
+						secure: context.babs.isProd,
 						sameSite: 'strict',
 					})
 					log.info('cookie set', result)
 					toprightText.set('Entering...')
-					window.location.reload() // Simpler than continuous flow for now // this.auth(this.session)
+					window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
 				break
 				case 'alreadyin':
 					// Just have them repeat the auth if this was their second login device
 					
-					this.babs.uiSys.offerReconnect('Closed other session.')
+					context.babs.uiSys.offerReconnect('Closed other session.')
 					
 				break
 				case 'load':
 					log.info('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
-						this.send({ping:'ping'})
+						context.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
 
 					const loadSelf = data.self
 					const zones = data.zones
 					const zone = zones.find(z => z.id == loadSelf.idzone)
 					log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
-					toprightText.set(this.babs.uiSys.toprightTextDefault)
+					toprightText.set(context.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
 
 					debugMode.set(loadSelf.meta.debugmode === undefined ? false : loadSelf.meta.debugmode) // Handle meta value creation
@@ -254,9 +273,9 @@ export class SocketSys {
 						menuSelfData.set(loadSelf)
 					}
 
-					this.babsReady = true
-					await this.babs.worldSys.loadStatics(this.babs.urlFiles, zone)
-					await this.babs.worldSys.loadObjects(zone)
+					context.babsReady = true
+					await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
+					await context.babs.worldSys.loadObjects(zone)
 
 					if(loadSelf.visitor !== true) {
 						document.getElementById('welcomebar').style.display = 'none' 
@@ -264,12 +283,12 @@ export class SocketSys {
 
 					// Create player entity
 					const bSelf = true
-					const playerSelf = await Player.Arrive(loadSelf, bSelf, this.babs)
+					const playerSelf = await Player.Arrive(loadSelf, bSelf, context.babs)
 
 					// Set up UIs
-					this.babs.uiSys.loadUis(data.uis)
+					context.babs.uiSys.loadUis(data.uis)
 
-					this.send({
+					context.send({
 						ready: loadSelf.id,
 					})
 
@@ -281,7 +300,7 @@ export class SocketSys {
 					// EventSys.Dispatch('players-arrive', data)
 
 					for(let arrival of data) {
-						const existingPlayer = this.babs.ents.get(arrival.id)
+						const existingPlayer = context.babs.ents.get(arrival.id)
 						log.info('existing player', existingPlayer)
 						if(existingPlayer) {
 							// If we already have that player, such as self, be sure to update it.
@@ -291,25 +310,25 @@ export class SocketSys {
 
 							// This is also where self gets added to zips?
 							existingPlayer.idzip = arrival.idzip
-							this.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
+							context.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
 
 						}
 						else {
 							const bSelf = false
-							const player = await Player.Arrive(arrival, bSelf, this.babs)
-							this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
+							const player = await Player.Arrive(arrival, bSelf, context.babs)
+							context.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
 						}
 
 					}
 				break
 				case 'playerdepart':
-					const departPlayer = this.babs.ents.get(data)
-					log.info('departPlayer', data, departPlayer, this.babs.scene)
+					const departPlayer = context.babs.ents.get(data)
+					log.info('departPlayer', data, departPlayer, context.babs.scene)
 
-					if(departPlayer && departPlayer.id !== this.babs.idSelf) {
+					if(departPlayer && departPlayer.id !== context.babs.idSelf) {
 						// Could be self departing from a previous session, or person already otherwise departed?
-						if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-							this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
+						if(departPlayer.id !== context.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
+							context.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
 							departPlayer.remove()
 
 						}
@@ -317,22 +336,22 @@ export class SocketSys {
 					}
 				break
 				case 'said':
-					const chattyPlayer = this.babs.ents.get(data.id)
+					const chattyPlayer = context.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
 						log.info('said by chattyPlayer', chattyPlayer.id, data.text)
-						this.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color})
+						context.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color})
 					}
 				break
 				case 'nicklist':
 					log.info('nicklist', data)
 					const nicklist = data
 					for(let pair of nicklist) {
-						const player = this.babs.ents.get(pair.idtarget)
+						const player = context.babs.ents.get(pair.idtarget)
 						log.info('nicklist player', player)
 						if(player) {
 							player.setNick(pair.nick)
 						}
-						this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+						context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 					}
 				break
 				case 'wobsupdate':
@@ -340,26 +359,36 @@ export class SocketSys {
 
 					// Create new wobject, then spawn the graphic at the right place.
 					for(let wob of data.wobs) {
-						const result = await Wob.Arrive(wob, this.babs, data.shownames)
+						const result = await Wob.Arrive(wob, context.babs, data.shownames)
 					}
 				break
 				case 'journal':
 					log.info('journal', data)
-					this.babs.uiSys.serverSaid(data.text)
+					context.babs.uiSys.serverSaid(data.text)
 				break
 				case 'serverrestart':
 					log('serverrestart', data)
-					if(this.babs.isProd) {
+					if(context.babs.isProd) {
 						setTimeout(() => {
-							this.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
+							context.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
 						}, 200)
 					}
 					setTimeout(() => {
 						window.location.reload()
-					}, this.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
+					}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
+				break
+				case 'contents':
+					log('contents', data)
+					if(data.id === context.babs.idSelf) { // Is your own inventory
+						// Spawn wobs and position them in bag
+						for(let wob of data.wobs) {
+							const result = await Wob.Arrive(wob, context.babs, false)
+						}
+						// context.babs.uiSys.svContainers[0].addWob()
+					}
 				break
 			}
-		})
+		}
 	}
 
 

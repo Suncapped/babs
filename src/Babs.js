@@ -183,6 +183,9 @@ class Babs {
 	update(time) {
 		// log.info(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
+
+		this.socketSys.update(dt)
+
 		this.uiSys.updateBegin(dt)
 		
 		// LoaderSys.update(dt)

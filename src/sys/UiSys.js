@@ -3,6 +3,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
+import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { toprightText, toprightReconnect, menuSelfData, uiWindows } from "../stores.js"
 import { log } from './../Utils'
@@ -16,6 +17,7 @@ export class UiSys {
 	labelElements = []
 	svJournal
 	svMenu
+	svContainers = []
 	nicklist = new Map()
 
     constructor(babs) {
@@ -247,6 +249,18 @@ export class UiSys {
 					},
 				})
 				uiWindows.set([...svelteGet(uiWindows), this.svMenu])
+			}
+			else if(ui.type === 'container') {
+				this.svContainers = [
+					...this.svContainers || [],
+					new Container({
+						target: document.body,
+						props: {
+							ui,
+						},
+					})
+				]
+				uiWindows.set([...svelteGet(uiWindows), this.svContainers[this.svContainers.length -1]])
 			}
 		}
 	}
