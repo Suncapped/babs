@@ -226,4 +226,12 @@
 		cursor: w-resize;
 	}
 
+	:global ul li:before { /* Prevent papercss from clobbering list items, like menu and dat.gui */
+		content: "";
+	}
+
+	:global div.dg.ac { /* Move dat.gui down */
+		top: 40px;
+	}
+
 </style>

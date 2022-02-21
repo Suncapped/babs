@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial } from "three"
 import { SocketSys } from "../sys/SocketSys"
 import { UiSys } from "../sys/UiSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
@@ -26,7 +26,7 @@ export class Wob extends Ent {
 
 
 	static HiddenScene = null
-	static HiddenSceneRender(mesh) {
+	static async HiddenSceneRender(mesh) {
 		if(!Wob.HiddenScene) {
 			const container = document.getElementById('HiddenRenderFrame')
 
@@ -105,10 +105,42 @@ export class Wob extends Ent {
 			localMesh.geometry.rotateX(-Math.PI /2)
 
 			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
-			Wob.HiddenScene.renderer.domElement.toDataURL()
+			// Wob.HiddenScene.renderer.domElement.toDataURL()
 		// }
 
-		return Wob.HiddenScene.renderer.domElement.toDataURL()
+
+		// let pickingTexture = new WebGLRenderTarget( 50, 50);
+		// // log('imageData!',Wob.HiddenScene.renderer.domElement.getImage)
+		// Wob.HiddenScene.renderer.setRenderTarget(pickingTexture)
+		// Wob.HiddenScene.renderer.render( Wob.HiddenScene.scene, Wob.HiddenScene.camera );
+		// const pixelBuffer = new Uint8Array( 4 *50*50 );
+		// Wob.HiddenScene.renderer.readRenderTargetPixels( pickingTexture, 0, 0, 50, 50, pixelBuffer );
+		// // log('rtpx', pixelBuffer)
+		// log('rtpx', Wob.HiddenScene.renderer.context)
+
+		const dataurl = Wob.HiddenScene.renderer.domElement.toDataURL()
+
+		return new Promise((resolve, reject) => {
+			let img = new Image()
+			img.src = dataurl
+			img.onload = () => {
+				var canvas = document.createElement('canvas');
+				canvas.width = UiSys.ICON_SIZE
+				canvas.height = UiSys.ICON_SIZE
+				var ctx = canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0);
+				var imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE);
+				let pixels = new Uint8Array(imageData.data.buffer);
+				canvas.remove()
+				img.remove()
+		
+				resolve([dataurl, pixels])
+			}
+			img.onerror = reject
+		})
+
+
+
 	}
 	// static HiddenSceneRender(mesh, renderer) {
 	// 	const scene = new Scene()
@@ -136,12 +168,16 @@ export class Wob extends Ent {
 	
 	static WobInstMeshes = new Map()
 	static async Arrive(arrivalWob, babs, shownames) {
-		const wob = new Wob(arrivalWob.id, babs)
-		wob.idzone = arrivalWob.idzone
-		wob.x = arrivalWob.x
-		wob.z = arrivalWob.z
-		wob.name = arrivalWob.name
-		wob.color = arrivalWob.color
+		const wobPrevious = babs.ents.get(arrivalWob.id)
+		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
+		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
+		babs.ents.set(arrivalWob.id, wob) // Ouch, remember that above is not mutating
+
+		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone
+			babs.uiSys.svContainers[0].delWob(wob.id)
+		}
+
+		log('arrive:', arrivalWob)
 
 		// Load gltf
 		// Assumes no object animation!
@@ -164,7 +200,7 @@ export class Wob extends Ent {
 			}
 			catch(e) { // Object doesn't exist.  Make a sphere
 				const geometry = new SphereGeometry(1, 12, 12)
-				const material = new MeshBasicMaterial({ color: 0xffff00 })
+				const material = new MeshPhongMaterial({ color: 0xcccc00 })
 				mesh = new Mesh(geometry, material)
 			}
 
@@ -175,20 +211,23 @@ export class Wob extends Ent {
 			instanced.count = currentCount
 			instanced.name = wob.name
 			instanced.instanceMatrix.setUsage(StreamDrawUsage) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
+			// instanced.instanceMatrix.needsUpdate = true
 
 			// Also add renderedIcon for later
-			instanced.renderedIcon = Wob.HiddenSceneRender(mesh)
-
+			const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+			instanced.renderedIcon = icon
+			instanced.renderedIconPixels = pixels
 
 			Wob.WobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
+
+			// log('added inst', wob.name, instanced)
 			
 		}
-		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Overflowing instance limit, need a larger one
+		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Is an actual instance, and needs more space
+			// Overflowing instance limit, need a larger one
 			log.info('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
-			babs.scene.remove(instanced)
-			instanced.dispose()
 
 			const newInstance = new InstancedMesh(instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
 			newInstance.count = currentCount
@@ -201,12 +240,16 @@ export class Wob extends Ent {
 				newInstance.setMatrixAt(i, transferMatrix)
 			}
 			newInstance.renderedIcon = instanced.renderedIcon
+			newInstance.renderedIconPixels = instanced.renderedIconPixels
 			
 			instanced.dispose()
+			babs.scene.remove(instanced)
 			instanced = newInstance
 
-			Wob.WobInstMeshes.set(wob.name, instanced)
-			babs.scene.add(instanced)
+			Wob.WobInstMeshes.set(wob.name, newInstance)
+			babs.scene.add(newInstance)
+
+
 			
 		}
 
@@ -214,9 +257,12 @@ export class Wob extends Ent {
 		if(wob.idzone) { // Place in zone
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 			position.setY(position.y +0.8)
-			wob.instancedIndex = instanced.count
+
+			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
+				wob.instancedIndex = instanced.count
+				instanced.count += 1
+			}
 			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(position))
-			instanced.count += 1
 			instanced.instanceMatrix.needsUpdate = true
 
 			const mudColors = []

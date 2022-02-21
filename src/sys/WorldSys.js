@@ -70,6 +70,7 @@ export class WorldSys {
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
 
 	babs
+	renderer
 
     dirLight
     dirLightHelper
@@ -82,7 +83,7 @@ export class WorldSys {
 		turbidity: 10,
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
-		mieDirectionalG: 0.7,
+		mieDirectionalG: 1.0, // 0.7,
 		elevation: 75,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
@@ -137,6 +138,7 @@ export class WorldSys {
 		EventSys.Subscribe(this)
 
 		this.babs = babs
+		this.renderer = renderer
 
 
 		Object.keys(this.colorFromLc).forEach(key => this.colorFromLc[key].convertSRGBToLinear())
@@ -195,7 +197,7 @@ export class WorldSys {
 
 		}
 
-		const skyUi = false
+		const skyUi = true
 		if(skyUi) {
 			const gui = new GUI()
 			gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
@@ -301,8 +303,8 @@ export class WorldSys {
 		// Put directional light at sun position, just farther out
 		this.dirLight?.position.copy(this.sunPosition.clone().multiplyScalar(10000))
 
-		if(this.dirLight) this.dirLight.intensity = MathUtils.lerp(0.01, 0.75, elevationRatio)
-		this.hemiLight.intensity = MathUtils.lerp(0.05, 0.25, elevationRatio)
+		if(this.dirLight) this.dirLight.intensity = MathUtils.lerp(0.01, 1.0 *(1/this.renderer.toneMappingExposure), elevationRatio)
+		this.hemiLight.intensity = MathUtils.lerp(0.05, 0.25 *(1/this.renderer.toneMappingExposure), elevationRatio)
 		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
 
 		// Water randomized rotation
@@ -365,6 +367,7 @@ export class WorldSys {
 
         this.ground = new Mesh( geometry, material )
         this.ground.name = 'ground'
+		this.ground.idzone = zone.id
         this.ground.castShadow = true
         this.ground.receiveShadow = true
 		// ground.visible = false

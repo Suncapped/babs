@@ -359,49 +359,28 @@ export class SocketSys {
 
 					// Create new wobject, then spawn the graphic at the right place.
 					for(let wobFresh of data.wobs) {
-						const wobExisting = context.babs.ents.get(wobFresh.id)
-						if(wobExisting) {
-							log('existing')
-							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
-							// const currentPosition = Wob.GetPositionFromIndex(instanced, wob.instancedIndex)
-
-							let positionNew = context.babs.worldSys.vRayGroundHeight(wobFresh.x, wobFresh.z)
-							positionNew.setY(positionNew.y +0.8)
-							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(positionNew))
-							instanced.instanceMatrix.needsUpdate = true
-							if(data.shownames) {
-								context.babs.uiSys.wobSaid(wobExisting.name, positionNew)
-							}
-						}
-						else {
-							const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
-						}
+						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
 					}
-				break
-				case 'journal':
-					log.info('journal', data)
-					context.babs.uiSys.serverSaid(data.text)
-				break
-				case 'serverrestart':
-					log('serverrestart', data)
-					if(context.babs.isProd) {
-						setTimeout(() => {
-							context.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
-						}, 200)
-					}
-					setTimeout(() => {
-						window.location.reload()
-					}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 				break
 				case 'contents':
 					log('contents', data)
+					// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
+					for(let wobFresh of data.wobs) {
+						const wobExisting = context.babs.ents.get(wobFresh.id)
+						if(wobExisting) {
+							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
+							instanced.instanceMatrix.needsUpdate = true
+						}
+					}
+					
 					if(data.id === context.babs.idSelf) { // Is your own inventory
 						// Spawn wobs and position them in bag
-						for(let wob of data.wobs) {
-							const result = await Wob.Arrive(wob, context.babs, false)
+						for(let wobFresh of data.wobs) {
+							const result = await Wob.Arrive(wobFresh, context.babs, false)
 						}
-						// context.babs.uiSys.svContainers[0].addWob()
 					}
+
 				break
 			}
 		}

@@ -273,9 +273,6 @@
 	#Menu ul li {
 		margin-bottom: 2px;
 	}
-	#Menu ul li:before{
-		content:'';
-	}
 
 	#Menu #inputreason {
 		width: 90%;

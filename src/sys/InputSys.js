@@ -1,4 +1,4 @@
-import { Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
+import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
 import { Wob } from "../ent/Wob"
 import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
@@ -62,7 +62,8 @@ export class InputSys {
 		movetarget: undefined,
 		landtarget: {
 			text: '',
-			point: new Vector3(0,0,0)
+			idzone: null,
+			point: new Vector3(0,0,0),
 		},
 
 	}
@@ -342,7 +343,6 @@ export class InputSys {
 		this.lastMoveHoldPicked
 		this.carrying = null
 		document.addEventListener('mousemove', ev => { // :MouseEvent
-			// log.info('mousemove', ev)
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
@@ -362,34 +362,105 @@ export class InputSys {
 			// 'offsetX' means offset from screen origin, not offset from last event/frame
 			this.mouse.x = ev.offsetX || ev.mozOffsetX || ev.webkitOffsetX || 0
 			this.mouse.y = ev.offsetY || ev.mozOffsetY || ev.webkitOffsetY || 0
-
+			// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
 
 			// From threejs:
 			// calculate mouse position in normalized device coordinates
 			// (-1 to +1) for both components
 			this.mouse.xy.x = ( ev.clientX / parseInt(this.canvas.style.width) ) * 2 - 1
 			this.mouse.xy.y = - ( ev.clientY / parseInt(this.canvas.style.height) ) * 2 + 1
-			// log(this.mouse.xy)
+			
+			if(ev.target.classList.contains('container-body')){
+
+				// There's another problem: Transparent corner of one png will overlap another, preventing mousemove target!
+				// What if I extract the coords within the parent, then check every child there for transparency, sorted by updated?
+				// Alright, so 1. get all items under mouse by looking through the bag!
+				for(const item of ev.target.childNodes) {
+					const itemBox = new Box2(
+						new Vector2(parseInt(item.style.left), parseInt(item.style.top)), 
+						new Vector2(parseInt(item.style.left) +parseInt(item.style.width), parseInt(item.style.top) +parseInt(item.style.height))
+					)
+					// log(ev.offsetX, ev.offsetY, itemBox)
+					if(itemBox.containsPoint(new Vector2(ev.offsetX, ev.offsetY))) {
+						// Mouse is within image bounds
+						if(this.babs.debugMode) item.style.border = '1px solid white'
+						// 2. Check whether over transparency 
+						const wobId = parseInt(item.id.split('-')[2])
+						const wob = this.babs.ents.get(wobId)
+						let instanced = Wob.WobInstMeshes.get(wob.name)
+						// log(wob,  Wob.WobInstMeshes, this.babs.ents)
+
+						// if(instanced) {
+							const pixels = instanced.renderedIconPixels // Uint8Array
+							const colorChannels = 4
+							const mouseImageX = ev.offsetX -itemBox.min.x
+							const mouseImageY = ev.offsetY -itemBox.min.y
+							let index = Utils.coordToIndex(mouseImageX, mouseImageY, UiSys.ICON_SIZE, colorChannels)
+							const alphaChannel = pixels[index+3] // r,g,b,a, so +3 is alpha
+							// log(alphaChannel) // Noramlly it's 255, but sometimes like 191 etc on the borders
+						// }
+						if(alphaChannel > 0) { // We are on top of non-transparency
+							// log('solid!', wob.name, wobId)
+							item.style.filter = 'brightness(200%)'
+
+							// Instanced things like wobjects, water, trees, etc unless caught above
+							const instanced = Wob.WobInstMeshes.get(wob.name)
+							// const index = this.mouseRayTargets[i].instanceId
+							// const position = Wob.GetPositionFromIndex(instanced, index)
+
+							this.pickedObject = {
+								instanced: instanced,
+								instancedName: wob.name,
+								// instancedIndex: index,
+								// instancedPosition: position,
+								id: wob.id,
+								isIcon: true,
+							}
+						}
+						else {
+							// log('notsolid', wob.name)
+							item.style.filter = 'none'
+							this.pickedObject = undefined
+						}
+
+					}
+					else {
+						if(this.babs.debugMode) item.style.border = 'none'
+					}
+
+				}
+
+			}
+			
 
 			// Determine if dragging a wobject
-			if(this.mouse.left && !this.carrying){ // Holding down, and not already carrying something
-				const isSameAsPrevious = 
-					this.lastMoveHoldPicked?.instanced
-					this.lastMoveHoldPicked?.instanced?.uuid === this.pickedObject?.instanced?.uuid // Ensures it's comparable object
-					 && this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
-				log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
-				if(this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) { // Over a wob in the world, and if already over a wob, it must be the same wob
-					this.lastMoveHoldPicked = this.pickedObject // Save that wob
-					log('saving')
-				}
-				else { // Holding down not over a wob, or over a different wob than the one previously saved
-					log('else')
-					if(this.lastMoveHoldPicked) { // And there is one previously saved
-						// Now we could lift that dragged wob
-						log('carrying')
-						this.carrying = this.lastMoveHoldPicked
-						this.lastMoveHoldPicked = null
-						// Now in update, we'll keep carrying on the mouse intersect to ground
+			if(!this.carrying){ // Not already carrying something
+				if(this.mouse.left || ev.buttons === 1){ 
+					let isSameAsPrevious
+					
+					if(this.mouse.left) { // Holding down, in canvas (mouse.left doesn't get activated otherwise)
+						isSameAsPrevious = this.lastMoveHoldPicked?.instanced?.uuid === this.pickedObject?.instanced?.uuid // Ensures it's comparable object
+							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
+					} 
+					else if(ev.buttons === 1) { // Holding down left mouse (buttonS because in mousemove), in UI
+						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id
+						log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
+					}
+					
+					if(this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
+						// Over a wob in the world, and if already over a wob, it must be the same wob
+						this.lastMoveHoldPicked = this.pickedObject // Save that wob
+						log('saving')
+					}
+					else { // Holding down not over a wob, or over a different wob than the one previously saved
+						log('else')
+						if(this.lastMoveHoldPicked) { // And there is one previously saved
+							// Now we could lift that dragged wob
+							log('carrying')
+							this.carrying = this.lastMoveHoldPicked
+							this.lastMoveHoldPicked = null
+							// Now in update, we'll keep carrying on the mouse intersect to ground
+						}
 					}
 				}
 			}
@@ -540,47 +611,54 @@ export class InputSys {
 				this.lastMoveHoldPicked = null
 				// Handle carry drop
 				if(this.carrying) {
-					log('carry drop', this.carrying, this.mouse.landtarget, this.pickedObject, this.mouse.movetarget.parentElement)
-					if(this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`){ // UI main bag
+					
+					log('carry drop', this.mouse.movetarget, this.carrying, this.mouse.landtarget, this.pickedObject)
+					if(this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
+						&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
+					){ // UI main bag
 						log('Main bag drop', this.mouse.movetarget)
-						// const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-						// let wob
-						// for (let [key, ent] of this.babs.ents) {
-						// 	if(ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
-						// 		wob = ent
-						// 		break
-						// 	}
-						// }
-						// log('Found', wob)
-						// this.babs.socketSys.send({
-						// 	action: {
-						// 		verb: 'moved',
-						// 		noun: wob.id,
-						// 		data: {
-						// 			point,
-						// 		},
-						// 	}
-						// })
-
-					}
-					else if(this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
-						log('landdrop', this.mouse.landtarget.point)
-						const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-						// Todo put distance limits, here and server
+						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
 						let wob
 						for (let [key, ent] of this.babs.ents) {
-							if(ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
+							if(ent.id === this.carrying.id  || (ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName)) { // Find by id or in instance index and position
 								wob = ent
 								break
 							}
 						}
-						log('Found', wob)
+						log('Found', wob, this.carrying.id)
+						this.babs.socketSys.send({
+							action: {
+								verb: 'contained',
+								noun: wob.id,
+								data: {
+									point,
+									container: this.babs.idSelf,
+								},
+							}
+						})
+
+					}
+					else if(this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
+						log('landdrop', this.mouse.landtarget)
+						const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
+						const idzone = this.mouse.landtarget.idzone
+						// Todo put distance limits, here and server
+						let wob
+						for (let [key, ent] of this.babs.ents) {
+							if(ent.id === this.carrying.id  || ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
+								// Indexed one (in zone)
+								wob = ent
+								break
+							}
+						}
+						log('Found', wob, this.carrying.id)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
 								noun: wob.id,
 								data: {
 									point,
+									idzone,
 								},
 							}
 						})
@@ -689,7 +767,8 @@ export class InputSys {
 		// 	this.player.controller.target.children[0].material.opacity = 0.2
 		// }
 
-		if(this.pickedObject) {
+		if(this.pickedObject 
+			&& !this.pickedObject.isIcon) { // Don't unpick when it's dragged from bag icon
 			if(this.pickedObject.instanced) { // InstancedMesh picks
 				this.pickedObject.instanced.setColorAt(this.pickedObject.instancedIndex, new Color(1,1,1))
 				this.pickedObject.instanced.instanceColor.needsUpdate = true
@@ -705,6 +784,7 @@ export class InputSys {
 		}
 		if(this.mouse.landtarget.text) {
 			this.mouse.landtarget.text = ''
+			this.mouse.landtarget.idzone = null
 			this.mouse.landtarget.point.set(0,0,0)
 		}
 
@@ -752,7 +832,6 @@ export class InputSys {
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
 					this.pickedObject = {
-						// object: this.mouseRayTargets[i].object,
 						instanced: instanced,
 						instancedName: name,
 						instancedIndex: index,
@@ -778,6 +857,7 @@ export class InputSys {
 						const lcString = this.babs.worldSys.StringifyLandcover[this.babs.worldSys.landcoverData[index]]
 
 						this.mouse.landtarget.text = lcString
+						this.mouse.landtarget.idzone = this.mouseRayTargets[i].object.idzone
 						this.mouse.landtarget.point = point
 					}
 					else if(this.mouseRayTargets[i].object?.name === 'sky') { // Sky
@@ -827,7 +907,9 @@ export class InputSys {
 
 		if(this.carrying) {
 			log('update carrying')
-			document.body.style.cursor = `url(${this.carrying.instanced.renderedIcon}) ${UiSys.ICON_SIZE /2} ${UiSys.ICON_SIZE /2}, auto`
+			if(!document.body.style.cursor || document.body.style.cursor === 'auto') {
+				document.body.style.cursor = `url(${this.carrying.instanced.renderedIcon}) ${UiSys.ICON_SIZE /2} ${UiSys.ICON_SIZE /2}, auto`
+			}
 			
 		}
 
