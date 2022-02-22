@@ -177,7 +177,7 @@ export class Wob extends Ent {
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
 
-		log('arrive:', arrivalWob)
+		// log('arrive:', arrivalWob)
 
 		// Load gltf
 		// Assumes no object animation!

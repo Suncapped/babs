@@ -362,8 +362,8 @@ export class SocketSys {
 						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
 					}
 				break
-				case 'contents':
-					log('contents', data)
+				case 'contains':
+					log('contains', data)
 					// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
 					for(let wobFresh of data.wobs) {
 						const wobExisting = context.babs.ents.get(wobFresh.id)
@@ -380,7 +380,21 @@ export class SocketSys {
 							const result = await Wob.Arrive(wobFresh, context.babs, false)
 						}
 					}
-
+				break
+				case 'journal':
+					log.info('journal', data)
+					context.babs.uiSys.serverSaid(data.text)
+				break
+				case 'serverrestart':
+					log('serverrestart', data)
+					if(context.babs.isProd) {
+						setTimeout(() => {
+							context.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
+						}, 200)
+					}
+					setTimeout(() => {
+						window.location.reload()
+					}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 				break
 			}
 		}

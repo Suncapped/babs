@@ -197,7 +197,7 @@ export class WorldSys {
 
 		}
 
-		const skyUi = true
+		const skyUi = false
 		if(skyUi) {
 			const gui = new GUI()
 			gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
