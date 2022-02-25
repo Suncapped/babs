@@ -382,7 +382,7 @@ export class WorldSys {
 
     }
 
-    async loadObjects(zone) {
+    async loadObjects(urlFiles, zone) {
         
 		// Sampling of objects
 		const loadItems = [
@@ -408,7 +408,19 @@ export class WorldSys {
 		// objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
 
 
+        const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
+        const dataBlob = await fet.blob()
 
+        // const buff = await data.arrayBuffer()
+        // this.landcoverData = new Uint8Array(buff)
+
+		let ds = new DecompressionStream('gzip')
+		let decompressedStream = dataBlob.stream().pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams
+		const decompressedBlob = await new Response(decompressedStream).blob()
+
+		const text = await decompressedBlob.text()
+		const wobs = JSON.parse(text)
+		return wobs
     }
 
     elevationData

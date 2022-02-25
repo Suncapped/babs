@@ -453,7 +453,7 @@ export class InputSys {
 						log('saving')
 					}
 					else { // Holding down not over a wob, or over a different wob than the one previously saved
-						log('else')
+						// log('else')
 						if(this.lastMoveHoldPicked) { // And there is one previously saved
 							// Now we could lift that dragged wob
 							log('carrying')

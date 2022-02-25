@@ -275,7 +275,6 @@ export class SocketSys {
 
 					context.babsReady = true
 					await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
-					await context.babs.worldSys.loadObjects(zone)
 
 					if(loadSelf.visitor !== true) {
 						document.getElementById('welcomebar').style.display = 'none' 
@@ -287,6 +286,12 @@ export class SocketSys {
 
 					// Set up UIs
 					context.babs.uiSys.loadUis(data.uis)
+
+					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, zone)
+					log('preload wobs', wobs)
+					for(let wobFresh of wobs) {
+						const result = await Wob.Arrive(wobFresh, context.babs, false)
+					}
 
 					context.send({
 						ready: loadSelf.id,
@@ -356,10 +361,19 @@ export class SocketSys {
 				break
 				case 'wobsupdate':
 					log('wobsupdate', data)
-
-					// Create new wobject, then spawn the graphic at the right place.
 					for(let wobFresh of data.wobs) {
 						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
+					}
+				break
+				case 'wobsremove':
+					log('wobsremove', data)
+					for(let wobRemove of data.wobs) {
+						const wobExisting = context.babs.ents.get(wobRemove.id)
+						if(wobExisting) {
+							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
+							instanced.instanceMatrix.needsUpdate = true
+						}
 					}
 				break
 				case 'contains':

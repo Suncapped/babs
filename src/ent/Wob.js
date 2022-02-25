@@ -173,7 +173,7 @@ export class Wob extends Ent {
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
 		babs.ents.set(arrivalWob.id, wob) // Ouch, remember that above is not mutating
 
-		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone
+		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone (or...is being loaded into zone twice!)
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
 
