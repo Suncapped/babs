@@ -185,7 +185,7 @@ export class Wob extends Ent {
 		let instanced = Wob.WobInstMeshes.get(wob.name)
 
 		const childIndex = 0 // stub
-		const countMax = 3
+		const countMax = 8
 		let currentCount = 0
 		if(!instanced) {
 			log.info('download, load, instantiate wobject', path)
