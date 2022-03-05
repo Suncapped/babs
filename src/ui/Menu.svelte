@@ -93,7 +93,6 @@
 	let colorPicker
 	let joinDate, joinMonth, joinYear
 	let dmCallsCount = 0 // Don't send update on initialization
-	let excitedReason
 	onMount(async () => {
 		updateDimensions()
 
@@ -112,19 +111,21 @@
 			}
 
 			// If they typed into the reason box, save it after a bit
-			if(excitedReason !== $menuSelfData.reason) {
-				if(excitedReason !== undefined) { // Ignore on first update from server
-					socketSend.set({
-						'savereason': $menuSelfData.reason,
-					})
-				}
-				excitedReason = $menuSelfData.reason
-			}
+			// if(excitedReason !== $menuSelfData.reason) {
+			// 	if(excitedReason !== undefined) { // Ignore on first update from server
+			// 		socketSend.set({
+			// 			'savereason': $menuSelfData.reason,
+			// 		})
+			// 	}
+			// 	excitedReason = $menuSelfData.reason
+			// }
 		}, 2000)
 
 		// Watch joindate and color
-		menuSelfData.subscribe(val => {
-			log.info('menuSelfData change', val)
+
+		let excitedReason
+		menuSelfData.subscribe((val) => {
+			log('menuSelfData change', val)
 			joinDate = new Date(Date.parse($menuSelfData.created_at))
 			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
 			joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
@@ -134,6 +135,21 @@
 				speechColorEl.style.color = $menuSelfData.color
 				colorPicker.color.hexString = $menuSelfData.color
 			}
+			const reason = document.getElementById('inputreason')
+			const tempReason = val.reason
+			setTimeout(() => {
+				if($menuSelfData.reason === tempReason) {
+					log('going to send savereason', )
+					socketSend.set({
+						'savereason': $menuSelfData.reason,
+					})
+					reason.style.borderColor = 'green'
+					setTimeout(() => {
+						// element.style.removeProperty("height");
+					})
+				}
+				
+			}, 2000)
 		})
 
 		// Watch debugMode
