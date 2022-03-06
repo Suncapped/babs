@@ -109,16 +109,6 @@
 					'savecolor': colorPicker.color.hexString,
 				})
 			}
-
-			// If they typed into the reason box, save it after a bit
-			// if(excitedReason !== $menuSelfData.reason) {
-			// 	if(excitedReason !== undefined) { // Ignore on first update from server
-			// 		socketSend.set({
-			// 			'savereason': $menuSelfData.reason,
-			// 		})
-			// 	}
-			// 	excitedReason = $menuSelfData.reason
-			// }
 		}, 2000)
 
 		// Watch joindate and color
@@ -145,9 +135,7 @@
 					})
 					reason.style.borderColor = 'green'
 					setTimeout(() => {
-						// element.style.removeProperty("height");
 						reason.style.removeProperty('border-color')
-						// log('removed property')
 					}, 1500)
 				}
 				
