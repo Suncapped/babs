@@ -146,7 +146,9 @@
 					reason.style.borderColor = 'green'
 					setTimeout(() => {
 						// element.style.removeProperty("height");
-					})
+						reason.style.removeProperty('border-color')
+						// log('removed property')
+					}, 1500)
 				}
 				
 			}, 2000)
