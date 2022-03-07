@@ -17,6 +17,7 @@
     "postbuild": "sh buildtime.sh",
     "predeploy": "npm run build",
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs",
+	"postdeploy": "node discord.js",
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10"
   },
   "devDependencies": {
@@ -29,7 +30,8 @@
     "svelte-check": "^2.4.1",
     "svelte-preprocess": "^4.10.2",
     "tslib": "^2.3.0",
-    "vite": "^2.7.13"
+    "vite": "^2.7.13",
+    "webhook-discord": "^3.7.8"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
