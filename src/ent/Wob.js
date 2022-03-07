@@ -176,6 +176,9 @@ export class Wob extends Ent {
 		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone (or...is being loaded into zone twice!)
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
+		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { // It's been moved bagtobag
+			babs.uiSys.svContainers[0].delWob(wob.id)
+		}
 
 		// log('arrive:', arrivalWob)
 

@@ -379,9 +379,10 @@ export class SocketSys {
 				case 'contains':
 					log('contains', data)
 					// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
+					// 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
 					for(let wobFresh of data.wobs) {
 						const wobExisting = context.babs.ents.get(wobFresh.id)
-						if(wobExisting) {
+						if(wobExisting && wobExisting.idzone) { // Wob in zone
 							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
@@ -392,6 +393,7 @@ export class SocketSys {
 						// Spawn wobs and position them in bag
 						for(let wobFresh of data.wobs) {
 							const result = await Wob.Arrive(wobFresh, context.babs, false)
+
 						}
 					}
 				break
