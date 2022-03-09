@@ -2,7 +2,7 @@
 
 > A web browser client for the player-driven world game First Earth, using Three.js and WebSocket.
 
-Gamedev chat at https://discord.gg/f2nbKVzgwm
+Gamedev chat at https://discord.gg/r4pdPTWbm5
 
 ## What is this?
 

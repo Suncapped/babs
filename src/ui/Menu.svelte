@@ -249,7 +249,7 @@
 			
 			<li>&nbsp;</li>
 			
-			<li><a target="_new" href="https://discord.gg/f2nbKVzgwm">discord.gg/f2nbKVzgwm</a></li>
+			<li><a target="_new" href="https://discord.gg/r4pdPTWbm5">discord.gg/r4pdPTWbm5</a></li>
 			<li>What are you most excited<br/>to do in First Earth?</li>
 			<li>
 				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
