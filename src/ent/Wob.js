@@ -244,6 +244,8 @@ export class Wob extends Ent {
 			}
 			newInstance.renderedIcon = instanced.renderedIcon
 			newInstance.renderedIconPixels = instanced.renderedIconPixels
+
+			newInstance.wobIdsByIndex = instanced.wobIdsByIndex
 			
 			instanced.dispose()
 			babs.scene.remove(instanced)
@@ -267,6 +269,11 @@ export class Wob extends Ent {
 			}
 			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(position))
 			instanced.instanceMatrix.needsUpdate = true
+
+			if(!instanced.wobIdsByIndex) {
+				instanced.wobIdsByIndex = []
+			}
+			instanced.wobIdsByIndex[wob.instancedIndex] = wob.id
 
 			const mudColors = []
 			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys

@@ -8,28 +8,45 @@ import { Quaternion } from 'three'
 export class CameraSys {
 	static DefaultOffsetHeight = 32
 
-	constructor(camera, targetController) {
+	constructor(camera, targetController, babs) {
+		this.babs = babs
 		this.camera = camera
 		this._target = targetController
 
 		this.offsetHeight = CameraSys.DefaultOffsetHeight
+		this.gh = null
+		this.idealOffset = null
 
 		this._currentPosition = new Vector3()
 		this._currentLookat = new Vector3()
 	}
 
 	_CalculateIdealOffset() {
-		const idealOffset = new Vector3(-4, this.offsetHeight, -75) 
+		
+		// log(this.offsetHeight)
+		this.idealOffset = new Vector3(-4, this.offsetHeight, -45)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
 		// const idealOffset = new Vector3(-4, this.offsetHeight /3, -3) // put lower and nearer for testing
+		
 
-		idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
-		idealOffset.applyQuaternion(this._target.Rotation)
-		idealOffset.add(this._target.Position)
-		return idealOffset
+		this.idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
+		this.idealOffset.applyQuaternion(this._target.Rotation)
+		this.idealOffset.add(this._target.Position)
+
+		this.gh = this.babs.worldSys.vRayGroundHeight(Math.round(this.idealOffset.x/4), Math.round(this.idealOffset.z/4))
+		// this.idealOffset.setY(Math.max(this.idealOffset.y, this.gh.y +4)) // todo smooth this
+		// if(this.idealOffset.y < this.gh.y +4) {
+			// log('less')
+			// this.idealOffset.y += 2
+			// this.offsetHeight += 2
+			// todo do this to prevent clipping, but smooth it?
+		// }
+
+		// return idealOffset
 	}
 
 	_CalculateIdealLookat() {
-		const idealLookat = new Vector3(0, 10, 50)
+		const sideOffset = 0//10
+		const idealLookat = new Vector3(sideOffset, 10, 0)
 
 		idealLookat.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
 		idealLookat.applyQuaternion(this._target.Rotation)
@@ -43,7 +60,8 @@ export class CameraSys {
 	}
 
 	update(dt) {
-		const idealOffset = this._CalculateIdealOffset()
+		// const idealOffset = this._CalculateIdealOffset()
+		this._CalculateIdealOffset()
 		const idealLookat = this._CalculateIdealLookat()
 
 		// const t = 0.05
@@ -55,7 +73,10 @@ export class CameraSys {
 		// this._currentLookat.lerp(idealLookat, t)
 		// this.camera.position.copy(this._currentPosition)
 		// this.camera.lookAt(this._currentLookat)
-		this.camera.position.copy(idealOffset)
+
+		this.camera.position.copy(this.idealOffset)
+
+
 		this.camera.lookAt(idealLookat)
 	}
 }

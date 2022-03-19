@@ -44,7 +44,7 @@ export class RenderSys {
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
 
-		const fov = 60
+		const fov = 45
 		const near = 1.0
 		this._camera = new PerspectiveCamera(fov, undefined, near, WorldSys.MAX_VIEW_DISTANCE*2)
 		this._camera.position.set(12, 8, 12)

@@ -412,6 +412,22 @@ export class SocketSys {
 						window.location.reload()
 					}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 				break
+				case 'energy':
+					log('energy', data)
+				break
+				case 'craftable':
+					log('craftable', data)
+
+					const wobId = data.wobId
+					const options = data.options
+				
+					// Display a list of icons above the wobId wob, list of options available:
+					// Create a .svelte file for icons
+					// When crafting thing is received, create icons for everything in it.
+
+
+
+				break
 			}
 		}
 	}
