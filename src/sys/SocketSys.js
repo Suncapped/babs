@@ -12,6 +12,7 @@ import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
 import { InputSys } from "./InputSys"
 import { Wob } from "../ent/Wob"
+import Crafting from "../ui/Crafting.svelte"
 
 export class SocketSys {
 
@@ -424,7 +425,14 @@ export class SocketSys {
 					// Display a list of icons above the wobId wob, list of options available:
 					// Create a .svelte file for icons
 					// When crafting thing is received, create icons for everything in it.
+					// position like: const chatLabel = new CSS2DObject(chatDiv)
 
+					new Crafting({
+						target: document.body,
+						props: {
+							options,
+						},
+					})
 
 
 				break
