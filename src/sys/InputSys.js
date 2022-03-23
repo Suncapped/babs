@@ -737,7 +737,15 @@ export class InputSys {
 				this.mouse.scrolldx -= ev.deltaX
 
 				if (this.mouse.device !== 'mouse') { // Do not move on wheel, if we know it's a mouse.
-					this.mouse.scrolldy += ev.deltaY
+					// this.mouse.scrolldy += ev.deltaY
+					// Disabling touchpad vertical scroll to move.  Instead, use code similar to mouse
+
+					// log(this.mouse.scrolldy)
+					if (ev.deltaY < 0 || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh.y + 4) {
+						// Only increase offsetHeight if camera is above ground, or moving camera up
+						this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
+					}
+
 				}
 			}
 
@@ -1064,6 +1072,7 @@ export class InputSys {
 				// Only increase offsetHeight if camera is above ground, or moving camera up
 				this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.05
 			}
+			// Above is matched to touchpad similar code
 		}
 
 		// Handle arrow keys turns // Move above keys with mouse stuff?
