@@ -741,7 +741,7 @@ export class InputSys {
 					// Disabling touchpad vertical scroll to move.  Instead, use code similar to mouse
 
 					// log(this.mouse.scrolldy)
-					if (ev.deltaY < 0 || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh.y + 4) {
+					if (ev.deltaY < 0 || !this.babs.cameraSys.gh || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 						// Only increase offsetHeight if camera is above ground, or moving camera up
 						this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
 					}
@@ -1068,7 +1068,7 @@ export class InputSys {
 			// idealOffset.setY(Math.max(idealOffset.y, gh.y +4))
 			// if(this.babs.cameraSys.gh.y > groundBelowCamera)
 
-			if (this.mouse.dy > 0 || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh.y + 4) {
+			if (this.mouse.dy > 0 || !this.babs.cameraSys.gh || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 				// Only increase offsetHeight if camera is above ground, or moving camera up
 				this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.05
 			}
