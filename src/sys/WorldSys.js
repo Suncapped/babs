@@ -52,6 +52,7 @@ import { debugMode } from "../stores"
 import { GUI } from 'dat.gui'
 import { Wob } from '../ent/Wob'
 import { EventSys } from './EventSys'
+import * as SunCalc from 'suncalc'
 
 export class WorldSys {
 
@@ -187,7 +188,6 @@ export class WorldSys {
 
 			const phi = MathUtils.degToRad( 90 - this.effectController.elevation )
 			const theta = MathUtils.degToRad( this.effectController.azimuth )
-
 			this.sunPosition.setFromSphericalCoords( 1, phi, theta )
 
 			uniforms['sunPosition'].value.copy( this.sunPosition )
@@ -288,11 +288,41 @@ export class WorldSys {
 	vectorPosition = new Vector3()
 	quatRotation = new Quaternion()
 
+	// isDaytime = null
+	timeMultiplier = 1_000
+	duskMargin = -0.1
+
+	// Temp hack to roughly start people out at the same time
+	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
+	timeAccum = null // set from Proxima // need to think more about this!
+
     update(dt, camera) {
-		
+
+		// Update sun position over time!
+		// let hourOfDay = Math.round(new Date().getTime() /1000) %24
+		// let nowDate = new Date(`March 22, 2022 ${hourOfDay}:${minOfDay}:00 MDT`)
+		// nowDate.setTime(nowDate.getTime() -(1000 *60 *60 *6)) // hours back
+
+		this.timeAccum += dt*1000 *this.timeMultiplier
+
+		let nowDate = new Date(this.timeAccum)
+		const sunCalcPos = SunCalc.getPosition(nowDate, 39.7392, -104.985)
+
+		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
+		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
+
 		// Adjust fog lightness (white/black) to sun elevation
-		const elevationRatio = this.effectController.elevation /90
-		const elevationRatioCapped = Math.min(50, this.effectController.elevation) /90
+		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0 and negative after sunset, positive up to 90 (at equator) toward noon!
+		// log('time:', noonness)
+		if(noonness < 0 +this.duskMargin) { // nighttime
+			this.timeMultiplier = 10_000 // speed up nighttime
+		}
+		else if(noonness >= 0 +this.duskMargin) { // daytime
+			this.timeMultiplier = 1_000
+		}
+
+		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
+		// log(noonness, 90 -MathUtils.radToDeg(phi))
 		this.babs.scene.fog.color.setHSL(
 			34/360, // Which color
 			0.1, // How much color
@@ -300,12 +330,27 @@ export class WorldSys {
 		)
 		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
+		// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
+		this.sunPosition.setFromSphericalCoords(100000, phi, theta)
+		this.sky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
+
 		// Put directional light at sun position, just farther out
 		this.dirLight?.position.copy(this.sunPosition.clone().multiplyScalar(10000))
 
-		if(this.dirLight) this.dirLight.intensity = MathUtils.lerp(0.01, 1.0 *(1/this.renderer.toneMappingExposure), elevationRatio)
-		this.hemiLight.intensity = MathUtils.lerp(0.05, 0.25 *(1/this.renderer.toneMappingExposure), elevationRatio)
-		// log('intensity', this.dirLight.intensity, this.hemiLight.intensity)
+
+		if(this.dirLight){
+			this.dirLight.intensity = MathUtils.lerp(
+				0.01, 
+				1.0 *(1/this.renderer.toneMappingExposure), 
+				Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
+			)
+		}
+		this.hemiLight.intensity = MathUtils.lerp(
+			0.05, 
+			0.3 *(1/this.renderer.toneMappingExposure), 
+			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
+		)
+		// log('intensity', this.dirLight?.intensity, this.hemiLight.intensity)
 
 		// Water randomized rotation
 		const spinSpeedMult = 5
