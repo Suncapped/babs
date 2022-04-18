@@ -902,8 +902,11 @@ export class InputSys {
 						this.mouse.landtarget.idzone = this.mouseRayTargets[i].object.idzone
 						this.mouse.landtarget.point = point
 					}
-					else if (this.mouseRayTargets[i].object?.name === 'sky') { // Sky
-						log('ray to sky')
+					else if (this.mouseRayTargets[i].object?.name === 'daysky') { // Sky
+						// log('ray to sky')
+					}
+					else if (this.mouseRayTargets[i].object?.name === 'nightsky') { // Sky
+						// log('ray to skybox')
 					}
 					else { // All other meshes
 						this.pickedObject = this.mouseRayTargets[i].object

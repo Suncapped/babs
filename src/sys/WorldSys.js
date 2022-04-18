@@ -42,6 +42,8 @@ import {
 	Euler,
 	InstancedBufferAttribute,
 	StreamDrawUsage,
+	TextureLoader,
+	FogExp2,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -61,14 +63,17 @@ export class WorldSys {
 	static Yard = 4
 	static Piece = WorldSys.Yard *10 // 40; 10 tiles
 	static Acre = WorldSys.Piece *5 // 200; 5 pieces
-
-
-	static MAX_VIEW_DISTANCE = WorldSys.ZoneLength
+	
+	static MAX_VIEW_DISTANCE = 1_000_000 // ~200 miles
+	static DAYSKY_SCALE = 900_000
+	static NIGHTSKY_SIZE = 800_000
 
 	static ZoneSegments = 25
 
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
+
+	static TIME_SPEED = 500
 
 	babs
 	renderer
@@ -169,10 +174,10 @@ export class WorldSys {
 
 
 		// New sky (not lighting)
-		this.sky = new Sky()
-		this.sky.name = 'sky'
-		this.sky.scale.setScalar(450000)
-		this.babs.scene.add(this.sky)
+		this.daysky = new Sky()
+		this.daysky.name = 'daysky'
+		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE)
+		this.babs.scene.add(this.daysky)
 		
 		this.sunPosition = new Vector3()
 
@@ -180,7 +185,7 @@ export class WorldSys {
 		const updateSkyValues = () => {
 
 
-			const uniforms = this.sky.material.uniforms
+			const uniforms = this.daysky.material.uniforms
 			uniforms[ 'turbidity' ].value = this.effectController.turbidity
 			uniforms[ 'rayleigh' ].value = this.effectController.rayleigh
 			uniforms[ 'mieCoefficient' ].value = this.effectController.mieCoefficient
@@ -224,12 +229,6 @@ export class WorldSys {
         this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
         this.babs.scene.add(this.hemiLight)
 
-		// https://hslpicker.com/#fff5d6
-		// http://www.workwithcolor.com/hsl-color-picker-01.htm
-
-
-
-
 		// Shadow
 		// Perhaps use https://github.com/vHawk/three-csm https://threejs.org/examples/?q=shadow#webgl_shadowmap_csm
 
@@ -252,13 +251,48 @@ export class WorldSys {
 		// renderer.shadowMap.type = PCFSoftShadowMap
         // renderer.shadowMap.autoUpdate/needsUpdate // Maybe use when sun isn't moving every frame
 
-        this.babs.scene.fog = new Fog(
+        this.babs.scene.fog = new FogExp2(
 			new Color(), 
-			1, 
-			WorldSys.MAX_VIEW_DISTANCE *1.5
+			// 1, 
+			// WorldSys.MAX_VIEW_DISTANCE
+			0.0000012 // Default is 0.00025 // Has to be low enough to see stars/skybox
 		)
 		// May have to do like sun.material.fog = false ?  Not for sun since it's shader, but perhaps for other far things
 		// https://www.youtube.com/watch?v=k1zGz55EqfU Fog video, would be great for rain
+
+
+		// nightsky Skybox
+
+		
+		// const sides = ['ft', 'bk', 'up', 'dn', 'rt', 'lf'];
+		const sides = ['north', 'south', 'top', 'bottom', 'east', 'west'] // this is actually going to be +x/-x, +y/-y, +z/-z!
+		
+		const nightskyImagepaths = sides.map(side => `${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
+
+		// const materialArray = nightskyImagepaths.map(image => {
+		// 	let texture = new TextureLoader().loadAsync(image)
+		// 	return new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+		// });
+
+
+		let materialArray = []
+		const buildSkybox = () => {
+			const size = WorldSys.NIGHTSKY_SIZE
+			const nightskyGeo = new BoxGeometry(size, size, size)
+			this.nightsky = new Mesh(nightskyGeo, materialArray)
+			this.nightsky.name = 'nightsky'
+			this.babs.scene.add(this.nightsky)
+		}
+		nightskyImagepaths.forEach((path, index) => {
+			new TextureLoader().loadAsync(path).then(texture => {
+				// Using index to ensure correct order
+				materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+				if(index === nightskyImagepaths.length -1 && !this.nightsky) { // Done loading the final one
+					buildSkybox()
+				}
+			})
+		})
+
 
 
     }
@@ -289,12 +323,13 @@ export class WorldSys {
 	quatRotation = new Quaternion()
 
 	// isDaytime = null
-	timeMultiplier = 1_000
+	timeMultiplier = WorldSys.TIME_SPEED
 	duskMargin = -0.1
 
 	// Temp hack to roughly start people out at the same time
 	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
-	timeAccum = null // set from Proxima // need to think more about this!
+	// timeAccum = 60*60*12*122 // set from Proxima // need to think more about this! // nighttime
+	timeAccum = 60*60*12*1223 // daytime
 
     update(dt, camera) {
 
@@ -304,22 +339,33 @@ export class WorldSys {
 		// nowDate.setTime(nowDate.getTime() -(1000 *60 *60 *6)) // hours back
 
 		this.timeAccum += dt*1000 *this.timeMultiplier
+		// log(Math.round(this.timeAccum))
 
-		let nowDate = new Date(this.timeAccum)
+		let nowDate = new Date(Math.round(this.timeAccum))
 		const sunCalcPos = SunCalc.getPosition(nowDate, 39.7392, -104.985)
 
 		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
 		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
 
 		// Adjust fog lightness (white/black) to sun elevation
-		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0 and negative after sunset, positive up to 90 (at equator) toward noon!
+		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
 		// log('time:', noonness)
 		if(noonness < 0 +this.duskMargin) { // nighttime
-			this.timeMultiplier = 10_000 // speed up nighttime
+			this.timeMultiplier = WorldSys.TIME_SPEED *5 // speed up nighttime
+			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
+				this.nightsky?.material.forEach(m => m.opacity = 1.0)
+			}
 		}
 		else if(noonness >= 0 +this.duskMargin) { // daytime
-			this.timeMultiplier = 1_000
+			this.timeMultiplier = WorldSys.TIME_SPEED
+			const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
+			this.nightsky?.material.forEach(m => m.opacity = opacity)
+			// log(noonness, opacity)
 		}
+
+		// Rotate sky // Todo more accurate lol!
+		this.nightsky.rotateY(-0.0002)
+		this.nightsky.rotateX(-0.0002)
 
 		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
 		// log(noonness, 90 -MathUtils.radToDeg(phi))
@@ -331,8 +377,8 @@ export class WorldSys {
 		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
-		this.sunPosition.setFromSphericalCoords(100000, phi, theta)
-		this.sky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
+		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, phi, theta)
+		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
 
 		// Put directional light at sun position, just farther out
 		this.dirLight?.position.copy(this.sunPosition.clone().multiplyScalar(10000))
@@ -346,7 +392,7 @@ export class WorldSys {
 			)
 		}
 		this.hemiLight.intensity = MathUtils.lerp(
-			0.66,//0.05, 
+			0.5,//0.05, 
 			0.3 *(1/this.renderer.toneMappingExposure), 
 			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
 		)
