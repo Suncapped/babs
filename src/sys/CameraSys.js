@@ -1,6 +1,6 @@
 import { log } from './../Utils'
 import * as THREE from 'three'
-import { Vector3 } from 'three'
+import { MathUtils, Vector3 } from 'three'
 import { Quaternion } from 'three'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
@@ -22,12 +22,15 @@ export class CameraSys {
 	}
 
 	_CalculateIdealOffset() {
+		const minDistance = -15
+		const maxDistance = -45
+		const limitDistance = 100
 		
-		// log(this.offsetHeight)
-		this.idealOffset = new Vector3(-4, this.offsetHeight, -45)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
+		const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
+		// log(this.offsetHeight, distanceLerp)
+		this.idealOffset = new Vector3(-4, this.offsetHeight, distanceLerp)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
 		// const idealOffset = new Vector3(-4, this.offsetHeight /3, -3) // put lower and nearer for testing
 		
-
 		this.idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.Rotation)
 		this.idealOffset.add(this._target.Position)

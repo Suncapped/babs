@@ -346,7 +346,7 @@ export class WorldSys {
 			)
 		}
 		this.hemiLight.intensity = MathUtils.lerp(
-			0.05, 
+			0.66,//0.05, 
 			0.3 *(1/this.renderer.toneMappingExposure), 
 			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
 		)
