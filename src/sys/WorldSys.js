@@ -263,10 +263,18 @@ export class WorldSys {
 
 		// nightsky Skybox
 
-		
 		// const sides = ['ft', 'bk', 'up', 'dn', 'rt', 'lf'];
-		const sides = ['north', 'south', 'top', 'bottom', 'east', 'west'] // this is actually going to be +x/-x, +y/-y, +z/-z!
-		
+		// this is actually going to be +x/-x, +y/-y, +z/-z!
+		// https://miro.medium.com/max/528/1*rC0T9uCBds1hxOBiUfbm6A.png
+		// https://codinhood.com/static/78e5f34c1ceb1e205cc8cc00b01a7d53/14e05/skybox2.png
+		// Cool: https://matheowis.github.io/HDRI-to-CubeMap/
+
+		// https://github.com/Stellarium/stellarium/issues/2223
+		// "If I map west to front (+Z), east to back (-Z), top to up (+Y), bottom to down (-Y) these all form a seamless whole. [...] if I map north to left (+X) and south to right (-X)"
+
+		// 				+x		-x		+y			-y		+z		-z
+		const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
+
 		const nightskyImagepaths = sides.map(side => `${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
 
 		// const materialArray = nightskyImagepaths.map(image => {
@@ -328,7 +336,9 @@ export class WorldSys {
 
 	// Temp hack to roughly start people out at the same time
 	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
-	// timeAccum = 60*60*12*122 // set from Proxima // need to think more about this! // nighttime
+
+	// todo set from Proxima // need to think more about this!
+	// timeAccum = 60*60*12*122 // nighttime
 	timeAccum = 60*60*12*1223 // daytime
 
     update(dt, camera) {
@@ -364,8 +374,8 @@ export class WorldSys {
 		}
 
 		// Rotate sky // Todo more accurate lol!
-		this.nightsky.rotateY(-0.0002)
-		this.nightsky.rotateX(-0.0002)
+		this.nightsky?.rotateY(-0.0002)
+		this.nightsky?.rotateX(-0.0002)
 
 		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
 		// log(noonness, 90 -MathUtils.radToDeg(phi))
