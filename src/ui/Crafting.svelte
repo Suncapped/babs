@@ -8,7 +8,18 @@
 
 	let options = $$props.options
 
-	// Move to position of object clicking on.
+	function updateWOB(opt) {
+		const craftingMenu = document.getElementById('Crafting')
+			document.body.removeChild(craftingMenu)
+			console.log("User selected: ",opt)
+		// Need a way to send an update to the server, will circle back to this
+		// const update = this.babs.socketSys.send({
+		// 						action: {
+		// 							verb: 'craft',
+		// 							noun: opt,
+		// 						}
+		// 					})
+	}
 
 </script>
 
@@ -17,9 +28,7 @@
 <div id="Crafting">
 	<ul>
 		{#each options as opt}
-			<li>
-				{opt}
-			</li>
+			<button id="{opt}" on:submit={(ev) => ev.preventDefault()} on:mouseup={(ev) => updateWOB(opt)}>{opt}</button>
 		{/each}
 	</ul>
 
@@ -31,8 +40,7 @@
 		top: 0px;
 		width: 100%;
 		height: 100%;
-		pointer-events: none; /* Clicks go through it */
-		
+	  pointer-events: fill; /* Allows the buttons to be clickable */
 	}
 
 </style>
