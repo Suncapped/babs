@@ -37,10 +37,13 @@
 <style>
 	#Crafting {
 		position: absolute;
-		top: 0px;
-		width: 100%;
-		height: 100%;
-	  pointer-events: fill; /* Allows the buttons to be clickable */
+		top: 20px;
+		left: 20px;
+		pointer-events: auto; /* Allows the buttons to be clickable */
+	}
+	#Crafting > ul {
+		padding: 0;
+		margin: 0;
 	}
 
 </style>
