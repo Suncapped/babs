@@ -436,6 +436,12 @@ export class SocketSys {
 
 
 				break
+				case 'asktarget':
+					log('asktarget', data, document.body.style.cursor)
+
+					context.babs.inputSys.askTarget(data.sourceWobId)
+
+				break
 			}
 		}
 	}
