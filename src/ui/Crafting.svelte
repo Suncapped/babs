@@ -4,21 +4,26 @@
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 	import { InputSys } from '../sys/InputSys.js'
-
+	import { SocketSys } from '../sys/SocketSys.js'
 
 	let options = $$props.options
+	let wobId = $$props.wobId
+
+
 
 	function updateWOB(opt) {
 		const craftingMenu = document.getElementById('Crafting')
 			document.body.removeChild(craftingMenu)
-			console.log("User selected: ",opt)
+			log("User selected: " + opt + " wobID: " + wobId)
+
 		// Need a way to send an update to the server, will circle back to this
-		// const update = this.babs.socketSys.send({
-		// 						action: {
-		// 							verb: 'craft',
-		// 							noun: opt,
-		// 						}
-		// 					})
+		socketSend.set({
+			'action': {
+				verb: 'craft',
+				noun: wobId,
+				data: opt
+			}
+		})
 	}
 
 </script>

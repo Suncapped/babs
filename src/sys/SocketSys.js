@@ -431,6 +431,7 @@ export class SocketSys {
 						target: document.body,
 						props: {
 							options,
+							wobId
 						},
 					})
 
