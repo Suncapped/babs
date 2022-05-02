@@ -360,12 +360,6 @@ export class SocketSys {
 						context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 					}
 				break
-				case 'wobsupdate':
-					log('wobsupdate', data)
-					for(let wobFresh of data.wobs) {
-						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
-					}
-				break
 				case 'wobsremove':
 					log('wobsremove', data)
 					for(let wobRemove of data.wobs) {
@@ -375,6 +369,11 @@ export class SocketSys {
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
 						}
+					}
+				case 'wobsupdate':
+					log('wobsupdate', data)
+					for(let wobFresh of data.wobs) {
+						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
 					}
 				break
 				case 'contains':
