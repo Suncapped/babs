@@ -374,6 +374,7 @@ export class SocketSys {
 							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
+							context.babs.ents.delete(wobExisting.id)
 						}
 					}
 				break
