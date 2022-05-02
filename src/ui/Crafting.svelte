@@ -9,8 +9,10 @@
 	let options = $$props.options
 	let wobId = $$props.wobId
 
-
-
+	if(document.getElementById('Crafting')){
+		const craftingMenu = document.getElementById('Crafting')
+			document.body.removeChild(craftingMenu)
+		}
 	function updateWOB(opt) {
 		const craftingMenu = document.getElementById('Crafting')
 			document.body.removeChild(craftingMenu)
@@ -25,6 +27,7 @@
 			}
 		})
 	}
+
 
 </script>
 

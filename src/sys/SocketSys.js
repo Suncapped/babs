@@ -360,12 +360,6 @@ export class SocketSys {
 						context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 					}
 				break
-				case 'wobsupdate':
-					log('wobsupdate', data)
-					for(let wobFresh of data.wobs) {
-						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
-					}
-				break
 				case 'wobsremove':
 					log('wobsremove', data)
 					for(let wobRemove of data.wobs) {
@@ -376,6 +370,11 @@ export class SocketSys {
 							instanced.instanceMatrix.needsUpdate = true
 							context.babs.ents.delete(wobExisting.id)
 						}
+					}
+				case 'wobsupdate':
+					log('wobsupdate', data)
+					for(let wobFresh of data.wobs) {
+						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
 					}
 				break
 				case 'contains':
