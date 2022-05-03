@@ -1239,11 +1239,11 @@ export class InputSys {
 
 	isAskingTarget = false
 	askTargetSourceWobId
-	askTarget(sourceWobId) {
+	askTarget(sourceWobId, name) {
 		this.askTargetSourceWobId = sourceWobId
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.playerSaid(this.babs.idSelf, 'What would you like to use this on?', {journal: false, color: '#cccccc', italics: true})
+		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${name} on?`, {journal: false, color: '#cccccc', italics: true})
 	}
 
 

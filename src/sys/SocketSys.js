@@ -371,6 +371,7 @@ export class SocketSys {
 							context.babs.ents.delete(wobExisting.id)
 						}
 					}
+				break;
 				case 'wobsupdate':
 					log('wobsupdate', data)
 					for(let wobFresh of data.wobs) {
@@ -440,7 +441,9 @@ export class SocketSys {
 				case 'asktarget':
 					log('asktarget', data, document.body.style.cursor)
 
-					context.babs.inputSys.askTarget(data.sourceWobId)
+					const wob = context.babs.ents.get(data.sourceWobId)
+
+					context.babs.inputSys.askTarget(data.sourceWobId, wob.name || '')
 
 				break
 			}
