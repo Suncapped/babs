@@ -371,6 +371,7 @@ export class SocketSys {
 							context.babs.ents.delete(wobExisting.id)
 						}
 					}
+					break
 				case 'wobsupdate':
 					log('wobsupdate', data)
 					for(let wobFresh of data.wobs) {
