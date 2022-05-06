@@ -102,7 +102,7 @@ export class Wob extends Ent {
 			Wob.HiddenScene.scene.add(localMesh)
 			// localMesh.position.set(1,1,1)
 			localMesh.position.set(0,-1.5,-0.5)
-			localMesh.geometry.rotateX(-Math.PI /2)
+			// localMesh.geometry.rotateX(-Math.PI /2)
 
 			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
 			// Wob.HiddenScene.renderer.domElement.toDataURL()
@@ -207,7 +207,7 @@ export class Wob extends Ent {
 				mesh = new Mesh(geometry, material)
 			}
 
-			mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
+			// mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
 
 			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
