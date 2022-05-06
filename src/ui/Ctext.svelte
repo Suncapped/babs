@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, inputCmd, nickTargetId } from "../stores.js"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, nickTargetId } from "../stores.js"
 	import Cookies from 'js-cookie'
 	import { log } from '../Utils.js'
 import { InputSys } from '../sys/InputSys.js';
@@ -13,8 +13,14 @@ import { InputSys } from '../sys/InputSys.js';
 		if(!chatbox.textContent) return
 
 		if(chatbox.textContent.startsWith('/')) { // Slash command
-			const cmd = chatbox.textContent.substring(1)
-			inputCmd.set(cmd)
+			const command = chatbox.textContent.substring(1)
+			socketSend.set({
+				action: {
+					verb: 'commanded',
+					noun: command,
+				}
+			})
+
 		}
 		else if(chatbox.textContent.startsWith(InputSys.NickPromptStart)) { //Naming someone
 			const nickparts = chatbox.textContent.split(':')

@@ -1,6 +1,6 @@
 import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
 import { Wob } from "../ent/Wob"
-import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from "three"
@@ -804,12 +804,6 @@ export class InputSys {
 		})
 
 		this.activityTimestamp = Date.now()
-
-		inputCmd.subscribe(cmd => { // Used by eg Ctext.svelte 
-			if (cmd === 'afk') {
-				this.isAfk = true
-			}
-		})
 
 		return this
 	}

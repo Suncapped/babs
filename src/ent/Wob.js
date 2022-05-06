@@ -261,7 +261,7 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
-			position.setY(position.y +0.8)
+			position.setY(position.y +0.4)
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count
