@@ -1,6 +1,6 @@
 import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
 import { Wob } from "../ent/Wob"
-import { topmenuUnfurled, rightMouseDown, debugMode, inputCmd, nickTargetId, dividerOffset, settings } from "../stores"
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from "three"
@@ -497,21 +497,53 @@ export class InputSys {
 
 					// Single click
 					if (this.mouse.ldouble === false) { // First click
-						// Single click player, get their name or nick
-						if (this.pickedObject?.type === 'SkinnedMesh') {
-							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
-							this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
+						if(this.isAskingTarget) { // In target selection mode
+
+							// if(this.pickedObject?.instanced) {
+							// 	this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
+							// }
+
+							const wob = Utils.findWobByInstance(this.babs.ents, this.pickedObject?.instancedIndex, this.pickedObject?.instancedName)
+							// todo make work for non-instanced things, and ground, players, etc.
+
+							if(!wob || !this.pickedObject?.instanced) {
+								this.babs.uiSys.playerSaid(this.babs.idSelf, 'There is no effect.', {journal: false, color: '#cccccc', italics: true})
+							}
+							else {
+								this.babs.socketSys.send({
+									action: {
+										verb: 'used',
+										noun: this.askTargetSourceWobId,
+										data: {
+											target: wob.id,
+										},
+									}
+								})
+							}
+							document.body.style.cursor = 'auto'
+							this.isAskingTarget = false
+							this.askTargetSourceWobId = null
+
 						}
-						else if (this.pickedObject?.instanced) {
-							this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
+						else { 
+							// Single click player, get their name or nick
+							if (this.pickedObject?.type === 'SkinnedMesh') {
+								const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
+							}
+							else if (this.pickedObject?.instanced) {
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
+							}
+	
+							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
+								// Create text here above the land.
+								this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
+							}
+	
+	
+							this.mouse.ldouble = Date.now()
 						}
 
-						if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
-							// Create text here above the land.
-							this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
-						}
-
-						this.mouse.ldouble = Date.now()
 					} // Double click
 					else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 						this.mouse.ldouble = 0
@@ -652,13 +684,8 @@ export class InputSys {
 					) { // UI main bag
 						log('Main bag drop', this.mouse.movetarget)
 						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
-						let wob
-						for (let [key, ent] of this.babs.ents) {
-							if (ent.id === this.carrying.id || (ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName)) { // Find by id or in instance index and position
-								wob = ent
-								break
-							}
-						}
+						const wob = this.babs.ents.get(this.carrying.id) 
+							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
 						log('Found', wob, this.carrying.id)
 						this.babs.socketSys.send({
 							action: {
@@ -677,14 +704,8 @@ export class InputSys {
 						const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
 						const idzone = this.mouse.landtarget.idzone
 						// Todo put distance limits, here and server
-						let wob
-						for (let [key, ent] of this.babs.ents) {
-							if (ent.id === this.carrying.id || ent.instancedIndex === this.carrying.instancedIndex && ent.name === this.carrying.instancedName) {
-								// Indexed one (in zone)
-								wob = ent
-								break
-							}
-						}
+						const wob = this.babs.ents.get(this.carrying.id) 
+							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
 						log('Found', wob, this.carrying.id)
 						this.babs.socketSys.send({
 							action: {
@@ -783,12 +804,6 @@ export class InputSys {
 		})
 
 		this.activityTimestamp = Date.now()
-
-		inputCmd.subscribe(cmd => { // Used by eg Ctext.svelte 
-			if (cmd === 'afk') {
-				this.isAfk = true
-			}
-		})
 
 		return this
 	}
@@ -908,7 +923,11 @@ export class InputSys {
 					else if (this.mouseRayTargets[i].object?.name === 'nightsky') { // Sky
 						// log('ray to skybox')
 					}
+					else if (this.mouseRayTargets[i].object?.name === 'flame') { // Flame
+						// log('ray to flame')
+					}
 					else { // All other meshes
+						log('Uncaught mosueRayTarget', this.mouseRayTargets[i])
 						this.pickedObject = this.mouseRayTargets[i].object
 					}
 				}
@@ -1214,6 +1233,15 @@ export class InputSys {
 			...svelteGet(settings),
 			inputdevice: this.mouse.device,
 		})
+	}
+
+	isAskingTarget = false
+	askTargetSourceWobId
+	askTarget(sourceWobId, name) {
+		this.askTargetSourceWobId = sourceWobId
+		this.isAskingTarget = true
+		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
+		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${name} on?`, {journal: false, color: '#cccccc', italics: true})
 	}
 
 

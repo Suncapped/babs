@@ -9,6 +9,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { LoaderSys } from "../sys/LoaderSys"
 import { log } from '../Utils'
 import { Ent } from "./Ent"
+import { Flame } from "../com/Flame"
 
 export class Wob extends Ent {
 
@@ -102,7 +103,7 @@ export class Wob extends Ent {
 			Wob.HiddenScene.scene.add(localMesh)
 			// localMesh.position.set(1,1,1)
 			localMesh.position.set(0,-1.5,-0.5)
-			localMesh.geometry.rotateX(-Math.PI /2)
+			// localMesh.geometry.rotateX(-Math.PI /2)
 
 			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
 			// Wob.HiddenScene.renderer.domElement.toDataURL()
@@ -142,29 +143,6 @@ export class Wob extends Ent {
 
 
 	}
-	// static HiddenSceneRender(mesh, renderer) {
-	// 	const scene = new Scene()
-	   
-	// 	const fov = 45
-	// 	const aspect = 2  // the canvas default
-	// 	const near = 0.1
-	// 	const far = 5
-	// 	const camera = new PerspectiveCamera(fov, aspect, near, far)
-	// 	camera.position.z = 2
-	// 	camera.position.set(0, 1, 2)
-	// 	camera.lookAt(0, 0, 0)
-	   
-	// 	const color = 0xFFFFFF
-	// 	const intensity = 1
-	// 	const light = new DirectionalLight(color, intensity)
-	// 	light.position.set(-1, 2, 4)
-	// 	scene.add(light)
-
-	// 	scene.add(mesh)
-
-	// 	renderer.render(scene, camera) // Hmm what does it do? lol
-	//   }
-	   
 	
 	static WobInstMeshes = new Map()
 	static async Arrive(arrivalWob, babs, shownames) {
@@ -207,7 +185,7 @@ export class Wob extends Ent {
 				mesh = new Mesh(geometry, material)
 			}
 
-			mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
+			// mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
 
 			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
@@ -261,7 +239,7 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
-			position.setY(position.y +0.8)
+			position.setY(position.y +0.4)
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count
@@ -294,9 +272,20 @@ export class Wob extends Ent {
 
 		}
 
+		if(wob.name === 'firepit') {
+			
+			await Flame.New(wob, babs)
+
+
+
+			
+
+		}
+
 		return wob
 		
 	}
+
 
 	static GetPositionFromIndex(instanced, index) {
 		const matrix = new Matrix4()
@@ -308,50 +297,6 @@ export class Wob extends Ent {
 		return position
 	}
 	
-	// mesh
-	// static WobInstMeshes = new Map()
-    // static async Load(path, babs, childIndex = 0) {
-    //     let wob = new Wob
-	// 	const fbxLoader = path.endsWith('.fbx')
-	// 	let group
-	// 	if(fbxLoader) {
-	// 		group = await babs.loaderSys.loadFbx(path)
-	// 	}
-	// 	else {
-	// 		// Caching
-	// 		// Assumes no object animation!
-	// 		const cached = Wob.WobInstMeshes.get(path)
-	// 		let scene
-	// 		if(cached) {
-	// 			log.info('cached object', path)
-	// 			scene = cached.clone()
-	// 		}
-	// 		else {
-	// 			log.info('download object', path)
-	// 			let group = await babs.loaderSys.loadGltf(path)
-	// 			Wob.WobInstMeshes.set(path, group.scene)
-	// 			scene = group.scene.clone()
-	// 		}
-
-	// 		group = (await babs.loaderSys.loadGltf(path)).scene
-	// 	}
-	// 	if(group.children.length > 1) {
-	// 		console.warn(`Loaded object with more than one child.  Using children[${childIndex}]`, group)
-	// 	}
-
-	// 	log.info(`Wob.New ${fbxLoader ? 'FBX' : 'GLTF'} group`, group.children[0].material)
-	// 	wob.mesh = group.children[childIndex]
-		
-	// 	// const material = new MeshPhongMaterial( { color: 0xF5F5F5 } )
-	// 	// const object = new Mesh( geometry, material )
-	// 	// if(Array.isArray(wob.mesh.material)) { // Fire
-	// 		// wob.mesh.material[2].side = DoubleSide
-	// 		// wob.mesh.material[2].color = new Color(0xFA942D).convertSRGBToLinear() // albedo?  moderates .map?
-	// 		// wob.mesh.material[2].emissive = new Color(102, 0, 0).convertSRGBToLinear() //  orange
-	// 	// }
-	// 	babs.scene.add( wob.mesh )
-    //     return wob
-    // }
 }
 
 

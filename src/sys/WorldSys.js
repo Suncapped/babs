@@ -673,7 +673,7 @@ export class WorldSys {
 		const ground = this.babs.scene.children.find(o=>o.name=='ground')
 		const [intersect] = raycaster.intersectObject(ground, true)
 		if(!intersect) {
-			log.info('no ground intersect!', intersect, raycaster, gx, gz)
+			// log.info('no ground intersect!', intersect, raycaster, gx, gz)
 		}
 		return intersect?.point
 	}

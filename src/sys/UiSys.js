@@ -43,7 +43,8 @@ export class UiSys {
 
 	playerSaid(idPlayer, text, options) {
 		options = {
-			color: 0xEEEEEE,
+			color: '#eeeeee',
+			italics: false,
 			journal: true,
 			isname: false,
 			...options,
@@ -58,12 +59,14 @@ export class UiSys {
 		const player = this.babs.ents.get(idPlayer)
 
 		// Set color based on our menu or the color send with chat for other player
-		if(idPlayer === this.babs.idSelf) {
-			chatDiv.style.color = svelteGet(menuSelfData).color
-		}
-		else {
+		// if(idPlayer === this.babs.idSelf) {
+		// 	chatDiv.style.color = svelteGet(menuSelfData).color
+		// }
+		// else {
 			chatDiv.style.color = options.color
-		}
+		// }
+
+		if(options.italics) chatDiv.style.fontStyle = 'italic'
 		
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = text

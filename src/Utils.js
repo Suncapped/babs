@@ -216,3 +216,13 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 // 		super()
 // 	}
 // }
+
+
+export function findWobByInstance(ents, instancedIndex, instancedName) {
+	for(let [key, ent] of ents) {
+		if(ent.instancedIndex === instancedIndex && ent.name === instancedName) {
+			return ent
+		}
+	}
+	return null
+}
