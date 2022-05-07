@@ -17,7 +17,10 @@ export class RenderSys {
 		this.renderer = new WebGLRenderer({ 
 			antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
 			// powerPreference: 'high-performance',
-			canvas: document.getElementById('canvas')
+			canvas: document.getElementById('canvas'),
+			// alpha: true,
+			// premultipliedAlpha: false,
+			// physicallyCorrectLights: true,
 		})
 		// this.renderer.outputEncoding = LinearEncoding
 		this.renderer.outputEncoding = sRGBEncoding

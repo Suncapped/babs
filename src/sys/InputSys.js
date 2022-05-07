@@ -923,7 +923,11 @@ export class InputSys {
 					else if (this.mouseRayTargets[i].object?.name === 'nightsky') { // Sky
 						// log('ray to skybox')
 					}
+					else if (this.mouseRayTargets[i].object?.name === 'flame') { // Flame
+						// log('ray to flame')
+					}
 					else { // All other meshes
+						log('Uncaught mosueRayTarget', this.mouseRayTargets[i])
 						this.pickedObject = this.mouseRayTargets[i].object
 					}
 				}
