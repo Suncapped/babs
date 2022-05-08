@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial } from "three"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from "three"
 import { SocketSys } from "../sys/SocketSys"
 import { UiSys } from "../sys/UiSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
@@ -239,7 +239,27 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
-			position.setY(position.y +0.4)
+
+
+				instanced.geometry?.center() 
+				// ^ Fixes offset pivot point
+				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
+
+				let size = new Vector3()
+				instanced.geometry?.boundingBox?.getSize(size)
+				// console.log('instanced', instanced.name, size.y)
+				const sink = 0.10
+				position.setY(position.y +(size.y /2) -(size.y *sink))
+				// Uhh maybe instead find the bottom and deliberately match it to ground?
+				// Find object height.
+				// Place object at half of height above ground.
+				// Isn't that what I just did??
+
+				const box = new BoxHelper( instanced, 0xffff00 );
+				babs.scene.add( box );
+				box.position.copy(position)
+
+
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count
