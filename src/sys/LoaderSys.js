@@ -92,13 +92,12 @@ export class LoaderSys {
 
 	}
 
-	async loadGltf(path) {
-		const loader = new GLTFLoader()//.setPath( 'models/gltf/DamagedHelmet/glTF/' )
-
+	loader = new GLTFLoader()
+	loadGltf(path) {
 		return new Promise((resolve, reject) => {
 			log.info('loading gltf', path)
 
-			loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
+			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
 					log.info('Loaded GLTF:', gltf)
 

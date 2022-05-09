@@ -290,9 +290,7 @@ export class SocketSys {
 
 					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, zone)
 					log('preload wobs', wobs)
-					for(let wobFresh of wobs) {
-						const result = await Wob.Arrive(wobFresh, context.babs, false)
-					}
+					await Wob.ArriveMany(wobs, context.babs, false)
 
 					context.send({
 						ready: loadSelf.id,
@@ -374,9 +372,7 @@ export class SocketSys {
 				break;
 				case 'wobsupdate':
 					log('wobsupdate', data)
-					for(let wobFresh of data.wobs) {
-						const result = await Wob.Arrive(wobFresh, context.babs, data.shownames)
-					}
+					await Wob.ArriveMany(data.wobs, context.babs, data.shownames)
 				break
 				case 'contains':
 					log('contains', data)
@@ -392,11 +388,7 @@ export class SocketSys {
 					}
 					
 					if(data.id === context.babs.idSelf) { // Is your own inventory
-						// Spawn wobs and position them in bag
-						for(let wobFresh of data.wobs) {
-							const result = await Wob.Arrive(wobFresh, context.babs, false)
-
-						}
+						await Wob.ArriveMany(data.wobs, context.babs, false)
 					}
 				break
 				case 'journal':

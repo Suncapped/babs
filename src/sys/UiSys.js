@@ -73,7 +73,7 @@ export class UiSys {
 		chatDiv.appendChild(chatSpan)
 
 		if(options.journal) {
-			this.svJournal.appendText((player.nick || 'Stranger')+': "'+text+'"', options.color)
+			this.svJournal.appendText((player.nick || 'Stranger')+': '+text, options.color)
 		}
 
 		// Decide how long to display for

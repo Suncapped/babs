@@ -143,9 +143,41 @@ export class Wob extends Ent {
 
 
 	}
+
+
+	static pathObs = {}
+	static async ArriveMany(arrivalWobs, babs, shownames) {
+		let promises = []
+		for(let wob of arrivalWobs) {
+			const path = `/environment/gltf/obj-${wob.name}.gltf`
+			if(!Wob.pathObs[path]) {
+				const promiseGroup = {
+					wob: wob,
+					ob: babs.loaderSys.loadGltf(path)
+				}
+				Wob.pathObs[path] = promiseGroup
+				promises.push(promiseGroup.ob)
+			}
+		}
+
+		for(let wob of arrivalWobs) {
+			const path = `/environment/gltf/obj-${wob.name}.gltf`
+			const result = Wob.pathObs[path]
+
+			let preloadedOb
+			try {
+				preloadedOb = await result.ob
+			}
+			catch(e) {
+				preloadedOb = undefined
+			}
+			// console.log('path', preloadedOb, wob.name, Wob.pathObs[path])
+			await Wob.Arrive(wob, babs, shownames, preloadedOb)
+		}
+	}
 	
 	static WobInstMeshes = new Map()
-	static async Arrive(arrivalWob, babs, shownames) {
+	static async Arrive(arrivalWob, babs, shownames, obPreloaded = null) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
@@ -173,7 +205,7 @@ export class Wob extends Ent {
 
 			let mesh
 			try {
-				const ob = await babs.loaderSys.loadGltf(path)
+				const ob = obPreloaded || await babs.loaderSys.loadGltf(path)
 				if(ob.scene.children.length > 1) {
 					console.warn(`Loaded object with more than one child.`, scene)
 				}
@@ -240,25 +272,19 @@ export class Wob extends Ent {
 		if(wob.idzone) { // Place in zone
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 
+			instanced.geometry?.center() 
+			// ^ Fixes offset pivot point
+			// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 
-				instanced.geometry?.center() 
-				// ^ Fixes offset pivot point
-				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-
-				let size = new Vector3()
-				instanced.geometry?.boundingBox?.getSize(size)
-				// console.log('instanced', instanced.name, size.y)
-				const sink = 0.10
-				position.setY(position.y +(size.y /2) -(size.y *sink))
-				// Uhh maybe instead find the bottom and deliberately match it to ground?
-				// Find object height.
-				// Place object at half of height above ground.
-				// Isn't that what I just did??
-
-				const box = new BoxHelper( instanced, 0xffff00 );
-				babs.scene.add( box );
-				box.position.copy(position)
-
+			let size = new Vector3()
+			instanced.geometry?.boundingBox?.getSize(size)
+			// console.log('instanced', instanced.name, size.y)
+			const sink = 0.10
+			position.setY(position.y +(size.y /2) -(size.y *sink))
+			// Uhh maybe instead find the bottom and deliberately match it to ground?
+			// Find object height.
+			// Place object at half of height above ground.
+			// Isn't that what I just did??
 
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
