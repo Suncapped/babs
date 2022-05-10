@@ -286,6 +286,7 @@ export class Flame extends Com {
 		noiseScaleZ : 1.5,//1.0,
 	};
 
+	static fireTex
 	static async New(wob, babs) {
 		const com = new Flame(wob, babs)
 
@@ -298,10 +299,10 @@ export class Flame extends Com {
 		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
 
 		// var fireTex = THREE.ImageUtils.loadTexture("");
-		const fireTex = await new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
+		Flame.fireTex = Flame.fireTex || await new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
 		// fireTex.encoding = sRGBEncoding // This too, though the default seems right
 
-		com.fire = new ThreeFire(fireTex)
+		com.fire = new ThreeFire(Flame.fireTex)
 		com.fire.name = 'flame'
 
 		babs.scene.add(com.fire);

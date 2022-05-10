@@ -147,20 +147,37 @@ export class Wob extends Ent {
 
 	static pathObs = {}
 	static async ArriveMany(arrivalWobs, babs, shownames) {
+
+		// Load gltfs in parallel
 		let promises = []
 		for(let wob of arrivalWobs) {
+			let instanced = Wob.WobInstMeshes.get(wob.name)
+			if(instanced) continue // If it's already been loaded, skip loading
+
 			const path = `/environment/gltf/obj-${wob.name}.gltf`
-			if(!Wob.pathObs[path]) {
-				const promiseGroup = {
-					wob: wob,
-					ob: babs.loaderSys.loadGltf(path)
-				}
-				Wob.pathObs[path] = promiseGroup
-				promises.push(promiseGroup.ob)
+			if(Wob.pathObs[path]) continue // Already loaded
+
+			const promiseGroup = {
+				wob: wob,
+				ob: babs.loaderSys.loadGltf(path)
 			}
+			Wob.pathObs[path] = promiseGroup
+			promises.push(promiseGroup.ob)
 		}
 
+
+		let readyNames = new Map
+
+		let renders = []
+		// Get mesh and generate icon
 		for(let wob of arrivalWobs) {
+			let instanced = Wob.WobInstMeshes.get(wob.name)
+			if(instanced) continue // If it's already been loaded, skip generating
+
+			if(readyNames.get(wob.name)) {
+				continue // Already loaded
+			}
+
 			const path = `/environment/gltf/obj-${wob.name}.gltf`
 			const result = Wob.pathObs[path]
 
@@ -171,13 +188,55 @@ export class Wob extends Ent {
 			catch(e) {
 				preloadedOb = undefined
 			}
-			// console.log('path', preloadedOb, wob.name, Wob.pathObs[path])
-			await Wob.Arrive(wob, babs, shownames, preloadedOb)
+
+			// Get mesh
+			let mesh
+			if(preloadedOb) { 
+				if(preloadedOb.scene.children.length > 1) {
+					console.warn(`Loaded object with more than one child.`, scene)
+				}
+
+				const childIndex = 0 // stub
+				mesh = preloadedOb.scene.children[childIndex]
+			}
+			else {// Object doesn't exist.  Make a sphere
+				const geometry = new SphereGeometry(1, 12, 12)
+				const material = new MeshPhongMaterial({ color: 0xcccc00 })
+				mesh = new Mesh(geometry, material)
+			}
+
+			const render = Wob.HiddenSceneRender(mesh)
+			renders.push(render)
+			readyNames.set(wob.name, {
+				wob,
+				mesh,
+				render,
+			})
 		}
+
+		for(let wob of arrivalWobs) {
+			// let instanced = Wob.WobInstMeshes.get(wob.name)
+			// if(instanced) continue // If it's already been loaded, skip generating
+
+			const ready = readyNames.get(wob.name)
+
+			let preloaded = null
+			if(ready) { // If there's a render.  If not, it's probably the second+ time ArriveMany was run, and the render happened in a previous iteration!
+				const [icon, pixels] = await ready.render
+				preloaded = {
+					mesh: ready.mesh,
+					icon,
+					pixels,
+				}
+			}
+			await Wob._Arrive(wob, babs, shownames, preloaded)
+
+		}
+
 	}
 	
 	static WobInstMeshes = new Map()
-	static async Arrive(arrivalWob, babs, shownames, obPreloaded = null) {
+	static async _Arrive(arrivalWob, babs, shownames, preloaded = null) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
@@ -197,29 +256,15 @@ export class Wob extends Ent {
 		const path = `/environment/gltf/obj-${wob.name}.gltf`
 		let instanced = Wob.WobInstMeshes.get(wob.name)
 
-		const childIndex = 0 // stub
 		const countMax = 8
 		let currentCount = 0
 		if(!instanced) {
 			log.info('download, load, instantiate wobject', path)
 
-			let mesh
-			try {
-				const ob = obPreloaded || await babs.loaderSys.loadGltf(path)
-				if(ob.scene.children.length > 1) {
-					console.warn(`Loaded object with more than one child.`, scene)
-				}
-				mesh = ob.scene.children[childIndex]
-			}
-			catch(e) { // Object doesn't exist.  Make a sphere
-				const geometry = new SphereGeometry(1, 12, 12)
-				const material = new MeshPhongMaterial({ color: 0xcccc00 })
-				mesh = new Mesh(geometry, material)
-			}
 
 			// mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
 
-			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
+			instanced = new InstancedMesh(preloaded.mesh.geometry, preloaded.mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
 			instanced.count = currentCount
 			instanced.name = wob.name
@@ -227,9 +272,9 @@ export class Wob extends Ent {
 			// instanced.instanceMatrix.needsUpdate = true
 
 			// Also add renderedIcon for later
-			const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
-			instanced.renderedIcon = icon
-			instanced.renderedIconPixels = pixels
+			// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+			instanced.renderedIcon = preloaded.icon
+			instanced.renderedIconPixels = preloaded.pixels
 
 			Wob.WobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
