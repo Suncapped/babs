@@ -55,6 +55,7 @@ import { GUI } from 'dat.gui'
 import { Wob } from '../ent/Wob'
 import { EventSys } from './EventSys'
 import * as SunCalc from 'suncalc'
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 
 export class WorldSys {
 
@@ -274,14 +275,25 @@ export class WorldSys {
 
 		// 				+x		-x		+y			-y		+z		-z
 		const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
+		// const sides = ['north', 'north', 'north', 'north', 'north', 'north'] // +y as north
 
-		const nightskyImagepaths = sides.map(side => `${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
+		const tl = new TextureLoader()
+		const nightskyImagepaths = sides.map(side => {
 
-		// const materialArray = nightskyImagepaths.map(image => {
-		// 	let texture = new TextureLoader().loadAsync(image)
-		// 	return new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
-		// });
+			// var ktx2Loader = new KTX2Loader();
+			// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
+			// ktx2Loader.detectSupport( renderer );
+			// return ktx2Loader.load( `${this.babs.urlFiles}/texture/sky/stars-${side}.ktx2`, function ( texture ) {
+			// 	// var material = new MeshStandardMaterial( { map: texture } );
+			// 	return texture
+			// }, function () {
+			// 	console.log( 'onProgress' );
+			// }, function ( e ) {
+			// 	console.error( e );
+			// } );
 
+			return tl.loadAsync(`${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
+		})
 
 		let materialArray = []
 		const buildSkybox = () => {
@@ -291,14 +303,13 @@ export class WorldSys {
 			this.nightsky.name = 'nightsky'
 			this.babs.scene.add(this.nightsky)
 		}
-		nightskyImagepaths.forEach((path, index) => {
-			new TextureLoader().loadAsync(path).then(texture => {
-				// Using index to ensure correct order
-				materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
-				if(index === nightskyImagepaths.length -1 && !this.nightsky) { // Done loading the final one
-					buildSkybox()
-				}
-			})
+		nightskyImagepaths.forEach(async (pathPromise, index) => {
+			const texture = await pathPromise
+			// Using index to ensure correct order
+			materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+			if(index === nightskyImagepaths.length -1 && !this.nightsky) { // Done loading the final one
+				buildSkybox()
+			}
 		})
 
 
@@ -530,15 +541,14 @@ export class WorldSys {
 	waterInstancedRands = []
     async genElevation(urlFiles, geometry, zone) {
         this.elevationData = null
-        
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
-
         const buff = await data.arrayBuffer()
         this.elevationData = new Uint8Array(buff)
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
+
         for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
