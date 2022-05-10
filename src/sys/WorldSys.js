@@ -275,7 +275,6 @@ export class WorldSys {
 
 		// 				+x		-x		+y			-y		+z		-z
 		const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
-		// const sides = ['north', 'north', 'north', 'north', 'north', 'north'] // +y as north
 
 		const tl = new TextureLoader()
 		const nightskyImagepaths = sides.map(side => {
@@ -301,6 +300,8 @@ export class WorldSys {
 			const nightskyGeo = new BoxGeometry(size, size, size)
 			this.nightsky = new Mesh(nightskyGeo, materialArray)
 			this.nightsky.name = 'nightsky'
+
+			// todo perhaps use offscreencanvas to fix this? 
 			this.babs.scene.add(this.nightsky)
 		}
 		nightskyImagepaths.forEach(async (pathPromise, index) => {

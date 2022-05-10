@@ -5,6 +5,7 @@ html, body {
     margin: 0;
     overflow: hidden;
     font-size: 24px;
+	overscroll-behavior-x: none;
 }
 
 body {
