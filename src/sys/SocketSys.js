@@ -280,6 +280,8 @@ export class SocketSys {
 						await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
 					}
 
+					await context.babs.worldSys.stitchElevation(zones)
+
 					const centerzone = zones.find(z => z.id == loadSelf.idzone)
 
 

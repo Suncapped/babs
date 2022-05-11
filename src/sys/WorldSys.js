@@ -540,28 +540,75 @@ export class WorldSys {
 		return wobs
     }
 
-    elevationData
+    elevationData = {}
     landcoverData
 	waterInstancedMesh
 	waterInstancedRands = []
     async genElevation(urlFiles, geometry, zone) {
-        this.elevationData = null
         const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
         const data = await fet.blob()
         const buff = await data.arrayBuffer()
-        this.elevationData = new Uint8Array(buff)
+
+		// Save thigns onto zone for later
+		zone.geometry = geometry
+		zone.elevationData = new Uint8Array(buff)
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
 
-		log('genel', zone.y)
-
-        for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
+		const dataNodes =  zone.elevationData.length // 26
+        for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-            verticesRef[j +1] = this.elevationData[i] * zone.yscale +zone.y // Set vertex height from elevations data
-			console.log(verticesRef[j +1])
+
+			// Set vertex height from elevations data
+            verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
         }
+    }
+    async stitchElevation(zones) {
+		for(let zone of zones) {
+			const nCoordsComponents = 3; // x,y,z
+			const verticesRef = zone.geometry.getAttribute('position').array
+	
+			const dataNodes =  zone.elevationData.length // 26
+
+			const zoneMinusZ = zones.find(z => z.x==zone.x && z.z==zone.z-1)
+			const zoneMinusX = zones.find(z => z.x==zone.x-1 && z.z==zone.z)
+
+			const zoneMinusZVerts = zoneMinusZ?.geometry.getAttribute('position').array
+			const zoneMinusXVerts = zoneMinusX?.geometry.getAttribute('position').array
+	
+			for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
+				// j + 1 because it is the y component that we modify
+				// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
+	
+				// Set vertex height from elevations data
+				verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
+
+				const {x: thisx, z: thisz} = Utils.indexToCoord(i)
+
+				// Stitch terrain elevations together
+				if(thisz === 0) { // rearward edge on z
+					// console.log('edge', zone.x+','+zone.z, zoneMinusX.x+','+zoneMinusX.z)
+					// todo set to other edge, not same place on far side
+					// const {thatx, thatz} = Utils.indexToCoord(j)
+
+					// Currently seems like the wrong axis is backing off....
+					if(zoneMinusZ) {
+						const indexOnOtherZone = Utils.coordToIndex(thisx, 25, 26, 3)
+						verticesRef[j +1] = zoneMinusZVerts[indexOnOtherZone +1] //hrmrm
+					}
+				}
+				if(thisx === 0) {
+					if(zoneMinusX) {
+						const indexOnOtherZone = Utils.coordToIndex(25, thisz, 26, 3)
+						verticesRef[j +1] = zoneMinusXVerts[indexOnOtherZone +1] //hrmrm
+					}
+				}
+
+			}
+		}
+
     }
     async genLandcover(urlFiles, geometry, zone) {
 		// Get landcover data
@@ -601,7 +648,7 @@ export class WorldSys {
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?
-						color.setHSL(98/360, 80/100, 0.2 +this.elevationData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
+						color.setHSL(98/360, 80/100, 0.2 +zone.elevationData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
@@ -625,6 +672,7 @@ export class WorldSys {
 
 		// Water?  Delayed?
 		setTimeout(() => {
+			if(this.waterInstancedMesh) return // zonetodo
 
 			const cubeSize = 4 // Must divide into 10
 			const waterCubePositions = []
@@ -677,7 +725,7 @@ export class WorldSys {
 				this.waterInstancedRands[i] = Math.random() - 0.5
 			}
 
-		}, 10)
+		}, 1) // todo race condition here
 
     }
 
