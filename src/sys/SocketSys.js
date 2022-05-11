@@ -276,9 +276,36 @@ export class SocketSys {
 					context.babsReady = true
 
 
+					// Load some things ahead of time
+
+					const fetches = []
 					for(let zone of zones) {
-						await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
+
+						zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations`)
+						zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers`)
+
+						fetches.push(zone.elevationData, zone.landcoverData)
 					}
+					await Promise.all(fetches)
+
+					for(let zone of zones) {
+						const fet = await zone.elevationData
+						const data = await fet.blob()
+						const buff = await data.arrayBuffer()
+						zone.elevationData = new Uint8Array(buff)
+
+						const fet2 = await zone.landcoverData
+						const data2 = await fet2.blob()
+						const buff2 = await data2.arrayBuffer()
+						zone.landcoverData = new Uint8Array(buff2)
+					}
+
+					const promises = []
+					for(let zone of zones) {
+						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, zone.eleFetch, zone.lcFetch))
+					}
+
+					await Promise.all(promises)
 
 					await context.babs.worldSys.stitchElevation(zones)
 

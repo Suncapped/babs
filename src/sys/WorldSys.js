@@ -137,9 +137,6 @@ export class WorldSys {
 		streamshore: new Color().setHSL(51/360, 39/100, 34/100),
 	}
 
-	waterCubes = []
-
-
 	
     constructor(renderer, babs, camera) {
 		EventSys.Subscribe(this)
@@ -462,7 +459,7 @@ export class WorldSys {
     }
 
 	ground
-    async loadStatics(urlFiles, zone) {
+    async loadStatics(urlFiles, zone, eleFetch) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
@@ -477,8 +474,8 @@ export class WorldSys {
         // material.color.setHSL( 0.095, 0.5, 0.20 )
 		material.vertexColors = true
 
-        await this.genElevation(urlFiles, geometry, zone)
-        await this.genLandcover(urlFiles, geometry, zone)
+		await this.genElevation(urlFiles, geometry, zone)
+		await this.genLandcover(urlFiles, geometry, zone)
 		
         geometry.computeVertexNormals()
 
@@ -545,18 +542,12 @@ export class WorldSys {
 	waterInstancedMesh
 	waterInstancedRands = []
     async genElevation(urlFiles, geometry, zone) {
-        const fet = await fetch(`${urlFiles}/zone/${zone.id}/elevations`)
-        const data = await fet.blob()
-        const buff = await data.arrayBuffer()
-
 		// Save thigns onto zone for later
 		zone.geometry = geometry
-		zone.elevationData = new Uint8Array(buff)
 
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
 
-		const dataNodes =  zone.elevationData.length // 26
         for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
@@ -565,18 +556,21 @@ export class WorldSys {
             verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
         }
     }
+
+	zones = []
     async stitchElevation(zones) {
+		this.zones = zones
 		for(let zone of zones) {
 			const nCoordsComponents = 3; // x,y,z
 			const verticesRef = zone.geometry.getAttribute('position').array
 	
-			const dataNodes =  zone.elevationData.length // 26
-
 			const zoneMinusZ = zones.find(z => z.x==zone.x && z.z==zone.z-1)
 			const zoneMinusX = zones.find(z => z.x==zone.x-1 && z.z==zone.z)
+			const zoneMinusBoth = zones.find(z => z.x==zone.x-1 && z.z==zone.z-1)
 
 			const zoneMinusZVerts = zoneMinusZ?.geometry.getAttribute('position').array
 			const zoneMinusXVerts = zoneMinusX?.geometry.getAttribute('position').array
+			const zoneMinusBothVerts = zoneMinusBoth?.geometry.getAttribute('position').array
 	
 			for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
 				// j + 1 because it is the y component that we modify
@@ -588,18 +582,19 @@ export class WorldSys {
 				const {x: thisx, z: thisz} = Utils.indexToCoord(i)
 
 				// Stitch terrain elevations together
-				if(thisz === 0) { // rearward edge on z
-					// console.log('edge', zone.x+','+zone.z, zoneMinusX.x+','+zoneMinusX.z)
-					// todo set to other edge, not same place on far side
-					// const {thatx, thatz} = Utils.indexToCoord(j)
-
-					// Currently seems like the wrong axis is backing off....
+				if(thisx === 0 && thisz === 0) { // angled one, not a side
+					if(zoneMinusBoth) {
+						const indexOnOtherZone = Utils.coordToIndex(25, 25, 26, 3)
+						verticesRef[j +1] = zoneMinusBothVerts[indexOnOtherZone +1] //hrmrm
+					}
+				}
+				else if(thisz === 0) { // rearward edge on z
 					if(zoneMinusZ) {
 						const indexOnOtherZone = Utils.coordToIndex(thisx, 25, 26, 3)
 						verticesRef[j +1] = zoneMinusZVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
-				if(thisx === 0) {
+				else if(thisx === 0) {
 					if(zoneMinusX) {
 						const indexOnOtherZone = Utils.coordToIndex(25, thisz, 26, 3)
 						verticesRef[j +1] = zoneMinusXVerts[indexOnOtherZone +1] //hrmrm
@@ -610,17 +605,9 @@ export class WorldSys {
 		}
 
     }
-    async genLandcover(urlFiles, geometry, zone) {
+    async genLandcover(urlFiles, geometry, zone, lcFetch) {
 		// Get landcover data
-        this.landcoverData = null
         
-        const fet = await fetch(`${urlFiles}/zone/${zone.id}/landcovers`)
-        const data = await fet.blob()
-
-        const buff = await data.arrayBuffer()
-        this.landcoverData = new Uint8Array(buff)
-
-
 		// Vertex colors on BufferGeometry using a non-indexed array
         const verticesRef = geometry.getAttribute('position').array
 		const nColorComponents = 3;  // r,g,b
@@ -635,7 +622,7 @@ export class WorldSys {
 		let waterNearbyIndex = new Array(26*26).fill(0)
 
         for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
-			const lcString = this.StringifyLandcover[this.landcoverData[index]]
+			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 			const color = this.colorFromLc[lcString]
 
 			// Spread color from this vertex as well as to its +1 forward vertices (ie over the piece, the 40x40ft)
@@ -644,7 +631,7 @@ export class WorldSys {
 				for(let x=0; x<=1; x++) {
 					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
-						console.warn('Color not found!', this.landcoverData[index], lcString)
+						console.warn('Color not found!', zone.landcoverData[index], lcString)
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?
@@ -661,7 +648,7 @@ export class WorldSys {
 			for(let z=-1; z<=1; z++) {
 				for(let x=-1; x<=1; x++) {
 					const offsetIndex = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
-					if(this.StringifyLandcover[this.landcoverData[offsetIndex]] === 'river') {
+					if(this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'river') {
 
 						waterNearbyIndex[index]++
 					}
@@ -672,14 +659,14 @@ export class WorldSys {
 
 		// Water?  Delayed?
 		setTimeout(() => {
-			if(this.waterInstancedMesh) return // zonetodo
+			if(!(zone.x == 0 && zone.z == 0)) return // zonetodo
 
 			const cubeSize = 4 // Must divide into 10
 			const waterCubePositions = []
 			const waterCubeColors = []
 
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
-				const lcString = this.StringifyLandcover[this.landcoverData[index]]
+				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 				const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
 				// log('gridPointofVerticesIndex', coordOfVerticesIndex)
 				// Create cubes on all spots in between
@@ -691,7 +678,6 @@ export class WorldSys {
 							const rayPosition = this.vRayGroundHeight(coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4, coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4)
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
-								// this.waterCubes.push(this.makeWaterCube(rayPosition, 4 *cubeSize)))
 								waterCubePositions.push(rayPosition)
 
 								const riverBaseColor = this.colorFromLc.river.clone()
