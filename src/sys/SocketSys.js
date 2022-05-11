@@ -257,7 +257,6 @@ export class SocketSys {
 
 					const loadSelf = data.self
 					const zones = data.zones
-					const zone = zones.find(z => z.id == loadSelf.idzone)
 					log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
 					toprightText.set(context.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
@@ -275,7 +274,15 @@ export class SocketSys {
 					}
 
 					context.babsReady = true
-					await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
+
+
+					for(let zone of zones) {
+						await context.babs.worldSys.loadStatics(context.babs.urlFiles, zone)
+					}
+
+					const centerzone = zones.find(z => z.id == loadSelf.idzone)
+
+
 
 					if(loadSelf.visitor !== true) {
 						document.getElementById('welcomebar').style.display = 'none' 
@@ -288,7 +295,7 @@ export class SocketSys {
 					// Set up UIs
 					context.babs.uiSys.loadUis(data.uis)
 
-					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, zone)
+					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, centerzone)
 					await Wob.ArriveMany(wobs, context.babs, false)
 
 					context.send({

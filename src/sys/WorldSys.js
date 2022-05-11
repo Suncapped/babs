@@ -466,7 +466,11 @@ export class WorldSys {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
-        geometry.translate(WorldSys.ZoneLength /2, 0, WorldSys.ZoneLength /2)
+        geometry.translate(
+			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.x, 
+			0,//zone.y -8000,
+			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.z,// zonetodo why - ?!
+		)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
         // const material = new MeshStandardMaterial({vertexColors: true})
@@ -479,7 +483,7 @@ export class WorldSys {
         geometry.computeVertexNormals()
 
         this.ground = new Mesh( geometry, material )
-        this.ground.name = 'ground'
+        this.ground.name = zone.x == 0 && zone.z == 0 ? 'ground' : 'ground2' // zonetodo
 		this.ground.idzone = zone.id
         this.ground.castShadow = true
         this.ground.receiveShadow = true
@@ -550,10 +554,13 @@ export class WorldSys {
 		const nCoordsComponents = 3; // x,y,z
         const verticesRef = geometry.getAttribute('position').array
 
+		log('genel', zone.y)
+
         for (let i=0, j=0, l=verticesRef.length; i < l; i++, j += nCoordsComponents ) {
             // j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-            verticesRef[j +1] = this.elevationData[i] * zone.yscale // Set vertex height from elevations data
+            verticesRef[j +1] = this.elevationData[i] * zone.yscale +zone.y // Set vertex height from elevations data
+			console.log(verticesRef[j +1])
         }
     }
     async genLandcover(urlFiles, geometry, zone) {

@@ -872,6 +872,7 @@ export class InputSys {
 					|| this.mouseRayTargets[i].object?.name === 'three-helper' // debug dest mesh
 					|| this.mouseRayTargets[i].object?.parent?.name === 'three-helper' // debug dest mesh
 					|| this.mouseRayTargets[i].object?.name === 'water' // water cubes IM
+					|| this.mouseRayTargets[i].object?.name === 'ground2' // zonetodo
 					|| this.mouseRayTargets[i].object?.name === 'flame') { // flame effect
 					continue // Skip
 				}
