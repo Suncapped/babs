@@ -261,7 +261,7 @@
 <style>
 	#Menu {
 		z-index: 50;
-		background-color:rgb(33, 33, 33);
+		background-color:rgba(12, 12, 12, 0.8);	
 	}
 	#Menu > .content {
 		padding: 8px;

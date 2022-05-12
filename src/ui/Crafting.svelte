@@ -36,7 +36,7 @@
 <div id="Crafting">
 	<ul>
 		{#each options as opt}
-			<button id="{opt}" on:submit={(ev) => ev.preventDefault()} on:mouseup={(ev) => updateWOB(opt)}>{opt}</button>
+			<button class="craftbtn" id="{opt}" on:submit={(ev) => ev.preventDefault()} on:mouseup={(ev) => updateWOB(opt)}>{opt}</button>
 		{/each}
 	</ul>
 
@@ -52,6 +52,11 @@
 	#Crafting > ul {
 		padding: 0;
 		margin: 0;
+	}
+	
+	.craftbtn {
+		background-color:rgba(12, 12, 12, 0.8);	
+
 	}
 
 </style>

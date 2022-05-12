@@ -102,9 +102,13 @@
 </div>
 
 <style>
+	#Journal {
+		z-index: 30;
+		background-color:rgba(12, 12, 12, 0.8);
+	}
 	#Journal > .content {
 		padding: 8px;
-		padding-left: 12px;
+		padding-left: 12px;	
 
 		font-size: 18px;
 		user-select: text;
@@ -115,6 +119,7 @@
 		display: none; /* for Chrome, Safari, and Opera */
 	}
 	:global #Journal p { /* Global needed since p's are inserted by ui? */
+		z-index: 50;
 		margin:0;
 		padding:0;
 	}

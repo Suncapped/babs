@@ -146,7 +146,8 @@
 
 <style>
 	.Container {
-		background-color:rgba(12, 12, 12, 1);
+		z-index: 40;
+		background-color:rgba(12, 12, 12, 0.8);	
 	}
 	.Container > .content {
 		padding: 0px;
