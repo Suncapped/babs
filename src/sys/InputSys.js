@@ -914,7 +914,7 @@ export class InputSys {
 
 						const index = Utils.coordToIndex(landPoint.x, landPoint.z, 26)
 						
-						const landcoverData = this.babs.worldSys.zones.find(z=>z.x==0&&z.z==0).landcoverData // zonestodo
+						const landcoverData = this.babs.worldSys.zones.find(z=>z.x==0&&z.z==0).landcoverData // zonetodo
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 
 						this.mouse.landtarget.text = lcString
