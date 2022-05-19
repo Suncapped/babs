@@ -466,7 +466,7 @@ export class WorldSys {
         geometry.translate(
 			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.x, 
 			0,//zone.y -8000,
-			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.z,// zonetodo why - ?!
+			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.z,
 		)
 
         const material = new MeshPhongMaterial( {side: FrontSide} )
@@ -623,7 +623,7 @@ export class WorldSys {
 
         for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
-			const color = this.colorFromLc[lcString]
+			let color = this.colorFromLc[lcString]
 
 			// Spread color from this vertex as well as to its +1 forward vertices (ie over the piece, the 40x40ft)
 			const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
@@ -632,6 +632,7 @@ export class WorldSys {
 					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
 						console.warn('Color not found!', zone.landcoverData[index], lcString)
+						color = this.colorFromLc['dirt'] // todo add colors?
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?

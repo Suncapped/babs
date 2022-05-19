@@ -335,6 +335,7 @@ export class SocketSys {
 				break
 				case 'playersarrive':
 					log.info('playersarrive', data)
+					log('wtf playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 
