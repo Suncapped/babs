@@ -302,7 +302,7 @@ export class SocketSys {
 
 					const promises = []
 					for(let zone of zones) {
-						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, zone.eleFetch, zone.lcFetch))
+						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
 					}
 
 					await Promise.all(promises)
@@ -335,7 +335,6 @@ export class SocketSys {
 				break
 				case 'playersarrive':
 					log.info('playersarrive', data)
-					log('wtf playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 
@@ -402,6 +401,14 @@ export class SocketSys {
 							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
+
+							if(wobExisting.attachments.length > 0){
+								wobExisting.attachments.forEach(att => {
+									console.log('removing att', att)
+									context.babs.scene.remove(att)
+								})
+							}
+
 							context.babs.ents.delete(wobExisting.id)
 						}
 					}

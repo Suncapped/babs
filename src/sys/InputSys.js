@@ -335,10 +335,10 @@ export class InputSys {
 			// finger2?.target.dispatchEvent(newEvent)
 			// document.dispatchEvent(newEvent)
 		}
-		document.addEventListener('touchstart', touchHandler, true)
-		document.addEventListener('touchmove', touchHandler, true)
-		document.addEventListener('touchend', touchHandler, true)
-		document.addEventListener('touchcancel', touchHandler, true);
+		document.addEventListener('touchstart', touchHandler, {passive:false})
+		document.addEventListener('touchmove', touchHandler, {passive:false})
+		document.addEventListener('touchend', touchHandler, {passive:false})
+		document.addEventListener('touchcancel', touchHandler, {passive:false});
 
 		this.lastMoveHoldPicked
 		this.carrying = null
@@ -745,8 +745,7 @@ export class InputSys {
 			}
 		})
 
-		this.canvas.onwheel = ev => {
-			ev.preventDefault()
+		this.canvas.addEventListener('wheel', ev => {
 
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
 			if (ev.ctrlKey) {
@@ -779,7 +778,7 @@ export class InputSys {
 				}
 			}
 
-		}
+		}, {passive:true})
 
 		topmenuUnfurled.subscribe(vis => { // Menu becomes visible
 			this.topMenuVisibleLocal = vis
@@ -873,6 +872,7 @@ export class InputSys {
 					|| this.mouseRayTargets[i].object?.parent?.name === 'three-helper' // debug dest mesh
 					|| this.mouseRayTargets[i].object?.name === 'water' // water cubes IM
 					|| this.mouseRayTargets[i].object?.name === 'ground2' // zonetodo
+					|| this.mouseRayTargets[i].object?.name === 'camerahelper' // zonetodo
 					|| this.mouseRayTargets[i].object?.name === 'flame') { // flame effect
 					continue // Skip
 				}

@@ -32,7 +32,7 @@ export class Wob extends Ent {
 			const container = document.getElementById('HiddenRenderFrame')
 
 			// create your renderer
-			const renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true, })
+			const renderer = new WebGLRenderer({ antialias: true, alpha: true, }) //  preserveDrawingBuffer: true, // why?
 			// renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( UiSys.ICON_SIZE, UiSys.ICON_SIZE );
 
@@ -189,11 +189,19 @@ export class Wob extends Ent {
 				preloadedOb = undefined
 			}
 
+
+			if(preloadedOb && !preloadedOb.scene) {
+				console.warn('Arrival wob has no scene: ', wob.name)
+			}
+			else if(preloadedOb && preloadedOb.scene.children.length == 0) {
+				console.warn('Arrival wob has no children in scene: ', wob.name)
+			}
+
 			// Get mesh
 			let mesh
-			if(preloadedOb) { 
+			if(preloadedOb && preloadedOb.scene) { 
 				if(preloadedOb.scene.children.length > 1) {
-					console.warn(`Loaded object with more than one child.`, scene)
+					console.warn(`Loaded object with more than one child.`, wob.name)
 				}
 
 				const childIndex = 0 // stub
@@ -201,8 +209,9 @@ export class Wob extends Ent {
 			}
 			else {// Object doesn't exist.  Make a sphere
 				const geometry = new SphereGeometry(1, 12, 12)
-				const material = new MeshPhongMaterial({ color: 0xcccc00 })
+				const material = new MeshLambertMaterial({ color: 0xcccc00 })
 				mesh = new Mesh(geometry, material)
+				// console.warn('Arrival wob has no scene: ', wob.name)
 			}
 
 			const render = Wob.HiddenSceneRender(mesh)
@@ -261,18 +270,18 @@ export class Wob extends Ent {
 		if(!instanced) {
 			log.info('download, load, instantiate wobject', path)
 
-
-			// mesh.geometry.rotateX( + Math.PI / 2 ) // Make the plane horizontal
-
-			instanced = new InstancedMesh(preloaded.mesh.geometry, preloaded.mesh.material, countMax) // Up to one for each grid space; ignores stacking, todo optimize more?
+			instanced = new InstancedMesh(preloaded.mesh.geometry, preloaded.mesh.material, countMax)
+			 // ^ Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
 			instanced.count = currentCount
 			instanced.name = wob.name
-			instanced.instanceMatrix.setUsage(StreamDrawUsage) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
+			instanced.instanceMatrix.setUsage(StreamDrawUsage) 
+			// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 			// instanced.instanceMatrix.needsUpdate = true
+			instanced.castShadow = true
+			instanced.receiveShadow = true
 
 			// Also add renderedIcon for later
-			// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
 			instanced.renderedIcon = preloaded.icon
 			instanced.renderedIconPixels = preloaded.pixels
 
@@ -299,6 +308,8 @@ export class Wob extends Ent {
 			}
 			newInstance.renderedIcon = instanced.renderedIcon
 			newInstance.renderedIconPixels = instanced.renderedIconPixels
+			newInstance.castShadow = instanced.castShadow
+			newInstance.receiveShadow = instanced.receiveShadow
 
 			newInstance.wobIdsByIndex = instanced.wobIdsByIndex
 			
@@ -323,14 +334,8 @@ export class Wob extends Ent {
 
 			let size = new Vector3()
 			instanced.geometry?.boundingBox?.getSize(size)
-			// console.log('instanced', instanced.name, size.y)
-			const sink = 0.10
-			position.setY(position.y +(size.y /2) -(size.y *sink))
-			// Uhh maybe instead find the bottom and deliberately match it to ground?
-			// Find object height.
-			// Place object at half of height above ground.
-			// Isn't that what I just did??
-
+			const sink = 0.2 // Percent didn't work for trees; instead use 0.2 of a foot (2.4 in lol)
+			position.setY(position.y +(size.y /2) -sink)
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count
@@ -365,11 +370,10 @@ export class Wob extends Ent {
 
 		if(wob.name === 'firepit') {
 			
-			await Flame.New(wob, babs)
+			const flame = await Flame.New(wob, babs)
+			wob.attachments = wob.attachments || [] // For later deletion if wob is removed (moved etc)
+			wob.attachments.push(flame)
 
-
-
-			
 
 		}
 

@@ -160,7 +160,7 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 		point.setY(point.y +1) // Raise up
 		chatLabel.position.copy(point)
-		this.babs.worldSys.ground.add(chatLabel)
+		this.babs.worldSys.currentGround.add(chatLabel)
 	}
 	serverSaid(text, point) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
@@ -187,7 +187,7 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
-		this.babs.worldSys.ground.add(chatLabel) // todo not ground
+		this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
 	}
 
 
@@ -265,7 +265,6 @@ export class UiSys {
 		if(this.babs?.idSelf) { // Player is loaded
 			const playerPos = this.babs.ents.get(this.babs.idSelf)?.controller?.target?.position
 			if(playerPos && !this.oldPos.equals(playerPos)) {
-				// window.document.getElementById('log').innerText = `${Math.floor(playerPos.x/4)}.${Math.floor(playerPos.y/4)}.${Math.floor(playerPos.z/4)} / ${this.babs.renderSys.renderer.info.render.calls}d ${this.babs.renderSys.renderer.info.render.triangles}t ${this.babs.renderSys.renderer.info.memory.geometries}g ${this.babs.renderSys.renderer.info.memory.textures}x ${this.babs.renderSys.renderer.info.programs.length}p`
 				this.oldPos = playerPos.clone()
 			}
 		}

@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
@@ -18,6 +18,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 
 export class LoaderSys {
 
+	megaMaterial
 
 	constructor(urlFiles) {
 		this.urlFiles = urlFiles
@@ -27,17 +28,18 @@ export class LoaderSys {
 			this.objectTexture.encoding = sRGBEncoding // Should already be default
 			this.objectTexture.flipY = false 
 					// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
-			const material = new MeshPhongMaterial({
+			const material = new MeshLambertMaterial({
 				name: 'megamaterial',
 				map: this.objectTexture,
 				// bumpMap: texture,
 				// bumpScale: bumpScale,
 				// color: diffuseColor,
-				specular: 0.16,
+				// specular: 0.16,
 				// reflectivity: 0.5,
-				shininess: 0.2,
+				// shininess: 0.2,
 				// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
-				side: FrontSide,
+				side: DoubleSide,
+				shadowSide: FrontSide,
 				// color: null,
 				// emissive: null,
 				// color: new Color(0,0,0).convertSRGBToLinear(),
@@ -45,7 +47,7 @@ export class LoaderSys {
 			// material.color.copy(material.color.convertSRGBToLinear())
 			// material.emissive.copy(material.emissive.convertSRGBToLinear())
 
-			this.objectMaterial = material
+			this.megaMaterial = material
 			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?
 			
 		})
@@ -103,7 +105,7 @@ export class LoaderSys {
 
 					gltf.scene.traverse(child => {
 						if (child.isMesh) {
-							child.material = this.objectMaterial
+							child.material = this.megaMaterial
 						}
 					})
 
@@ -124,7 +126,7 @@ export class LoaderSys {
 
 	mapPathRigCache = new Map()
 	async loadRig(gender) {
-		// Todo when we switch to mega atlas, use global material (this.objectMaterial)
+		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
 		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
 		texture.flipY = false // gltf flipped boolean
 		const material = new MeshPhongMaterial({
@@ -137,6 +139,7 @@ export class LoaderSys {
 			shininess: 0.2,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 			side: FrontSide,
+			shadowSide: FrontSide,
 		})
 		
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
@@ -157,11 +160,19 @@ export class LoaderSys {
 		const skinnedMesh = scene.children[0].children[1]//group.traverse(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
+		skinnedMesh.castShadow = true
+		skinnedMesh.receiveShadow = true
+		// scene.receiveShadow = true
+		// scene.traverse(c => c.receiveShadow = true)
+		// scene.children.traverse(c => c.receiveShadow = true)
+		// scene.children.traverse(c => c.traverse(d => d.receiveShadow = true))
+
 		// Okay let's try this https://stackoverflow.com/questions/27022160/three-js-can-i-apply-position-rotation-and-scale-to-the-geometry/27023024#27023024
 		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
 		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
 		scene.scale.multiplyScalar(0.1 * 3.28) // hax for temp character
+
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
@@ -170,7 +181,6 @@ export class LoaderSys {
 		cube.position.setY(3*(1 /scene.scale.x))
 		cube.visible = false
 		scene.add(cube)
-		// scene.traverse(c => c.castShadow = true)
 
 		return scene
 	}

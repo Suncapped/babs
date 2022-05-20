@@ -10,10 +10,12 @@ import { dividerOffset } from '../stores'
 
 export class RenderSys {
 
+	babs
 	renderer
 	labelRenderer
 
 	constructor(babs) {
+		this.babs = babs
 		this.renderer = new WebGLRenderer({ 
 			antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
 			// powerPreference: 'high-performance',
@@ -35,8 +37,6 @@ export class RenderSys {
 		// In that case, might as well use ACES until we know whether monitors support HDR (or make a player toggle)
 		// Now I've changed it to 0.3 but multiplied lights by (1/it), such that sky is less white and more blue, but light is still good.
 
-		// this.renderer.shadowMap.enabled = true
-		// this.renderer.shadowMap.type = THREE.PCFSoftShadowMap // todo shadows re-add?  or use in WorldSys?
 
 		this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setSize(0,0)
@@ -54,34 +54,8 @@ export class RenderSys {
 
 		this._scene = new Scene()
 
-		// let light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
-		// light.position.set(-100, 100, 100)
-		// light.target.position.set(0, 0, 0)
-		// light.castShadow = true
-		// light.shadow.bias = -0.001
-		// light.shadow.mapSize.width = 4096
-		// light.shadow.mapSize.height = 4096
-		// light.shadow.camera.near = 0.1
-		// light.shadow.camera.far = 500.0
-		// light.shadow.camera.near = 0.5
-		// light.shadow.camera.far = 500.0
-		// light.shadow.camera.left = 50
-		// light.shadow.camera.right = -50
-		// light.shadow.camera.top = 50
-		// light.shadow.camera.bottom = -50
-		// this._scene.add(light)
-
-		// let light = new THREE.AmbientLight(0xFFFFFF, 1)
-		// this._scene.add(light)
-
 		this.labelRenderer = new CSS2DRenderer()
-		// this.labelRenderer.domElement.style.position = 'absolute'
 		this.labelRenderer.domElement.id = 'labelRenderer'
-		// this.labelRenderer.domElement.style.top = '0px'
-		// this.labelRenderer.domElement.style['pointer-events'] = 'none'
-		// this.labelRenderer.domElement.style = {
-		// 	'background-color': 'green',
-		// }
 
 		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
 
@@ -123,6 +97,8 @@ export class RenderSys {
 			this.labelRenderer.setSize(width, height)
 			this._camera.aspect = width / height
 			this._camera.updateProjectionMatrix()
+
+			this.babs.worldSys?.csm?.updateFrustums()
 			// setTimeout(this.handleResize, 10) 
 		// }
 		// if(this.firstTime) { // Hax to deal with Overlay.svelte update happening 'too early'

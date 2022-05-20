@@ -44,6 +44,10 @@ import {
 	StreamDrawUsage,
 	TextureLoader,
 	FogExp2,
+	NeverDepth,
+	BasicShadowMap,
+	PCFShadowMap,
+	VSMShadowMap,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -55,7 +59,8 @@ import { GUI } from 'dat.gui'
 import { Wob } from '../ent/Wob'
 import { EventSys } from './EventSys'
 import * as SunCalc from 'suncalc'
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
+// import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
+// import { CSM } from 'three/examples/jsm/csm/CSM.js';
 
 export class WorldSys {
 
@@ -74,7 +79,7 @@ export class WorldSys {
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
 
-	static TIME_SPEED = 500
+	static TIME_SPEED = 300
 
 	babs
 	renderer
@@ -90,7 +95,7 @@ export class WorldSys {
 		turbidity: 10,
 		rayleigh: 1,//3,
 		mieCoefficient: 0.005,
-		mieDirectionalG: 1.0, // 0.7,
+		mieDirectionalG: 0.5, // 0.7,
 		elevation: 75,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
@@ -174,7 +179,7 @@ export class WorldSys {
 		// New sky (not lighting)
 		this.daysky = new Sky()
 		this.daysky.name = 'daysky'
-		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE)
+		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE )
 		this.babs.scene.add(this.daysky)
 		
 		this.sunPosition = new Vector3()
@@ -227,28 +232,6 @@ export class WorldSys {
         this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
         this.babs.scene.add(this.hemiLight)
 
-		// Shadow
-		// Perhaps use https://github.com/vHawk/three-csm https://threejs.org/examples/?q=shadow#webgl_shadowmap_csm
-
-		// this.dirLight.castShadow = true
-        // this.dirLight.shadow.mapSize.width = 2048
-        // this.dirLight.shadow.mapSize.height = 2048
-        // const d = 75
-        // this.dirLight.shadow.camera.top = 0//d
-        // this.dirLight.shadow.camera.left = 0
-        // this.dirLight.shadow.camera.bottom = 0
-        // this.dirLight.shadow.camera.right = 0//d
-        // this.dirLight.shadow.camera.far = 500
-        // this.dirLight.shadow.bias = - 0.001
-
-		// var shadowHelper = new CameraHelper( this.dirLight.shadow.camera )
-		// shadowHelper.name = 'three-helper'
-		// this.babs.scene.add( shadowHelper )
-
-        // renderer.shadowMap.enabled = true
-		// renderer.shadowMap.type = PCFSoftShadowMap
-        // renderer.shadowMap.autoUpdate/needsUpdate // Maybe use when sun isn't moving every frame
-
         this.babs.scene.fog = new FogExp2(
 			new Color(), 
 			// 1, 
@@ -276,6 +259,7 @@ export class WorldSys {
 		const tl = new TextureLoader()
 		const nightskyImagepaths = sides.map(side => {
 
+			// Attempting to use precompiled textures but they ended up being huge file sizes and unloadable.  Try again later?
 			// var ktx2Loader = new KTX2Loader();
 			// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
 			// ktx2Loader.detectSupport( renderer );
@@ -313,23 +297,88 @@ export class WorldSys {
 
 
     }
+
+	shadowDist = 150
+	playerTarget
 	Event(type, data) {
 		if(type === 'controller-ready') {
 			if(!data.isSelf) return // Only add lights for self
 			// Directional light
-			const playerTarget = data.controller.target//this.babs.ents.get(this.babs.idSelf)?.controller?.target
+			this.playerTarget = data.controller.target
 
 			// todo have this track not-the-player lol.  Perhaps an origin that doesn't move?  Used to be cube
 			this.dirLight = new DirectionalLight(0xffffff, 0)
-			this.dirLight.target = playerTarget
-			this.babs.scene.add(this.dirLight)
-			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 10)
+			this.dirLight.target = this.playerTarget
+
+			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 1000)
 			this.dirLightHelper.name = 'three-helper'
 			this.babs.scene.add(this.dirLightHelper)
-
+			
 			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
-			// this.dirLight.position.set(this.lightShift.x, this.lightShift.y, this.lightShift.z).normalize()
-			// this.dirLight.position.multiplyScalar( 3 )
+			
+			// Shadow
+			this.dirLight.castShadow = true
+			this.dirLight.shadow.bias = -0.0001
+			this.dirLight.shadow.normalBias = -0.1
+			this.dirLight.shadow.mapSize.width = 4096
+			this.dirLight.shadow.mapSize.height = 4096
+			this.dirLight.shadow.camera.near = 0
+			this.dirLight.shadow.camera.far = this.shadowDist *2
+			this.dirLight.shadow.camera.left = this.shadowDist
+			this.dirLight.shadow.camera.right = -this.shadowDist
+			this.dirLight.shadow.camera.top = this.shadowDist
+			this.dirLight.shadow.camera.bottom = -this.shadowDist
+
+			this.babs.scene.add(this.dirLight)
+
+			this.cameraHelper = new CameraHelper(this.dirLight.shadow.camera)
+			this.cameraHelper.name = 'camerahelper'
+			this.babs.scene.add(this.cameraHelper)
+
+			this.renderer.shadowMap.enabled = true
+
+			// this.renderer.shadowMap.type = BasicShadowMap
+			this.renderer.shadowMap.type = PCFShadowMap
+			// this.renderer.shadowMap.type = PCFSoftShadowMap
+			// this.renderer.shadowMap.type = VSMShadowMap
+
+			// this.renderer.shadowMap.autoUpdate = true // /needsUpdate 
+			// ^ Only needed to false if updating manually; true updates every frame
+
+			debugMode.subscribe(on => {
+				this.cameraHelper.visible = on
+				this.dirLightHelper.visible = on
+			})
+
+
+			// Trying out CSM
+			// https://github.com/vHawk/three-csm https://threejs.org/examples/?q=shadow#webgl_shadowmap_csm
+			// const params = {
+			// 	orthographic: false,
+			// 	fade: false,
+			// 	far: 4000,
+			// 	mode: 'practical',
+			// 	lightX: 0.5,
+			// 	lightY: 0.5,
+			// 	lightZ: 0.5,
+			// 	margin: 100,
+			// 	lightFar: 4000,
+			// 	lightNear: 1,
+			// };
+			// this.csm = new CSM( {
+			// 	maxFar: params.far,
+			// 	cascades: 4,
+			// 	mode: params.mode,
+			// 	parent: this.babs.scene,
+			// 	shadowMapSize: 1024,
+			// 	lightDirection: new Vector3( params.lightX, params.lightY, params.lightZ ).normalize(),
+			// 	camera: this.babs.camera
+			// } );
+			// this.csm.setupMaterial(this.babs.worldSys.groundMaterial)
+			// Nope, sketchy integration with engine, lambert, maybe instancemesh, light color
+
+
+			
 		}
 	}
 
@@ -369,17 +418,19 @@ export class WorldSys {
 		// Adjust fog lightness (white/black) to sun elevation
 		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
 		// log('time:', noonness)
+
 		if(noonness < 0 +this.duskMargin) { // nighttime
 			this.timeMultiplier = WorldSys.TIME_SPEED *5 // speed up nighttime
 			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
 				this.nightsky?.material.forEach(m => m.opacity = 1.0)
 			}
+			
 		}
 		else if(noonness >= 0 +this.duskMargin) { // daytime
 			this.timeMultiplier = WorldSys.TIME_SPEED
 			const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
 			this.nightsky?.material.forEach(m => m.opacity = opacity)
-			// log(noonness, opacity)
+			this.dirLight ? this.dirLight.castShadow = true : 0
 		}
 
 		// Rotate sky // Todo more accurate lol!
@@ -399,16 +450,29 @@ export class WorldSys {
 		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, phi, theta)
 		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
 
-		// Put directional light at sun position, just farther out
-		this.dirLight?.position.copy(this.sunPosition.clone().multiplyScalar(10000))
-
 
 		if(this.dirLight){
-			this.dirLight.intensity = MathUtils.lerp(
-				0.01, 
-				1.0 *(1/this.renderer.toneMappingExposure), 
-				Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
-			)
+			// Put directional light at sun position, just farther out
+			this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
+			this.dirLight.position.add(this.playerTarget.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
+
+			this.dirLightHelper.update()
+			this.cameraHelper.update()
+			// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
+
+			if(noonness < 0 -this.duskMargin /3){ // /2 so that shadows are active after sun isn't at an extreme angle
+				this.dirLight.castShadow = false
+				this.dirLight.intensity = 0
+			}
+			else {
+				this.dirLight.castShadow = true
+				// Intensity based on noonness
+				this.dirLight.intensity = MathUtils.lerp(
+					0.01, 
+					1.0 *(1/this.renderer.toneMappingExposure), 
+					Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
+				)
+			}
 		}
 		this.hemiLight.intensity = MathUtils.lerp(
 			0.5,//0.05, 
@@ -455,11 +519,14 @@ export class WorldSys {
 			this.waterInstancedMesh.instanceMatrix.needsUpdate = true
 		}
 
+		this.csm?.update()
+
 		this.updateCount++
     }
 
-	ground
-    async loadStatics(urlFiles, zone, eleFetch) {
+	currentGround
+	groundMaterial
+    async loadStatics(urlFiles, zone) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
@@ -467,25 +534,49 @@ export class WorldSys {
 			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.x, 
 			0,//zone.y -8000,
 			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.z,
-		)
-
-        const material = new MeshPhongMaterial( {side: FrontSide} )
+			)
+			
+		// const material = new MeshPhongMaterial({
+		// 	name: 'megamaterial',
+		// 	map: this.objectTexture,
+		// 	// bumpMap: texture,
+		// 	// bumpScale: bumpScale,
+		// 	// color: diffuseColor,
+		// 	specular: 0.16,
+		// 	// reflectivity: 0.5,
+		// 	shininess: 0.2,
+		// 	// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
+		// 	side: FrontSide,
+		// 	// color: null,
+		// 	// emissive: null,
+		// 	// color: new Color(0,0,0).convertSRGBToLinear(),
+		// })
+        this.groundMaterial = this.groundMaterial || new MeshLambertMaterial( {
+			side: FrontSide,
+			shadowSide: FrontSide,
+			// depthFunc: NeverDepth,
+		} )
         // const material = new MeshStandardMaterial({vertexColors: true})
-        // material.color.setHSL( 0.095, 0.5, 0.20 )
-		material.vertexColors = true
+        // this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )
+		this.groundMaterial.vertexColors = true
 
 		await this.genElevation(urlFiles, geometry, zone)
 		await this.genLandcover(urlFiles, geometry, zone)
 		
         geometry.computeVertexNormals()
 
-        this.ground = new Mesh( geometry, material )
-        this.ground.name = zone.x == 0 && zone.z == 0 ? 'ground' : 'ground2' // zonetodo
-		this.ground.idzone = zone.id
-        this.ground.castShadow = true
-        this.ground.receiveShadow = true
-		// ground.visible = false
-        this.babs.scene.add(this.ground)
+		const newGround = new Mesh( geometry, this.groundMaterial )
+        newGround.name = 'ground2' // zonetodo
+		newGround.idzone = zone.id
+        newGround.castShadow = true
+        newGround.receiveShadow = true
+		newGround.zone = zone
+        this.babs.scene.add(newGround)
+
+		if(zone.x == 0 && zone.z == 0) {
+			newGround.name = 'ground'
+			this.currentGround = newGround
+		}
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
@@ -605,7 +696,7 @@ export class WorldSys {
 		}
 
     }
-    async genLandcover(urlFiles, geometry, zone, lcFetch) {
+    async genLandcover(urlFiles, geometry, zone) {
 		// Get landcover data
         
 		// Vertex colors on BufferGeometry using a non-indexed array
@@ -730,22 +821,5 @@ export class WorldSys {
 		}
 		return intersect?.point
 	}
-
-	// This has been replaced with an InstancedMesh!
-	// waterMaterial = new MeshLambertMaterial()
-	// waterGeometry
-	// makeWaterCube(vPosition, size) {
-	// 	if(!this.waterGeometry) this.waterGeometry = new BoxGeometry( size, size, size )
-	// 	const cube = new Mesh(this.waterGeometry, this.waterMaterial)
-	// 	// log(this.colorFromLc.river)
-	// 	cube.material.color = this.colorFromLc.river
-	// 	cube.position.copy(vPosition).setY(vPosition.y - size/2) // Sink partway into ground
-	// 	// cube.material.castShadow = false
-	// 	// cube.material.receiveShadow = false
-	// 	// cube.material.disableLighting = true
-	// 	cube.randFactor = Math.random()
-	// 	this.babs.scene.add(cube)
-	// 	return cube
-	// }
 
 }
