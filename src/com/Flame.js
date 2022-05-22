@@ -287,7 +287,7 @@ export class Flame extends Com {
 	};
 
 	static fireTex
-	static async New(wob, babs) {
+	static async New(wob, babs, scale, yup) {
 		const com = new Flame(wob, babs)
 
 		// Init static singletons
@@ -307,11 +307,10 @@ export class Flame extends Com {
 
 		babs.scene.add(com.fire);
 
-		const scale = 3
-		com.fire.scale.set(scale,scale,scale)
+		com.fire.scale.set(scale,scale*1.33,scale)
 		const {y} = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
-		com.fire.position.setY(y +2)
-		com.fire.position.setX(wob.x *4 +2)
+		com.fire.position.setY(y +yup)
+		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(wob.z *4 +2)
 
 		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude;

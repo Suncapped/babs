@@ -370,7 +370,16 @@ export class Wob extends Ent {
 
 		}
 
-		if(wob.name === 'firepit') {
+		if(wob.name === 'firepit' || wob.name === 'torch') {
+			let scale, yup
+			if(wob.name === 'firepit') {
+				scale = 3
+				yup = 2
+			}
+			else if(wob.name === 'torch') {
+				scale = 1.1
+				yup = 3.5
+			}
 
 			// Remove any existing flame
 			if(wob.attachments?.flame){
@@ -379,7 +388,7 @@ export class Wob extends Ent {
 			}
 
 			// Add new flame
-			const flame = await Flame.New(wob, babs)
+			const flame = await Flame.New(wob, babs, scale, yup)
 			wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
 			wob.attachments.flame = flame
 
