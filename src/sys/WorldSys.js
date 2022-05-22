@@ -452,7 +452,7 @@ export class WorldSys {
 
 
 		if(this.dirLight){
-			// Put directional light at sun position, just farther out
+			// Put directional light at sun position, but closer in!
 			this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
 			this.dirLight.position.add(this.playerTarget.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
 

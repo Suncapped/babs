@@ -17,7 +17,7 @@
     "postbuild": "sh buildtime.sh",
     "predeploy": "npm run build",
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs",
-    "postdeploy": "//node discord.js",
+    "postdeploy": "node discord.js",
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10"
   },
   "devDependencies": {

@@ -194,7 +194,25 @@ export class InputSys {
 			if (this.keys.cleft) {
 
 				// Spawn test character
-				if (this.keys.v === PRESS) {
+				if (this.keys.b === PRESS) {
+					let wobTrees = []
+					const treesPerAxis = 100
+					const spacing = 2
+					for(let a=0; a<treesPerAxis; a++) {
+						for(let b=0; b<treesPerAxis; b++) {
+							wobTrees.push({
+								id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
+								idzone: 899279496,
+								x: a*spacing,
+								z: b*spacing,
+								name: 'lodgepole simple',
+								color: '0xff0000',
+							})
+						}
+					}
+					console.log('wobTree time!', wobTree)
+					await Wob.ArriveMany(wobTrees, this.babs, false)
+
 
 
 					/* 
@@ -746,6 +764,7 @@ export class InputSys {
 		})
 
 		this.canvas.addEventListener('wheel', ev => {
+			ev.preventDefault()
 
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
 			if (ev.ctrlKey) {
@@ -778,7 +797,7 @@ export class InputSys {
 				}
 			}
 
-		}, {passive:true})
+		}, {passive: false})
 
 		topmenuUnfurled.subscribe(vis => { // Menu becomes visible
 			this.topMenuVisibleLocal = vis
