@@ -402,7 +402,8 @@ export class SocketSys {
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
 
-							if(wobExisting.attachments.length > 0){
+							// if(wobExisting.attachments && wobExisting.attachments.length > 0){
+							if(wobExisting.attachments?.length > 0){ // shortcut for above
 								wobExisting.attachments.forEach(att => {
 									console.log('removing att', att)
 									context.babs.scene.remove(att)
@@ -457,19 +458,24 @@ export class SocketSys {
 
 					const wobId = data.wobId
 					const options = data.options
+					const craftWob = context.babs.ents.get(wobId)
+					let position = context.babs.worldSys.vRayGroundHeight(craftWob.x, craftWob.z)
 				
+					log(position)
 					// Display a list of icons above the wobId wob, list of options available:
 					// Create a .svelte file for icons
 					// When crafting thing is received, create icons for everything in it.
 					// position like: const chatLabel = new CSS2DObject(chatDiv)
 
-					new Crafting({
-						target: document.body,
-						props: {
-							options,
-							wobId
-						},
-					})
+					context.babs.uiSys.craftSaid(options, position, wobId)
+					
+					// new Crafting({
+					// 	target: document.body,
+					// 	props: {
+					// 		options,
+					// 		wobId
+					// 	},
+					// })
 
 
 				break

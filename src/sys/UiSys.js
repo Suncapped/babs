@@ -5,7 +5,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { toprightText, toprightReconnect, menuSelfData, uiWindows } from "../stores.js"
+import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from "../stores.js"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -188,6 +188,41 @@ export class UiSys {
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
 		this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
+	}
+
+	craftSaid(options, point, wobId) {	
+		const chatDiv = document.createElement('div')
+		chatDiv.id = 'Crafting'
+		const chatLabel = new CSS2DObject(chatDiv)
+
+		options.forEach(option => {
+			const chatButton = document.createElement('button')
+			chatButton.innerText = option
+			chatButton.id = option
+			chatButton.className = "craftbtn"
+			chatButton.style.cssText = 'pointer-events: auto;'
+			chatButton.onsubmit = (ev) => ev.preventDefault()
+			chatButton.onmouseup = (ev) => updateWOB(option)
+
+			chatDiv.appendChild(chatButton)
+			point.setY(point.y +2) // Raise up
+			chatLabel.position.copy(point)
+			this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
+		})	
+		
+		const updateWOB = (opt) => {
+			log("User selected: " + opt + " wobID: " + wobId)
+			this.babs.worldSys.currentGround.remove(chatLabel)	
+
+			// Need a way to send an update to the server, will circle back to this
+			socketSend.set({
+				'action': {
+					verb: 'craft',
+					noun: wobId,
+					data: opt
+				}
+			})
+		}
 	}
 
 
