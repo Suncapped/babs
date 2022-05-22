@@ -334,7 +334,9 @@ export class Wob extends Ent {
 
 			let size = new Vector3()
 			instanced.geometry?.boundingBox?.getSize(size)
-			const sink = 0.2 // Percent didn't work for trees; instead use 0.2 of a foot (2.4 in lol)
+
+			const sink = Math.min(size.y *0.05, 0.2)  // Percent didn't work for trees; instead use 0.2 of a foot (2.4 in lol)
+			// console.log('size', size, sink)
 			position.setY(position.y +(size.y /2) -sink)
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
@@ -369,10 +371,17 @@ export class Wob extends Ent {
 		}
 
 		if(wob.name === 'firepit') {
-			
+
+			// Remove any existing flame
+			if(wob.attachments?.flame){
+				babs.scene.remove(wob.attachments.flame.fire)
+				delete wob.attachments.flame
+			}
+
+			// Add new flame
 			const flame = await Flame.New(wob, babs)
-			wob.attachments = wob.attachments || [] // For later deletion if wob is removed (moved etc)
-			wob.attachments.push(flame)
+			wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
+			wob.attachments.flame = flame
 
 
 		}

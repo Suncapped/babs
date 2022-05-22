@@ -23,7 +23,7 @@ export class CameraSys {
 
 	_CalculateIdealOffset() {
 		const minDistance = -15
-		const maxDistance = -45
+		const maxDistance = -30
 		const limitDistance = 100
 		
 		const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)

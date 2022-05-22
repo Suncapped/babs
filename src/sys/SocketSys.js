@@ -402,12 +402,9 @@ export class SocketSys {
 							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
 
-							// if(wobExisting.attachments && wobExisting.attachments.length > 0){
-							if(wobExisting.attachments?.length > 0){ // shortcut for above
-								wobExisting.attachments.forEach(att => {
-									console.log('removing att', att)
-									context.babs.scene.remove(att)
-								})
+							if(wobExisting.attachments?.flame){
+								context.babs.scene.remove(wob.attachments.flame.fire)
+								delete wob.attachments.flame
 							}
 
 							context.babs.ents.delete(wobExisting.id)

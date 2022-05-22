@@ -15,6 +15,7 @@ import { Vector4 } from "three"
 import { Matrix3 } from "three"
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import { Controller } from "../com/Controller"
 
 export class LoaderSys {
 
@@ -171,7 +172,7 @@ export class LoaderSys {
 		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
 		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
-		scene.scale.multiplyScalar(0.1 * 3.28) // hax for temp character
+		scene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
 
 		
 		// Put in a box for raycast bounding // must adjust with scale

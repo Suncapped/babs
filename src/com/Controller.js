@@ -46,6 +46,8 @@ export class Controller extends Com {
 		7: 0,
 	}
 
+	static sizeScaleDown = 0.80
+
 	raycaster
 	gDestination
 
@@ -62,7 +64,7 @@ export class Controller extends Com {
 		cont.vTerrainMin = new THREE.Vector3(0,0,0)
 		cont.vTerrainMax = new THREE.Vector3(1000,10_000,1000)
 		cont._decceleration = new THREE.Vector3(-5.0, 0, -5.0) // friction, basically
-		cont.acceleration = new THREE.Vector3(100, 0, 100)
+		cont.acceleration = new THREE.Vector3(100 *this.sizeScaleDown, 0, 100 *this.sizeScaleDown)
 		cont.rotationSpeed = 1
 		cont.velocity = new THREE.Vector3(0, 0, 0)
 		cont.groundDistance = 0
