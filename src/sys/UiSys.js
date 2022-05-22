@@ -240,7 +240,7 @@ export class UiSys {
      */
     createStats(which) {
         this[which] = Stats()
-        this[which].showPanel(which=="fps"?0:2)
+        this[which].showPanel(which=="fps"?0:1)
         this[which].dom.id = which
         this[which].dom.style = ""
 

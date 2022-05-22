@@ -55,7 +55,6 @@ import { LineSegments } from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { debugMode } from "../stores"
 
-import { GUI } from 'dat.gui'
 import { Wob } from '../ent/Wob'
 import { EventSys } from './EventSys'
 import * as SunCalc from 'suncalc'
@@ -205,17 +204,18 @@ export class WorldSys {
 
 		}
 
-		const skyUi = false
-		if(skyUi) {
-			const gui = new GUI()
-			gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-			gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
-		}
+
+		// import { GUI } from 'dat.gui'
+		// const gui = new GUI()
+		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
+		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
+
+
 		updateSkyValues()
 
 

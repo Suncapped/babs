@@ -62,3 +62,9 @@ a {
 a:hover{
     border-bottom: 2px solid lightblue;
 }
+
+
+
+#HiddenRenderFrame {
+	display: none; position:fixed; top:50px; left:50px; width: 100px; height: 100px; background-color:red;
+}

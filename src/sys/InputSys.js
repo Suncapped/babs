@@ -873,8 +873,8 @@ export class InputSys {
 		if (this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
 		) {
-			this.mouseRayTargets = []
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
+			this.mouseRayTargets = []
 			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
 
 			// if(this.mouseRayTargets.length > 1) {
