@@ -278,7 +278,11 @@ export class Wob extends Ent {
 			instanced.instanceMatrix.setUsage(StreamDrawUsage) 
 			// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 			// instanced.instanceMatrix.needsUpdate = true
-			instanced.castShadow = true
+
+			let size = new Vector3()
+			instanced.geometry?.boundingBox?.getSize(size)
+
+			instanced.castShadow = size.y >= 1
 			instanced.receiveShadow = true
 
 			// Also add renderedIcon for later

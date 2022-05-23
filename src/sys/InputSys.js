@@ -202,11 +202,13 @@ export class InputSys {
 
 				// Spawn test character
 				if (this.keys.b === PRESS) {
+					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
+					// const [treesPerAxis, spacing] = [5, 50] // Property (5 pieces) posts
+					let count=0
 					let wobTrees = []
-					const treesPerAxis = 5
-					const spacing = 50
 					for(let a=0; a<treesPerAxis; a++) {
 						for(let b=0; b<treesPerAxis; b++) {
+							count++
 							wobTrees.push({
 								id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
 								idzone: 899279496,
@@ -217,6 +219,7 @@ export class InputSys {
 							})
 						}
 					}
+					log('Created '+count+' client side items')
 					await Wob.ArriveMany(wobTrees, this.babs, false)
 
 
