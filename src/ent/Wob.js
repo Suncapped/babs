@@ -339,9 +339,12 @@ export class Wob extends Ent {
 			let size = new Vector3()
 			instanced.geometry?.boundingBox?.getSize(size)
 
-			const sink = Math.min(size.y *0.05, 0.2)  // Percent didn't work for trees; instead use 0.2 of a foot (2.4 in lol)
-			// console.log('size', size, sink)
-			position.setY(position.y +(size.y /2) -sink)
+			// console.log('sizey', size.y, wob.name)
+			const sink = Math.min(size.y *0.05, 0.2)  
+			// ^ Sink by a percent but with a max for things like trees.
+			const lift = size.y < 0.01 ? 0.066 : 0
+			// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
+			position.setY(position.y +(size.y /2) -sink +lift)
 
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count

@@ -80,7 +80,7 @@ export class WorldSys {
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
 
-	static TIME_SPEED = 300
+	static TIME_SPEED = 100
 
 	babs
 	renderer
@@ -422,7 +422,7 @@ export class WorldSys {
 		// log('time:', noonness)
 
 		if(noonness < 0 +this.duskMargin) { // nighttime
-			this.timeMultiplier = WorldSys.TIME_SPEED *5 // speed up nighttime
+			this.timeMultiplier = WorldSys.TIME_SPEED *10 // speed up nighttime
 			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
 				this.nightsky?.material.forEach(m => m.opacity = 1.0)
 			}
@@ -601,11 +601,12 @@ export class WorldSys {
         const dataBlob = await fet.blob()
 
 		let ds = new DecompressionStream('gzip')
+		
 		// const stream = dataBlob.stream()
 		// Hack patch from https://github.com/stardazed/sd-streams/issues/8
 		const readableStream = new PatchableReadableStream(dataBlob.stream().getReader())
 
-		let decompressedStream = readableStream.pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams
+		let decompressedStream = readableStream.pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams // But, we have now polyfilled it (and Safari) using @stardazed/streams-polyfill
 
 		const response = new Response(decompressedStream)
 		const decompressedBlob = await response.blob()
@@ -614,10 +615,6 @@ export class WorldSys {
 		const wobs = JSON.parse(text)
 		return wobs
     }
-
-
-	  
-
 
     elevationData = {}
     landcoverData
@@ -718,7 +715,8 @@ export class WorldSys {
 					}
 					if(lcString === 'grass') {
 						// Lighten slightly with elevation // Todo add instead of overwrite?
-						color.setHSL(98/360, 80/100, 0.2 +zone.elevationData[index] /1000).convertSRGBToLinear() // todo copy instead of mutate
+						// color.clone().setHSL(98/360, 80/100, 0.2 +zone.elevationData[index] /1000).convertSRGBToLinear() 
+						// ^^ todo copy instead of mutate?
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
@@ -830,3 +828,4 @@ export class PatchableReadableStream extends ReadableStream {
 	  })
 	}
   }
+  

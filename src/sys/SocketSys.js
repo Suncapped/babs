@@ -380,7 +380,7 @@ export class SocketSys {
 					const chattyPlayer = context.babs.ents.get(data.id)
 					if(chattyPlayer) { // Can be self; self text get put over head, too.
 						log.info('said by chattyPlayer', chattyPlayer.id, data.text)
-						context.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color})
+						context.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color, show: data.show})
 					}
 				break
 				case 'nicklist':

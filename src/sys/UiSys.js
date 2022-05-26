@@ -47,6 +47,7 @@ export class UiSys {
 			italics: false,
 			journal: true,
 			isname: false,
+			show: true, // show above head?
 			...options,
 		}
 		const chatDiv = document.createElement('div')
@@ -74,6 +75,10 @@ export class UiSys {
 
 		if(options.journal) {
 			this.svJournal.appendText((player.nick || 'Stranger')+': '+text, options.color)
+		}
+
+		if(!options.show) {
+			return
 		}
 
 		// Decide how long to display for
