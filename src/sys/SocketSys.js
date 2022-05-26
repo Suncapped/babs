@@ -325,7 +325,9 @@ export class SocketSys {
 					context.babs.uiSys.loadUis(data.uis)
 
 					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, centerzone)
-					await Wob.ArriveMany(wobs, context.babs, false)
+					if(wobs) {
+						await Wob.ArriveMany(wobs, context.babs, false)
+					}
 
 					context.send({
 						ready: loadSelf.id,

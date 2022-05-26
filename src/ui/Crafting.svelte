@@ -44,20 +44,5 @@
 </div>  -->
 
 <style>
-	#Crafting {
-		position: absolute;
-		top: 20px;
-		left: 20px;
-		pointer-events: auto; /* Allows the buttons to be clickable */
-	}
-	#Crafting > ul {
-		padding: 0;
-		margin: 0;
-	}
-	
-	.craftbtn {
-		background-color:rgba(12, 12, 12, 0.8);	
-
-	}
 
 </style>

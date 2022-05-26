@@ -16,12 +16,12 @@ This codebase might not be useful as a library for making a different game, beca
 
 # Install Nodejs
 
-Requires Nodejs version 17.  An easy way to get there is using `volta` https://docs.volta.sh/guide/getting-started.  Brief MacOS/Linux instructions:
+Requires Nodejs version 18.  An easy way to get there is using `volta` https://docs.volta.sh/guide/getting-started.  Brief MacOS/Linux instructions:
 
 ```console
 curl https://get.volta.sh | bash
 exit # Close console.  Then open a new console and:
-volta install node@17
+volta install node@18
 ```
 
 ### Clone repo, then run dev server

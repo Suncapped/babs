@@ -61,6 +61,8 @@ import * as SunCalc from 'suncalc'
 // import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 // import { CSM } from 'three/examples/jsm/csm/CSM.js';
 
+import '@stardazed/streams-polyfill'
+
 export class WorldSys {
 
 	static ZoneLength = 1000
@@ -319,7 +321,7 @@ export class WorldSys {
 			// Shadow
 			this.dirLight.castShadow = true
 			this.dirLight.shadow.bias = -0.0001
-			this.dirLight.shadow.normalBias = -0.1
+			this.dirLight.shadow.normalBias = 0.1
 			this.dirLight.shadow.mapSize.width = 4096
 			this.dirLight.shadow.mapSize.height = 4096
 			this.dirLight.shadow.camera.near = 0
@@ -342,7 +344,7 @@ export class WorldSys {
 			// this.renderer.shadowMap.type = PCFSoftShadowMap
 			// this.renderer.shadowMap.type = VSMShadowMap
 
-			// this.renderer.shadowMap.autoUpdate = true // /needsUpdate 
+			this.renderer.shadowMap.autoUpdate = true // /needsUpdate 
 			// ^ Only needed to false if updating manually; true updates every frame
 
 			debugMode.subscribe(on => {
@@ -460,7 +462,9 @@ export class WorldSys {
 			this.cameraHelper.update()
 			// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
 
-			if(noonness < 0 -this.duskMargin /3){ // /2 so that shadows are active after sun isn't at an extreme angle
+			if(noonness < 0 +this.duskMargin /7) { 
+				// ^ todo have shadows fade out rather than just disappear?
+				// 	Or just have less ambient lighting of objects at night?
 				this.dirLight.castShadow = false
 				this.dirLight.intensity = 0
 			}
@@ -588,45 +592,32 @@ export class WorldSys {
     }
 
     async loadObjects(urlFiles, zone) {
-        
-		// Sampling of objects
-		const loadItems = [
-			'flower-lotus.gltf',
-			'flowers-carnations.gltf', 'grass-basic.gltf',
-			'grass.gltf',              'mushroom-boletus.gltf',
-			'mushroom-toadstool.gltf', 'obj-chisel.gltf',
-			'obj-tablet.gltf',         'obj-timber.gltf',
-			'rock-crystal.gltf',       'rock-pillarsmall.gltf',
-			'rock-terrassesmall.gltf', 'rocks-sharpsmall.gltf',
-			'rocks-small.gltf',        'stone-diamond.gltf',
-			'stump.gltf',              'tree-birchtall.gltf',
-			'tree-dead.gltf',          'tree-fallenlog.gltf',
-			'tree-forest-simple.gltf', 'tree-forest.gltf',
-			'tree-oak.gltf',           'tree-old.gltf',
-			'tree-park.gltf',          'tree-spruce.gltf',
+		const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
 
-			'bush-basic.gltf', 'obj-mud.gltf', 'obj-blockmud.gltf', 
+		if(fet.status == 404) {// Zone with no objects cached yet!
+			return null
+		}
 
-			// 'F_Bald_mesh_009.gltf',
-		]
-		// const objs = await Promise.all(loadItems.map(item => Wob.New(`/environment/gltf/${item}`, this.babs, 0)))
-		// objs.forEach((obj, i) => obj.mesh.position.copy(this.vRayGroundHeight(i*2 +2, 16 +2)))
-
-
-        const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
         const dataBlob = await fet.blob()
 
-        // const buff = await data.arrayBuffer()
-        // this.landcoverData = new Uint8Array(buff)
-
 		let ds = new DecompressionStream('gzip')
-		let decompressedStream = dataBlob.stream().pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams
-		const decompressedBlob = await new Response(decompressedStream).blob()
+		// const stream = dataBlob.stream()
+		// Hack patch from https://github.com/stardazed/sd-streams/issues/8
+		const readableStream = new PatchableReadableStream(dataBlob.stream().getReader())
+
+		let decompressedStream = readableStream.pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams
+
+		const response = new Response(decompressedStream)
+		const decompressedBlob = await response.blob()
 
 		const text = await decompressedBlob.text()
 		const wobs = JSON.parse(text)
 		return wobs
     }
+
+
+	  
+
 
     elevationData = {}
     landcoverData
@@ -823,3 +814,19 @@ export class WorldSys {
 	}
 
 }
+
+export class PatchableReadableStream extends ReadableStream {
+	constructor (reader) {
+	  super({
+		async start(controller) {
+		  while (true) {
+			const { done, value } = await reader.read()
+			if (done) break
+			controller.enqueue(value)
+		  }
+		  controller.close()
+		  reader.releaseLock()
+		}
+	  })
+	}
+  }

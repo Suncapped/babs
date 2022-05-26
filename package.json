@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.3.0",
   "engines": {
-    "node": "v17"
+    "node": "v18"
   },
   "volta": {
-    "node": "17.4.0"
+    "node": "18.2.0"
   },
   "scripts": {
     "dev": "vite --host",
@@ -36,6 +36,7 @@
   "dependencies": {
     "@jaames/iro": "^5.5.2",
     "@neodrag/svelte": "^1.0.2",
+    "@stardazed/streams-polyfill": "^2.4.0",
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.1",
     "papercss": "^1.8.2",

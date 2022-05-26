@@ -40,7 +40,7 @@ export class LoaderSys {
 				// shininess: 0.2,
 				// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 				side: DoubleSide,
-				shadowSide: FrontSide,
+				shadowSide: FrontSide, // Might have to use separate materials if I want more granularity.
 				// color: null,
 				// emissive: null,
 				// color: new Color(0,0,0).convertSRGBToLinear(),
@@ -176,7 +176,7 @@ export class LoaderSys {
 
 		
 		// Put in a box for raycast bounding // must adjust with scale
-		const cube = new Mesh(new BoxGeometry(3, 8, 3), new MeshBasicMaterial())
+		const cube = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
 		cube.scale.multiplyScalar(1 /scene.scale.x)
 		cube.position.setY(3*(1 /scene.scale.x))

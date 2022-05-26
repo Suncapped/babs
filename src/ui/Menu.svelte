@@ -197,7 +197,7 @@
 		<div class="content card-body">
 			<div id="picker"></div>
 			<ul>			
-			<li>Welcome to First Earth</li>
+			<li>Welcome to First Earth!</li>
 			<li>
 					Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
 			</li>
