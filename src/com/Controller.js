@@ -10,6 +10,7 @@ import { WorldSys } from '../sys/WorldSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
+import { WobAtPosition } from '../Utils'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -50,6 +51,7 @@ export class Controller extends Com {
 
 	raycaster
 	gDestination
+	hover = 0
 
 	constructor(arrival, babs) {
 		super(arrival.id, Controller, babs)
@@ -368,9 +370,21 @@ export class Controller extends Com {
 
 			}
 
+			this.hover = 0
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
 					this._stateMachine.setState('idle')
+
+					const wobAtDest = WobAtPosition(this.babs.ents, this.gDestination.x, this.gDestination.z)
+					if(wobAtDest?.name == 'hot spring') {
+						this.hover = -3
+					}
+					if(wobAtDest?.name == 'flat rock') {
+						this.hover = 0.8
+					}
+					if(wobAtDest?.name == 'ladder') {
+						this.hover = 7
+					}
 				}
 			}
 
@@ -445,9 +459,9 @@ export class Controller extends Com {
 			const groundIntersect = this.raycaster.intersectObject(ground, true)
 			// log('groundIntersect', groundIntersect, ground)
 			const groundHeightY = groundIntersect?.[0]?.point.y
-			if(groundHeightY > controlObject.position.y) {
+			if(groundHeightY > controlObject.position.y || this.hover) {
 				this.groundDistance = true
-				controlObject.position.setY(groundHeightY) // Import is bottom-origin!
+				controlObject.position.setY(groundHeightY +this.hover)
 				// If on ground, y velocity stops
 			}
 			this.groundDistance = controlObject.position.y - groundHeightY // Used for jump

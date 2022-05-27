@@ -610,37 +610,24 @@ export class InputSys {
 							// box.focus()
 						} else {//} if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
-							log('wobclick', this.mouse, this.pickedObject, this.pickedObject.instanced.wobIdsByIndex)
+							log('wobclick', this.mouse, this.pickedObject, this.pickedObject?.instanced?.wobIdsByIndex)
 
-							const wobId = this.pickedObject.instanced.wobIdsByIndex[this.pickedObject.instancedIndex]
-							const wob = this.babs.ents.get(wobId)
-							log('WOBID', wobId, wob)
+							if(this.pickedObject) {
 
-							// const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-							// const index = Utils.coordToIndex(point.x, point.z, 26)
-
-							this.babs.socketSys.send({
-								action: {
-									verb: 'used',
-									noun: wobId,
-								}
-							})
-
-							// Crafting ?  Example
-							// this.babs.socketSys.send({
-							// 	action: {
-							// 		verb: 'used',
-							// 		noun: '(id of mud wob)',
-							// 	}
-							// })
-							// // Then you'd get back crafting menu data
-							// // Then...you'd click something in the crafting menu and:
-							// this.babs.socketSys.send({
-							// 	action: {
-							// 		verb: 'craft',
-							// 		noun: 'mud block',
-							// 	}
-							// })
+								const wobId = this.pickedObject.instanced.wobIdsByIndex[this.pickedObject.instancedIndex]
+								const wob = this.babs.ents.get(wobId)
+								log('WOBID', wobId, wob)
+	
+								// const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
+								// const index = Utils.coordToIndex(point.x, point.z, 26)
+	
+								this.babs.socketSys.send({
+									action: {
+										verb: 'used',
+										noun: wobId,
+									}
+								})
+							}
 
 						}
 					}

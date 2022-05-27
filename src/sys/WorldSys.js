@@ -134,6 +134,7 @@ export class WorldSys {
 		dirt: new Color().setHSL(35/360, 40/100, 40/100),
 		sand: new Color().setHSL(49/360, 37/100, 68/100),
 		cliff: new Color().setHSL(13/360, 61/100, 24/100),
+		lake: new Color().setHSL(222/360, 39/100, 34/100),
 		lakeshore: new Color().setHSL(51/360, 39/100, 34/100),
 		river: new Color().setHSL(222/360, 39/100, 34/100),
 		rivershore: new Color().setHSL(51/360, 39/100, 34/100),
@@ -729,7 +730,11 @@ export class WorldSys {
 			for(let z=-1; z<=1; z++) {
 				for(let x=-1; x<=1; x++) {
 					const offsetIndex = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
-					if(this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'river') {
+					if(
+						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'river'
+						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'lake'
+					
+					) {
 
 						waterNearbyIndex[index]++
 					}
@@ -740,7 +745,13 @@ export class WorldSys {
 
 		// Water?  Delayed?
 		setTimeout(() => {
-			if(!(zone.x == 0 && zone.z == 0)) return // zonetodo
+			if(!
+				(
+					(zone.x == 0 && zone.z == 0)
+				)
+			){
+				return // zonetodo
+			}
 
 			const cubeSize = 4 // Must divide into 10
 			const waterCubePositions = []

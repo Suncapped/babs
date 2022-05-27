@@ -416,6 +416,8 @@ export class Wob extends Ent {
 		position.setFromMatrixPosition(matrix)
 		return position
 	}
+
+
 	
 }
 

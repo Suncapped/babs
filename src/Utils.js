@@ -226,3 +226,14 @@ export function findWobByInstance(ents, instancedIndex, instancedName) {
 	}
 	return null
 }
+
+export function WobAtPosition(ents, gx, gz) {
+	// todo make this use an abstracted grid (like server) instead of linear search
+	for(let [key, ent] of ents) {
+		if(ent.x === gx && ent.z === gz) {
+			return ent
+		}
+	}
+	return null
+
+}

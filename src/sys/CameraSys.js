@@ -6,7 +6,7 @@ import { Quaternion } from 'three'
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 export class CameraSys {
-	static DefaultOffsetHeight = 10
+	static DefaultOffsetHeight = 15
 
 	constructor(camera, targetController, babs) {
 		this.babs = babs
