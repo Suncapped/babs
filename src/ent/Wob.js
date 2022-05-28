@@ -248,7 +248,7 @@ export class Wob extends Ent {
 
 	static ArriveMany(arrivalWobs, babs, shownames) {
 		let arrivalPromises = arrivalWobs.map(wob => Wob._Arrive(wob, babs, shownames))
-		return Promise.all(arrivalPromises)
+		return arrivalPromises
 	}
 	
 	static WobInstMeshes = new Map()
@@ -270,73 +270,83 @@ export class Wob extends Ent {
 		// Load gltf
 		// Assumes no object animation!
 		let instanced = Wob.WobInstMeshes.get(wob.name)
-		// let test = await instanced
-		// log('test', test, instanced)
+		if(typeof instanced?.then === 'function') { // isPromise
+			instanced = await instanced
+		}
+		// log('instanced', instanced)
 
 		const countMax = 8
 		let currentCount = 0
 		if(!instanced) {
 			const path = `/environment/gltf/obj-${wob.name}.gltf`
-			log('download, load, instantiate wobject', wob.name)
 
-			let mesh
-			try {
-				const gltf = await babs.loaderSys.loadGltf(path)
-				console.log('loading', path)
-				if(gltf.scene) { 
-					if(gltf.scene.children.length == 0) {
-						console.warn('Arrival wob has no children in scene: ', wob.name)
-					}
-					else {
-						mesh = gltf.scene.children[0]
-						if(gltf.scene.children.length > 1) {
-							console.warn(`Loaded object with more than one child.`, wob.name)
+			const loadstuff = async () => {
+					
+				let mesh
+				try {
+					const gltf = await babs.loaderSys.loadGltf(path)
+					log.info('downloading wob', path)
+					if(gltf.scene) { 
+						if(gltf.scene.children.length == 0) {
+							console.warn('Arrival wob has no children in scene: ', wob.name)
+						}
+						else {
+							mesh = gltf.scene.children[0]
+							if(gltf.scene.children.length > 1) {
+								console.warn(`Loaded object with more than one child.`, wob.name)
+							}
 						}
 					}
+					else {
+						console.warn('Arrival wob has no scene: ', wob.name)
+					}
+					
 				}
-				else {
-					console.warn('Arrival wob has no scene: ', wob.name)
+				catch(e) {
 				}
-				
+
+				if(!mesh) { 
+					// Object wasn't loaded.  Make a sphere
+					const geometry = new SphereGeometry(1, 12, 12)
+					const material = new MeshLambertMaterial({ color: 0xcccc00 })
+					mesh = new Mesh(geometry, material)
+				}
+
+				instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax)
+				// ^ Up to one for each grid space; ignores stacking, todo optimize more?
+				instanced.countMax = countMax
+				instanced.count = currentCount
+				instanced.name = wob.name
+				instanced.instanceMatrix.setUsage(StreamDrawUsage) 
+				// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
+				// instanced.instanceMatrix.needsUpdate = true
+
+				let size = new Vector3()
+				instanced.geometry?.boundingBox?.getSize(size)
+
+				instanced.castShadow = size.y >= 1
+				instanced.receiveShadow = true
+
+				// Also add renderedIcon for later
+				// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+				// instanced.renderedIcon = icon
+				// instanced.renderedIconPixels = pixels
+
+				babs.scene.add(instanced)
+
+				return instanced
 			}
-			catch(e) {
-			}
 
-			if(!mesh) { 
-				// Object wasn't loaded.  Make a sphere
-				const geometry = new SphereGeometry(1, 12, 12)
-				const material = new MeshLambertMaterial({ color: 0xcccc00 })
-				mesh = new Mesh(geometry, material)
-			}
 
-			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax)
-			// ^ Up to one for each grid space; ignores stacking, todo optimize more?
-			instanced.countMax = countMax
-			instanced.count = currentCount
-			instanced.name = wob.name
-			instanced.instanceMatrix.setUsage(StreamDrawUsage) 
-			// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
-			// instanced.instanceMatrix.needsUpdate = true
-
-			let size = new Vector3()
-			instanced.geometry?.boundingBox?.getSize(size)
-
-			instanced.castShadow = size.y >= 1
-			instanced.receiveShadow = true
-
-			// Also add renderedIcon for later
-			// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
-			// instanced.renderedIcon = icon
-			// instanced.renderedIconPixels = pixels
-
-			babs.scene.add(instanced)
-			Wob.WobInstMeshes.set(wob.name, instanced)
+			const prom = loadstuff()
+			Wob.WobInstMeshes.set(wob.name, prom)
+			await prom // Await here too so that this first-loaded object gets loaded below (needs this loaded instance)
 
 
 		}
 		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Is an actual instance, and needs more space
 			// Overflowing instance limit, need a larger one
-			log('enlarging IM '+instanced.name, instanced.count)
+			log.info('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
 
 			const newInstance = new InstancedMesh(instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
@@ -369,7 +379,7 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			log('finally, place in zone', wob.name)
+			log.info('finally-place', wob.name)
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 
 			instanced.geometry?.center() 
