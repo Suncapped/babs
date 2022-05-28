@@ -75,12 +75,6 @@ export class Player extends Ent {
 		
 	}
 
-	// Event(type, data) {
-	// 	if(type === 'controller-ready') { 
-
-	// 	}
-	// }
-
 	setNick(newNick) {
 		if(this.nick == newNick) return // Only show once, or if undefined == undefined
 		this.nick = newNick

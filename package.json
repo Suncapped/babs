@@ -21,26 +21,26 @@
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.12",
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.45",
     "@tsconfig/svelte": "^3.0.0",
     "@types/dat.gui": "^0.7.7",
     "@types/three": "^0.140.0",
     "bicubic-interpolate": "^1.0.4",
-    "svelte": "^3.46.3",
-    "svelte-check": "^2.4.1",
-    "svelte-preprocess": "^4.10.2",
-    "tslib": "^2.3.0",
-    "vite": "^2.7.13",
+    "svelte": "^3.48.0",
+    "svelte-check": "^2.7.1",
+    "svelte-preprocess": "^4.10.6",
+    "tslib": "^2.4.0",
+    "vite": "^2.9.9",
     "webhook-discord": "^3.7.8"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
-    "@neodrag/svelte": "^1.0.2",
+    "@neodrag/svelte": "^1.1.4",
     "@stardazed/streams-polyfill": "^2.4.0",
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.1",
-    "papercss": "^1.8.2",
+    "papercss": "^1.8.3",
     "suncalc": "^1.9.0",
-    "three": "^0.140.2"
+    "three": "^0.141.0"
   }
 }

@@ -64,10 +64,9 @@ class Babs {
 		var preservedConsoleLog = console.warn
 		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
 			if(
-				!arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
-				&& !arguments[0]?.includes('.length has been deprecated. Use .count instead') // threejs gltf loader issues?
-				&& !arguments[0]?.includes('.addAttribute() has been renamed')
-				&& !arguments[0]?.includes('.gammaFactor has been removed')
+				// !arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
+				// && !arguments[0]?.includes('.length has been deprecated. Use .count instead') // threejs gltf loader issues?
+				/* && */!arguments[0]?.includes('.gammaFactor has been removed')
 			) {
 				preservedConsoleLog.apply(console, arguments)
 			}

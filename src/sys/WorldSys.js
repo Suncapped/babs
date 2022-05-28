@@ -695,7 +695,8 @@ export class WorldSys {
 		// const nVerticesPerFace = 3; // 3 for Triangle faces
 		
 		// Add color attribute to geometry, so that I can use vertex colors
-		geometry.addAttribute( 'color', new Float32BufferAttribute(geometry.getAttribute('position').clone(), nColorComponents))
+		const colorArr = new Float32Array(verticesRef.length) 
+		geometry.setAttribute( 'color', new Float32BufferAttribute(colorArr, nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array
 	
 
