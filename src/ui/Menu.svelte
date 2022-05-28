@@ -187,6 +187,25 @@
 		updateDimensions()
 	})
 
+	let inputChecked = false
+	settings.subscribe((sets) => {
+		for (const key in sets) {
+			if (key === 'inputdevice') {
+				log('settings?.inputdevice')
+				inputChecked = sets[key] === 'touchpad'
+			}
+		}
+	})
+
+	function inputDeviceChange(ev) {
+		if(ev.target.checked) {
+			$settings.inputdevice = 'touchpad'
+		}
+		else {
+			$settings.inputdevice = 'mouse'
+		}
+	}
+
 </script>
 
 <svelte:window on:resize={updateDimensions} on:keydown={(ev) => setFurl(ev, !ui.unfurled)}/>
@@ -221,7 +240,7 @@
 						Touchpad
 					</label>
 					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={ev => ev.target.checked ? $settings.inputdevice = 'touchpad' : 'mouse'} checked="{$settings?.inputdevice === 'touchpad' ? 'checked':''}" />
+						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={inputDeviceChange} bind:checked={inputChecked} />
 						<span class="paper-switch-slider round"></span>
 					</label>
 					<label for="paperSwitch6" class="paper-switch-label">

@@ -108,8 +108,8 @@ export class InputSys {
 		this.player = player
 		this.canvas = document.getElementById('canvas')
 
-		this.mouse.device = mousedevice || 'mouse' // Default to mouse; because touchpad user has to figure out two finger touch either way.
-		this.setMouseDevice(this.mouse.device)
+		this.setMouseDevice(mousedevice || 'mouse') 
+		// ^^ Default to mouse; because touchpad user has to figure out two finger touch either way.
 
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
@@ -811,6 +811,7 @@ export class InputSys {
 
 			for (const key in sets) {
 				if (key === 'inputdevice') {
+					log('SETS')
 					this.setMouseDevice(sets[key])
 				}
 			}
@@ -1241,7 +1242,6 @@ export class InputSys {
 			// disable touchmove. Otherwise there's no way to stop moving hah!
 			this.touchmove = 0
 		}
-
 
 		this.babs.socketSys.send({
 			savemousedevice: newDevice,
