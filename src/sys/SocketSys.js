@@ -318,16 +318,18 @@ export class SocketSys {
 					}
 
 					// Create player entity
-					const bSelf = true
-					const playerSelf = await Player.Arrive(loadSelf, bSelf, context.babs)
+					const playerPromise = Player.Arrive(loadSelf, true, context.babs)
 
 					// Set up UIs
 					context.babs.uiSys.loadUis(data.uis)
 
 					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, centerzone)
-					if(wobs) {
-						await Wob.ArriveMany(wobs, context.babs, false)
-					}
+					// We first load the object data above; then below we know which gltfs to pull
+					// Since in the future we might cache them locally.
+					// That's why we don't include them in the loadObjects /cache
+					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
+
+					await Promise.all([playerPromise, arriveWobsPromise])
 
 					context.send({
 						ready: loadSelf.id,

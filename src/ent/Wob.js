@@ -27,7 +27,7 @@ export class Wob extends Ent {
 
 
 	static HiddenScene = null
-	static async HiddenSceneRender(mesh) {
+	static HiddenSceneRender(mesh) {
 		if(!Wob.HiddenScene) {
 			const container = document.getElementById('HiddenRenderFrame')
 
@@ -146,30 +146,27 @@ export class Wob extends Ent {
 
 
 	static pathObs = {}
-	static async ArriveMany(arrivalWobs, babs, shownames) {
+	static async ArriveManyOld(arrivalWobs, babs, shownames) {
 
 		// Load gltfs in parallel
-		let promises = []
+		let gltfPromises = []
 		for(let wob of arrivalWobs) {
 			let instanced = Wob.WobInstMeshes.get(wob.name)
 			if(instanced) continue // If it's already been loaded, skip loading
 
 			const path = `/environment/gltf/obj-${wob.name}.gltf`
-			if(Wob.pathObs[path]) continue // Already loaded
+			if(Wob.pathObs[path]) continue // Already in the process of loading
 
-			const promiseGroup = {
+			gltfPromises.push(babs.loaderSys.loadGltf(path))
+			Wob.pathObs[path] = {
 				wob: wob,
-				ob: babs.loaderSys.loadGltf(path)
+				gltfPromise: gltfPromises[gltfPromises.length -1]
 			}
-			Wob.pathObs[path] = promiseGroup
-			promises.push(promiseGroup.ob)
 		}
 
-
 		let readyNames = new Map
-
 		let renders = []
-		// Get mesh and generate icon
+		// Get mesh 
 		for(let wob of arrivalWobs) {
 			let instanced = Wob.WobInstMeshes.get(wob.name)
 			if(instanced) continue // If it's already been loaded, skip generating
@@ -183,7 +180,7 @@ export class Wob extends Ent {
 
 			let preloadedOb
 			try {
-				preloadedOb = await result.ob
+				preloadedOb = await result.gltfPromise
 			}
 			catch(e) {
 				preloadedOb = undefined
@@ -214,6 +211,7 @@ export class Wob extends Ent {
 				// console.warn('Arrival wob has no scene: ', wob.name)
 			}
 
+			// and generate icon
 			const render = Wob.HiddenSceneRender(mesh)
 			renders.push(render)
 			readyNames.set(wob.name, {
@@ -223,6 +221,8 @@ export class Wob extends Ent {
 			})
 		}
 
+		// Run arrivals
+		let arrivalPromises = []
 		for(let wob of arrivalWobs) {
 			// let instanced = Wob.WobInstMeshes.get(wob.name)
 			// if(instanced) continue // If it's already been loaded, skip generating
@@ -238,14 +238,21 @@ export class Wob extends Ent {
 					pixels,
 				}
 			}
-			await Wob._Arrive(wob, babs, shownames, preloaded)
+			arrivalPromises.push(Wob._Arrive(wob, babs, shownames, preloaded))
 
 		}
 
+		return Promise.all(arrivalPromises)
+
+	}
+
+	static ArriveMany(arrivalWobs, babs, shownames) {
+		let arrivalPromises = arrivalWobs.map(wob => Wob._Arrive(wob, babs, shownames))
+		return Promise.all(arrivalPromises)
 	}
 	
 	static WobInstMeshes = new Map()
-	static async _Arrive(arrivalWob, babs, shownames, preloaded = null) {
+	static async _Arrive(arrivalWob, babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
@@ -262,16 +269,48 @@ export class Wob extends Ent {
 
 		// Load gltf
 		// Assumes no object animation!
-		const path = `/environment/gltf/obj-${wob.name}.gltf`
 		let instanced = Wob.WobInstMeshes.get(wob.name)
+		// let test = await instanced
+		// log('test', test, instanced)
 
 		const countMax = 8
 		let currentCount = 0
 		if(!instanced) {
-			log.info('download, load, instantiate wobject', path)
+			const path = `/environment/gltf/obj-${wob.name}.gltf`
+			log('download, load, instantiate wobject', wob.name)
 
-			instanced = new InstancedMesh(preloaded.mesh.geometry, preloaded.mesh.material, countMax)
-			 // ^ Up to one for each grid space; ignores stacking, todo optimize more?
+			let mesh
+			try {
+				const gltf = await babs.loaderSys.loadGltf(path)
+				console.log('loading', path)
+				if(gltf.scene) { 
+					if(gltf.scene.children.length == 0) {
+						console.warn('Arrival wob has no children in scene: ', wob.name)
+					}
+					else {
+						mesh = gltf.scene.children[0]
+						if(gltf.scene.children.length > 1) {
+							console.warn(`Loaded object with more than one child.`, wob.name)
+						}
+					}
+				}
+				else {
+					console.warn('Arrival wob has no scene: ', wob.name)
+				}
+				
+			}
+			catch(e) {
+			}
+
+			if(!mesh) { 
+				// Object wasn't loaded.  Make a sphere
+				const geometry = new SphereGeometry(1, 12, 12)
+				const material = new MeshLambertMaterial({ color: 0xcccc00 })
+				mesh = new Mesh(geometry, material)
+			}
+
+			instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax)
+			// ^ Up to one for each grid space; ignores stacking, todo optimize more?
 			instanced.countMax = countMax
 			instanced.count = currentCount
 			instanced.name = wob.name
@@ -286,18 +325,18 @@ export class Wob extends Ent {
 			instanced.receiveShadow = true
 
 			// Also add renderedIcon for later
-			instanced.renderedIcon = preloaded.icon
-			instanced.renderedIconPixels = preloaded.pixels
+			// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+			// instanced.renderedIcon = icon
+			// instanced.renderedIconPixels = pixels
 
-			Wob.WobInstMeshes.set(wob.name, instanced)
 			babs.scene.add(instanced)
+			Wob.WobInstMeshes.set(wob.name, instanced)
 
-			// log('added inst', wob.name, instanced)
-			
+
 		}
 		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Is an actual instance, and needs more space
 			// Overflowing instance limit, need a larger one
-			log.info('enlarging IM '+instanced.name, instanced.count)
+			log('enlarging IM '+instanced.name, instanced.count)
 			currentCount = instanced.count
 
 			const newInstance = new InstancedMesh(instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
@@ -330,6 +369,7 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
+			log('finally, place in zone', wob.name)
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 
 			instanced.geometry?.center() 
@@ -395,9 +435,11 @@ export class Wob extends Ent {
 			}
 
 			// Add new flame
-			const flame = await Flame.New(wob, babs, scale, yup)
+			const flame = Flame.Create(wob, babs, scale, yup)
 			wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
-			wob.attachments.flame = flame
+			flame.then((res) => {
+				wob.attachments.flame = res
+			})
 
 
 		}

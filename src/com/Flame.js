@@ -287,7 +287,7 @@ export class Flame extends Com {
 	};
 
 	static fireTex
-	static async New(wob, babs, scale, yup) {
+	static async Create(wob, babs, scale, yup) {
 		const com = new Flame(wob, babs)
 
 		// Init static singletons
@@ -304,7 +304,6 @@ export class Flame extends Com {
 
 		com.fire = new ThreeFire(Flame.fireTex)
 		com.fire.name = 'flame'
-
 		babs.scene.add(com.fire);
 
 		com.fire.scale.set(scale,scale*1.33,scale)

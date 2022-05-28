@@ -191,7 +191,6 @@
 	settings.subscribe((sets) => {
 		for (const key in sets) {
 			if (key === 'inputdevice') {
-				log('settings?.inputdevice')
 				inputChecked = sets[key] === 'touchpad'
 			}
 		}

@@ -260,7 +260,7 @@ export class WorldSys {
 		const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
 		const tl = new TextureLoader()
-		const nightskyImagepaths = sides.map(side => {
+		const nightskyImages = sides.map(side => {
 
 			// Attempting to use precompiled textures but they ended up being huge file sizes and unloadable.  Try again later?
 			// var ktx2Loader = new KTX2Loader();
@@ -288,17 +288,15 @@ export class WorldSys {
 			// todo perhaps use offscreencanvas to fix this? 
 			this.babs.scene.add(this.nightsky)
 		}
-		nightskyImagepaths.forEach(async (pathPromise, index) => {
-			const texture = await pathPromise
-			// Using index to ensure correct order
-			materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
-			if(index === nightskyImagepaths.length -1 && !this.nightsky) { // Done loading the final one
-				buildSkybox()
-			}
+		Promise.all(nightskyImages).then((images, index) => {
+			images.forEach((texture, index) => {
+				// Using index to ensure correct order
+				materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+				if(index === images.length -1 && !this.nightsky) { // Done loading the final one
+					buildSkybox()
+				}
+			})
 		})
-
-
-
     }
 
 	shadowDist = 150

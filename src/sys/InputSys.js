@@ -811,7 +811,6 @@ export class InputSys {
 
 			for (const key in sets) {
 				if (key === 'inputdevice') {
-					log('SETS')
 					this.setMouseDevice(sets[key])
 				}
 			}
