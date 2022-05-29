@@ -563,8 +563,12 @@ export class WorldSys {
         // this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )
 		this.groundMaterial.vertexColors = true
 
+		// console.time('ele')
 		await this.genElevation(urlFiles, geometry, zone)
+		// console.timeEnd('ele') // 17ms
+		// console.time('landcover')
 		await this.genLandcover(urlFiles, geometry, zone)
+		// console.timeEnd('landcover') // 32ms // meh
 		
         geometry.computeVertexNormals()
 

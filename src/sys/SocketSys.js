@@ -276,7 +276,10 @@ export class SocketSys {
 					context.babsReady = true
 
 
+
+
 					// Load some things ahead of time
+
 
 					const fetches = []
 					for(let zone of zones) {
@@ -287,6 +290,7 @@ export class SocketSys {
 						fetches.push(zone.elevationData, zone.landcoverData)
 					}
 					await Promise.all(fetches)
+
 
 					for(let zone of zones) {
 						const fet = await zone.elevationData
@@ -300,22 +304,19 @@ export class SocketSys {
 						zone.landcoverData = new Uint8Array(buff2)
 					}
 
+
 					const promises = []
 					for(let zone of zones) {
 						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
 					}
-
+					
+					console.time('stitch')
 					await Promise.all(promises)
+					console.timeEnd('stitch')
 
 					await context.babs.worldSys.stitchElevation(zones)
 
 					const centerzone = zones.find(z => z.id == loadSelf.idzone)
-
-
-
-					if(loadSelf.visitor !== true) {
-						document.getElementById('welcomebar').style.display = 'none' 
-					}
 
 					// Create player entity
 					const playerPromise = Player.Arrive(loadSelf, true, context.babs)
@@ -334,6 +335,10 @@ export class SocketSys {
 
 					await Promise.all([playerPromise, arriveWobsPromise])
 
+					if(loadSelf.visitor !== true) {
+						document.getElementById('welcomebar').style.display = 'none' 
+					}
+					
 					context.send({
 						ready: loadSelf.id,
 					})

@@ -119,7 +119,7 @@ export class Wob extends Ent {
 		// // log('rtpx', pixelBuffer)
 		// log('rtpx', Wob.HiddenScene.renderer.context)
 
-		const dataurl = Wob.HiddenScene.renderer.domElement.toDataURL('image/jpeg', 0.1)
+		const dataurl = Wob.HiddenScene.renderer.domElement.toDataURL()//('image/png')
 
 		return new Promise((resolve, reject) => {
 			let img = new Image()
@@ -366,22 +366,10 @@ export class Wob extends Ent {
 				instanced.castShadow = size.y >= 1
 				instanced.receiveShadow = true
 
-				// Also add renderedIcon for later
-				// const stored = Utils.storageGet(wob.id)
-				// if(stored){
-				// 	log('stored!')
-				// 	instanced.renderedIcon = stored.icon
-				// 	instanced.renderedIconPixels = stored.pixels
-				// }
-				// else {
-				// 	log('not yet stored')
-					const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
-					instanced.renderedIcon = icon
-					instanced.renderedIconPixels = pixels
-				// 	const expireInMinutes = 60
-					// Utils.storageSet(wob.id, {icon, pixels}, expireInMinutes *60 *1000)
-					// ^ Too large, particularly with pixels
-				// }
+				const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+				instanced.renderedIcon = icon
+				instanced.renderedIconPixels = pixels
+				// todo replace icons with 3d?
 
 				Wob.WobInstMeshes.set(wob.name, instanced)
 				babs.scene.add(instanced)
