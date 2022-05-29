@@ -559,7 +559,12 @@ export class InputSys {
 								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
 							}
 							else if (this.pickedObject?.instanced) {
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
+								let debugStuff = ''
+								if(this.babs.debugMode) {
+									const [x,y,z] = this.pickedObject?.instancedPosition.toArray()
+									debugStuff += `; pos: ${x}, ~${Math.round(y)}, ${z}; index: `+this.pickedObject?.instancedIndex
+								}
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, this.pickedObject?.instancedPosition)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
@@ -700,7 +705,7 @@ export class InputSys {
 						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
 						const wob = this.babs.ents.get(this.carrying.id) 
 							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
-						log('Found', wob, this.carrying.id)
+						log('Found', wob, this.carrying)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'contained',
@@ -720,7 +725,7 @@ export class InputSys {
 						// Todo put distance limits, here and server
 						const wob = this.babs.ents.get(this.carrying.id) 
 							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
-						log('Found', wob, this.carrying.id)
+						log('Found', wob, this.carrying)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -905,6 +910,7 @@ export class InputSys {
 					const position = Wob.GetPositionFromIndex(instanced, index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
+					log('name', name)
 					this.pickedObject = {
 						instanced: instanced,
 						instancedName: name,

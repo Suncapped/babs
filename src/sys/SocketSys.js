@@ -250,7 +250,7 @@ export class SocketSys {
 					
 				break
 				case 'load':
-					log.info('socket: load', data)
+					log('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						context.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
@@ -327,6 +327,9 @@ export class SocketSys {
 					// We first load the object data above; then below we know which gltfs to pull
 					// Since in the future we might cache them locally.
 					// That's why we don't include them in the loadObjects /cache
+					// and since different zones also have different wobs anyway, this must be pull, not push.
+
+					// However, we can do a mass file request; see in ArriveMany
 					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
 
 					await Promise.all([playerPromise, arriveWobsPromise])

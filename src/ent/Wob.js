@@ -247,6 +247,30 @@ export class Wob extends Ent {
 	}
 
 	static ArriveMany(arrivalWobs, babs, shownames) {
+
+		const prefix = 'environment/'
+
+		// We can do a mass file request so server doesn't have to handle so many requests.
+		let needNames = new Map()
+		arrivalWobs.forEach(wob => {
+			// if(wob.name == 'hot spring') log('needlog', wob.name)
+			if(!Wob.WobInstMeshes.get(wob.name)) { // Not loaded, not promised
+				const path = `${wob.name}`
+				needNames.set(path, null)
+			}
+		}) 
+
+		const filenames = [...needNames.keys()]
+		if(filenames.length) {
+			log('needNames', JSON.stringify(filenames))
+			// const massFiles = fetch(`${babs.urlFiles}/mass`, {
+			// 	method: 'POST',
+			// 	body:  JSON.stringify(filenames),
+			// 	headers: { 'Content-Type': 'application/json' }
+			// })
+		}
+
+
 		let arrivalPromises = arrivalWobs.map(wob => Wob._Arrive(wob, babs, shownames))
 		return arrivalPromises
 	}
@@ -254,30 +278,45 @@ export class Wob extends Ent {
 	static WobInstMeshes = new Map()
 	static async _Arrive(arrivalWob, babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
+
+		// if(arrivalWob.name == 'hot spring') log('ARRIVE!!!!!!!', arrivalWob, wobPrevious, wobPrevious?.id, wobPrevious?.instancedIndex)
+
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
+		// log('........wob', arrivalWob.instancedIndex, wobPrevious, wobPrevious?.id, wobPrevious?.instancedIndex, wob.instancedIndex)
+		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
+		// So ....uhh I guess set that later on? Comment 1287y19y1
+
 		babs.ents.set(arrivalWob.id, wob) // Ouch, remember that above is not mutating
 
-		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone (or...is being loaded into zone twice!)
+		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone // what: (or...is being loaded into zone twice!)
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
 		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { // It's been moved bagtobag
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
 
-		// log('arrive:', arrivalWob)
+		// if(wob.name == 'hot spring') log('----', 'arrive:', wob.name)
 
 		// Load gltf
 		// Assumes no object animation!
 		let instanced = Wob.WobInstMeshes.get(wob.name)
-		if(typeof instanced?.then === 'function') { // isPromise
-			instanced = await instanced
+		const isPromise = typeof instanced?.then === 'function'
+		if(isPromise) { 
+			// Wow okay.  The problem is, it was setting as the *returned* instance.  
+			// But we want the one modified by instance expansion below, so re-get from Map
+			// if(wob.name == 'hot spring') log('was promise', wob.name)
+			await instanced
+			instanced = Wob.WobInstMeshes.get(wob.name)
+			// if(wob.name == 'hot spring') log('after promise', instanced)
+			// Huge side effect here: Only AFTER this point do other wobs have updated props like instancedIndex // Comment 1287y19y1
 		}
-		// log('instanced', instanced)
+		// if(wob.name == 'hot spring') log('instanced', wob.name, instanced)
 
-		const countMax = 8
+		const countMax = 200
 		let currentCount = 0
 		if(!instanced) {
+			// if(wob.name == 'hot spring') log('not instanced', wob.name)
 			const path = `/environment/gltf/obj-${wob.name}.gltf`
 
 			const loadstuff = async () => {
@@ -285,7 +324,7 @@ export class Wob extends Ent {
 				let mesh
 				try {
 					const gltf = await babs.loaderSys.loadGltf(path)
-					log.info('downloading wob', path)
+					// if(wob.name == 'hot spring') log('downloading wob', wob.name)
 					if(gltf.scene) { 
 						if(gltf.scene.children.length == 0) {
 							console.warn('Arrival wob has no children in scene: ', wob.name)
@@ -328,10 +367,20 @@ export class Wob extends Ent {
 				instanced.receiveShadow = true
 
 				// Also add renderedIcon for later
-				// const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
-				// instanced.renderedIcon = icon
-				// instanced.renderedIconPixels = pixels
+				const stored = Utils.storageGet(wob.id)
+				if(stored){
+					instanced.renderedIcon = stored.icon
+					instanced.renderedIconPixels = stored.pixels
+				}
+				else {
+					const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
+					instanced.renderedIcon = icon
+					instanced.renderedIconPixels = pixels
+					const expireInMinutes = 60
+					Utils.storageSet(wob.id, {icon, pixels}, mins *60 *1000)
+				}
 
+				Wob.WobInstMeshes.set(wob.name, instanced)
 				babs.scene.add(instanced)
 
 				return instanced
@@ -346,7 +395,7 @@ export class Wob extends Ent {
 		}
 		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Is an actual instance, and needs more space
 			// Overflowing instance limit, need a larger one
-			log.info('enlarging IM '+instanced.name, instanced.count)
+			// if(wob.name == 'hot spring') log('enlarging IM ', wob.name, currentCount, instanced.count, instanced.countMax)
 			currentCount = instanced.count
 
 			const newInstance = new InstancedMesh(instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
@@ -379,7 +428,7 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			log.info('finally-place', wob.name)
+			// if(wob.name == 'hot spring') log('finally-place', wob.name, instanced)
 			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
 
 			instanced.geometry?.center() 
@@ -396,9 +445,13 @@ export class Wob extends Ent {
 			// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 			position.setY(position.y +(size.y /2) -sink +lift)
 
+			// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
+			wob.instancedIndex = wobPrevious?.instancedIndex
 			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
 				wob.instancedIndex = instanced.count
+				// if(wob.name == 'hot spring') log('COUNTBEF', instanced.count)
 				instanced.count += 1
+				// if(wob.name == 'hot spring') log('COUNT++', instanced.count)
 			}
 			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(position))
 			instanced.instanceMatrix.needsUpdate = true

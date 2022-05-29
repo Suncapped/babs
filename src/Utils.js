@@ -220,7 +220,9 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 
 export function findWobByInstance(ents, instancedIndex, instancedName) {
 	for(let [key, ent] of ents) {
+		log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
 		if(ent.instancedIndex === instancedIndex && ent.name === instancedName) {
+			log('return', ent)
 			return ent
 		}
 	}
@@ -236,4 +238,25 @@ export function WobAtPosition(ents, gx, gz) {
 	}
 	return null
 
+}
+
+
+export function storageSet(key, value, ms) {
+	const now = new Date()
+	const item = {
+		value,
+		expire: now.getTime() + ms,
+	}
+	localStorage.setItem(key, JSON.stringify(item))
+}
+
+export function storageGet(key) {
+	const str = localStorage.getItem(key)
+	if (!str) return null
+	const item = JSON.parse(str)
+	if (new Date().getTime() > item.expire) {
+		localStorage.removeItem(key)
+		return null
+	}
+	return item.value
 }
