@@ -200,7 +200,7 @@ export class InputSys {
 
 				}
 
-				// Spawn test character
+				// Rwara
 				if (this.keys.b === PRESS) {
 					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
 					// const [treesPerAxis, spacing] = [5, 50] // Property (5 pieces) posts
@@ -222,43 +222,19 @@ export class InputSys {
 					log('Created '+count+' client side items')
 					await Wob.ArriveMany(wobTrees, this.babs, false)
 
+				}
 
-
-					/* 
-					const childIndex = 0
-					const loadItems = [
-						'tree-birchtall.gltf',
-						'tree-spruce.gltf'
-					]
-					let count=0
-					for(let item of loadItems) {
-						let obj = await Wob.New(`/environment/gltf/${item}`, this.babs, childIndex)
-						log.info('obj scale', obj.mesh.scale)
-						// obj.mesh.scale.copy(new Vector3(0.01, 0.01, 0.01).multiplyScalar(3.3))
-						// obj.mesh.scale.multiplyScalar(3.3)
-						obj.mesh.position.copy(babs.worldSys.vRayGroundHeight((count+16)*2 +2, 12 +2))
-						count++
+				if (this.keys.n === PRESS) {
+					const wobScroll = {
+						id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
+						idzone: 899279496,
+						x: 4,
+						z: 4,
+						name: 'scroll',
+						color: '0xff0000',
 					}
-					*/
-
-
-					// obj.mesh.scale.multiplyScalar(10)
-					// obj.mesh.scale.multiplyScalar(1/12) 
-					// obj.mesh.geometry.scale.multiplyScalar(1/12) 
-
-					/*
-					// obj.mesh.scale.multiplyScalar(0.01 * 3.3)
-					// obj.mesh.position.copy(this.player.controller.target.position)
-					// obj.mesh.position.y -= this.ftHeightHead
-
-					// Place in front; move forward parallel to the xz-plane, assume camera.up is y-up
-					// const distance = 8
-					// let _vector = new Vector3()
-					// _vector.setFromMatrixColumn( this.player.controller.target.matrix, 0 )  // camera.matrix
-					// _vector.crossVectors( this.player.controller.target.up, _vector ) // camera.up
-					// obj.mesh.position.addScaledVector( _vector, distance )
-					*/
-
+					log('Created scroll at 4,4')
+					await Wob.ArriveMany([wobScroll], this.babs, false)
 				}
 			}
 
@@ -471,7 +447,7 @@ export class InputSys {
 					}
 					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in mousemove), in UI
 						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id
-						log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
+						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
 					}
 
 					if (this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) {

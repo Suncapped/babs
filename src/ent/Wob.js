@@ -144,108 +144,6 @@ export class Wob extends Ent {
 
 	}
 
-
-	static pathObs = {}
-	static async ArriveManyOld(arrivalWobs, babs, shownames) {
-
-		// Load gltfs in parallel
-		let gltfPromises = []
-		for(let wob of arrivalWobs) {
-			let instanced = Wob.WobInstMeshes.get(wob.name)
-			if(instanced) continue // If it's already been loaded, skip loading
-
-			const path = `/environment/gltf/obj-${wob.name}.gltf`
-			if(Wob.pathObs[path]) continue // Already in the process of loading
-
-			gltfPromises.push(babs.loaderSys.loadGltf(path))
-			Wob.pathObs[path] = {
-				wob: wob,
-				gltfPromise: gltfPromises[gltfPromises.length -1]
-			}
-		}
-
-		let readyNames = new Map
-		let renders = []
-		// Get mesh 
-		for(let wob of arrivalWobs) {
-			let instanced = Wob.WobInstMeshes.get(wob.name)
-			if(instanced) continue // If it's already been loaded, skip generating
-
-			if(readyNames.get(wob.name)) {
-				continue // Already loaded
-			}
-
-			const path = `/environment/gltf/obj-${wob.name}.gltf`
-			const result = Wob.pathObs[path]
-
-			let preloadedOb
-			try {
-				preloadedOb = await result.gltfPromise
-			}
-			catch(e) {
-				preloadedOb = undefined
-			}
-
-
-			if(preloadedOb && !preloadedOb.scene) {
-				console.warn('Arrival wob has no scene: ', wob.name)
-			}
-			else if(preloadedOb && preloadedOb.scene.children.length == 0) {
-				console.warn('Arrival wob has no children in scene: ', wob.name)
-			}
-
-			// Get mesh
-			let mesh
-			if(preloadedOb && preloadedOb.scene) { 
-				if(preloadedOb.scene.children.length > 1) {
-					console.warn(`Loaded object with more than one child.`, wob.name)
-				}
-
-				const childIndex = 0 // stub
-				mesh = preloadedOb.scene.children[childIndex]
-			}
-			else {// Object doesn't exist.  Make a sphere
-				const geometry = new SphereGeometry(1, 12, 12)
-				const material = new MeshLambertMaterial({ color: 0xcccc00 })
-				mesh = new Mesh(geometry, material)
-				// console.warn('Arrival wob has no scene: ', wob.name)
-			}
-
-			// and generate icon
-			const render = Wob.HiddenSceneRender(mesh)
-			renders.push(render)
-			readyNames.set(wob.name, {
-				wob,
-				mesh,
-				render,
-			})
-		}
-
-		// Run arrivals
-		let arrivalPromises = []
-		for(let wob of arrivalWobs) {
-			// let instanced = Wob.WobInstMeshes.get(wob.name)
-			// if(instanced) continue // If it's already been loaded, skip generating
-
-			const ready = readyNames.get(wob.name)
-
-			let preloaded = null
-			if(ready) { // If there's a render.  If not, it's probably the second+ time ArriveMany was run, and the render happened in a previous iteration!
-				const [icon, pixels] = await ready.render
-				preloaded = {
-					mesh: ready.mesh,
-					icon,
-					pixels,
-				}
-			}
-			arrivalPromises.push(Wob._Arrive(wob, babs, shownames, preloaded))
-
-		}
-
-		return Promise.all(arrivalPromises)
-
-	}
-
 	static ArriveMany(arrivalWobs, babs, shownames) {
 
 		const prefix = 'environment/'
@@ -317,7 +215,7 @@ export class Wob extends Ent {
 		let currentCount = 0
 		if(!instanced) {
 			// if(wob.name == 'hot spring') log('not instanced', wob.name)
-			const path = `/environment/gltf/obj-${wob.name}.gltf`
+			const path = `/environment/gltf/obj-${wob.name}.glb`
 
 			const loadstuff = async () => {
 
