@@ -220,9 +220,8 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 
 export function findWobByInstance(ents, instancedIndex, instancedName) {
 	for(let [key, ent] of ents) {
-		log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
+		// log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
 		if(ent.instancedIndex === instancedIndex && ent.name === instancedName) {
-			log('return', ent)
 			return ent
 		}
 	}

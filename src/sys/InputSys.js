@@ -477,7 +477,6 @@ export class InputSys {
 					if (this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
 						// Over a wob in the world, and if already over a wob, it must be the same wob
 						this.lastMoveHoldPicked = this.pickedObject // Save that wob
-						log('saving')
 					}
 					else { // Holding down not over a wob, or over a different wob than the one previously saved
 						// log('else')
@@ -910,7 +909,6 @@ export class InputSys {
 					const position = Wob.GetPositionFromIndex(instanced, index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
-					log('name', name)
 					this.pickedObject = {
 						instanced: instanced,
 						instancedName: name,
