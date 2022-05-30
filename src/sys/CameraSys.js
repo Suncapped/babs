@@ -26,14 +26,29 @@ export class CameraSys {
 		const maxDistance = -30
 		const limitDistance = 100
 		
-		const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
-		// log(this.offsetHeight, distanceLerp)
-		this.idealOffset = new Vector3(-4, this.offsetHeight, distanceLerp)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
-		// const idealOffset = new Vector3(-4, this.offsetHeight /3, -3) // put lower and nearer for testing
+		// const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
+		
+		let offsetDist = -40//this.offsetHeight
+		if(this.offsetHeight < 30) {
+			offsetDist = -40 +(30 -this.offsetHeight)
+		}
+		if(this.offsetHeight < 11) {
+			this._target.target.visible = false
+			this._target.target.children.find(c => c.name == 'player_bbox').clickable = false
+		}
+		else {
+			this._target.target.visible = true
+			this._target.target.children.find(c => c.name == 'player_bbox').clickable = true
+		}
+		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
+		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera
+
+		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
 		
 		this.idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.Rotation)
 		this.idealOffset.add(this._target.Position)
+		// this.idealOffset.add(new Vector3(40, 0, 40))
 
 		this.gh = this.babs.worldSys.vRayGroundHeight(Math.round(this.idealOffset.x/4), Math.round(this.idealOffset.z/4))
 		// this.idealOffset.setY(Math.max(this.idealOffset.y, this.gh.y +4)) // todo smooth this

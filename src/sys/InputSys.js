@@ -896,7 +896,11 @@ export class InputSys {
 				else if (this.mouseRayTargets[i].object instanceof Mesh) { // Must go after more specific mesh types
 
 
-					if (this.mouseRayTargets[i].object?.name === 'player_bbox') { // Player bounding box
+					if (this.mouseRayTargets[i].object?.name === 'player_bbox') {
+						if(!this.mouseRayTargets[i].object?.clickable) {
+							continue
+						}
+						// Player bounding box, not in first person view
 						this.pickedObject = this.mouseRayTargets[i].object
 						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 						// log('player_bbox', this.pickedObject)

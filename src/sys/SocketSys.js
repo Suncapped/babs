@@ -250,7 +250,7 @@ export class SocketSys {
 					
 				break
 				case 'load':
-					log('socket: load', data)
+					log.info('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						context.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)

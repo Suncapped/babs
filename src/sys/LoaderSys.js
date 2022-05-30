@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, sRGBEncoding, Vector2 } from "three"
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Sphere, sRGBEncoding, Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
@@ -181,7 +181,38 @@ export class LoaderSys {
 		cube.scale.multiplyScalar(1 /scene.scale.x)
 		cube.position.setY(3*(1 /scene.scale.x))
 		cube.visible = false
+		// cube.clickable = true
 		scene.add(cube)
+
+		skinnedMesh.geometry.computeBoundingSphere();
+		// skinnedMesh.geometry.boundingSphere.center = new Vector3(0, 3, 0)
+		// skinnedMesh.geometry.boundingSphere.radius = 1
+		// skinnedMesh.matrixWorldNeedsUpdate = true
+		// skinnedMesh.geometry.matrixWorldNeedsUpdate = true
+
+		// // Re-scale boundingsphere
+		// // https://stackoverflow.com/questions/68562800/three-js-bounding-sphere-of-a-scaled-object
+		// // Copy the geometry 
+		// let geoClone = skinnedMesh.geometry.clone() // really bad for memory, but it's simple/easy
+		// // Apply the world transformation to the copy (updates vertex positions)
+		// geoClone.applyMatrix4( skinnedMesh.matrixWorld )
+		// // Convert the vertices into Vector3s (also bad for memeory)
+		// let vertices = []
+		// let pos = geoClone.attributes.position.array
+		// for( let i = 0, l = pos.length; i < l; i += 3 ){
+		// 	vertices.push( new Vector3( pos[i], pos[i+1], pos[i+2] ) )
+		// }
+		// // Create and set your mesh's bounding sphere
+		// skinnedMesh.geometry.boundingSphere = new Sphere()
+		// skinnedMesh.geometry.boundingSphere.setFromPoints( vertices )
+
+
+		setTimeout(() => {
+			skinnedMesh.geometry.boundingSphere.center = new Vector3(0, 5, 0)
+			skinnedMesh.geometry.boundingSphere.radius = 200 // ?!
+			// skinnedMesh.matrixWorldNeedsUpdate = true
+			// skinnedMesh.geometry.matrixWorldNeedsUpdate = true
+		}, 1)
 
 		return scene
 	}
