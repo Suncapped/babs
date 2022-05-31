@@ -16,10 +16,13 @@ import { Matrix3 } from "three"
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
 import { Controller } from "../com/Controller"
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 
 export class LoaderSys {
 
 	megaMaterial
+	loader
+	dracoLoader
 
 	constructor(urlFiles) {
 		this.urlFiles = urlFiles
@@ -53,6 +56,10 @@ export class LoaderSys {
 			
 		})
 
+		this.loader = new GLTFLoader()
+		this.dracoLoader = new DRACOLoader()
+		this.dracoLoader.setDecoderPath('../../node_modules/three/examples/js/libs/draco/gltf/')
+		this.loader.setDRACOLoader(this.dracoLoader)
 	}
 
 	async loadFbx(path) {
@@ -95,10 +102,11 @@ export class LoaderSys {
 
 	}
 
-	loader = new GLTFLoader()
+	
 	loadGltf(path) {
 		return new Promise((resolve, reject) => {
 			log.info('loading gltf', path)
+
 
 			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
