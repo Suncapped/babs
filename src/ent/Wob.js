@@ -135,7 +135,7 @@ export class Wob extends Ent {
 				canvas.remove()
 				img.remove()
 		
-				resolve([dataurl, pixels])
+				resolve({image: dataurl, pixels: pixels})
 			}
 			img.onerror = reject
 		})
@@ -264,10 +264,14 @@ export class Wob extends Ent {
 				instanced.castShadow = size.y >= 1
 				instanced.receiveShadow = true
 
-				const [icon, pixels] = await Wob.HiddenSceneRender(mesh)
-				instanced.renderedIcon = icon
-				instanced.renderedIconPixels = pixels
-				// todo replace icons with 3d?
+
+				instanced.renderedIcon = async () => {
+					const {image, pixels} = await Wob.HiddenSceneRender(mesh)
+					instanced.renderedIcon = () => { // Overwrite self?!  lol amazing
+						return {image, pixels}
+					}
+					return instanced.renderedIcon()
+				}
 
 				Wob.WobInstMeshes.set(wob.name, instanced)
 				babs.scene.add(instanced)
@@ -297,8 +301,10 @@ export class Wob extends Ent {
 				instanced.getMatrixAt(i, transferMatrix)
 				newInstance.setMatrixAt(i, transferMatrix)
 			}
+
+			// save rendered icons (they may have been added JIT)
 			newInstance.renderedIcon = instanced.renderedIcon
-			newInstance.renderedIconPixels = instanced.renderedIconPixels
+
 			newInstance.castShadow = instanced.castShadow
 			newInstance.receiveShadow = instanced.receiveShadow
 
@@ -365,7 +371,7 @@ export class Wob extends Ent {
 
 		}
 		else {	// Send to bag
-			babs.uiSys.svContainers[0].addWob(wob, instanced.renderedIcon)
+			babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
 
 		}
 

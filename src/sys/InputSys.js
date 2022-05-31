@@ -345,7 +345,7 @@ export class InputSys {
 
 		this.lastMoveHoldPicked
 		this.carrying = null
-		document.addEventListener('mousemove', ev => { // :MouseEvent
+		document.addEventListener('mousemove', async ev => { // :MouseEvent
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
@@ -394,7 +394,7 @@ export class InputSys {
 						// log(wob,  Wob.WobInstMeshes, this.babs.ents)
 
 						// if(instanced) {
-						const pixels = instanced.renderedIconPixels // Uint8Array
+						const pixels = (await instanced.renderedIcon()).pixels
 						const colorChannels = 4
 						const mouseImageX = ev.offsetX - itemBox.min.x
 						const mouseImageY = ev.offsetY - itemBox.min.y
@@ -975,7 +975,8 @@ export class InputSys {
 		if (this.carrying) {
 			log('update carrying')
 			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
-				document.body.style.cursor = `url(${this.carrying.instanced.renderedIcon}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
+				const riImage = (await this.carrying.instanced.renderedIcon()).image
+				document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
 			}
 
 		}

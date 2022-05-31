@@ -98,7 +98,7 @@
 		p.style.top = (wob.z -size/2)+'px'
 		p.style.width = size+'px'
 		p.style.height = size+'px'
-		p.src = renderedIcon
+		p.src = renderedIcon.image
 		content.appendChild(p)
 	}
 

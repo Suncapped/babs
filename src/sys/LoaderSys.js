@@ -181,7 +181,7 @@ export class LoaderSys {
 		cube.scale.multiplyScalar(1 /scene.scale.x)
 		cube.position.setY(3*(1 /scene.scale.x))
 		cube.visible = false
-		// cube.clickable = true
+		cube.clickable = true
 		scene.add(cube)
 
 		skinnedMesh.geometry.computeBoundingSphere();
