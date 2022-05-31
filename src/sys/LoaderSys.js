@@ -58,7 +58,9 @@ export class LoaderSys {
 
 		this.loader = new GLTFLoader()
 		this.dracoLoader = new DRACOLoader()
-		this.dracoLoader.setDecoderPath('../../node_modules/three/examples/js/libs/draco/gltf/')
+		// this.dracoLoader.setDecoderPath('../../node_modules/three/examples/js/libs/draco/gltf/')
+		this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/draco/')
+		this.dracoLoader.setDecoderConfig({ type: 'js' })
 		this.loader.setDRACOLoader(this.dracoLoader)
 	}
 
