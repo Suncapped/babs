@@ -310,9 +310,9 @@ export class SocketSys {
 						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
 					}
 					
-					console.time('stitch')
+					// console.time('stitch') // 182ms for 81 zones
 					await Promise.all(promises)
-					console.timeEnd('stitch')
+					// console.timeEnd('stitch')
 
 					await context.babs.worldSys.stitchElevation(zones)
 
@@ -406,7 +406,7 @@ export class SocketSys {
 					}
 				break
 				case 'wobsremove':
-					log('wobsremove', data)
+					log.info('wobsremove', data)
 					for(let wobRemove of data.wobs) {
 						const wobExisting = context.babs.ents.get(wobRemove.id)
 						if(wobExisting) {
@@ -424,11 +424,11 @@ export class SocketSys {
 					}
 				break;
 				case 'wobsupdate':
-					log('wobsupdate', data)
+					log.info('wobsupdate', data)
 					await Wob.ArriveMany(data.wobs, context.babs, data.shownames)
 				break
 				case 'contains':
-					log('contains', data)
+					log.info('contains', data)
 					// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
 					// 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
 					for(let wobFresh of data.wobs) {

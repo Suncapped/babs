@@ -209,7 +209,7 @@ export class Wob extends Ent {
 		let currentCount = 0
 		if(!instanced) {
 			// if(wob.name == 'hot spring') log('not instanced', wob.name)
-			const path = `/environment/gltf/obj-${wob.name}.bin` // .glb as .bin for CF
+			const path = `/environment/gltf/obj-${wob.name}.glb`
 
 			const loadstuff = async () => {
 

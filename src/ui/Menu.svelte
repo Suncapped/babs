@@ -115,7 +115,7 @@
 
 		let excitedReason
 		menuSelfData.subscribe((val) => {
-			log('menuSelfData change', val)
+			log.info('menuSelfData change', val)
 			joinDate = new Date(Date.parse($menuSelfData.created_at))
 			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
 			joinYear = joinDate.toLocaleString('default', { year: 'numeric' })

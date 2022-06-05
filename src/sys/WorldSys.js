@@ -115,6 +115,7 @@ export class WorldSys {
 		9: 'streammedium',
 		10: 'streamlarge',
 		11: 'streamshore',
+		27: '',
 	}
 	WaterTypes = [
 		'lake',
