@@ -473,7 +473,7 @@ export class InputSys {
 
 		})
 
-		document.addEventListener('mousedown', ev => {
+		document.addEventListener('mousedown', async ev => {
 			log.info('mouseOnDown', ev.button, ev.target.id)
 
 			// Close top menu if it's open
@@ -641,7 +641,13 @@ export class InputSys {
 					}
 					else {
 						// If not touchpad, do pointer lock.  Touchpad doesn't need it because look is via gestures
-						this.canvas.requestPointerLock()
+
+						try{
+							await this.canvas.requestPointerLock()
+						}
+						catch(e) {
+							log('PointerLock Exception', e)
+						}
 						// this.canvas.style.cursor = 'none'
 
 						// If you started pressing w before mouse, chat now has annoying 'w's in it; clear them.

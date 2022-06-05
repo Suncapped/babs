@@ -284,8 +284,8 @@ export class SocketSys {
 					const fetches = []
 					for(let zone of zones) {
 
-						zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations`)
-						zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers`)
+						zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
+						zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
 
 						fetches.push(zone.elevationData, zone.landcoverData)
 					}

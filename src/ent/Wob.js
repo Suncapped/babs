@@ -158,16 +158,10 @@ export class Wob extends Ent {
 			}
 		}) 
 
-		const filenames = [...needNames.keys()]
-		if(filenames.length) {
-			log('needNames', JSON.stringify(filenames))
-			// const massFiles = fetch(`${babs.urlFiles}/mass`, {
-			// 	method: 'POST',
-			// 	body:  JSON.stringify(filenames),
-			// 	headers: { 'Content-Type': 'application/json' }
-			// })
-		}
-
+		// const filenames = [...needNames.keys()]
+		// if(filenames.length) {
+		// 	log('needNames', JSON.stringify(filenames))
+		// }
 
 		let arrivalPromises = arrivalWobs.map(wob => Wob._Arrive(wob, babs, shownames))
 		return arrivalPromises
@@ -215,7 +209,7 @@ export class Wob extends Ent {
 		let currentCount = 0
 		if(!instanced) {
 			// if(wob.name == 'hot spring') log('not instanced', wob.name)
-			const path = `/environment/gltf/obj-${wob.name}.glb`
+			const path = `/environment/gltf/obj-${wob.name}.bin` // .glb as .bin for CF
 
 			const loadstuff = async () => {
 

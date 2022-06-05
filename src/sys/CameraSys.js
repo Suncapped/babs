@@ -25,14 +25,16 @@ export class CameraSys {
 		const minDistance = -15
 		const maxDistance = -30
 		const limitDistance = 100
-		
+
 		// const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
-		
+
 		let offsetDist = -40//this.offsetHeight
-		if(this.offsetHeight < 30) {
-			offsetDist = -40 +(30 -this.offsetHeight)
+		if (this.offsetHeight < 30) {
+			offsetDist = -40 + (30 - this.offsetHeight)
 		}
-		if(this.offsetHeight < 11) {
+		// let mat = this._target.target.children[0]?.children[1]?.material
+		if (this.offsetHeight < 4) {
+			// if(mat) mat.opacity = 0.2
 			this._target.target.visible = false
 			this._target.target.children.find(c => c.name == 'player_bbox').clickable = false
 		}
@@ -44,19 +46,19 @@ export class CameraSys {
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera
 
 		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
-		
-		this.idealOffset.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
+
+		this.idealOffset.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.Rotation)
 		this.idealOffset.add(this._target.Position)
 		// this.idealOffset.add(new Vector3(40, 0, 40))
 
-		this.gh = this.babs.worldSys.vRayGroundHeight(Math.round(this.idealOffset.x/4), Math.round(this.idealOffset.z/4))
+		this.gh = this.babs.worldSys.vRayGroundHeight(Math.round(this.idealOffset.x / 4), Math.round(this.idealOffset.z / 4))
 		// this.idealOffset.setY(Math.max(this.idealOffset.y, this.gh.y +4)) // todo smooth this
 		// if(this.idealOffset.y < this.gh.y +4) {
-			// log('less')
-			// this.idealOffset.y += 2
-			// this.offsetHeight += 2
-			// todo do this to prevent clipping, but smooth it?
+		// log('less')
+		// this.idealOffset.y += 2
+		// this.offsetHeight += 2
+		// todo do this to prevent clipping, but smooth it?
 		// }
 
 		// return idealOffset
@@ -66,7 +68,7 @@ export class CameraSys {
 		const sideOffset = 0//10
 		const idealLookat = new Vector3(sideOffset, 10, 0)
 
-		idealLookat.applyAxisAngle(new Vector3(0,-1,0), this._target.getHeadRotationX())
+		idealLookat.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		idealLookat.applyQuaternion(this._target.Rotation)
 
 		// let pos = this._target.Position.clone()
