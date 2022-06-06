@@ -103,47 +103,73 @@ export class WorldSys {
 	}
 
 	StringifyLandcover = {
-		56: 'grass',
-		64: 'dirt',
-		69: 'sand',
-		76: 'cliff',
-		4: 'lake',
-		5: 'lakeshore',
-		6: 'river',
-		7: 'rivershore',
-		8: 'streamsmall',
-		9: 'streammedium',
-		10: 'streamlarge',
-		11: 'streamshore',
-		27: '',
+		12: 'SnowIceTundra',
+		31: 'BarrenRockSandClay',
+		
+		41: 'ForestDeciduous',
+		42: 'ForestEvergreen',
+		43: 'ForestMixed',
+
+		52: 'ShrubAndScrub',
+		71: 'Grassland',
+
+		90: 'WetlandWoody',
+		95: 'WetlandHerbacious',
+
+		108: 'Lake',
+		112: 'LakeShore',
+		116: 'River',
+		120: 'RiverShore',
+		124: 'StreamSmall',
+		128: 'StreamMedium',
+		132: 'StreamLarge',
+		136: 'StreamShore',
+
+		200: 'Cliff',
 	}
-	WaterTypes = [
-		'lake',
-		'river',
-		'streamsmall',
-		'streammedium',
-		'streamlarge',
-	]
-	ShoreTypes = [
-		'lakeshore',
-		'rivershore',
-		'streamshore',
-	]
 
 	colorFromLc = {
-		grass: new Color().setHSL(98/360, 100/100, 20/100),
-		dirt: new Color().setHSL(35/360, 40/100, 40/100),
-		sand: new Color().setHSL(49/360, 37/100, 68/100),
-		cliff: new Color().setHSL(13/360, 61/100, 24/100),
-		lake: new Color().setHSL(222/360, 39/100, 34/100),
-		lakeshore: new Color().setHSL(51/360, 39/100, 34/100),
-		river: new Color().setHSL(222/360, 39/100, 34/100),
-		rivershore: new Color().setHSL(51/360, 39/100, 34/100),
-		streamsmall: new Color().setHSL(222/360, 39/100, 34/100),
-		streammedium: new Color().setHSL(222/360, 39/100, 34/100),
-		streamlarge: new Color().setHSL(222/360, 39/100, 34/100),
-		streamshore: new Color().setHSL(51/360, 39/100, 34/100),
+		// grass: new Color().setHSL(98/360, 100/100, 20/100),
+		// dirt: new Color().setHSL(35/360, 40/100, 40/100),
+		// sand: new Color().setHSL(49/360, 37/100, 68/100),
+
+		SnowIceTundra: new Color().setHSL(75/360, 3/100, 74/100), // light gray
+		BarrenRockSandClay: new Color().setHSL(39/360, 24/100, 64/100), // tan
+
+		ForestDeciduous: new Color().setHSL(73/360, 22/100, 37/100), // green
+		ForestEvergreen: new Color().setHSL(92/360, 40/100, 23/100), // dark green
+		ForestMixed: new Color().setHSL(80/360, 30/100, 30/100), // in-between ish
+
+		ShrubAndScrub: new Color().setHSL(85/360, 18/100, 47/100), // Browner light green
+		Grassland: new Color().setHSL(63/360, 15/100, 50/100), // Light green
+
+		WetlandWoody: new Color().setHSL(8/360, 19/100, 37/100), // Brownish
+		WetlandHerbacious: new Color().setHSL(10/360, 14/100, 47/100), // Brownish lighter
+
+		Lake: new Color().setHSL(222/360, 39/100, 34/100),
+		LakeShore: new Color().setHSL(51/360, 39/100, 34/100),
+		River: new Color().setHSL(222/360, 39/100, 34/100),
+		RiverShore: new Color().setHSL(51/360, 39/100, 34/100),
+		StreamSmall: new Color().setHSL(222/360, 39/100, 34/100),
+		StreamMedium: new Color().setHSL(222/360, 39/100, 34/100),
+		StreamLarge: new Color().setHSL(222/360, 39/100, 34/100),
+		StreamShore: new Color().setHSL(51/360, 39/100, 34/100),
+
+		Cliff: new Color().setHSL(13/360, 61/100, 24/100),
 	}
+
+	WaterTypes = [
+		'Lake',
+		'River',
+		'Streamsmall',
+		'Streammedium',
+		'Streamlarge',
+	]
+	ShoreTypes = [
+		'Lakeshore',
+		'Rivershore',
+		'Streamshore',
+	]
 
 	
     constructor(renderer, babs, camera) {
@@ -716,12 +742,7 @@ export class WorldSys {
 					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
 						console.warn('Color not found!', zone.landcoverData[index], lcString)
-						color = this.colorFromLc['dirt'] // todo add colors?
-					}
-					if(lcString === 'grass') {
-						// Lighten slightly with elevation // Todo add instead of overwrite?
-						// color.clone().setHSL(98/360, 80/100, 0.2 +zone.elevationData[index] /1000).convertSRGBToLinear() 
-						// ^^ todo copy instead of mutate?
+						color = this.colorFromLc.Grassland // todo add colors?
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
@@ -735,8 +756,8 @@ export class WorldSys {
 				for(let x=-1; x<=1; x++) {
 					const offsetIndex = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
 					if(
-						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'river'
-						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'lake'
+						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'River'
+						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Lake'
 					
 					) {
 
@@ -776,7 +797,7 @@ export class WorldSys {
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
 								waterCubePositions.push(rayPosition)
 
-								const riverBaseColor = this.colorFromLc.river.clone()
+								const riverBaseColor = this.colorFromLc.River.clone()
 								riverBaseColor.offsetHSL(0, 0, (Math.random() -0.1) * 20/100) // -0.1 biases it toward dark
 
 								waterCubeColors.push(riverBaseColor.r, riverBaseColor.g, riverBaseColor.b)

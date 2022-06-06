@@ -74,7 +74,7 @@ export class UiSys {
 		chatDiv.appendChild(chatSpan)
 
 		if(options.journal) {
-			this.svJournal.appendText((player.nick || 'Stranger')+': '+text, options.color)
+			this.svJournal.appendText((player?.nick || options.name || 'Stranger')+': '+text, options.color)
 		}
 
 		if(!options.show) {
@@ -93,7 +93,7 @@ export class UiSys {
 		const secondsClamped = MathUtils.clamp(seconds, startingTimeMin, 20)
 		
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *secondsClamped))
-		chatDiv.setAttribute('data-idPlayer', idPlayer)
+		chatDiv.setAttribute('data-idPlayer', idPlayer || options.name)
 		chatDiv.style.visibility = 'hidden'
 		this.labelElements.push(chatDiv)
 
@@ -108,7 +108,7 @@ export class UiSys {
 
 				// Move older divs upward
 				for(let div of this.labelElements) {
-					if(parseInt(div.getAttribute('data-idPlayer')) === idPlayer){
+					if(parseInt(div.getAttribute('data-idPlayer')) === (idPlayer || options.name)){
 						if(chatDiv === div) continue // Skip self
 						const currentDistanceUp = Math.abs(parseInt(div.style.top)) || 0
 						const pad = 3
@@ -131,14 +131,14 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		if(player.controller?.target) { 
+		if(player?.controller?.target) { 
 			// Needed to avoid latency of interval below
 			player.controller.target.add(chatLabel)
 		}
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting')
-				if(player.controller.target) {
+				if(player?.controller?.target) {
 					player.controller.target.add(chatLabel)
 					clearInterval(waitForMesh)
 				}

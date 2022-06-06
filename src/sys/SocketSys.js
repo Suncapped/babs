@@ -388,10 +388,10 @@ export class SocketSys {
 				break
 				case 'said':
 					const chattyPlayer = context.babs.ents.get(data.id)
-					if(chattyPlayer) { // Can be self; self text get put over head, too.
-						log.info('said by chattyPlayer', chattyPlayer.id, data.text)
-						context.babs.uiSys.playerSaid(chattyPlayer.id, data.text, {color: data.color, show: data.show !== false})
-					}
+					log.info('said by chattyPlayer', chattyPlayer?.id, data.name, data.text)
+					// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
+					// In that case, data.name is set to their name.
+					context.babs.uiSys.playerSaid(chattyPlayer?.id, data.text, {color: data.color, show: data.show !== false, name: data.name})
 				break
 				case 'nicklist':
 					log.info('nicklist', data)
@@ -452,8 +452,8 @@ export class SocketSys {
 					log('serverrestart', data)
 					if(context.babs.isProd) {
 						setTimeout(() => {
-							context.babs.uiSys.svJournal.appendText('Reconnecting...', '#ff0000', 'right')
-						}, 200)
+							context.babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
+						}, 2000)
 					}
 					setTimeout(() => {
 						window.location.reload()
