@@ -600,15 +600,17 @@ export class WorldSys {
         geometry.computeVertexNormals()
 
 		const newGround = new Mesh( geometry, this.groundMaterial )
-        newGround.name = 'ground2' // zonetodo
+        newGround.name = 'ground'
 		newGround.idzone = zone.id
         newGround.castShadow = true
         newGround.receiveShadow = true
 		newGround.zone = zone
         this.babs.scene.add(newGround)
 
+		this.babs.ents.get(zone.id).ground = newGround
+
 		if(zone.x == 0 && zone.z == 0) {
-			newGround.name = 'ground'
+			// newGround.name = 'ground'
 			this.currentGround = newGround
 		}
 
@@ -623,12 +625,16 @@ export class WorldSys {
 
     async loadObjects(urlFiles, zone) {
 		const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
-
-		if(fet.status == 404) {// Zone with no objects cached yet!
-			return null
+		// log('fet.status', fet.status)
+		if(fet.status == 404) {// No such zone or zone with no objects cached yet
+			return []
 		}
 
         const dataBlob = await fet.blob()
+		// log('fet.blob', dataBlob)
+		if(dataBlob.size == 2) {  // hax on size (for `{}`)
+			return []
+		}
 
 		let ds = new DecompressionStream('gzip')
 		
@@ -792,7 +798,11 @@ export class WorldSys {
 					for(let z=0; z<10 /cubeSize /Math.round(spacing); z++) {
 						for(let x=0; x<10/cubeSize /Math.round(spacing); x++) {
 
-							const rayPosition = this.vRayGroundHeight(coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4, coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4)
+							const rayPosition = this.vRayGroundHeight(
+								coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4,
+								coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4,
+								zone.id,
+							)
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
 								waterCubePositions.push(rayPosition)
@@ -832,19 +842,57 @@ export class WorldSys {
 
     }
 
-	vRayGroundHeight(gx, gz) { // Return engine height
+	vRayGroundHeight(gx, gz, idzone) { // Return engine height
+		const targetZone = this.babs.ents.get(idzone)
+		// log('targetZone', targetZone)
+
+		const zoneDelta = new Vector3(targetZone.x *1000, 0, targetZone.z *1000)
+
 		const raycaster = new Raycaster(
-			new Vector3(gx *4 +2, WorldSys.ZoneTerrainMax.y, gz*4 +2), // +2 makes it center of grid instead of corner
+			new Vector3(gx *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
 			new Vector3( 0, -1, 0 ), 
 			0, WorldSys.ZoneTerrainMax.y
 		)
 
-		const ground = this.babs.scene.children.find(o=>o.name=='ground')
+		const ground = targetZone.ground
 		const [intersect] = raycaster.intersectObject(ground, true)
 		if(!intersect) {
-			// log.info('no ground intersect!', intersect, raycaster, gx, gz)
+			// log('vRayGroundHeight: no ground intersect!', intersect, raycaster, gx, gz)
 		}
 		return intersect?.point
+	}
+
+	zoneAndPosFromCurrent(relativeGridPoint, resolution) { // res eg 40 for pieces, 4? for tiles
+		const divisor = 1000 /resolution
+	
+		const zoneDelta = new Vector3(
+			Math.floor(relativeGridPoint.x /divisor),
+			0,
+			Math.floor(relativeGridPoint.z /divisor),
+		)
+		const targetZoneCoords = new Vector3(
+			(this.currentGround.zone.x + zoneDelta.x),
+			0,
+			(this.currentGround.zone.z + zoneDelta.z),
+		)
+		
+		const targetZone = this.zones.find(zone=>zone.x==targetZoneCoords.x && zone.z == targetZoneCoords.z)
+		if(!targetZone) {
+			log('zoneAndPosFromCurrent: No target zone at', targetZoneCoords, 'for relativeGridPoint', relativeGridPoint)
+		}
+		
+		let targetPos = new Vector3(
+			relativeGridPoint.x %divisor,
+			0,
+			relativeGridPoint.z %divisor,
+		)
+		// Loop back to max on negative (balances modulus which handles positive)
+		if(targetPos.x < 0) targetPos.x += divisor
+		if(targetPos.z < 0) targetPos.z += divisor
+			
+		// log('zoneAndPosFromCurrent', zoneDelta.x+','+zoneDelta.z, ' to ', targetZoneCoords.x+','+targetZoneCoords.z, ' results in ', targetZone.id, ' at point ', targetGridPoint.x+','+targetGridPoint.z)
+	
+		return {targetZone, targetPos}
 	}
 
 }

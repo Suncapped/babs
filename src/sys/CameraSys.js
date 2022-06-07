@@ -52,7 +52,11 @@ export class CameraSys {
 		this.idealOffset.add(this._target.Position)
 		// this.idealOffset.add(new Vector3(40, 0, 40))
 
-		this.gh = this.babs.worldSys.vRayGroundHeight(Math.round(this.idealOffset.x / 4), Math.round(this.idealOffset.z / 4))
+		// this.gh = this.babs.worldSys.vRayGroundHeight(
+		// 	Math.round(this.idealOffset.x / 4),
+		// 	Math.round(this.idealOffset.z / 4),
+		// 	this.babs.worldSys.currentGround.zone.id,
+		// )
 		// this.idealOffset.setY(Math.max(this.idealOffset.y, this.gh.y +4)) // todo smooth this
 		// if(this.idealOffset.y < this.gh.y +4) {
 		// log('less')

@@ -12,7 +12,6 @@ import { Ent } from "./Ent"
 import { Flame } from "../com/Flame"
 
 export class Wob extends Ent {
-
 	/** @private */
 	constructor(id, babs) {
 		super(id, babs)
@@ -171,11 +170,8 @@ export class Wob extends Ent {
 	static async _Arrive(arrivalWob, babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
 
-		// if(arrivalWob.name == 'hot spring') log('ARRIVE!!!!!!!', arrivalWob, wobPrevious, wobPrevious?.id, wobPrevious?.instancedIndex)
-
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
-		// log('........wob', arrivalWob.instancedIndex, wobPrevious, wobPrevious?.id, wobPrevious?.instancedIndex, wob.instancedIndex)
 		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
 		// So ....uhh I guess set that later on? Comment 1287y19y1
 
@@ -310,15 +306,11 @@ export class Wob extends Ent {
 
 			Wob.WobInstMeshes.set(wob.name, newInstance)
 			babs.scene.add(newInstance)
-
-
-			
 		}
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			// if(wob.name == 'hot spring') log('finally-place', wob.name, instanced)
-			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
+			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone)
 
 			instanced.geometry?.center() 
 			// ^ Fixes offset pivot point

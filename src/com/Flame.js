@@ -307,7 +307,7 @@ export class Flame extends Com {
 		babs.scene.add(com.fire);
 
 		com.fire.scale.set(scale,scale*1.33,scale)
-		const {y} = babs.worldSys.vRayGroundHeight(wob.x, wob.z)
+		const {y} = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone)
 		com.fire.position.setY(y +yup)
 		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(wob.z *4 +2)

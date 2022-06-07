@@ -1,6 +1,6 @@
 // Simpler logging
 
-import { Vector3 } from "three"
+import { Vector2, Vector3 } from "three"
 import { debugMode } from "./stores"
 import { get as svelteGet } from 'svelte/store'
 
@@ -259,3 +259,4 @@ export function storageGet(key) {
 	}
 	return item.value
 }
+

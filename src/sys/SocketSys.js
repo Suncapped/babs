@@ -13,6 +13,7 @@ import { Raycaster } from "three"
 import { InputSys } from "./InputSys"
 import { Wob } from "../ent/Wob"
 import Crafting from "../ui/Crafting.svelte"
+import { Zone } from "../ent/Zone"
 
 export class SocketSys {
 
@@ -190,6 +191,7 @@ export class SocketSys {
 	}
 	processEnqueue(payload){
 		if(payload.load || payload.visitor || payload.session) { // First one happens immediately, to jumpstart babsReady
+			log('payload', payload )
 			this.process(this, payload)
 		}
 		else {
@@ -275,22 +277,19 @@ export class SocketSys {
 
 					context.babsReady = true
 
-
-
+					for(let zone of zones) {
+						await Zone.Create(zone, context.babs)
+					}
 
 					// Load some things ahead of time
-
-
 					const fetches = []
 					for(let zone of zones) {
-
 						zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 						zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
 
 						fetches.push(zone.elevationData, zone.landcoverData)
 					}
 					await Promise.all(fetches)
-
 
 					for(let zone of zones) {
 						const fet = await zone.elevationData
@@ -305,34 +304,36 @@ export class SocketSys {
 					}
 
 
-					const promises = []
+					const pStatics = []
 					for(let zone of zones) {
-						promises.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
+						pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
 					}
-					
-					// console.time('stitch') // 182ms for 81 zones
-					await Promise.all(promises)
-					// console.timeEnd('stitch')
+					// console.time('stitch')
+					await Promise.all(pStatics)
+					// console.timeEnd('stitch') // 182ms for 81 zones
 
 					await context.babs.worldSys.stitchElevation(zones)
 
-					const centerzone = zones.find(z => z.id == loadSelf.idzone)
-
+					
+					
 					// Create player entity
 					const playerPromise = Player.Arrive(loadSelf, true, context.babs)
-
+					
 					// Set up UIs
 					context.babs.uiSys.loadUis(data.uis)
-
-					const wobs = await context.babs.worldSys.loadObjects(context.babs.urlFiles, centerzone)
+					
+					let pObjects = []
+					for(let zone of zones) {
+						pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
+					}
+					const wobs = (await Promise.all(pObjects)).flat()
 					// We first load the object data above; then below we know which gltfs to pull
 					// Since in the future we might cache them locally.
 					// That's why we don't include them in the loadObjects /cache
 					// and since different zones also have different wobs anyway, this must be pull, not push.
 
-					// However, we can do a mass file request; see in ArriveMany
+					// However, we can do a mass file request; see in ArriveMany					// Create player entity
 					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
-
 					await Promise.all([playerPromise, arriveWobsPromise])
 
 					if(loadSelf.visitor !== true) {
@@ -468,7 +469,7 @@ export class SocketSys {
 					const wobId = data.wobId
 					const options = data.options
 					const craftWob = context.babs.ents.get(wobId)
-					let position = context.babs.worldSys.vRayGroundHeight(craftWob.x, craftWob.z)
+					let position = context.babs.worldSys.vRayGroundHeight(craftWob.x, craftWob.z, craftWob.idzone)
 				
 					log(position)
 					// Display a list of icons above the wobId wob, list of options available:

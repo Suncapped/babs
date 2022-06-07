@@ -200,7 +200,7 @@ export class InputSys {
 
 				}
 
-				// Rwara
+				// Instant Forest
 				if (this.keys.b === PRESS) {
 					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
 					// const [treesPerAxis, spacing] = [5, 50] // Property (5 pieces) posts
@@ -224,6 +224,7 @@ export class InputSys {
 
 				}
 
+				// One scroll (there were reasons!)
 				if (this.keys.n === PRESS) {
 					const wobScroll = {
 						id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
@@ -567,15 +568,18 @@ export class InputSys {
 
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
-							const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-							// const index = Utils.coordToIndex(point.x, point.z, 26)
+							const relativeGridPoint = this.mouse.landtarget.point.clone().divideScalar(4).floor()
+							const idzone = this.mouse.landtarget.idzone
+
+							const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 
 							this.babs.socketSys.send({
 								action: {
 									verb: 'used',
 									noun: 'ground',
 									data: {
-										point,
+										point: targetPos,
+										idzone,
 									},
 								}
 							})
@@ -597,9 +601,6 @@ export class InputSys {
 								const wobId = this.pickedObject.instanced.wobIdsByIndex[this.pickedObject.instancedIndex]
 								const wob = this.babs.ents.get(wobId)
 								log('WOBID', wobId, wob)
-	
-								// const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
-								// const index = Utils.coordToIndex(point.x, point.z, 26)
 	
 								this.babs.socketSys.send({
 									action: {
@@ -701,8 +702,10 @@ export class InputSys {
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log('landdrop', this.mouse.landtarget)
-						const point = this.mouse.landtarget.point.clone().divideScalar(4).round()
+						const relativeGridPoint = this.mouse.landtarget.point.clone().divideScalar(4).floor()
 						const idzone = this.mouse.landtarget.idzone
+						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
+
 						// Todo put distance limits, here and server
 						const wob = this.babs.ents.get(this.carrying.id) 
 							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
@@ -712,7 +715,7 @@ export class InputSys {
 								verb: 'moved',
 								noun: wob.id,
 								data: {
-									point,
+									point: targetPos,
 									idzone,
 								},
 							}
@@ -872,7 +875,7 @@ export class InputSys {
 					|| this.mouseRayTargets[i].object?.name === 'three-helper' // debug dest mesh
 					|| this.mouseRayTargets[i].object?.parent?.name === 'three-helper' // debug dest mesh
 					|| this.mouseRayTargets[i].object?.name === 'water' // water cubes IM
-					|| this.mouseRayTargets[i].object?.name === 'ground2' // zonetodo
+					// || this.mouseRayTargets[i].object?.name === 'farzone' // zonetodo
 					|| this.mouseRayTargets[i].object?.name === 'camerahelper' // zonetodo
 					|| this.mouseRayTargets[i].object?.name === 'flame') { // flame effect
 					continue // Skip
@@ -913,18 +916,22 @@ export class InputSys {
 						this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
-						// log('ground', this.mouseRayTargets[i].point)
 						const point = this.mouseRayTargets[i].point
-						const landPoint = point.clone().divideScalar(1000 / 25).round()
+						const relativeGridPoint = point.clone().divideScalar(1000 / 25).floor()
 
-						const index = Utils.coordToIndex(landPoint.x, landPoint.z, 26)
+						// Transform gridPoint to be relative to current zone, and find its zone
+						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 40)
+						// log('targetZone', targetZone, targetPos)
 						
-						const landcoverData = this.babs.worldSys.zones.find(z=>z.x==0&&z.z==0).landcoverData // zonetodo
+						const landcoverData = targetZone.landcoverData
+						const index = Utils.coordToIndex(targetPos.x, targetPos.z, 26)
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 
 						this.mouse.landtarget.text = lcString
-						this.mouse.landtarget.idzone = this.mouseRayTargets[i].object.idzone
-						this.mouse.landtarget.point = point
+						this.mouse.landtarget.idzone = targetZone.id
+						this.mouse.landtarget.point = this.mouseRayTargets[i].point
+
+						// Also, maybe we should highlight this square or something?  By editing index color
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'daysky') { // Sky
 						// log('ray to sky')
@@ -1140,7 +1147,7 @@ export class InputSys {
 
 			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.player.controller.idealTargetQuaternion)
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
-			log.info('vector!', tempMatrix, vector)
+			// log.info('vector!', tempMatrix, vector)
 
 			if (this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
 				vector.crossVectors(this.player.controller.target.up, vector) // camera.up
@@ -1159,10 +1166,19 @@ export class InputSys {
 			log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
 
 			gCurrentPos = gCurrentPosFloored
-			gCurrentPos.setY(0) // Y needs a lot of work in this area...
+			gCurrentPos.setY(0) // Y needs a lot of work in this area...(8 months later: or does it? :D)
 
 			const dest = gCurrentPos.clone().add(vector)
-			dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
+			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
+			const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(dest, 4)
+			log('dest', targetZone, targetPos, this.babs.worldSys.currentGround)
+			if(this.babs.worldSys.currentGround.zone.id != targetZone.id) {
+				// Request a zone transfer from server?
+				const zoneEnt = this.babs.ents.get(targetZone.id) // todo fix all this lol
+				this.babs.worldSys.currentGround = zoneEnt.ground
+
+				// todo warp all objects?
+			}
 
 			// Send to controller
 			log.info('InputSys: call controller.setDestination()', dest)

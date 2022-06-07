@@ -349,7 +349,7 @@ export class Controller extends Com {
 					controlObject.position.setZ(eDest.z)
 				}
 				else if (eDiff.z > 0) {
-					log.info('Controller: update(), addZ based on', eDiff)
+					// log.info('Controller: update(), addZ based on', eDiff)
 					velocity.z += acc.z * dt
 				}
 				else if (eDiff.z < 0) {
@@ -361,7 +361,7 @@ export class Controller extends Com {
 					controlObject.position.setX(eDest.x)
 				}
 				else if (eDiff.x > 0) {
-					log.info('Controller: update(), addX based on', eDiff)
+					// log.info('Controller: update(), addX based on', eDiff)
 					velocity.x += acc.x * dt
 				}
 				else if (eDiff.x < 0) {
@@ -442,10 +442,10 @@ export class Controller extends Com {
 		controlObject.position.add(forward)
 		// controlObject.position.add(sideways)
 
-		controlObject.position.clamp(
-			WorldSys.ZoneTerrainMin,
-			WorldSys.ZoneTerrainMax,
-		)
+		// controlObject.position.clamp(
+		// 	WorldSys.ZoneTerrainMin,
+		// 	WorldSys.ZoneTerrainMax,
+		// )
 
 		if (this._mixer) {
 			this._mixer.update(dt)
@@ -454,7 +454,7 @@ export class Controller extends Com {
 		// Keep above ground
 		this.raycaster.ray.origin.copy(controlObject.position)
 		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
-		const ground = this.scene.children.find(o=>o.name=='ground')
+		const ground = this.babs.worldSys.currentGround // zonetodo handle handoff somehow
 		if(ground && this.raycaster) {
 			const groundIntersect = this.raycaster.intersectObject(ground, true)
 			// log('groundIntersect', groundIntersect, ground)
@@ -463,6 +463,9 @@ export class Controller extends Com {
 				this.groundDistance = true
 				controlObject.position.setY(groundHeightY +this.hover)
 				// If on ground, y velocity stops
+			}
+			if(!groundIntersect.length) {
+				velocity.y = 6 // Makes you float upward so you can get back to a working ground :)
 			}
 			this.groundDistance = controlObject.position.y - groundHeightY // Used for jump
 		}
