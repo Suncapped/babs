@@ -163,9 +163,14 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject(chatDiv)
-		point.setY(point.y +1) // Raise up
-		chatLabel.position.copy(point)
-		this.babs.worldSys.currentGround.add(chatLabel)
+
+		// New:
+		let zonePoint = point.clone().setY(point.y +1)// Raise up
+		const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(zonePoint, 1)
+		const zone = this.babs.ents.get(targetZone.id)
+		targetPos.add(new Vector3(zone.x *1000, 0, zone.z *1000))
+		chatLabel.position.copy(targetPos)
+		zone.ground.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
 	}
 	serverSaid(text, point) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')

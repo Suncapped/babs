@@ -255,6 +255,7 @@ export class WorldSys {
 		// this.babs.scene.add(light)
 
         this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
+		this.hemiLight.name = 'hemilight'
         const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
 		hemiLightHelper.name = 'three-helper'
         this.babs.scene.add(hemiLightHelper)
@@ -336,6 +337,7 @@ export class WorldSys {
 
 			// todo have this track not-the-player lol.  Perhaps an origin that doesn't move?  Used to be cube
 			this.dirLight = new DirectionalLight(0xffffff, 0)
+			this.dirLight.name = 'dirlight'
 			this.dirLight.target = this.playerTarget
 
 			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 1000)
@@ -556,7 +558,7 @@ export class WorldSys {
 
 	currentGround
 	groundMaterial
-    async loadStatics(urlFiles, zone) {
+    async loadStatics(urlFiles, zone, isStartingZone = false) {
         let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
@@ -583,6 +585,7 @@ export class WorldSys {
 		// })
         this.groundMaterial = this.groundMaterial || new MeshLambertMaterial( {
 			side: FrontSide,
+			// side: Side,
 			shadowSide: FrontSide,
 			// depthFunc: NeverDepth,
 		} )
@@ -609,12 +612,13 @@ export class WorldSys {
 
 		this.babs.ents.get(zone.id).ground = newGround
 
-		if(zone.x == 0 && zone.z == 0) {
-			// newGround.name = 'ground'
+		if(isStartingZone) {
+			log('playerStartingZone', newGround)
 			this.currentGround = newGround
 		}
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
+		groundGrid.name = 'groundgrid'
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
 		this.babs.scene.add(groundGrid)
 		debugMode.subscribe(on => {
@@ -844,7 +848,9 @@ export class WorldSys {
 
 	vRayGroundHeight(gx, gz, idzone) { // Return engine height
 		const targetZone = this.babs.ents.get(idzone)
-		// log('targetZone', targetZone)
+		if(!targetZone) {
+			log('not targetZone', idzone, targetZone)
+		}
 
 		const zoneDelta = new Vector3(targetZone.x *1000, 0, targetZone.z *1000)
 
@@ -883,7 +889,7 @@ export class WorldSys {
 		
 		let targetPos = new Vector3(
 			relativeGridPoint.x %divisor,
-			0,
+			relativeGridPoint.y, // No transform of Y
 			relativeGridPoint.z %divisor,
 		)
 		// Loop back to max on negative (balances modulus which handles positive)
@@ -893,6 +899,29 @@ export class WorldSys {
 		// log('zoneAndPosFromCurrent', zoneDelta.x+','+zoneDelta.z, ' to ', targetZoneCoords.x+','+targetZoneCoords.z, ' results in ', targetZone.id, ' at point ', targetGridPoint.x+','+targetGridPoint.z)
 	
 		return {targetZone, targetPos}
+	}
+
+	shiftEverything(xShift, zShift, butPlayer = false) {
+		const excludeFromShift = [
+			// 'ground', 'groundgrid', 
+			butPlayer ? 'player' : 'asdf',
+			'camerahelper', 
+			'three-helper', 'dirlight', 'hemilight',
+			'nightsky', 'daysky',
+
+		] // , 'PointLight', 'ThreeFire', InstancedMesh
+		this.babs.scene.children.forEach(child => {
+			if(!excludeFromShift.includes(child.name)) {
+				child.position.setX(child.position.x +xShift)
+				child.position.setZ(child.position.z +zShift)
+				if(child.name != 'ground' && child.name != 'groundgrid' ) {
+					log('shift', child.name)
+				}
+			}
+			else {
+				log('NOT SHIFT', child.name)
+			}
+		})
 	}
 
 }

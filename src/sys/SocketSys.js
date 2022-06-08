@@ -252,7 +252,7 @@ export class SocketSys {
 					
 				break
 				case 'load':
-					log.info('socket: load', data)
+					log('socket: load', data)
 					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 						context.send({ping:'ping'})
 					}, SocketSys.pingSeconds * 1000)
@@ -306,13 +306,15 @@ export class SocketSys {
 
 					const pStatics = []
 					for(let zone of zones) {
-						pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone))
+						const isStartingZone = zone.id == loadSelf.idzone
+						pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isStartingZone))
 					}
 					// console.time('stitch')
 					await Promise.all(pStatics)
 					// console.timeEnd('stitch') // 182ms for 81 zones
 
 					await context.babs.worldSys.stitchElevation(zones)
+
 
 					
 					
@@ -339,6 +341,9 @@ export class SocketSys {
 					if(loadSelf.visitor !== true) {
 						document.getElementById('welcomebar').style.display = 'none' 
 					}
+
+					const startingZone = this.babs.ents.get(loadSelf.idzone)
+					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 					
 					context.send({
 						ready: loadSelf.id,
@@ -386,6 +391,19 @@ export class SocketSys {
 						}
 
 					}
+				break
+				case 'zonein':
+					// Handle self or others switching zones
+					const player = context.babs.ents.get(data.idplayer)
+					const zone = context.babs.ents.get(data.idzone)
+					log('zonein', player.id, zone.id, context.babs.worldSys.currentGround, zone.ground)
+
+					context.babs.worldSys.currentGround = zone.ground
+
+
+					player.controller.zoneIn(zone)
+
+
 				break
 				case 'said':
 					const chattyPlayer = context.babs.ents.get(data.id)

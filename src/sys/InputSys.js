@@ -544,7 +544,9 @@ export class InputSys {
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
+								// log('this.mouse.landtarget', JSON.stringify(this.mouse.landtarget))
 								// Create text here above the land.
+								// const zone = this.babs.ents.get(this.mouse.landtarget.idzone)
 								this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
 							}
 	
@@ -916,6 +918,7 @@ export class InputSys {
 						this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
+						if(this.player.controller.zoningWait) continue // don't deal with ground intersects while zoning
 						const point = this.mouseRayTargets[i].point
 						const relativeGridPoint = point.clone().divideScalar(1000 / 25).floor()
 
@@ -1142,7 +1145,9 @@ export class InputSys {
 
 				)
 			)
+			&& !this.player.controller.zoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
 		)) {
+			
 			log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
 
 			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.player.controller.idealTargetQuaternion)
@@ -1171,11 +1176,11 @@ export class InputSys {
 			const dest = gCurrentPos.clone().add(vector)
 			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 			const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(dest, 4)
-			log('dest', targetZone, targetPos, this.babs.worldSys.currentGround)
+			// log('dest', targetZone, targetPos, this.babs.worldSys.currentGround)
 			if(this.babs.worldSys.currentGround.zone.id != targetZone.id) {
 				// Request a zone transfer from server?
-				const zoneEnt = this.babs.ents.get(targetZone.id) // todo fix all this lol
-				this.babs.worldSys.currentGround = zoneEnt.ground
+				// const zoneEnt = this.babs.ents.get(targetZone.id) // todo fix all this lol
+				// this.babs.worldSys.currentGround = zoneEnt.ground
 
 				// todo warp all objects?
 			}

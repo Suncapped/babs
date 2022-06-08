@@ -137,26 +137,61 @@ export class Controller extends Com {
 		return this.headRotationX
 	}
 
+	zoningWait = false
 	setDestination(gVector3, movestate) {
 		// This takes a grid destination, which we'll be moved toward in update()
-		if(gVector3.equals(this.gDestination)) {
-			return
-		}
+		if(gVector3.equals(this.gDestination)) return // Do not process if unchanged
+		if(this.zoningWait) return // Do not process during zoning
 
 		this.gDestination = gVector3.clone()
-		log.info('setDestination changed', this.gDestination, movestate)
+		log('setDestination changed', this.gDestination, movestate)
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
+		
+
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.idEnt === this.babs.idSelf) {
+			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
+			
+			// New destination!
+			// As soon as dest is next square (for the first time), send ENTERZONE
+
+			const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(this.gDestination, 4)
+			log('zoneAndPosFromCurrent', targetZone, targetPos.x+','+targetPos.z)
+
+			// log(this.scene)
+
+			let enterzone_id
+			if(this.gDestination.x < 0 || this.gDestination.z < 0 || this.gDestination.x > 249 || this.gDestination.z > 249){
+				enterzone_id = targetZone.id
+				this.zoningWait = true
+
+				this.gDestination.x = targetPos.x
+				this.gDestination.z = targetPos.z
+
+				
+				const zonetarget = this.babs.ents.get(targetZone.id)
+				const zonecurrent = this.babs.ents.get(this.babs.worldSys.currentGround.zone.id) 
+				// ^ zonetodo just have 1 type of zone pls :S
+				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
+
+				// Why not reset origin here?
+				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
+
+
+			}
+
 			this.babs.socketSys.send({
 				move: {
-					movestate: Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1],
+					movestate: movestateSend,
 					a: this.gDestination.x,
 					b: this.gDestination.z,
+					enterzone_id,
 				}
 			})
+
+
 		}
 	}
 
@@ -395,7 +430,10 @@ export class Controller extends Com {
 		} 
 		else {
 			const gravityFtS = 32 *10 // Why does it feel off without *10?
-			velocity.y -= gravityFtS*dt
+
+			if(!this.zoningWait) { // No gravity while walking between zones waiting for zonein
+				velocity.y -= gravityFtS*dt
+			}
 		}
 
 		// if (this._input._keys.left) {
@@ -465,9 +503,11 @@ export class Controller extends Com {
 				// If on ground, y velocity stops
 			}
 			if(!groundIntersect.length) {
-				velocity.y = 6 // Makes you float upward so you can get back to a working ground :)
+				velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
 			}
-			this.groundDistance = controlObject.position.y - groundHeightY // Used for jump
+			else {
+				this.groundDistance = controlObject.position.y - groundHeightY // Used for jump
+			}
 		}
 		
 		if(this.headRotationX) {
@@ -483,6 +523,13 @@ export class Controller extends Com {
 		}
 
 		
+	}
+
+	zoneIn(zone) {
+		this.zoningWait = false
+		this.target.position.y = 0 // Prevent floating when zoning
+		// this.update(1)
+		// this.update(1)
 	}
 
 }
