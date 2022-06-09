@@ -4,7 +4,7 @@ import { LoaderSys } from '../sys/LoaderSys'
 import { log } from '../Utils'
 import { Euler, MathUtils, PointLight, Quaternion, Raycaster, sRGBEncoding, TextureLoader } from 'three'
 import { Vector3 } from 'three'
-import { Com } from './Com'
+import { Comp } from './Comp'
 import { SocketSys } from '../sys/SocketSys'
 import { WorldSys } from '../sys/WorldSys'
 
@@ -261,7 +261,7 @@ class ThreeFire extends THREE.Mesh {
 };
 
 
-export class Flame extends Com {
+export class Flame extends Comp {
 
 	static player
 

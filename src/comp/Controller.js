@@ -4,7 +4,7 @@ import { LoaderSys } from '../sys/LoaderSys'
 import { log } from '../Utils'
 import { Euler, MathUtils, Quaternion, Raycaster } from 'three'
 import { Vector3 } from 'three'
-import { Com } from './Com'
+import { Comp } from './Comp'
 import { SocketSys } from '../sys/SocketSys'
 import { WorldSys } from '../sys/WorldSys'
 
@@ -24,7 +24,7 @@ class BasicCharacterControllerProxy {
 	}
 }
 
-export class Controller extends Com {
+export class Controller extends Comp {
 
 	static MOVESTATE = {
 		Idle: 0,

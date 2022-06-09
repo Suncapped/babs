@@ -10,7 +10,7 @@ import { Mesh } from "three"
 import { DoubleSide } from "three"
 import { Matrix4 } from "three"
 import { Vector2 } from "three"
-import { Controller } from "../com/Controller"
+import { Controller } from "../comp/Controller"
 import { WorldSys } from "./WorldSys"
 import * as Utils from './../Utils'
 import { UiSys } from "./UiSys"

@@ -15,7 +15,7 @@ import { Vector4 } from "three"
 import { Matrix3 } from "three"
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { Controller } from "../com/Controller"
+import { Controller } from "../comp/Controller"
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 
 export class LoaderSys {

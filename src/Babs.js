@@ -19,7 +19,7 @@ import { LoaderSys } from './sys/LoaderSys'
 import { CameraSys } from './sys/CameraSys'
 import { RenderSys } from './sys/RenderSys'
 import { Player } from './ent/Player'
-import { Controller } from './com/Controller'
+import { Controller } from './comp/Controller'
 
 import { baseDomain, isProd, debugMode, urlFiles } from "./stores"
 
@@ -46,7 +46,7 @@ class Babs {
 
 
 	ents = new Map() // id key, value ent
-	comcats = new Map() // comType key, value is an array of those coms
+	compcats = new Map() // comType key, value is an array of those coms
 
 	zips = new Map() // idzip key, value idplayer
 
@@ -191,7 +191,7 @@ class Babs {
 		this.inputSys?.update(dt, this.scene)
 		this.worldSys.update(dt, this.camera)
 
-		for(let [name, coms] of this.comcats) {
+		for(let [name, coms] of this.compcats) {
 			if(coms) {
 				for(let com of coms) {
 					com.update(dt)

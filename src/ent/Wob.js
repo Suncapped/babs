@@ -3,13 +3,13 @@ import { SocketSys } from "../sys/SocketSys"
 import { UiSys } from "../sys/UiSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '../Utils'
-import { Appearance } from "../com/Appearance"
+import { Appearance } from "../comp/Appearance"
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { LoaderSys } from "../sys/LoaderSys"
 import { log } from '../Utils'
 import { Ent } from "./Ent"
-import { Flame } from "../com/Flame"
+import { Flame } from "../comp/Flame"
 
 export class Wob extends Ent {
 	/** @private */

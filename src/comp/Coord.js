@@ -2,8 +2,7 @@
 import * as Utils from '../Utils'
 import { Ent } from './Ent'
 
-
-export class Zone extends Ent {
+export class Coord extends Comp {
 	constructor(id, babs) {
 		super(id, babs)
 	}

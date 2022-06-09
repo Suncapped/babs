@@ -6,7 +6,7 @@ import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
 import { log, randIntInclusive } from './../Utils'
 import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from "three"
-import { Controller } from "../com/Controller"
+import { Controller } from "../comp/Controller"
 import { Player } from "../ent/Player"
 import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
