@@ -264,6 +264,10 @@ export class Wob extends Ent {
 				}
 
 				Wob.WobInstMeshes.set(wob.name, instanced)
+
+				instanced.position.x = -1000
+				instanced.position.z = 0
+
 				babs.scene.add(instanced)
 
 				return instanced
@@ -299,6 +303,8 @@ export class Wob extends Ent {
 			newInstance.receiveShadow = instanced.receiveShadow
 
 			newInstance.wobIdsByIndex = instanced.wobIdsByIndex
+			newInstance.position.x = instanced.position.x
+			newInstance.position.z = instanced.position.z
 			
 			instanced.dispose()
 			babs.scene.remove(instanced)
@@ -310,7 +316,8 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone)
+			log('with wob', wob)
+			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone, 'wobplace')
 
 			instanced.geometry?.center() 
 			// ^ Fixes offset pivot point

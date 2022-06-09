@@ -574,14 +574,13 @@ export class InputSys {
 							const idzone = this.mouse.landtarget.idzone
 
 							const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
-
 							this.babs.socketSys.send({
 								action: {
 									verb: 'used',
 									noun: 'ground',
 									data: {
 										point: targetPos,
-										idzone,
+										idzone: targetZone.id,
 									},
 								}
 							})
@@ -920,19 +919,21 @@ export class InputSys {
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 						if(this.player.controller.zoningWait) continue // don't deal with ground intersects while zoning
 						const point = this.mouseRayTargets[i].point
-						const relativeGridPoint = point.clone().divideScalar(1000 / 25).floor()
-
+						
+						const relativeGridPoint = point.clone().divideScalar(4).floor()
+						// relativeGridPoint.setY(point.y) // sigh - make a FEVector or something
 						// Transform gridPoint to be relative to current zone, and find its zone
-						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 40)
-						// log('targetZone', targetZone, targetPos)
+						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 						
 						const landcoverData = targetZone.landcoverData
-						const index = Utils.coordToIndex(targetPos.x, targetPos.z, 26)
+						const index = Utils.coordToIndex(Math.floor(targetPos.x /10), Math.floor(targetPos.z /10), 26)
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 
 						this.mouse.landtarget.text = lcString
 						this.mouse.landtarget.idzone = targetZone.id
-						this.mouse.landtarget.point = this.mouseRayTargets[i].point
+						this.mouse.landtarget.point = point
+
+						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
 
 						// Also, maybe we should highlight this square or something?  By editing index color
 					}

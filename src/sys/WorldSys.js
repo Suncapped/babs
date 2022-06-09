@@ -846,13 +846,18 @@ export class WorldSys {
 
     }
 
-	vRayGroundHeight(gx, gz, idzone) { // Return engine height
+	vRayGroundHeight(gx, gz, idzone, from = '') { // Return engine height
 		const targetZone = this.babs.ents.get(idzone)
 		if(!targetZone) {
-			log('not targetZone', idzone, targetZone)
+			log('no targetZone', idzone, targetZone)
 		}
 
-		const zoneDelta = new Vector3(targetZone.x *1000, 0, targetZone.z *1000)
+		let zoneDelta = new Vector3(targetZone.x -this.currentGround.zone.x, 0, targetZone.z -this.currentGround.zone.z)
+		zoneDelta.multiply(new Vector3(1000, 1, 1000))
+
+		if(from == 'wobplace') {
+			log('targetZone', targetZone, zoneDelta, gx, gz)
+		}
 
 		const raycaster = new Raycaster(
 			new Vector3(gx *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
@@ -863,12 +868,17 @@ export class WorldSys {
 		const ground = targetZone.ground
 		const [intersect] = raycaster.intersectObject(ground, true)
 		if(!intersect) {
-			// log('vRayGroundHeight: no ground intersect!', intersect, raycaster, gx, gz)
+			// log('vRayGroundHeight: no ground intersect!', intersect, raycaster, gx, gz, ground)
 		}
-		return intersect?.point
+		let result = intersect?.point
+		log('result', result)
+		// result.sub(zoneDelta) // ok...
+
+		return result
 	}
 
 	zoneAndPosFromCurrent(relativeGridPoint, resolution) { // res eg 40 for pieces, 4? for tiles
+
 		const divisor = 1000 /resolution
 	
 		const zoneDelta = new Vector3(
@@ -876,6 +886,7 @@ export class WorldSys {
 			0,
 			Math.floor(relativeGridPoint.z /divisor),
 		)
+		// log('curg', this.currentGround)
 		const targetZoneCoords = new Vector3(
 			(this.currentGround.zone.x + zoneDelta.x),
 			0,
@@ -897,7 +908,7 @@ export class WorldSys {
 		if(targetPos.z < 0) targetPos.z += divisor
 			
 		// log('zoneAndPosFromCurrent', zoneDelta.x+','+zoneDelta.z, ' to ', targetZoneCoords.x+','+targetZoneCoords.z, ' results in ', targetZone.id, ' at point ', targetGridPoint.x+','+targetGridPoint.z)
-	
+
 		return {targetZone, targetPos}
 	}
 

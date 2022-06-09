@@ -315,9 +315,6 @@ export class SocketSys {
 
 					await context.babs.worldSys.stitchElevation(zones)
 
-
-					
-					
 					// Create player entity
 					const playerPromise = Player.Arrive(loadSelf, true, context.babs)
 					
@@ -334,20 +331,22 @@ export class SocketSys {
 					// That's why we don't include them in the loadObjects /cache
 					// and since different zones also have different wobs anyway, this must be pull, not push.
 
-					// However, we can do a mass file request; see in ArriveMany					// Create player entity
+					// Interject this before Arrives, so that objects have zones to ray their Y 
+					const startingZone = this.babs.ents.get(loadSelf.idzone)
+					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
+					
+					// (However, we can do a mass file request; see in ArriveMany)
 					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
 					await Promise.all([playerPromise, arriveWobsPromise])
+					
+
+					context.send({
+						ready: loadSelf.id,
+					})
 
 					if(loadSelf.visitor !== true) {
 						document.getElementById('welcomebar').style.display = 'none' 
 					}
-
-					const startingZone = this.babs.ents.get(loadSelf.idzone)
-					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-					
-					context.send({
-						ready: loadSelf.id,
-					})
 
 
 				break
