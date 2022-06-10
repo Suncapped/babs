@@ -20,6 +20,7 @@ export class Zone extends Ent {
 	async init(data) { // This patterns allows an async new, using `this`
 		this.x = data.x
 		this.z = data.z
+		return this
 	}
 
 
