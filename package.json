@@ -12,6 +12,7 @@
     "dev": "vite --host",
     "playerdev": "vite --mode playerdev",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
     "serve": "vite preview",
     "build": "vite build",
     "postbuild": "sh buildtime.sh",
@@ -30,6 +31,7 @@
     "svelte-check": "^2.7.1",
     "svelte-preprocess": "^4.10.6",
     "tslib": "^2.4.0",
+    "typescript": "^4.7.3",
     "vite": "^2.9.9",
     "webhook-discord": "^3.7.8"
   },

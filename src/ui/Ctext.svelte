@@ -1,9 +1,9 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, nickTargetId } from "../stores.js"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, nickTargetId } from "../stores"
 	import Cookies from 'js-cookie'
-	import { log } from '../Utils.js'
-import { InputSys } from '../sys/InputSys.js';
+	import { log } from '@/Utils'
+	import { InputSys } from '@/sys/InputSys'
 
 	let chatbox
 

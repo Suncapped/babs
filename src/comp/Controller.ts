@@ -1,16 +1,16 @@
 import * as THREE from 'three'
-import { EventSys } from '../sys/EventSys'
-import { LoaderSys } from '../sys/LoaderSys'
-import { log } from '../Utils'
+import { EventSys } from '@/sys/EventSys'
+import { LoaderSys } from '@/sys/LoaderSys'
+import { log } from '@/Utils'
 import { Euler, MathUtils, Quaternion, Raycaster } from 'three'
 import { Vector3 } from 'three'
-import { Comp } from './Comp'
-import { SocketSys } from '../sys/SocketSys'
-import { WorldSys } from '../sys/WorldSys'
+import { Comp } from '@/comp/Comp'
+import { SocketSys } from '@/sys/SocketSys'
+import { WorldSys } from '@/sys/WorldSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
-import { WobAtPosition } from '../Utils'
+import { WobAtPosition } from '@/Utils'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 

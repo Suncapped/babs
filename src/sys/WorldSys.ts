@@ -55,7 +55,7 @@ import { LineSegments } from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
 import { debugMode } from "../stores"
 
-import { Wob } from '../ent/Wob'
+import { Wob } from '@/ent/Wob'
 import { EventSys } from './EventSys'
 import * as SunCalc from 'suncalc'
 // import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'

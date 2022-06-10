@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings } from "../stores.js"
-	import { log } from '../Utils.js'
+	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings } from "../stores"
+	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 	import Cookies from 'js-cookie'
 	import iro from '@jaames/iro'
@@ -96,7 +96,7 @@
 	onMount(async () => {
 		updateDimensions()
 
-		colorPicker = new iro.ColorPicker('#picker');
+		colorPicker = new iro.ColorPicker('#picker')
 		colorPicker.resize(200) // Must use this, not in init options above // todo send a patch?
 		colorPicker.on('input:change', function(color) {
 			speechColorEl.style.color = color.hexString

@@ -10,16 +10,16 @@ import {
     AxesHelper,
 	Cache,
 } from 'three'
-import { WorldSys } from './sys/WorldSys'
-import { SocketSys } from './sys/SocketSys'
-import { UiSys } from './sys/UiSys'
-import { InputSys } from './sys/InputSys'
-import { sleep, log } from './Utils'
-import { LoaderSys } from './sys/LoaderSys'
-import { CameraSys } from './sys/CameraSys'
-import { RenderSys } from './sys/RenderSys'
-import { Player } from './ent/Player'
-import { Controller } from './comp/Controller'
+import { WorldSys } from '@/sys/WorldSys'
+import { SocketSys } from '@/sys/SocketSys'
+import { UiSys } from '@/sys/UiSys'
+import { InputSys } from '@/sys/InputSys'
+import { sleep, log } from '@/Utils'
+import { LoaderSys } from '@/sys/LoaderSys'
+import { CameraSys } from '@/sys/CameraSys'
+import { RenderSys } from '@/sys/RenderSys'
+import { Player } from '@/ent/Player'
+import { Controller } from '@/comp/Controller'
 
 import { baseDomain, isProd, debugMode, urlFiles } from "./stores"
 
@@ -43,6 +43,7 @@ class Babs {
 	uiSys
 	worldSys
 	socketSys
+	renderSys :RenderSys
 
 
 	ents = new Map() // id key, value ent
@@ -115,8 +116,8 @@ class Babs {
 			switch (true) {
 				case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)"
 				case agent.indexOf("edg") > -1: return "MS Edge Chromium"
-				case agent.indexOf("opr") > -1 && !!window.opr: return "opera"
-				case agent.indexOf("chrome") > -1 && !!window.chrome: return "chrome"
+				case agent.indexOf("opr") > -1 && !!window['opr']: return "opera"
+				case agent.indexOf("chrome") > -1 && !!window['chrome']: return "chrome"
 				case agent.indexOf("trident") > -1: return "Internet Explorer"
 				case agent.indexOf("firefox") > -1: return "firefox"
 				case agent.indexOf("safari") > -1: return "safari"
@@ -147,10 +148,10 @@ class Babs {
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
-			document.getElementById('charsave').disabled = true
+			document.getElementById('charsave')['disabled'] = true
 			this.socketSys.enter(
-				document.getElementById('email').value, 
-				document.getElementById('password').value
+				document.getElementById('email')['value'], 
+				document.getElementById('password')['value']
 			)
 		})
 

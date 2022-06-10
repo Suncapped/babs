@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores.js"
-	import { log } from '../Utils.js'
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores"
+	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 
 	const DRAG_THRESHOLD = 2

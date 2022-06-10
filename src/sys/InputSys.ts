@@ -1,5 +1,5 @@
 import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
-import { Wob } from "../ent/Wob"
+import { Wob } from "@/ent/Wob"
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from "../stores"
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
@@ -10,7 +10,7 @@ import { Mesh } from "three"
 import { DoubleSide } from "three"
 import { Matrix4 } from "three"
 import { Vector2 } from "three"
-import { Controller } from "../comp/Controller"
+import { Controller } from "@/comp/Controller"
 import { WorldSys } from "./WorldSys"
 import * as Utils from './../Utils'
 import { UiSys } from "./UiSys"

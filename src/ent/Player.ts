@@ -1,11 +1,11 @@
 
-import { CameraSys } from '../sys/CameraSys'
-import { InputSys } from '../sys/InputSys'
-import { Controller } from '../comp/Controller'
-import { LoaderSys } from '../sys/LoaderSys'
-import { log } from '../Utils'
+import { CameraSys } from '@/sys/CameraSys'
+import { InputSys } from '@/sys/InputSys'
+import { Controller } from '@/comp/Controller'
+import { LoaderSys } from '@/sys/LoaderSys'
+import { log } from '@/Utils'
 import { Ent } from './Ent'
-import { EventSys } from '../sys/EventSys'
+import { EventSys } from '@/sys/EventSys'
 
 // Player Character
 export class Player extends Ent {

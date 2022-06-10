@@ -1,6 +1,7 @@
 
-import * as Utils from '../Utils'
-import { Ent } from './Ent'
+import * as Utils from '@/Utils'
+import { Comp } from '@/comp/Comp'
+import { Ent } from '@/ent/Ent'
 
 export class Coord extends Comp {
 	// This patterns allows: const coord = await Coord.Create()

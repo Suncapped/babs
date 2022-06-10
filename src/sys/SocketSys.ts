@@ -1,19 +1,19 @@
 import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from "../stores"
 import Cookies from "js-cookie"
-import { UiSys } from '../sys/UiSys'
+import { UiSys } from '@/sys/UiSys'
 import { EventSys } from "./EventSys"
 import { WorldSys } from "./WorldSys"
 import { LoaderSys } from "./LoaderSys"
 import { log, randIntInclusive } from './../Utils'
 import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from "three"
-import { Controller } from "../comp/Controller"
-import { Player } from "../ent/Player"
+import { Controller } from "@/comp/Controller"
+import { Player } from "@/ent/Player"
 import { CameraSys } from "./CameraSys"
 import { Raycaster } from "three"
 import { InputSys } from "./InputSys"
-import { Wob } from "../ent/Wob"
+import { Wob } from "@/ent/Wob"
 import Crafting from "../ui/Crafting.svelte"
-import { Zone } from "../ent/Zone"
+import { Zone } from "@/ent/Zone"
 
 export class SocketSys {
 

@@ -1,5 +1,5 @@
 
-import { log } from '../Utils'
+import { log } from '@/Utils'
 export class Ent {
 	id
 	babs

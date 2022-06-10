@@ -1,5 +1,5 @@
 
-import * as Utils from '../Utils'
+import * as Utils from '@/Utils'
 import { Ent } from './Ent'
 
 

@@ -1,15 +1,15 @@
 import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from "three"
-import { SocketSys } from "../sys/SocketSys"
-import { UiSys } from "../sys/UiSys"
+import { SocketSys } from "@/sys/SocketSys"
+import { UiSys } from "@/sys/UiSys"
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as Utils from '../Utils'
-import { Appearance } from "../comp/Appearance"
+import * as Utils from '@/Utils'
+import { Appearance } from "@/comp/Appearance"
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { LoaderSys } from "../sys/LoaderSys"
-import { log } from '../Utils'
+import { LoaderSys } from "@/sys/LoaderSys"
+import { log } from '@/Utils'
 import { Ent } from "./Ent"
-import { Flame } from "../comp/Flame"
+import { Flame } from "@/comp/Flame"
 
 export class Wob extends Ent {
 	/** @private */

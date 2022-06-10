@@ -5,7 +5,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from "../stores.js"
+import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from "../stores"
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'

@@ -13,6 +13,8 @@ export class RenderSys {
 	babs
 	renderer
 	labelRenderer
+	_camera :PerspectiveCamera
+	_scene :Scene
 
 	constructor(babs) {
 		this.babs = babs
