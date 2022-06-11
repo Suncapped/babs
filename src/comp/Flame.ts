@@ -11,6 +11,9 @@ import { WorldSys } from '@/sys/WorldSys'
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
 import { isPowerOfTwo } from 'three/src/math/MathUtils'
+import { Babs } from '@/Babs'
+import { Zone } from '@/ent/Zone'
+import { EngineCoord, YardCoord } from './Coord'
 
 
 let FireShader = {
@@ -287,7 +290,7 @@ export class Flame extends Comp {
 	};
 
 	static fireTex
-	static async Create(wob, babs, scale, yup) {
+	static async Create(wob, babs :Babs, scale, yup) {
 		const com = new Flame(wob, babs)
 
 		// Init static singletons
@@ -307,7 +310,11 @@ export class Flame extends Comp {
 		babs.scene.add(com.fire);
 
 		com.fire.scale.set(scale,scale*1.33,scale)
-		const {y} = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone)
+
+		const zone = babs.ents.get(wob.idzone) as Zone
+		const yardCoord = YardCoord.Create(wob.x, wob.z)
+		const {y} = zone.calcHeightAt(yardCoord.toEngineCoordCentered()) // zonetodo is this even working?
+
 		com.fire.position.setY(y +yup)
 		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(wob.z *4 +2)

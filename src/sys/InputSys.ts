@@ -14,6 +14,7 @@ import { Controller } from "@/comp/Controller"
 import { WorldSys } from "./WorldSys"
 import * as Utils from './../Utils'
 import { UiSys } from "./UiSys"
+import { EngineCoord, YardCoord } from "@/comp/Coord"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -538,7 +539,9 @@ export class InputSys {
 								let debugStuff = ''
 								if(this.babs.debugMode) {
 									const [x,y,z] = this.pickedObject?.instancedPosition.toArray()
-									debugStuff += `; pos: ${x}, ~${Math.round(y)}, ${z}; index: `+this.pickedObject?.instancedIndex
+									const engCoord = EngineCoord.Create(new Vector3(x,y,z))
+									const yardCoord = engCoord.toYardCoord()
+									debugStuff += `: [${yardCoord.x}, ${yardCoord.z}]yd ^${Math.round(y)}ft ii=`+this.pickedObject?.instancedIndex
 								}
 								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, this.pickedObject?.instancedPosition)
 							}

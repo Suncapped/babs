@@ -333,6 +333,7 @@ export class SocketSys {
 
 					// Interject this before Arrives, so that objects have zones to ray their Y 
 					const startingZone = this.babs.ents.get(loadSelf.idzone)
+					log('startingZone', startingZone)
 					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 					
 					// (However, we can do a mass file request; see in ArriveMany)

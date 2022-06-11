@@ -166,6 +166,9 @@ export class UiSys {
 
 		// New:
 		let {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(point.clone(), 1)
+		if(this.babs.debugMode) {
+			chatSpan.innerText += ` on #${targetZone.id} (${targetZone.x},${targetZone.z})z`
+		}
 		const zone = this.babs.ents.get(targetZone.id)
 
 		targetPos.add(new Vector3(0, 1, 0)) // Raise up
@@ -316,7 +319,7 @@ export class UiSys {
 				this.oldPos = playerPos.clone()
 			}
 		}
-		const newLogText = `${Math.floor(this.oldPos.x/4)}.${Math.floor(this.oldPos.y/4)}.${Math.floor(this.oldPos.z/4)} / d${this.babs.renderSys.renderer.info.render.calls} t${this.babs.renderSys.renderer.info.render.triangles} g${this.babs.renderSys.renderer.info.memory.geometries} x${this.babs.renderSys.renderer.info.memory.textures} p${this.babs.renderSys.renderer.info.programs.length}`
+		const newLogText = `${Math.floor(this.oldPos.x/4)}.${Math.floor(this.oldPos.y)}.${Math.floor(this.oldPos.z/4)} / d${this.babs.renderSys.renderer.info.render.calls} t${this.babs.renderSys.renderer.info.render.triangles} g${this.babs.renderSys.renderer.info.memory.geometries} x${this.babs.renderSys.renderer.info.memory.textures} p${this.babs.renderSys.renderer.info.programs.length}`
 		if(this.logText !== newLogText) {
 			this.logText = newLogText
 			window.document.getElementById('log').innerText = this.logText

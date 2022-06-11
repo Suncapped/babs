@@ -62,6 +62,9 @@ import * as SunCalc from 'suncalc'
 // import { CSM } from 'three/examples/jsm/csm/CSM.js';
 
 import '@stardazed/streams-polyfill'
+import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { Babs } from '@/Babs'
+import { Zone } from '@/ent/Zone'
 
 export class WorldSys {
 
@@ -82,7 +85,7 @@ export class WorldSys {
 
 	static TIME_SPEED = 100
 
-	babs
+	babs :Babs
 	renderer
 
     dirLight
@@ -792,6 +795,8 @@ export class WorldSys {
 			const waterCubePositions = []
 			const waterCubeColors = []
 
+			const entZone = this.babs.ents.get(zone.id) as Zone // zonetodo convert all zone refs to ents
+
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 				const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
@@ -802,11 +807,16 @@ export class WorldSys {
 					for(let z=0; z<10 /cubeSize /Math.round(spacing); z++) {
 						for(let x=0; x<10/cubeSize /Math.round(spacing); x++) {
 
-							const rayPosition = this.vRayGroundHeight(
-								coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4,
-								coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4,
-								zone.id,
+							const xpos = coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4 // Well that's opaque lol
+							const zpos = coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4
+							
+							const yardCoord = YardCoord.Create(
+								Utils.clamp(xpos, 0, 249),
+								Utils.clamp(zpos, 0, 249),
 							)
+							const engineCoord = yardCoord.toEngineCoord()
+							const rayPosition = entZone.calcHeightAt(engineCoord).toVector3()
+							// New Coords are beautiful to work with...
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
 								waterCubePositions.push(rayPosition)

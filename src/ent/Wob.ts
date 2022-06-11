@@ -10,6 +10,9 @@ import { LoaderSys } from "@/sys/LoaderSys"
 import { log } from '@/Utils'
 import { Ent } from "./Ent"
 import { Flame } from "@/comp/Flame"
+import { Zone } from "./Zone"
+import { Babs } from "@/Babs"
+import { YardCoord } from "@/comp/Coord"
 
 export class Wob extends Ent {
 	/** @private */
@@ -167,7 +170,7 @@ export class Wob extends Ent {
 	}
 	
 	static WobInstMeshes = new Map()
-	static async _Arrive(arrivalWob, babs, shownames) {
+	static async _Arrive(arrivalWob, babs :Babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id)
 
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
@@ -265,7 +268,7 @@ export class Wob extends Ent {
 
 				Wob.WobInstMeshes.set(wob.name, instanced)
 
-				instanced.position.x = -1000
+				instanced.position.x = 0//-1000
 				instanced.position.z = 0
 
 				babs.scene.add(instanced)
@@ -317,7 +320,13 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			log('with wob', wob)
-			let position = babs.worldSys.vRayGroundHeight(wob.x, wob.z, wob.idzone, 'wobplace')
+			const zone = babs.ents.get(wob.idzone) as Zone
+			const yardCoord = YardCoord.Create(wob.x, wob.z)
+			log('1', yardCoord, )
+			log('2', yardCoord.toEngineCoord())
+			log('3', zone.calcHeightAt(yardCoord.toEngineCoordCentered()))
+			let engPosition = zone.calcHeightAt(yardCoord.toEngineCoordCentered()).toVector3()
+			log('engPosition', engPosition)
 
 			instanced.geometry?.center() 
 			// ^ Fixes offset pivot point
@@ -331,7 +340,7 @@ export class Wob extends Ent {
 			// ^ Sink by a percent but with a max for things like trees.
 			const lift = size.y < 0.01 ? 0.066 : 0
 			// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
-			position.setY(position.y +(size.y /2) -sink +lift)
+			engPosition.setY(engPosition.y +(size.y /2) -sink +lift)
 
 			// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
 			wob.instancedIndex = wobPrevious?.instancedIndex
@@ -341,7 +350,7 @@ export class Wob extends Ent {
 				instanced.count += 1
 				// if(wob.name == 'hot spring') log('COUNT++', instanced.count)
 			}
-			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(position))
+			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(engPosition))
 			instanced.instanceMatrix.needsUpdate = true
 
 			if(!instanced.wobIdsByIndex) {
@@ -359,7 +368,7 @@ export class Wob extends Ent {
 			instanced.instanceColor = bufferAttr
 
 			if(shownames) {
-				babs.uiSys.wobSaid(wob.name, position)
+				babs.uiSys.wobSaid(wob.name, engPosition)
 			}
 
 		}

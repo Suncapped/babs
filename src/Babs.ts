@@ -22,9 +22,10 @@ import { Player } from '@/ent/Player'
 import { Controller } from '@/comp/Controller'
 
 import { baseDomain, isProd, debugMode, urlFiles } from "./stores"
+import { type Ent } from './ent/Ent'
 
 
-class Babs {
+export class Babs {
 
 	isProd = window.location.href.startsWith('https://earth.suncapped.com')
 	baseDomain
@@ -46,7 +47,7 @@ class Babs {
 	renderSys :RenderSys
 
 
-	ents = new Map() // id key, value ent
+	ents = new Map<Number, Ent>() // id key, value ent
 	compcats = new Map() // comType key, value is an array of those coms
 
 	zips = new Map() // idzip key, value idplayer

@@ -1,59 +1,54 @@
 
-import * as Utils from '@/Utils'
+import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { WorldSys } from '@/sys/WorldSys'
+import { log } from '@/Utils'
+import { Raycaster, Vector3 } from 'three'
 import { Ent } from './Ent'
 
 
 export class Zone extends Ent {
-	constructor(id, babs) {
-		super(id, babs)
-	}
 	static async Create(zone, babs){
-		const context = new Zone(zone.id, babs)
-		return context.init(zone)
+		return new Zone(zone.id, babs).init(zone)
 	}
-
 
 	ground // ground 3d object (often used for vRayGroundHeight)
 	x
 	z
 	
-	async init(data) { // This patterns allows an async new, using `this`
-		this.x = data.x
-		this.z = data.z
+	async init(zone) { // This patterns allows an async new, using `this`
+		this.x = zone.x
+		this.z = zone.z
 		return this
 	}
 
 
+	// calcHeightAt(yx :YardCoord, yz :YardCoord) :
+	// new Vector3(x *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
 
-	vRayGroundHeight(xGridLocal, zGridLocal) { // Return engine height
-		const targetZone = this.babs.ents.get(idzone)
-		if(!targetZone) {
-			log('no targetZone', idzone, targetZone)
-		}
 
-		let zoneDelta = new Vector3(targetZone.x -this.currentGround.zone.x, 0, targetZone.z -this.currentGround.zone.z)
-		zoneDelta.multiply(new Vector3(1000, 1, 1000))
-
-		if(from == 'wobplace') {
-			log('targetZone', targetZone, zoneDelta, gx, gz)
-		}
+	calcHeightAt(coord :EngineCoord) :EngineCoord {
+		// let zoneDelta = new Vector3(this.x -this.babs.worldSys.currentGround.zone.x, 0, this.z -this.babs.worldSys.currentGround.zone.z)
+		// zoneDelta.multiply(new Vector3(1000, 1, 1000))
 
 		const raycaster = new Raycaster(
-			new Vector3(gx *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
+			new Vector3(coord.x, WorldSys.ZoneTerrainMax.y, coord.z), // +2 makes it center of grid instead of corner
 			new Vector3( 0, -1, 0 ), 
 			0, WorldSys.ZoneTerrainMax.y
 		)
 
-		const ground = targetZone.ground
-		const [intersect] = raycaster.intersectObject(ground, true)
+		let [intersect] = raycaster.intersectObject(this.ground, true)
 		if(!intersect) {
-			// log('vRayGroundHeight: no ground intersect!', intersect, raycaster, gx, gz, ground)
+			log('calcHeightAt: no ground intersect!', coord, raycaster)
+			intersect = {
+				point: new Vector3(0,0,0),
+				distance: null,
+				object: null,
+			}
 		}
 		let result = intersect?.point
-		log('result', result)
-		// result.sub(zoneDelta) // ok...
+		// log('intersect', result)
 
-		return result
+		return EngineCoord.Create(result)
 	}
 
 

@@ -20,7 +20,8 @@
 
 	"paths": {
 		"@/*": ["src/*"],
-	}
+	},
+	"importsNotUsedAsValues": "preserve"
 	
   },
   "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
