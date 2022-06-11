@@ -249,8 +249,8 @@
 			</li>
 			<li><a href on:click|preventDefault={()=> { movementTips = !movementTips; updateDimensions()} }>Movement Tips</a>
 				<div hidden="{!movementTips}">
-					<li>To move, hold right-mouse plus:<br/>left, double-left, space, wasd, middle</li>
-					<li>Or on laptop touchpad:<br/>Two finger touch, click, swipe, pinch</li>
+					<li>Touchpad:<br/>Slide two fingers around, click.</li>
+					<li>Mouse:<br/>Hold right button, look around, then tap left.</li>
 				</div>
 			</li>
 			<!-- <li>

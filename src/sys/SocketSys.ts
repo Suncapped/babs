@@ -14,12 +14,15 @@ import { InputSys } from "./InputSys"
 import { Wob } from "@/ent/Wob"
 import Crafting from "../ui/Crafting.svelte"
 import { Zone } from "@/ent/Zone"
+import { Babs } from "@/Babs"
+import { EngineCoord, YardCoord } from "@/comp/Coord"
 
 export class SocketSys {
 
 	ws
 	scene
 	babsReady = false
+	babs :Babs
 
 	static pingSeconds = 30
 
@@ -198,7 +201,7 @@ export class SocketSys {
 			this.processQueue.push([this.process, payload])
 		}
 	}
-	async process(context, payload){
+	async process(context :SocketSys, payload){
 		for(const [op, data] of Object.entries(payload)) {
 			switch(op) {
 				case 'auth':
@@ -487,15 +490,13 @@ export class SocketSys {
 					const wobId = data.wobId
 					const options = data.options
 					const craftWob = context.babs.ents.get(wobId)
-					let position = context.babs.worldSys.vRayGroundHeight(craftWob.x, craftWob.z, craftWob.idzone)
-				
-					log(position)
+
 					// Display a list of icons above the wobId wob, list of options available:
 					// Create a .svelte file for icons
 					// When crafting thing is received, create icons for everything in it.
 					// position like: const chatLabel = new CSS2DObject(chatDiv)
 
-					context.babs.uiSys.craftSaid(options, position, wobId)
+					context.babs.uiSys.craftSaid(options, craftWob)
 					
 					// new Crafting({
 					// 	target: document.body,

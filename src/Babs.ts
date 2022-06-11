@@ -28,22 +28,22 @@ import { type Ent } from './ent/Ent'
 export class Babs {
 
 	isProd = window.location.href.startsWith('https://earth.suncapped.com')
-	baseDomain
-	urlFiles
-	urlSocket
+	baseDomain :string
+	urlFiles :string
+	urlSocket :string
 
 	browser
 
 	camera
-	scene
+	scene :Scene
 	renderer
 
-	cameraSys
-	inputSys
-	loaderSys
-	uiSys
-	worldSys
-	socketSys
+	cameraSys :CameraSys
+	inputSys :InputSys
+	loaderSys :LoaderSys
+	uiSys :UiSys
+	worldSys :WorldSys
+	socketSys :SocketSys
 	renderSys :RenderSys
 
 
@@ -52,9 +52,9 @@ export class Babs {
 
 	zips = new Map() // idzip key, value idplayer
 
-	idSelf
+	idSelf :Number
 
-	debugMode
+	debugMode :boolean
 
 
 

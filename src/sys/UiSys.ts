@@ -9,6 +9,8 @@ import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } 
 import { log } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
+import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { Zone } from '@/ent/Zone'
 
 export class UiSys {
 	babs
@@ -206,7 +208,7 @@ export class UiSys {
 		this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
 	}
 
-	craftSaid(options, point, wobId) {	
+	craftSaid(options, wob) {	
 		const chatDiv = document.createElement('div')
 		chatDiv.id = 'Crafting'
 		const chatLabel = new CSS2DObject(chatDiv)
@@ -221,20 +223,26 @@ export class UiSys {
 			chatButton.onmouseup = (ev) => updateWOB(option)
 
 			chatDiv.appendChild(chatButton)
+
+			const craftWobZone = this.babs.ents.get(wob.idzone) as Zone
+			// const eCoord = EngineCoord.Create(new Vector3(craftWob.x, 0, craftWob.z))
+			let point = craftWobZone.calcHeightAt(YardCoord.Create(wob))
+
 			point.setY(point.y +2) // Raise up
 			chatLabel.position.copy(point)
+
 			this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
 		})	
 		
 		const updateWOB = (opt) => {
-			log("User selected: " + opt + " wobID: " + wobId)
+			log("User selected: " + opt + " wobID: " + wob.id)
 			this.babs.worldSys.currentGround.remove(chatLabel)	
 
 			// Need a way to send an update to the server, will circle back to this
 			socketSend.set({
 				'action': {
 					verb: 'craft',
-					noun: wobId,
+					noun: wob.id,
 					data: opt
 				}
 			})

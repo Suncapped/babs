@@ -566,9 +566,9 @@ export class WorldSys {
 		// geometry = geometry.toNonIndexed()
         geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
         geometry.translate(
-			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.x, 
+			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.x, 
 			0,//zone.y -8000,
-			WorldSys.ZoneLength /2 +WorldSys.ZoneLength *zone.z,
+			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.z,
 			)
 			
 		// const material = new MeshPhongMaterial({
@@ -611,6 +611,8 @@ export class WorldSys {
         newGround.castShadow = true
         newGround.receiveShadow = true
 		newGround.zone = zone
+		newGround.position.setX(WorldSys.ZoneLength *zone.x)
+		newGround.position.setZ(WorldSys.ZoneLength *zone.z)
         this.babs.scene.add(newGround)
 
 		this.babs.ents.get(zone.id).ground = newGround
@@ -623,6 +625,8 @@ export class WorldSys {
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.name = 'groundgrid'
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
+		groundGrid.position.setX(WorldSys.ZoneLength *zone.x)
+		groundGrid.position.setZ(WorldSys.ZoneLength *zone.z)
 		this.babs.scene.add(groundGrid)
 		debugMode.subscribe(on => {
 			groundGrid.visible = on
@@ -810,10 +814,10 @@ export class WorldSys {
 							const xpos = coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4 // Well that's opaque lol
 							const zpos = coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4
 							
-							const yardCoord = YardCoord.Create(
-								Utils.clamp(xpos, 0, 249),
-								Utils.clamp(zpos, 0, 249),
-							)
+							const yardCoord = YardCoord.Create({
+								x: Utils.clamp(xpos, 0, 249),
+								z: Utils.clamp(zpos, 0, 249),
+							})
 							const engineCoord = yardCoord.toEngineCoord()
 							const rayPosition = entZone.calcHeightAt(engineCoord).toVector3()
 							// New Coords are beautiful to work with...
@@ -855,37 +859,6 @@ export class WorldSys {
 		}, 1) // todo race condition here
 
     }
-
-	vRayGroundHeight(gx, gz, idzone, from = '') { // Return engine height
-		const targetZone = this.babs.ents.get(idzone)
-		if(!targetZone) {
-			log('no targetZone', idzone, targetZone)
-		}
-
-		let zoneDelta = new Vector3(targetZone.x -this.currentGround.zone.x, 0, targetZone.z -this.currentGround.zone.z)
-		zoneDelta.multiply(new Vector3(1000, 1, 1000))
-
-		if(from == 'wobplace') {
-			log('targetZone', targetZone, zoneDelta, gx, gz)
-		}
-
-		const raycaster = new Raycaster(
-			new Vector3(gx *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
-			new Vector3( 0, -1, 0 ), 
-			0, WorldSys.ZoneTerrainMax.y
-		)
-
-		const ground = targetZone.ground
-		const [intersect] = raycaster.intersectObject(ground, true)
-		if(!intersect) {
-			// log('vRayGroundHeight: no ground intersect!', intersect, raycaster, gx, gz, ground)
-		}
-		let result = intersect?.point
-		log('result', result)
-		// result.sub(zoneDelta) // ok...
-
-		return result
-	}
 
 	zoneAndPosFromCurrent(relativeGridPoint, resolution) { // res eg 40 for pieces, 4? for tiles
 

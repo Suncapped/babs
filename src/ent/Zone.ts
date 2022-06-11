@@ -11,10 +11,10 @@ export class Zone extends Ent {
 		return new Zone(zone.id, babs).init(zone)
 	}
 
-	ground // ground 3d object (often used for vRayGroundHeight)
+	ground // ground 3d Mesh
 	x
 	z
-	
+
 	async init(zone) { // This patterns allows an async new, using `this`
 		this.x = zone.x
 		this.z = zone.z
@@ -22,16 +22,19 @@ export class Zone extends Ent {
 	}
 
 
-	// calcHeightAt(yx :YardCoord, yz :YardCoord) :
-	// new Vector3(x *4 +2 +zoneDelta.x, WorldSys.ZoneTerrainMax.y, gz*4 +2 +zoneDelta.z), // +2 makes it center of grid instead of corner
-
-
-	calcHeightAt(coord :EngineCoord) :EngineCoord {
+	calcHeightAt(coord :EngineCoord|YardCoord) :EngineCoord {
 		// let zoneDelta = new Vector3(this.x -this.babs.worldSys.currentGround.zone.x, 0, this.z -this.babs.worldSys.currentGround.zone.z)
 		// zoneDelta.multiply(new Vector3(1000, 1, 1000))
+		if(coord instanceof YardCoord) {
+			log('YardCoord inside')
+			coord = coord.toEngineCoordCentered()
+		}
+
+		const offset = new Vector3(this.ground.position.x, this.ground.position.z)
+		log('ground', this.ground)
 
 		const raycaster = new Raycaster(
-			new Vector3(coord.x, WorldSys.ZoneTerrainMax.y, coord.z), // +2 makes it center of grid instead of corner
+			new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner
 			new Vector3( 0, -1, 0 ), 
 			0, WorldSys.ZoneTerrainMax.y
 		)

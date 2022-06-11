@@ -38,14 +38,16 @@ abstract class Coord {
 
 // Specific Coord Classes:
 
+type hasCoords = {x :number, z :number}
+
 type YardRange = UintRange<0, 250>
 export class YardCoord extends Coord {
-	static Create(x :number, z :number) {
-		if(x < 0 || x >= 250 || z < 0 || z >= 250) {
-			console.error('Invalid YardCoord: ', x, z)
+	static Create(coord :hasCoords) {
+		if(coord.x < 0 || coord.x >= 250 || coord.z < 0 || coord.z >= 250) {
+			console.error('Invalid YardCoord: ', coord.x, coord.z)
 			return undefined
 		}
-		return new YardCoord().init(x as YardRange, z as YardRange)
+		return new YardCoord().init(coord.x as YardRange, coord.z as YardRange)
 	}
 
 	x :YardRange
@@ -95,8 +97,13 @@ export class ZoneCoord extends Coord {
 
 export class EngineCoord extends Coord {
 	// This patterns allows: const coord = await Coord.Create()
-	static Create(float: Vector3) {
-		return new EngineCoord().init(float)
+	static Create(input: YardCoord|Vector3) {
+		if(input instanceof Vector3) {
+			return new EngineCoord().init(input)
+		}
+		else if(input instanceof YardCoord) {
+			return new EngineCoord().init(new Vector3(input.x *4, 0, input.z *4))
+		}
 	}
 
 	x :number
@@ -113,6 +120,6 @@ export class EngineCoord extends Coord {
 		return new Vector3(this.x, this.y, this.z)
 	}
 	toYardCoord() {
-		return YardCoord.Create(Math.floor(this.x /4), Math.floor(this.z /4))
+		return YardCoord.Create({x: Math.floor(this.x /4), z: Math.floor(this.z /4)})
 	}
 }

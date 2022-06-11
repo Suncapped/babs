@@ -312,8 +312,8 @@ export class Flame extends Comp {
 		com.fire.scale.set(scale,scale*1.33,scale)
 
 		const zone = babs.ents.get(wob.idzone) as Zone
-		const yardCoord = YardCoord.Create(wob.x, wob.z)
-		const {y} = zone.calcHeightAt(yardCoord.toEngineCoordCentered()) // zonetodo is this even working?
+		const yardCoord = YardCoord.Create(wob)
+		const {y} = zone.calcHeightAt(yardCoord) // zonetodo is this even working?
 
 		com.fire.position.setY(y +yup)
 		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  

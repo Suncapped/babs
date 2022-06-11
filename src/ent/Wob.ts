@@ -171,7 +171,7 @@ export class Wob extends Ent {
 	
 	static WobInstMeshes = new Map()
 	static async _Arrive(arrivalWob, babs :Babs, shownames) {
-		const wobPrevious = babs.ents.get(arrivalWob.id)
+		const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
 
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
 		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
@@ -319,13 +319,14 @@ export class Wob extends Ent {
 
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
-			log('with wob', wob)
 			const zone = babs.ents.get(wob.idzone) as Zone
-			const yardCoord = YardCoord.Create(wob.x, wob.z)
+			log('with wob', wob, zone)
+			const yardCoord = YardCoord.Create(wob)
 			log('1', yardCoord, )
 			log('2', yardCoord.toEngineCoord())
-			log('3', zone.calcHeightAt(yardCoord.toEngineCoordCentered()))
-			let engPosition = zone.calcHeightAt(yardCoord.toEngineCoordCentered()).toVector3()
+			const centered = zone.calcHeightAt(yardCoord)
+			log('3', centered)
+			let engPosition = centered.toVector3()
 			log('engPosition', engPosition)
 
 			instanced.geometry?.center() 
