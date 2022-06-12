@@ -296,6 +296,7 @@ export class Flame extends Comp {
 		// Init static singletons
 		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
 			const pointLight = new PointLight(0xff0000, 1, 1000, 4)
+			pointLight.name = 'flamelight'
 			Flame.lightPool.push(pointLight)
 			babs.scene.add(pointLight)
 		}

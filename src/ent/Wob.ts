@@ -27,6 +27,12 @@ export class Wob extends Ent {
 	color
 	instancedIndex
 
+	private _zone :Zone
+	get zone() {
+		if(!this._zone) this._zone = this.babs.ents.get(this.idzone) as Zone
+		return this._zone
+	}
+
 
 	static HiddenScene = null
 	static HiddenSceneRender(mesh) {
@@ -174,11 +180,10 @@ export class Wob extends Ent {
 		const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
 
 		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
-		wob = {...wob, ...arrivalWob} // Add and overwrite with new arrival data
+		wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
 		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
 		// So ....uhh I guess set that later on? Comment 1287y19y1
-
-		babs.ents.set(arrivalWob.id, wob) // Ouch, remember that above is not mutating
+		babs.ents.set(arrivalWob.id, wob)
 
 		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone // what: (or...is being loaded into zone twice!)
 			babs.uiSys.svContainers[0].delWob(wob.id)
@@ -309,8 +314,8 @@ export class Wob extends Ent {
 			newInstance.position.x = instanced.position.x
 			newInstance.position.z = instanced.position.z
 			
-			instanced.dispose()
 			babs.scene.remove(instanced)
+			instanced.dispose()
 			instanced = newInstance
 
 			Wob.WobInstMeshes.set(wob.name, newInstance)
@@ -320,14 +325,14 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			const zone = babs.ents.get(wob.idzone) as Zone
-			log('with wob', wob, zone)
+			log('newwob with wob', wob, zone)
 			const yardCoord = YardCoord.Create(wob)
-			log('1', yardCoord, )
-			log('2', yardCoord.toEngineCoord())
+			log('newwob 1', yardCoord)
+			log('newwob 2', yardCoord.toEngineCoord())
 			const centered = zone.calcHeightAt(yardCoord)
-			log('3', centered)
+			log('newwob 3', centered)
 			let engPosition = centered.toVector3()
-			log('engPosition', engPosition)
+			log('newwob engPosition', engPosition)
 
 			instanced.geometry?.center() 
 			// ^ Fixes offset pivot point
@@ -369,7 +374,7 @@ export class Wob extends Ent {
 			instanced.instanceColor = bufferAttr
 
 			if(shownames) {
-				babs.uiSys.wobSaid(wob.name, engPosition)
+				babs.uiSys.wobSaid(wob.name, wob)
 			}
 
 		}

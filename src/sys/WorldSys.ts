@@ -607,15 +607,13 @@ export class WorldSys {
 
 		const newGround = new Mesh( geometry, this.groundMaterial )
         newGround.name = 'ground'
-		newGround.idzone = zone.id
         newGround.castShadow = true
         newGround.receiveShadow = true
 		newGround.zone = zone
 		newGround.position.setX(WorldSys.ZoneLength *zone.x)
 		newGround.position.setZ(WorldSys.ZoneLength *zone.z)
+		zone.ground = newGround
         this.babs.scene.add(newGround)
-
-		this.babs.ents.get(zone.id).ground = newGround
 
 		if(isStartingZone) {
 			log('playerStartingZone', newGround)
@@ -817,6 +815,7 @@ export class WorldSys {
 							const yardCoord = YardCoord.Create({
 								x: Utils.clamp(xpos, 0, 249),
 								z: Utils.clamp(zpos, 0, 249),
+								zone: entZone,
 							})
 							const engineCoord = yardCoord.toEngineCoord()
 							const rayPosition = entZone.calcHeightAt(engineCoord).toVector3()
@@ -895,6 +894,7 @@ export class WorldSys {
 		return {targetZone, targetPos}
 	}
 
+	shiftiness = new Vector3()
 	shiftEverything(xShift, zShift, butPlayer = false) {
 		const excludeFromShift = [
 			// 'ground', 'groundgrid', 
@@ -909,13 +909,14 @@ export class WorldSys {
 				child.position.setX(child.position.x +xShift)
 				child.position.setZ(child.position.z +zShift)
 				if(child.name != 'ground' && child.name != 'groundgrid' ) {
-					log('shift', child.name)
+					log('shifting', child.name || child)
 				}
 			}
 			else {
 				log('NOT SHIFT', child.name)
 			}
 		})
+		this.shiftiness.add(new Vector3(xShift, 0, zShift))
 	}
 
 }

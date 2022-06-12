@@ -261,7 +261,7 @@ export class SocketSys {
 					}, SocketSys.pingSeconds * 1000)
 
 					const loadSelf = data.self
-					const zones = data.zones
+					const zonedatas = data.zones
 					log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
 					toprightText.set(context.babs.uiSys.toprightTextDefault)
 					document.getElementById('topleft').style.visibility = 'visible'
@@ -280,8 +280,9 @@ export class SocketSys {
 
 					context.babsReady = true
 
-					for(let zone of zones) {
-						await Zone.Create(zone, context.babs)
+					let zones = []
+					for(let zonedata of zonedatas) {
+						zones.push(Zone.Create(zonedata, context.babs))
 					}
 
 					// Load some things ahead of time
@@ -334,14 +335,14 @@ export class SocketSys {
 					// That's why we don't include them in the loadObjects /cache
 					// and since different zones also have different wobs anyway, this must be pull, not push.
 
+					// (However, we can do a mass file request; see in ArriveMany)
+					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
+					await Promise.all([playerPromise, arriveWobsPromise])
+
 					// Interject this before Arrives, so that objects have zones to ray their Y 
 					const startingZone = this.babs.ents.get(loadSelf.idzone)
 					log('startingZone', startingZone)
 					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-					
-					// (However, we can do a mass file request; see in ArriveMany)
-					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
-					await Promise.all([playerPromise, arriveWobsPromise])
 					
 
 					context.send({

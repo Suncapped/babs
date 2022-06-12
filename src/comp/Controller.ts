@@ -11,6 +11,7 @@ import { WorldSys } from '@/sys/WorldSys'
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
 import { WobAtPosition } from '@/Utils'
+import { Babs } from '@/Babs'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 

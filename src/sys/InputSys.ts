@@ -15,6 +15,8 @@ import { WorldSys } from "./WorldSys"
 import * as Utils from './../Utils'
 import { UiSys } from "./UiSys"
 import { EngineCoord, YardCoord } from "@/comp/Coord"
+import { Babs } from "@/Babs"
+import { Player } from "@/ent/Player"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -103,8 +105,11 @@ export class InputSys {
 	topMenuVisibleLocal
 
 	isAfk = false
+	babs :Babs
+	player :Player
+	canvas :HTMLElement
 
-	constructor(babs, player, mousedevice) {
+	constructor(babs :Babs, player :Player, mousedevice) {
 		this.babs = babs
 		this.player = player
 		this.canvas = document.getElementById('canvas')
@@ -502,11 +507,6 @@ export class InputSys {
 					// Single click
 					if (this.mouse.ldouble === false) { // First click
 						if(this.isAskingTarget) { // In target selection mode
-
-							// if(this.pickedObject?.instanced) {
-							// 	this.babs.uiSys.wobSaid(this.pickedObject?.instancedName, this.pickedObject?.instancedPosition)
-							// }
-
 							const wob = Utils.findWobByInstance(this.babs.ents, this.pickedObject?.instancedIndex, this.pickedObject?.instancedName)
 							// todo make work for non-instanced things, and ground, players, etc.
 
@@ -529,28 +529,31 @@ export class InputSys {
 							this.askTargetSourceWobId = null
 
 						}
-						else { 
-							// Single click player, get their name or nick
+						else {
 							if (this.pickedObject?.type === 'SkinnedMesh') {
+								// Single click player, get their name or nick
 								const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
 							}
 							else if (this.pickedObject?.instanced) {
 								let debugStuff = ''
+								// Single click instanced
+								const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
+
 								if(this.babs.debugMode) {
-									const [x,y,z] = this.pickedObject?.instancedPosition.toArray()
-									const engCoord = EngineCoord.Create(new Vector3(x,y,z))
-									const yardCoord = engCoord.toYardCoord()
-									debugStuff += `: [${yardCoord.x}, ${yardCoord.z}]yd ^${Math.round(y)}ft ii=`+this.pickedObject?.instancedIndex
+									log('this.pickedObject', this.pickedObject)
+									const pos = this.pickedObject?.instancedPosition
+									const yardCoord = EngineCoord.Create(pos).toYardCoord(wob.zone)
+									debugStuff += `: [${yardCoord.x}, ${yardCoord.z}]yd ^${Math.round(pos.y)}ft ii=`+this.pickedObject?.instancedIndex
 								}
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, this.pickedObject?.instancedPosition)
+								
+								log('picked', this.pickedObject, this.pickedObject?.id, wob)
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, wob)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
-								// log('this.mouse.landtarget', JSON.stringify(this.mouse.landtarget))
-								// Create text here above the land.
-								// const zone = this.babs.ents.get(this.mouse.landtarget.idzone)
-								this.babs.uiSys.landSaid(this.mouse.landtarget.text, this.mouse.landtarget.point)
+								log('landSaid pre', this.mouse.landtarget)
+								this.babs.uiSys.landSaid(this.mouse.landtarget)
 							}
 	
 	
@@ -570,32 +573,22 @@ export class InputSys {
 							box.focus()
 						}
 						else if (this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
-
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
-							const relativeGridPoint = this.mouse.landtarget.point.clone().divideScalar(4).floor()
-							const idzone = this.mouse.landtarget.idzone
+							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+							const yardCoord = EngineCoord.Create(this.mouse.landtarget.point).toYardCoord(zone)
 
-							const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 							this.babs.socketSys.send({
 								action: {
 									verb: 'used',
 									noun: 'ground',
 									data: {
-										point: targetPos,
-										idzone: targetZone.id,
+										point: {x: yardCoord.x, z: yardCoord.z},
+										idzone: zone.id,
 									},
 								}
 							})
 
-							// If terrain intersect is set, and clicked it a second time
-							// const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
-							// nickTargetId.set(player.id)
-
-							// const box = document.getElementById('chatbox')
-							// box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
-							// box.style.display = 'block'
-							// box.focus()
 						} else {//} if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
 							log('wobclick', this.mouse, this.pickedObject, this.pickedObject?.instanced?.wobIdsByIndex)
@@ -847,9 +840,11 @@ export class InputSys {
 			this.pickedObject = undefined;
 		}
 		if (this.mouse.landtarget.text) {
-			this.mouse.landtarget.text = ''
-			this.mouse.landtarget.idzone = null
-			this.mouse.landtarget.point.set(0, 0, 0)
+			this.mouse.landtarget = {
+				text: '',
+				idzone: null,
+				point: new Vector3(0,0,0),
+			}
 		}
 
 		// log('mt', this.mouse.movetarget)
@@ -898,11 +893,14 @@ export class InputSys {
 					const position = Wob.GetPositionFromIndex(instanced, index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
+					const wobId = instanced.wobIdsByIndex[index]
 					this.pickedObject = {
 						instanced: instanced,
 						instancedName: name,
 						instancedIndex: index,
 						instancedPosition: position,
+						id: wobId,
+						// isIcon: true,
 					}
 
 				}
@@ -921,20 +919,27 @@ export class InputSys {
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 						if(this.player.controller.zoningWait) continue // don't deal with ground intersects while zoning
-						const point = this.mouseRayTargets[i].point
+						// const relativeGridPoint = point.clone().divideScalar(4).floor()
+						// const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 						
-						const relativeGridPoint = point.clone().divideScalar(4).floor()
-						// relativeGridPoint.setY(point.y) // sigh - make a FEVector or something
-						// Transform gridPoint to be relative to current zone, and find its zone
-						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
+						const ground = this.mouseRayTargets[i].object
+						const zone = ground.zone
+						const engCoord = EngineCoord.Create(this.mouseRayTargets[i].point)
+						const yardCoord = engCoord.toYardCoord(zone)
 						
-						const landcoverData = targetZone.landcoverData
-						const index = Utils.coordToIndex(Math.floor(targetPos.x /10), Math.floor(targetPos.z /10), 26)
+						const landcoverData = yardCoord.zone.landcoverData
+						// const newEngCoord = yardCoord.toEngineCoord()
+						// todo use actual PieceCoord
+						const pieceCoord = new Vector3(Math.floor(yardCoord.x /10), engCoord.y, Math.floor(yardCoord.z /10))
+						const index = Utils.coordToIndex(pieceCoord.x, pieceCoord.z, 26)
+						
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 
-						this.mouse.landtarget.text = lcString
-						this.mouse.landtarget.idzone = targetZone.id
-						this.mouse.landtarget.point = point
+						this.mouse.landtarget = {
+							text: lcString,
+							idzone: zone.id,
+							point: this.mouseRayTargets[i].point,
+						}
 
 						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
 
@@ -1179,15 +1184,6 @@ export class InputSys {
 
 			const dest = gCurrentPos.clone().add(vector)
 			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
-			const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(dest, 4)
-			// log('dest', targetZone, targetPos, this.babs.worldSys.currentGround)
-			if(this.babs.worldSys.currentGround.zone.id != targetZone.id) {
-				// Request a zone transfer from server?
-				// const zoneEnt = this.babs.ents.get(targetZone.id) // todo fix all this lol
-				// this.babs.worldSys.currentGround = zoneEnt.ground
-
-				// todo warp all objects?
-			}
 
 			// Send to controller
 			log.info('InputSys: call controller.setDestination()', dest)

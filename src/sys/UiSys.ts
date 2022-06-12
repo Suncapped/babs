@@ -11,9 +11,12 @@ import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { EngineCoord, YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
+import { Wob } from '@/ent/Wob'
+import { InputSys } from './InputSys'
+import { Babs } from '@/Babs'
 
 export class UiSys {
-	babs
+	babs :Babs
 	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>'
 	ctext
 	labelElements = []
@@ -149,12 +152,12 @@ export class UiSys {
 	}
 
 
-	landSaid(text, point) { // todo abstract all this creation for all the said()s into one
+	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
 		const chatSpan = document.createElement('span')
-		chatSpan.innerText = text
+		chatSpan.innerText = landtarget.text
 		chatDiv.appendChild(chatSpan)
 		
 		chatDiv.style.color = '#aaaaaa'
@@ -166,19 +169,21 @@ export class UiSys {
 
 		const chatLabel = new CSS2DObject(chatDiv)
 
-		// New:
-		let {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(point.clone(), 1)
+		const zone = this.babs.ents.get(landtarget.idzone) as Zone
+		const engCoord = EngineCoord.Create(landtarget.point)
+		const yardCoord = engCoord.toYardCoord(zone)
+		log('engCoord', landtarget.point, engCoord)
+		
 		if(this.babs.debugMode) {
-			chatSpan.innerText += ` on #${targetZone.id} (${targetZone.x},${targetZone.z})z`
+			chatSpan.innerText += ` on #${zone.id} (${yardCoord.x},${yardCoord.z})z`
 		}
-		const zone = this.babs.ents.get(targetZone.id)
 
-		targetPos.add(new Vector3(0, 1, 0)) // Raise up
-		targetPos.add(new Vector3(zone.x *1000, 0, zone.z *1000)) // Move to offset
+		let point = zone.calcHeightAt(yardCoord).toVector3()
+		point.setY(point.y +1)
 
-		chatLabel.position.copy(targetPos)
+		chatLabel.position.copy(point)
 		// log('chatLabel targetPos', point, targetPos, targetZone)
-		zone.ground.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
+		this.babs.scene.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
 	}
 	serverSaid(text, point) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
@@ -187,7 +192,7 @@ export class UiSys {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
 
-	wobSaid(text, point) {
+	wobSaid(text, wob :Wob) {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
@@ -203,9 +208,14 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 		
 		const chatLabel = new CSS2DObject(chatDiv)
+		const wobZone = this.babs.ents.get(wob.idzone) as Zone
+		let point = wobZone.calcHeightAt(YardCoord.Create(wob)).toVector3()
+		log('wobSaid point', point, YardCoord.Create(wob))
+
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
-		this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
+
+		this.babs.scene.add(chatLabel) // todo not ground // OMG this is why there's an offset
 	}
 
 	craftSaid(options, wob) {	
@@ -220,18 +230,16 @@ export class UiSys {
 			chatButton.className = "craftbtn"
 			chatButton.style.cssText = 'pointer-events: auto;'
 			chatButton.onsubmit = (ev) => ev.preventDefault()
-			chatButton.onmouseup = (ev) => updateWOB(option)
+			chatButton.onclick = (ev) => updateWOB(option)
 
 			chatDiv.appendChild(chatButton)
 
-			const craftWobZone = this.babs.ents.get(wob.idzone) as Zone
-			// const eCoord = EngineCoord.Create(new Vector3(craftWob.x, 0, craftWob.z))
-			let point = craftWobZone.calcHeightAt(YardCoord.Create(wob))
-
+			const wobZone = this.babs.ents.get(wob.idzone) as Zone
+			let point = wobZone.calcHeightAt(YardCoord.Create(wob)).toVector3()
 			point.setY(point.y +2) // Raise up
 			chatLabel.position.copy(point)
 
-			this.babs.worldSys.currentGround.add(chatLabel) // todo not ground
+			this.babs.scene.add(chatLabel)
 		})	
 		
 		const updateWOB = (opt) => {

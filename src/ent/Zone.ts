@@ -2,35 +2,48 @@
 import { EngineCoord, YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
-import { Raycaster, Vector3 } from 'three'
+import { Mesh, Raycaster, Vector3 } from 'three'
 import { Ent } from './Ent'
 
 
 export class Zone extends Ent {
-	static async Create(zone, babs){
-		return new Zone(zone.id, babs).init(zone)
+	static Create(zonedata, babs){
+		return new Zone(zonedata.id, babs).init(zonedata)
 	}
 
-	ground // ground 3d Mesh
+
 	x
 	z
+	y
+	yscale
 
-	async init(zone) { // This patterns allows an async new, using `this`
-		this.x = zone.x
-		this.z = zone.z
+	elevationData // Injected by SocketSys
+	landcoverData // Injected by SocketSys
+
+	geometry
+	ground :Mesh // ground 3d Mesh
+	
+	init(zonedata) { // This patterns allows an async new, using `this`
+		this.x = zonedata.x
+		this.z = zonedata.z
+		this.y = zonedata.y
+		this.yscale = zonedata.yscale
 		return this
 	}
 
 
 	calcHeightAt(coord :EngineCoord|YardCoord) :EngineCoord {
-		// let zoneDelta = new Vector3(this.x -this.babs.worldSys.currentGround.zone.x, 0, this.z -this.babs.worldSys.currentGround.zone.z)
-		// zoneDelta.multiply(new Vector3(1000, 1, 1000))
+		let offset = new Vector3()
 		if(coord instanceof YardCoord) {
-			log('YardCoord inside')
+			log('wobSaid YardCoord inside', coord)
 			coord = coord.toEngineCoordCentered()
+			log('wobSaid YardCoord inside AFTER', coord)
 		}
+		else {
+			// Offset engine things since they're otherwise not shiftiness-aware?  Not sure
+		}
+		// offset = new Vector3(this.ground.position.x, 0, this.ground.position.z)
 
-		const offset = new Vector3(this.ground.position.x, this.ground.position.z)
 		log('ground', this.ground)
 
 		const raycaster = new Raycaster(

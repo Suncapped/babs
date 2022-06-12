@@ -1,8 +1,9 @@
+import { Babs } from "@/Babs"
 import { log } from "../Utils"
 
 export class Comp {
-	babs
-	idEnt
+	babs :Babs
+	idEnt :number
 	constructor(idEnt, comClass, babs) {
 		this.idEnt = idEnt
 		this.babs = babs
