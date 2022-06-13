@@ -44,7 +44,7 @@ export class Zone extends Ent {
 		}
 		// offset = new Vector3(this.ground.position.x, 0, this.ground.position.z)
 
-		log('ground', this.ground)
+		// log('ground', this.ground)
 
 		const raycaster = new Raycaster(
 			new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner

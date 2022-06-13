@@ -70,7 +70,7 @@ export class InputSys {
 		},
 
 	}
-	keys = {
+	keys :{[key:string]:boolean|number} = {
 		w: OFF,
 		a: OFF,
 		s: OFF,
@@ -99,7 +99,7 @@ export class InputSys {
 	headTurnMaxDegrees = 45 // Determines at what point the view will snap turn
 	doubleClickMs = 400 // MS was 500ms
 	movelock = false // Autorun
-	touchmove = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
+	touchmove :boolean|number = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
 	runmode = true // Run mode, as opposed to walk mode
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
@@ -229,19 +229,24 @@ export class InputSys {
 					await Wob.ArriveMany(wobTrees, this.babs, false)
 
 				}
+				if (this.keys.m === PRESS) {
+					// One scroll (there were reasons!)
+					// const wobScroll = {
+					// 	id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
+					// 	idzone: 899279496,
+					// 	x: 4,
+					// 	z: 4,
+					// 	name: 'scroll',
+					// 	color: '0xff0000',
+					// }
+					// log('Created scroll at 4,4')
+					// await Wob.ArriveMany([wobScroll], this.babs, false)
+					log('m', this.babs.ents, this.babs.ents.size)
 
-				// One scroll (there were reasons!)
-				if (this.keys.n === PRESS) {
-					const wobScroll = {
-						id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
-						idzone: 899279496,
-						x: 4,
-						z: 4,
-						name: 'scroll',
-						color: '0xff0000',
+					// Show zones
+					for (const [key, value] of this.babs.ents.entries()) {
+						console.log(key, value)
 					}
-					log('Created scroll at 4,4')
-					await Wob.ArriveMany([wobScroll], this.babs, false)
 				}
 			}
 
@@ -418,6 +423,8 @@ export class InputSys {
 							// const index = this.mouseRayTargets[i].instanceId
 							// const position = Wob.GetPositionFromIndex(instanced, index)
 
+							// log('instanced?', wob)
+
 							this.pickedObject = {
 								instanced: instanced,
 								instancedName: wob.name,
@@ -465,7 +472,6 @@ export class InputSys {
 						// log('else')
 						if (this.lastMoveHoldPicked) { // And there is one previously saved
 							// Now we could lift that dragged wob
-							log('carrying')
 							this.carrying = this.lastMoveHoldPicked
 							this.lastMoveHoldPicked = null
 							// Now in update, we'll keep carrying on the mouse intersect to ground
@@ -543,7 +549,8 @@ export class InputSys {
 								if(this.babs.debugMode) {
 									log('this.pickedObject', this.pickedObject)
 									const pos = this.pickedObject?.instancedPosition
-									const yardCoord = EngineCoord.Create(pos).toYardCoord(wob.zone)
+									const engCoord = EngineCoord.Create(pos)
+									const yardCoord = engCoord.toYardCoord(wob.zone)
 									debugStuff += `: [${yardCoord.x}, ${yardCoord.z}]yd ^${Math.round(pos.y)}ft ii=`+this.pickedObject?.instancedIndex
 								}
 								
@@ -704,8 +711,10 @@ export class InputSys {
 						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 
 						// Todo put distance limits, here and server
-						const wob = this.babs.ents.get(this.carrying.id) 
-							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
+						const wobContained = this.babs.ents.get(this.carrying.id) 
+						const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
+						const wob = wobContained || wobInstanced
+
 						log('Found', wob, this.carrying)
 						this.babs.socketSys.send({
 							action: {
@@ -811,9 +820,13 @@ export class InputSys {
 
 	mouseRayTargets = []
 	displayDestinationMesh
-	pickedObject
+
+	pickedObject :any
 	pickedObjectSavedColor
 	pickedObjectSavedMaterial
+	lastMoveHoldPicked :any
+	carrying :any
+
 	async update(dt, scene) {
 
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
@@ -925,7 +938,7 @@ export class InputSys {
 						const ground = this.mouseRayTargets[i].object
 						const zone = ground.zone
 						const engCoord = EngineCoord.Create(this.mouseRayTargets[i].point)
-						const yardCoord = engCoord.toYardCoord(zone)
+						const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
 						
 						const landcoverData = yardCoord.zone.landcoverData
 						// const newEngCoord = yardCoord.toEngineCoord()

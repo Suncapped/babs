@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { Euler, MathUtils, Quaternion, Raycaster } from 'three'
+import { Euler, MathUtils, Quaternion, Raycaster, Scene } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -12,6 +12,9 @@ import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, Jump
 import { Matrix4 } from 'three'
 import { WobAtPosition } from '@/Utils'
 import { Babs } from '@/Babs'
+import { Zone } from '@/ent/Zone'
+import { YardCoord } from './Coord'
+import { Player } from '@/ent/Player'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -54,11 +57,14 @@ export class Controller extends Comp {
 	gDestination
 	hover = 0
 
+	scene :Scene
+	target :Scene
+
 	constructor(arrival, babs) {
 		super(arrival.id, Controller, babs)
 	}
 
-	static async New(arrival, babs, fbxScene) {
+	static async New(arrival, babs, scene :Scene) {
 		const cont = new Controller(arrival, babs)
 		log.info('new Controller()', arrival)
 		cont.arrival = arrival
@@ -79,7 +85,7 @@ export class Controller extends Comp {
 		)
 
 		// Init
-		cont.target = fbxScene
+		cont.target = scene
 		cont.idealTargetQuaternion = cont.target.quaternion.clone()
 
 		cont._mixer = new THREE.AnimationMixer(cont.target)
@@ -171,15 +177,10 @@ export class Controller extends Comp {
 				this.gDestination.x = targetPos.x
 				this.gDestination.z = targetPos.z
 
-				
-				const zonetarget = this.babs.ents.get(targetZone.id)
-				const zonecurrent = this.babs.ents.get(this.babs.worldSys.currentGround.zone.id) 
-				// ^ zonetodo just have 1 type of zone pls :S
+				const zonetarget = targetZone
+				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
-
-				// Why not reset origin here?
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
-
 
 			}
 
@@ -526,11 +527,23 @@ export class Controller extends Comp {
 		
 	}
 
-	zoneIn(zone) {
+	zoneIn(player :Player, zone :Zone) {
+		log('zonein', player.id, zone.id, this.babs.worldSys.currentGround, zone.ground)
+		log('this.gDestination', this.gDestination)
+
+		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone})
+		const engCoord = zone.calcHeightAt(yardCoord)
+
+		this.babs.worldSys.currentGround = zone.ground
+
+		log('engCoord.y', engCoord.y)
+
+		
+		// this.target.position.y = 0 // Prevent floating when zoning
+		this.target.position.y = engCoord.y
+
+
 		this.zoningWait = false
-		this.target.position.y = 0 // Prevent floating when zoning
-		// this.update(1)
-		// this.update(1)
 	}
 
 }

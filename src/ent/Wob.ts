@@ -20,17 +20,16 @@ export class Wob extends Ent {
 		super(id, babs)
 	}
 
-	idzone
 	x
 	z
 	name
 	color
 	instancedIndex
 
-	private _zone :Zone
+	idzone
+
 	get zone() {
-		if(!this._zone) this._zone = this.babs.ents.get(this.idzone) as Zone
-		return this._zone
+		return this.babs.ents.get(this.idzone) as Zone
 	}
 
 
@@ -179,17 +178,37 @@ export class Wob extends Ent {
 	static async _Arrive(arrivalWob, babs :Babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
 
-		let wob = wobPrevious || new Wob(arrivalWob.id, babs)
+		if(arrivalWob.id == 470844215) {
+			log('arriving 470844215', arrivalWob)
+		}
+
+		let wob
+		// if(wobPrevious) {
+		// 	// Keep wobPrevious so I can check against it later (eg for container)
+		// 	wob = Object.assign(wob, wobPrevious)
+		// }
+		// else {
+			wob = new Wob(arrivalWob.id, babs)
+		// }
+
 		wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
 		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
 		// So ....uhh I guess set that later on? Comment 1287y19y1
 		babs.ents.set(arrivalWob.id, wob)
 
-		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { // It's been moved from container into zone // what: (or...is being loaded into zone twice!)
+		log('----------TRY', wob, wobPrevious)
+		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
+			// It's been moved from container into zone
+			log('--------------DELETING', wob, wobPrevious)
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
-		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { // It's been moved bagtobag
+		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
+			// It's been moved bagtobag, or is being initial loaded into bag
+			log('--------------BABAAG')
 			babs.uiSys.svContainers[0].delWob(wob.id)
+		}
+		else {
+			log('--------------NO', wobPrevious?.idzone, wob?.idzone)
 		}
 
 		// if(wob.name == 'hot spring') log('----', 'arrive:', wob.name)
@@ -273,8 +292,8 @@ export class Wob extends Ent {
 
 				Wob.WobInstMeshes.set(wob.name, instanced)
 
-				instanced.position.x = 0//-1000
-				instanced.position.z = 0
+				instanced.position.setX(babs.worldSys.shiftiness.x)
+				instanced.position.setZ(babs.worldSys.shiftiness.z)
 
 				babs.scene.add(instanced)
 
@@ -325,14 +344,23 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			const zone = babs.ents.get(wob.idzone) as Zone
-			log('newwob with wob', wob, zone)
+			log('--\n--\nnewwob with wob: ', wob.name, wob, zone)
 			const yardCoord = YardCoord.Create(wob)
-			log('newwob 1', yardCoord)
-			log('newwob 2', yardCoord.toEngineCoord())
-			const centered = zone.calcHeightAt(yardCoord)
-			log('newwob 3', centered)
-			let engPosition = centered.toVector3()
-			log('newwob engPosition', engPosition)
+			log('newwob yardCoord', yardCoord)
+			const eCoord = yardCoord.toEngineCoord()
+			log('newwob eCoord', eCoord)
+			const heighted = zone.calcHeightAt(yardCoord)
+			log('newwob heighted', heighted)
+			let engPositionVector = heighted.toVector3()
+			log('newwob vector', engPositionVector)
+
+			// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
+
+			log('SHIFTINESS', babs.worldSys.shiftiness.x)
+			engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+
+
+			//
 
 			instanced.geometry?.center() 
 			// ^ Fixes offset pivot point
@@ -346,7 +374,7 @@ export class Wob extends Ent {
 			// ^ Sink by a percent but with a max for things like trees.
 			const lift = size.y < 0.01 ? 0.066 : 0
 			// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
-			engPosition.setY(engPosition.y +(size.y /2) -sink +lift)
+			engPositionVector.setY(engPositionVector.y +(size.y /2) -sink +lift)
 
 			// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
 			wob.instancedIndex = wobPrevious?.instancedIndex
@@ -356,7 +384,7 @@ export class Wob extends Ent {
 				instanced.count += 1
 				// if(wob.name == 'hot spring') log('COUNT++', instanced.count)
 			}
-			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(engPosition))
+			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(engPositionVector))
 			instanced.instanceMatrix.needsUpdate = true
 
 			if(!instanced.wobIdsByIndex) {

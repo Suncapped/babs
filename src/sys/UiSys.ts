@@ -170,9 +170,10 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 
 		const zone = this.babs.ents.get(landtarget.idzone) as Zone
+		// log('landtarget.idzone', landtarget.idzone, zone)
 		const engCoord = EngineCoord.Create(landtarget.point)
-		const yardCoord = engCoord.toYardCoord(zone)
-		log('engCoord', landtarget.point, engCoord)
+		const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
+		log('engCoord', landtarget.point, engCoord, yardCoord)
 		
 		if(this.babs.debugMode) {
 			chatSpan.innerText += ` on #${zone.id} (${yardCoord.x},${yardCoord.z})z`
@@ -223,6 +224,12 @@ export class UiSys {
 		chatDiv.id = 'Crafting'
 		const chatLabel = new CSS2DObject(chatDiv)
 
+		const wobZone = this.babs.ents.get(wob.idzone) as Zone
+		const yardCoord = YardCoord.Create(wob)
+		let point = wobZone.calcHeightAt(yardCoord).toVector3()
+		point.setY(point.y +2) // Raise up
+		chatLabel.position.copy(point)
+
 		options.forEach(option => {
 			const chatButton = document.createElement('button')
 			chatButton.innerText = option
@@ -234,17 +241,13 @@ export class UiSys {
 
 			chatDiv.appendChild(chatButton)
 
-			const wobZone = this.babs.ents.get(wob.idzone) as Zone
-			let point = wobZone.calcHeightAt(YardCoord.Create(wob)).toVector3()
-			point.setY(point.y +2) // Raise up
-			chatLabel.position.copy(point)
-
 			this.babs.scene.add(chatLabel)
 		})	
 		
 		const updateWOB = (opt) => {
 			log("User selected: " + opt + " wobID: " + wob.id)
-			this.babs.worldSys.currentGround.remove(chatLabel)	
+			log('parent', chatLabel.parent)
+			this.babs.scene.remove(chatLabel)	
 
 			// Need a way to send an update to the server, will circle back to this
 			socketSend.set({

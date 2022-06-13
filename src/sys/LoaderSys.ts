@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Sphere, sRGBEncoding, Vector2 } from "three"
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, Sphere, sRGBEncoding, Vector2 } from "three"
 import { Vector3 } from "three"
 import { SocketSys } from "./SocketSys"
 import { EventSys } from "./EventSys"
@@ -106,7 +106,7 @@ export class LoaderSys {
 	}
 
 	
-	loadGltf(path) {
+	loadGltf(path) :Promise<Group> {
 		return new Promise((resolve, reject) => {
 			log.info('loading gltf', path)
 
@@ -137,7 +137,7 @@ export class LoaderSys {
 	}
 
 	mapPathRigCache = new Map()
-	async loadRig(gender) {
+	async loadRig(gender) :Scene {
 		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
 		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
 		texture.flipY = false // gltf flipped boolean
@@ -157,7 +157,7 @@ export class LoaderSys {
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
 		const path = `/char/${gender}/female-rig.glb`
 		const cached = this.mapPathRigCache.get(path)
-		let scene
+		let scene :Scene
 		if(cached) {
 			log.info('cached rig', path)
 			scene = SkeletonUtils.clone(cached)

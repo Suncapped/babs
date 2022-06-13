@@ -6,6 +6,7 @@ import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
 import { Ent } from './Ent'
 import { EventSys } from '@/sys/EventSys'
+import { Scene } from 'three'
 
 // Player Character
 export class Player extends Ent {
@@ -13,7 +14,7 @@ export class Player extends Ent {
 	// transform
 	// appearance
 	// movement
-	controller
+	controller :Controller
 	animation
 
 	// Properties:
@@ -44,7 +45,7 @@ export class Player extends Ent {
 		const [gltfScene] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
-		])
+		]) as [Scene]
 		gltfScene.name = 'player'
 		gltfScene.idplayer = arrival.id
 		gltfScene.visible = false

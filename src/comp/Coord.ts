@@ -45,9 +45,9 @@ export class YardCoord extends Coord {
 	static PER_ZONE = 250
 	static Create(coord :CoordAndZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
 		// This is going to replace worldSys.zoneAndPosFromCurrent()
-		log('YardCoord', coord)
+		// Zone, like in EngineCoord.toYardCoord() is a perspective zone from player?
 		const crossCoord = crosszoneCoord(coord, YardCoord.PER_ZONE)
-		return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, coord.zone)
+		return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, crossCoord.zone)
 	}
 
 	x :YardRange
@@ -78,36 +78,32 @@ export class YardCoord extends Coord {
 		// also note above that this.zone.ground <- position of this will always be relative to currentGround?
 		
 		// const zoneTheoreticalX = this.zone.x *1000
-		const zoneGroundX = this.zone.ground.position.x
-		const zoneGroundZ = this.zone.ground.position.z
-		log('zonx', 
-			this.x + ','+this.z, 
-			this.zone.x + ','+this.zone.z, 
-			this.zone.ground.position.x + ','+this.zone.ground.position.z, 
-			this.zone.babs.worldSys.currentGround.position.x+','+this.zone.babs.worldSys.currentGround.position.z,
-		)
+		// const zoneGroundX = this.zone.ground.position.x
+		// const zoneGroundZ = this.zone.ground.position.z
+		// log('zonx', 
+		// 	this.x + ','+this.z, 
+		// 	this.zone.x + ','+this.zone.z, 
+		// 	this.zone.ground.position.x + ','+this.zone.ground.position.z, 
+		// 	this.zone.babs.worldSys.currentGround.position.x+','+this.zone.babs.worldSys.currentGround.position.z,
+		// )
 
 		// So the engine X of this coord's stuff is just objectively +zoneActualX
 		// So then why is it putting things one-zone-over way forward?  
 		// Well, for one thing, next-zone stuff ALREADY translated?
 
-		const shiftiness = this.zone.babs.worldSys.shiftiness
-		log('shiftiness', shiftiness)
-		log('GP', this.zone.ground.position)
+		// const shiftiness = this.zone.babs.worldSys.shiftiness
+		// shiftiness not needed; it's built into this.zone.ground.position
 		return EngineCoord.Create(new Vector3(
-			+(this.zone.ground.position.x) +this.x *4, 
+			(this.zone.ground.position.x) +this.x *4, 
 			0, 
-			+(this.zone.ground.position.z) +this.z *4
+			(this.zone.ground.position.z) +this.z *4
 		))
 	}
 	toEngineCoordCentered() {
-		const shiftiness = this.zone.babs.worldSys.shiftiness
-		log('shiftiness CENTERED', shiftiness)
-		log('GP2', this.zone.ground.position)
 		return EngineCoord.Create(new Vector3(
-			+(this.zone.ground.position.x) +this.x *4, 
+			(this.zone.ground.position.x) +this.x *4 +2, 
 			0, 
-			+(this.zone.ground.position.z) +this.z *4
+			(this.zone.ground.position.z) +this.z *4 +2,
 		))
 	}
 }
@@ -153,13 +149,13 @@ export class ZoneCoord extends Coord {
 
 export class EngineCoord extends Coord {
 	// This patterns allows: const coord = await Coord.Create()
-	static Create(input: Vector3|YardCoord) {
+	static Create(input: Vector3) {
 		if(input instanceof Vector3) {
 			return new EngineCoord().init(input)
 		}
-		else if(input instanceof YardCoord) {
-			return new EngineCoord().init(new Vector3(input.x *4, 0, input.z *4))
-		}
+		// else if(input instanceof YardCoord) {
+		// 	return input.toEngineCoord()
+		// }
 	}
 
 	x :number
@@ -175,7 +171,7 @@ export class EngineCoord extends Coord {
 	toVector3() {
 		return new Vector3(this.x, this.y, this.z)
 	}
-	toYardCoord(zone :Zone) :YardCoord { // zonetodo
+	toYardCoord(fromPerspectiveOf :Zone) :YardCoord { // zonetodo
 		// I could ray down and find which zone that way?
 		// But zone should also be derivable from playeroffset with zone.xz *1000
 		// Though playeroffset would be zero in a future unending terrain.
@@ -195,12 +191,13 @@ export class EngineCoord extends Coord {
 		// eg: x: 1017.9435729436972
 		// /4 =254.25, floor() = 254
 
+		// log('toYardCoord', fromPerspectiveOf.id, fromPerspectiveOf.x, this.x)
 
 		
 		return YardCoord.Create({
-			x: Math.floor((this.x -zone.babs.worldSys.shiftiness.x) /4), 
-			z: Math.floor((this.z -zone.babs.worldSys.shiftiness.z) /4),
-			zone: zone,
+			x: Math.floor((this.x) /4), 
+			z: Math.floor((this.z) /4),
+			zone: fromPerspectiveOf,
 		})
 
 
@@ -228,14 +225,18 @@ function crosszoneCoord(startingCoord :CoordAndZone, perZone :number) :CoordAndZ
 	// 	// return coord // zonetodo optimize, Return original coord? or earlier, above?
 	// }
 	// Find target zone's id
-	for(const [id, ent] of babs.ents) {
-		if(ent instanceof Zone && ent.x === absTargetZoneCoord.x && ent.z === absTargetZoneCoord.z) {
-			absTargetZoneCoord.zone = ent
+	for(const [id, zone] of babs.ents) {
+		if(zone instanceof Zone && zone.x === absTargetZoneCoord.x && zone.z === absTargetZoneCoord.z) {
+			// log('hhhhhmph', startingCoord.x, deltaZoneX, startingCoord.zone.x, absTargetZoneCoord.x, zone)
+			absTargetZoneCoord.zone = zone
 			break
 		}
 	}
 	if(!absTargetZoneCoord.zone) {
-		Utils.log('crosszoneCoord: No target zone at', absTargetZoneCoord, 'for startingCoord', startingCoord)
+		log('crosszoneCoord: No target zone at', absTargetZoneCoord, 'for startingCoord', startingCoord)
+	}
+	else {
+		// log('FOUND ZONE?!?!', startingCoord, absTargetZoneCoord.zone)
 	}
 
 	// Find remainder/overflow YardCoord (YardCoord within the potentially new zone)

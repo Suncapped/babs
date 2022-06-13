@@ -282,6 +282,7 @@ export class SocketSys {
 
 					let zones = []
 					for(let zonedata of zonedatas) {
+						log('Zone.Create(zonedata', zonedata)
 						zones.push(Zone.Create(zonedata, context.babs))
 					}
 
@@ -324,7 +325,14 @@ export class SocketSys {
 					
 					// Set up UIs
 					context.babs.uiSys.loadUis(data.uis)
-					
+
+
+					// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
+					// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
+					const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
+					log('startingZone', startingZone)
+					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
+
 					let pObjects = []
 					for(let zone of zones) {
 						pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
@@ -335,15 +343,9 @@ export class SocketSys {
 					// That's why we don't include them in the loadObjects /cache
 					// and since different zones also have different wobs anyway, this must be pull, not push.
 
-					// (However, we can do a mass file request; see in ArriveMany)
+					// (However (sk), we can do a mass file request; see in ArriveMany)
 					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
 					await Promise.all([playerPromise, arriveWobsPromise])
-
-					// Interject this before Arrives, so that objects have zones to ray their Y 
-					const startingZone = this.babs.ents.get(loadSelf.idzone)
-					log('startingZone', startingZone)
-					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-					
 
 					context.send({
 						ready: loadSelf.id,
@@ -398,14 +400,10 @@ export class SocketSys {
 				break
 				case 'zonein':
 					// Handle self or others switching zones
-					const player = context.babs.ents.get(data.idplayer)
-					const zone = context.babs.ents.get(data.idzone)
-					log('zonein', player.id, zone.id, context.babs.worldSys.currentGround, zone.ground)
+					const player = context.babs.ents.get(data.idplayer) as Player
+					const zone = context.babs.ents.get(data.idzone) as Zone
 
-					context.babs.worldSys.currentGround = zone.ground
-
-
-					player.controller.zoneIn(zone)
+					player.controller.zoneIn(player, zone)
 
 
 				break
@@ -458,7 +456,7 @@ export class SocketSys {
 						const wobExisting = context.babs.ents.get(wobFresh.id)
 						if(wobExisting && wobExisting.idzone) { // Wob in zone
 							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
-							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
+							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
 							instanced.instanceMatrix.needsUpdate = true
 						}
 					}

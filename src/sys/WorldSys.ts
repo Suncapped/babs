@@ -896,6 +896,7 @@ export class WorldSys {
 
 	shiftiness = new Vector3()
 	shiftEverything(xShift, zShift, butPlayer = false) {
+		log('shiftEverythingshiftEverythingshiftEverythingshiftEverythingshiftEverything')
 		const excludeFromShift = [
 			// 'ground', 'groundgrid', 
 			butPlayer ? 'player' : 'asdf',
