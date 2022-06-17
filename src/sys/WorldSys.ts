@@ -859,44 +859,8 @@ export class WorldSys {
 
     }
 
-	zoneAndPosFromCurrent(relativeGridPoint, resolution) { // res eg 40 for pieces, 4? for tiles
-
-		const divisor = 1000 /resolution
-	
-		const zoneDelta = new Vector3(
-			Math.floor(relativeGridPoint.x /divisor),
-			0,
-			Math.floor(relativeGridPoint.z /divisor),
-		)
-		// log('curg', this.currentGround)
-		const targetZoneCoords = new Vector3(
-			(this.currentGround.zone.x + zoneDelta.x),
-			0,
-			(this.currentGround.zone.z + zoneDelta.z),
-		)
-		
-		const targetZone = this.zones.find(zone=>zone.x==targetZoneCoords.x && zone.z == targetZoneCoords.z)
-		if(!targetZone) {
-			log('zoneAndPosFromCurrent: No target zone at', targetZoneCoords, 'for relativeGridPoint', relativeGridPoint)
-		}
-		
-		let targetPos = new Vector3(
-			relativeGridPoint.x %divisor,
-			relativeGridPoint.y, // No transform of Y
-			relativeGridPoint.z %divisor,
-		)
-		// Loop back to max on negative (balances modulus which handles positive)
-		if(targetPos.x < 0) targetPos.x += divisor
-		if(targetPos.z < 0) targetPos.z += divisor
-			
-		// log('zoneAndPosFromCurrent', zoneDelta.x+','+zoneDelta.z, ' to ', targetZoneCoords.x+','+targetZoneCoords.z, ' results in ', targetZone.id, ' at point ', targetGridPoint.x+','+targetGridPoint.z)
-
-		return {targetZone, targetPos}
-	}
-
 	shiftiness = new Vector3()
 	shiftEverything(xShift, zShift, butPlayer = false) {
-		log('shiftEverythingshiftEverythingshiftEverythingshiftEverythingshiftEverything')
 		const excludeFromShift = [
 			// 'ground', 'groundgrid', 
 			butPlayer ? 'player' : 'asdf',

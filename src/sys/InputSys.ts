@@ -17,6 +17,7 @@ import { UiSys } from "./UiSys"
 import { EngineCoord, YardCoord } from "@/comp/Coord"
 import { Babs } from "@/Babs"
 import { Player } from "@/ent/Player"
+import { Zone } from "@/ent/Zone"
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -675,7 +676,7 @@ export class InputSys {
 		})
 
 		document.addEventListener('mouseup', ev => {
-			log.info('mouseOnUp', ev.button, ev.target.id)
+			// log.info('mouseOnUp', ev.button, ev.target.id)
 			if (ev.button === MOUSE_LEFT_CODE) {
 				this.mouse.left = LIFT
 
@@ -706,10 +707,10 @@ export class InputSys {
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log('landdrop', this.mouse.landtarget)
-						const relativeGridPoint = this.mouse.landtarget.point.clone().divideScalar(4).floor()
-						const idzone = this.mouse.landtarget.idzone
-						const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
-
+						// const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+						const engCoord = EngineCoord.Create(this.mouse.landtarget.point)
+						const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
+						
 						// Todo put distance limits, here and server
 						const wobContained = this.babs.ents.get(this.carrying.id) 
 						const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
@@ -721,8 +722,8 @@ export class InputSys {
 								verb: 'moved',
 								noun: wob.id,
 								data: {
-									point: targetPos,
-									idzone,
+									point: {x: yardCoord.x, z: yardCoord.z},
+									idzone: yardCoord.zone.id,
 								},
 							}
 						})
@@ -932,8 +933,6 @@ export class InputSys {
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 						if(this.player.controller.zoningWait) continue // don't deal with ground intersects while zoning
-						// const relativeGridPoint = point.clone().divideScalar(4).floor()
-						// const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(relativeGridPoint, 4)
 						
 						const ground = this.mouseRayTargets[i].object
 						const zone = ground.zone

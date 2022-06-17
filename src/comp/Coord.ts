@@ -44,7 +44,7 @@ type YardRange = UintRange<0, 250>
 export class YardCoord extends Coord {
 	static PER_ZONE = 250
 	static Create(coord :CoordAndZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
-		// This is going to replace worldSys.zoneAndPosFromCurrent()
+		// This will replace worldSys.zoneAndPosFromCurrent()
 		// Zone, like in EngineCoord.toYardCoord() is a perspective zone from player?
 		const crossCoord = crosszoneCoord(coord, YardCoord.PER_ZONE)
 		return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, crossCoord.zone)

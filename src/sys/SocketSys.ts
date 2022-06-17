@@ -27,6 +27,7 @@ export class SocketSys {
 	static pingSeconds = 30
 
 	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
+		log('movePlayer', idzip, a, b)
 		// log('attemping to move player, attempt', attempts)
 		const idPlayer = this.babs.zips.get(idzip)
 		const player = this.babs.ents.get(idPlayer)	
@@ -358,7 +359,7 @@ export class SocketSys {
 
 				break
 				case 'playersarrive':
-					log.info('playersarrive', data)
+					log('playersarrive', data)
 
 					// EventSys.Dispatch('players-arrive', data)
 

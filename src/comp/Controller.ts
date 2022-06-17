@@ -13,7 +13,7 @@ import { Matrix4 } from 'three'
 import { WobAtPosition } from '@/Utils'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
-import { YardCoord } from './Coord'
+import { EngineCoord, YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
@@ -54,7 +54,7 @@ export class Controller extends Comp {
 	static sizeScaleDown = 0.80
 
 	raycaster
-	gDestination
+	gDestination :Vector3
 	hover = 0
 
 	scene :Scene
@@ -146,6 +146,14 @@ export class Controller extends Comp {
 
 	zoningWait = false
 	setDestination(gVector3, movestate) {
+
+		// Let us change this from in-zone playermoves coords, to extrazone coords (for non-self)
+		if(this.idEnt !== this.babs.idSelf) {
+			gVector3 = 
+
+		}
+
+
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gVector3.equals(this.gDestination)) return // Do not process if unchanged
 		if(this.zoningWait) return // Do not process during zoning
@@ -164,20 +172,22 @@ export class Controller extends Comp {
 			// New destination!
 			// As soon as dest is next square (for the first time), send ENTERZONE
 
-			const {targetZone, targetPos} = this.babs.worldSys.zoneAndPosFromCurrent(this.gDestination, 4)
-			log('zoneAndPosFromCurrent', targetZone, targetPos.x+','+targetPos.z)
-
-			// log(this.scene)
+			log('gdest', this.gDestination)
+			const targetYardCoord = YardCoord.Create({
+				...this.gDestination, 
+				zone: this.babs.worldSys.currentGround.zone,
+			})
+			log('gdest TYC', targetYardCoord)
 
 			let enterzone_id
 			if(this.gDestination.x < 0 || this.gDestination.z < 0 || this.gDestination.x > 249 || this.gDestination.z > 249){
-				enterzone_id = targetZone.id
+				enterzone_id = targetYardCoord.zone.id
 				this.zoningWait = true
 
-				this.gDestination.x = targetPos.x
-				this.gDestination.z = targetPos.z
+				this.gDestination.x = targetYardCoord.x
+				this.gDestination.z = targetYardCoord.z
 
-				const zonetarget = targetZone
+				const zonetarget = targetYardCoord.zone
 				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
@@ -324,8 +334,6 @@ export class Controller extends Comp {
 
 
 
-
-
 		this._stateMachine.update(dt, this._input)
 
 		const controlObject = this.target
@@ -368,15 +376,15 @@ export class Controller extends Comp {
 			const eDiff = eDest.clone().sub(controlObject.position) // Distance from CENTER
 
 			// Far away due to frame drops (tab-in/out etc)
-			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
 			const zFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
-			if(xFar) {
-				velocity.x = 0
-				controlObject.position.setX(eDest.x)
-			}
+			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
 			if(zFar) {
 				velocity.z = 0
 				controlObject.position.setZ(eDest.z)
+			}
+			if(xFar) {
+				velocity.x = 0
+				controlObject.position.setX(eDest.x)
 			}
 			if(!xFar && !zFar) {
 
@@ -534,16 +542,25 @@ export class Controller extends Comp {
 		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone})
 		const engCoord = zone.calcHeightAt(yardCoord)
 
-		this.babs.worldSys.currentGround = zone.ground
+		// this.target.position.y = engCoord.y
 
-		log('engCoord.y', engCoord.y)
+		if(player.id === this.babs.idSelf) { // Self
+			this.babs.worldSys.currentGround = zone.ground
+			this.zoningWait = false
+		}
+		else { // Others
+			// Swap other players to a new zone
+			// zone.ground.add(player.model)
+			// log('other', )
 
-		
-		// this.target.position.y = 0 // Prevent floating when zoning
-		this.target.position.y = engCoord.y
+			// Add them to the zone they zoned into
+			// zone.ground.add(player)
 
+			// this.target.position.add(new Vector3(1000, 0, 0))
 
-		this.zoningWait = false
+			
+		}
+
 	}
 
 }

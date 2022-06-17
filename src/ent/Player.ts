@@ -7,6 +7,7 @@ import { log } from '@/Utils'
 import { Ent } from './Ent'
 import { EventSys } from '@/sys/EventSys'
 import { Scene } from 'three'
+import { Zone } from './Zone'
 
 // Player Character
 export class Player extends Ent {
@@ -21,6 +22,8 @@ export class Player extends Ent {
 	self
 	idzip
 	char
+	
+	model :Scene
 
 	// References:
 
@@ -40,7 +43,7 @@ export class Player extends Ent {
 		// plr.nick = arrival.meta?.nick // Too confusing for players
 		plr.setNick(babs.uiSys.nicklist.get(arrival.id))
 
-		log.info('New Player:', plr)
+		log('New Player:', plr)
 
 		const [gltfScene] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
