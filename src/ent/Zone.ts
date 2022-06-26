@@ -1,5 +1,5 @@
 
-import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
 import { Mesh, Raycaster, Vector3 } from 'three'
@@ -32,7 +32,7 @@ export class Zone extends Ent {
 	}
 
 
-	calcHeightAt(coord :EngineCoord|YardCoord) :EngineCoord {
+	calcHeightAt(coord :Vector3|YardCoord) :Vector3 {
 		let offset = new Vector3()
 		if(coord instanceof YardCoord) {
 			log('wobSaid YardCoord inside', coord)
@@ -64,7 +64,7 @@ export class Zone extends Ent {
 		let result = intersect?.point
 		// log('intersect', result)
 
-		return EngineCoord.Create(result)
+		return result
 	}
 
 

@@ -1,7 +1,7 @@
 // Simpler logging
 
-import { Vector2, Vector3 } from "three"
-import { debugMode } from "./stores"
+import { Vector2, Vector3 } from 'three'
+import { debugMode } from './stores'
 import { get as svelteGet } from 'svelte/store'
 
 
@@ -218,7 +218,7 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 // }
 
 
-export function findWobByInstance(ents, instancedIndex, instancedName) { // todo combine wobIdsByIndex
+export function findWobByInstance(ents, instancedIndex, instancedName) { // note also: wobIdsByIndex
 	for(let [key, ent] of ents) {
 		// log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
 		if(ent.instancedIndex === instancedIndex && ent.name === instancedName) {
@@ -260,3 +260,6 @@ export function storageGet(key) {
 	return item.value
 }
 
+export function v3out(vector :Vector3) {
+	return `(${vector.x.toFixed(2)}, ${vector.y.toFixed(2)}, ${vector.z.toFixed(2)})v3`
+}

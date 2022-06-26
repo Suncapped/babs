@@ -16,6 +16,8 @@
     "checkJs": true,
     "isolatedModules": true,
 
+	"noUnusedLocals": false,
+
 	"types": ["vite/client"],
 
 	"paths": {

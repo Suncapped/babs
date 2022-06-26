@@ -1,22 +1,50 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from "three"
-import { SocketSys } from "@/sys/SocketSys"
-import { UiSys } from "@/sys/UiSys"
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from 'three'
+import { SocketSys } from '@/sys/SocketSys'
+import { UiSys } from '@/sys/UiSys'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import * as Utils from '@/Utils'
-import { Appearance } from "@/comp/Appearance"
+import { Appearance } from '@/comp/Appearance'
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { LoaderSys } from "@/sys/LoaderSys"
+import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { Ent } from "./Ent"
-import { Flame } from "@/comp/Flame"
-import { Zone } from "./Zone"
-import { Babs } from "@/Babs"
-import { YardCoord } from "@/comp/Coord"
+import { Ent } from './Ent'
+import { Flame } from '@/comp/Flame'
+import { Zone } from './Zone'
+import { Babs } from '@/Babs'
+import { YardCoord } from '@/comp/Coord'
+
+type IconData = {image :string, pixels :Uint8Array}
+
+export class FeInstancedMesh extends InstancedMesh {
+	private constructor(...args: ConstructorParameters<typeof InstancedMesh>) { super(...args) }
+	static Create(babs :Babs, ...args: ConstructorParameters<typeof InstancedMesh>) {
+		return new FeInstancedMesh(...args).init(babs)
+	}
+
+	babs :Babs
+	wobIdsByIndex :number[] = []
+	renderedIcon :Promise<IconData>|IconData
+	init(babs :Babs) {
+		this.babs = babs
+		return this
+	}
+
+	coordFromIndex(index) { 
+		// Returns world coord; instanced are zero-oriented since they have to be shared across zones, and their 'getMatrixAt()' positions are all local, not world.  So we change them to world using shiftiness.
+		const matrix = new Matrix4()
+		this.getMatrixAt(index, matrix)
+		const quat = new Quaternion()
+		const position = new Vector3()
+		quat.setFromRotationMatrix(matrix)
+		position.setFromMatrixPosition(matrix)
+		const engWorldCoord = position.add(this.babs.worldSys.shiftiness)
+		return engWorldCoord
+	}
+}
 
 export class Wob extends Ent {
-	/** @private */
-	constructor(id, babs) {
+	private constructor(id, babs) {
 		super(id, babs)
 	}
 
@@ -34,7 +62,7 @@ export class Wob extends Ent {
 
 
 	static HiddenScene = null
-	static HiddenSceneRender(mesh) {
+	static HiddenSceneRender(mesh) :Promise<IconData> {
 		if(!Wob.HiddenScene) {
 			const container = document.getElementById('HiddenRenderFrame')
 
@@ -126,23 +154,23 @@ export class Wob extends Ent {
 		// // log('rtpx', pixelBuffer)
 		// log('rtpx', Wob.HiddenScene.renderer.context)
 
-		const dataurl = Wob.HiddenScene.renderer.domElement.toDataURL()//('image/png')
+		const dataurl :string = Wob.HiddenScene.renderer.domElement.toDataURL()//('image/png')
 
 		return new Promise((resolve, reject) => {
 			let img = new Image()
 			img.src = dataurl
 			img.onload = () => {
-				var canvas = document.createElement('canvas');
+				let canvas = document.createElement('canvas');
 				canvas.width = UiSys.ICON_SIZE
 				canvas.height = UiSys.ICON_SIZE
-				var ctx = canvas.getContext('2d');
+				let ctx = canvas.getContext('2d');
 				ctx.drawImage(img, 0, 0);
-				var imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE);
+				let imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE);
 				let pixels = new Uint8Array(imageData.data.buffer);
 				canvas.remove()
 				img.remove()
 		
-				resolve({image: dataurl, pixels: pixels})
+				resolve({image: dataurl, pixels: pixels} as IconData)
 			}
 			img.onerror = reject
 		})
@@ -174,41 +202,23 @@ export class Wob extends Ent {
 		return arrivalPromises
 	}
 	
-	static WobInstMeshes = new Map()
+	static WobInstMeshes = new Map<string, Promise<FeInstancedMesh> | FeInstancedMesh>()
 	static async _Arrive(arrivalWob, babs :Babs, shownames) {
 		const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
 
-		if(arrivalWob.id == 470844215) {
-			log('arriving 470844215', arrivalWob)
-		}
-
-		let wob
-		// if(wobPrevious) {
-		// 	// Keep wobPrevious so I can check against it later (eg for container)
-		// 	wob = Object.assign(wob, wobPrevious)
-		// }
-		// else {
-			wob = new Wob(arrivalWob.id, babs)
-		// }
-
+		let wob = new Wob(arrivalWob.id, babs)
 		wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
 		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
 		// So ....uhh I guess set that later on? Comment 1287y19y1
 		babs.ents.set(arrivalWob.id, wob)
 
-		log('----------TRY', wob, wobPrevious)
 		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
 			// It's been moved from container into zone
-			log('--------------DELETING', wob, wobPrevious)
 			babs.uiSys.svContainers[0].delWob(wob.id)
 		}
 		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
 			// It's been moved bagtobag, or is being initial loaded into bag
-			log('--------------BABAAG')
 			babs.uiSys.svContainers[0].delWob(wob.id)
-		}
-		else {
-			log('--------------NO', wobPrevious?.idzone, wob?.idzone)
 		}
 
 		// if(wob.name == 'hot spring') log('----', 'arrive:', wob.name)
@@ -216,8 +226,7 @@ export class Wob extends Ent {
 		// Load gltf
 		// Assumes no object animation!
 		let instanced = Wob.WobInstMeshes.get(wob.name)
-		const isPromise = typeof instanced?.then === 'function'
-		if(isPromise) { 
+		if(instanced instanceof Promise) { 
 			// Wow okay.  The problem is, it was setting as the *returned* instance.  
 			// But we want the one modified by instance expansion below, so re-get from Map
 			// if(wob.name == 'hot spring') log('was promise', wob.name)
@@ -266,7 +275,7 @@ export class Wob extends Ent {
 					mesh = new Mesh(geometry, material)
 				}
 
-				instanced = new InstancedMesh(mesh.geometry, mesh.material, countMax)
+				instanced = FeInstancedMesh.Create(babs, mesh.geometry, mesh.material, countMax)
 				// ^ Up to one for each grid space; ignores stacking, todo optimize more?
 				instanced.countMax = countMax
 				instanced.count = currentCount
@@ -312,7 +321,7 @@ export class Wob extends Ent {
 			// if(wob.name == 'hot spring') log('enlarging IM ', wob.name, currentCount, instanced.count, instanced.countMax)
 			currentCount = instanced.count
 
-			const newInstance = new InstancedMesh(instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
+			const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
 			newInstance.count = currentCount
 			newInstance.countMax = instanced.countMax *2
 			newInstance.name = wob.name
@@ -351,7 +360,7 @@ export class Wob extends Ent {
 			log('newwob eCoord', eCoord)
 			const heighted = zone.calcHeightAt(yardCoord)
 			log('newwob heighted', heighted)
-			let engPositionVector = heighted.toVector3()
+			let engPositionVector = heighted
 			log('newwob vector', engPositionVector)
 
 			// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
@@ -387,9 +396,6 @@ export class Wob extends Ent {
 			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(engPositionVector))
 			instanced.instanceMatrix.needsUpdate = true
 
-			if(!instanced.wobIdsByIndex) {
-				instanced.wobIdsByIndex = []
-			}
 			instanced.wobIdsByIndex[wob.instancedIndex] = wob.id
 
 			const mudColors = []
@@ -441,19 +447,6 @@ export class Wob extends Ent {
 		return wob
 		
 	}
-
-
-	static GetPositionFromIndex(instanced, index) {
-		const matrix = new Matrix4()
-		instanced.getMatrixAt(index, matrix)
-		const quat = new Quaternion()
-		const position = new Vector3()
-		quat.setFromRotationMatrix(matrix)
-		position.setFromMatrixPosition(matrix)
-		return position
-	}
-
-
 	
 }
 

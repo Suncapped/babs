@@ -1,22 +1,22 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, Sphere, sRGBEncoding, Vector2 } from "three"
-import { Vector3 } from "three"
-import { SocketSys } from "./SocketSys"
-import { EventSys } from "./EventSys"
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader"
-import { TextureLoader } from "three"
-import { MeshPhongMaterial } from "three"
-import { AnimationMixer } from "three"
-import { SkinnedMesh } from "three"
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, Sphere, sRGBEncoding, Vector2 } from 'three'
+import { Vector3 } from 'three'
+import { SocketSys } from './SocketSys'
+import { EventSys } from './EventSys'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+import { TextureLoader } from 'three'
+import { MeshPhongMaterial } from 'three'
+import { AnimationMixer } from 'three'
+import { SkinnedMesh } from 'three'
 import { log, sleep } from './../Utils'
-import { Matrix4 } from "three"
-import { Group } from "three"
-import { Bone } from "three"
-import { Vector4 } from "three"
-import { Matrix3 } from "three"
-import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { Controller } from "@/comp/Controller"
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
+import { Matrix4 } from 'three'
+import { Group } from 'three'
+import { Bone } from 'three'
+import { Vector4 } from 'three'
+import { Matrix3 } from 'three'
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { Controller } from '@/comp/Controller'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 
 export class LoaderSys {
 
@@ -137,7 +137,7 @@ export class LoaderSys {
 	}
 
 	mapPathRigCache = new Map()
-	async loadRig(gender) :Scene {
+	async loadRig(gender) {
 		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
 		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
 		texture.flipY = false // gltf flipped boolean

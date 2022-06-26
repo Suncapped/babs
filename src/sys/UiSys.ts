@@ -5,11 +5,11 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from "../stores"
-import { log } from './../Utils'
+import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from '../stores'
+import { log, v3out } from './../Utils'
 import { MathUtils, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
-import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
 import { Wob } from '@/ent/Wob'
 import { InputSys } from './InputSys'
@@ -156,32 +156,33 @@ export class UiSys {
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
+		// Calculate position
+		const zone = this.babs.ents.get(landtarget.idzone) as Zone
+		const yardCoord = YardCoord.Create({
+			position: landtarget.point,
+			zone: zone,
+		})
+		
+		let point = zone.calcHeightAt(yardCoord)
+		point.setY(point.y +1)
+
+		if(this.babs.debugMode) {
+			landtarget.text += `\n${yardCoord}`
+			landtarget.text += `\n${v3out(landtarget.point)}`
+		}
+
+		log.info('landSaid', landtarget.text)
+		
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = landtarget.text
 		chatDiv.appendChild(chatSpan)
 		
 		chatDiv.style.color = '#aaaaaa'
-		// this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
-
-		const expiresInSeconds = 3
+		const expiresInSeconds = this.babs.debugMode ? 10 : 3
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject(chatDiv)
-
-		const zone = this.babs.ents.get(landtarget.idzone) as Zone
-		// log('landtarget.idzone', landtarget.idzone, zone)
-		const engCoord = EngineCoord.Create(landtarget.point)
-		const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
-		log('engCoord', landtarget.point, engCoord, yardCoord)
-		
-		if(this.babs.debugMode) {
-			chatSpan.innerText += ` on #${zone.id} (${yardCoord.x},${yardCoord.z})z`
-		}
-
-		let point = zone.calcHeightAt(yardCoord).toVector3()
-		point.setY(point.y +1)
-
 		chatLabel.position.copy(point)
 		// log('chatLabel targetPos', point, targetPos, targetZone)
 		this.babs.scene.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
@@ -194,6 +195,7 @@ export class UiSys {
 	}
 
 	wobSaid(text, wob :Wob) {
+		log.info('wobSaid', text)
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
 
@@ -204,13 +206,13 @@ export class UiSys {
 		chatDiv.style.color = '#aaaaaa'
 		// this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
 
-		const expiresInSeconds = 3
+		const expiresInSeconds = this.babs.debugMode ? 10 : 3
 		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
 		this.labelElements.push(chatDiv)
 		
 		const chatLabel = new CSS2DObject(chatDiv)
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
-		let point = wobZone.calcHeightAt(YardCoord.Create(wob)).toVector3()
+		let point = wobZone.calcHeightAt(YardCoord.Create(wob))
 		log('wobSaid point', point, YardCoord.Create(wob))
 
 		point.setY(point.y +4) // Raise up
@@ -226,7 +228,7 @@ export class UiSys {
 
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
-		let point = wobZone.calcHeightAt(yardCoord).toVector3()
+		let point = wobZone.calcHeightAt(yardCoord)
 		point.setY(point.y +2) // Raise up
 		chatLabel.position.copy(point)
 

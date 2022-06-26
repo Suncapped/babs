@@ -1,31 +1,31 @@
 import * as Utils from './../Utils'
 import { 
-    PlaneGeometry, 
-    MeshBasicMaterial, 
-    Mesh,
-    Color,
-    DoubleSide,
-    FrontSide,
-    MeshPhongMaterial,
-    Vector3,
-    Raycaster,
-    Fog,
-    HemisphereLightHelper,
-    HemisphereLight,
-    DirectionalLight,
-    DirectionalLightHelper,
-    SphereGeometry,
-    ShaderMaterial,
-    BackSide,
-    PerspectiveCamera,
-    WebGLRenderer,
-    PCFSoftShadowMap,
-    BoxBufferGeometry,
-    AxesHelper,
-    LineBasicMaterial,
-    TubeGeometry,
-    BufferGeometry,
-    Vector2,
+	PlaneGeometry, 
+	MeshBasicMaterial, 
+	Mesh,
+	Color,
+	DoubleSide,
+	FrontSide,
+	MeshPhongMaterial,
+	Vector3,
+	Raycaster,
+	Fog,
+	HemisphereLightHelper,
+	HemisphereLight,
+	DirectionalLight,
+	DirectionalLightHelper,
+	SphereGeometry,
+	ShaderMaterial,
+	BackSide,
+	PerspectiveCamera,
+	WebGLRenderer,
+	PCFSoftShadowMap,
+	BoxBufferGeometry,
+	AxesHelper,
+	LineBasicMaterial,
+	TubeGeometry,
+	BufferGeometry,
+	Vector2,
 	CameraHelper,
 	AmbientLight,
 	MathUtils,
@@ -48,12 +48,13 @@ import {
 	BasicShadowMap,
 	PCFShadowMap,
 	VSMShadowMap,
+	Material,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
 import { Sky } from 'three/examples/jsm/objects/Sky.js'
-import { debugMode } from "../stores"
+import { debugMode } from '../stores'
 
 import { Wob } from '@/ent/Wob'
 import { EventSys } from './EventSys'
@@ -62,7 +63,7 @@ import * as SunCalc from 'suncalc'
 // import { CSM } from 'three/examples/jsm/csm/CSM.js';
 
 import '@stardazed/streams-polyfill'
-import { EngineCoord, YardCoord } from '@/comp/Coord'
+import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 
@@ -88,9 +89,9 @@ export class WorldSys {
 	babs :Babs
 	renderer
 
-    dirLight
-    dirLightHelper
-    // lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
+	dirLight
+	dirLightHelper
+	// lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
 	hemiLight
 
 	sky
@@ -104,6 +105,11 @@ export class WorldSys {
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}
+
+	daysky :Sky
+	nightsky :Mesh & {material: Material[]}
+
+	cameraHelper :CameraHelper
 
 	StringifyLandcover = {
 		12: 'SnowIceTundra',
@@ -175,7 +181,7 @@ export class WorldSys {
 	]
 
 	
-    constructor(renderer, babs, camera) {
+	constructor(renderer, babs, camera) {
 		EventSys.Subscribe(this)
 
 		this.babs = babs
@@ -185,27 +191,27 @@ export class WorldSys {
 		Object.keys(this.colorFromLc).forEach(key => this.colorFromLc[key].convertSRGBToLinear())
 
 
-        // Old sky
-        // this.babs.scene.background = new Color().setHSL( 0.6, 0, 1 )
-        // const vertexShader = document.getElementById( 'vertexShader' ).textContent
-        // const fragmentShader = document.getElementById( 'fragmentShader' ).textContent
-        // const uniforms = {
-        //     "topColor": { value: new Color( 0x0077ff ) },
-        //     "bottomColor": { value: new Color( 0xffffff ) },
-        //     "offset": { value: 33 },
-        //     "exponent": { value: 0.6 }
-        // }
-        // uniforms.topColor.value.copy( hemiLight.color )
-        // this.babs.scene.fog.color.copy( uniforms[ "bottomColor" ].value )
-        // const skyGeo = new SphereGeometry( 4000, 32, 15 )
-        // const skyMat = new ShaderMaterial( {
-        //     uniforms: uniforms,
-        //     vertexShader: vertexShader,
-        //     fragmentShader: fragmentShader,
-        //     side: BackSide
-        // } )
-        // const sky = new Mesh( skyGeo, skyMat )
-        // this.babs.scene.add( sky )
+		// Old sky
+		// this.babs.scene.background = new Color().setHSL( 0.6, 0, 1 )
+		// const vertexShader = document.getElementById( 'vertexShader' ).textContent
+		// const fragmentShader = document.getElementById( 'fragmentShader' ).textContent
+		// const uniforms = {
+		//     "topColor": { value: new Color( 0x0077ff ) },
+		//     "bottomColor": { value: new Color( 0xffffff ) },
+		//     "offset": { value: 33 },
+		//     "exponent": { value: 0.6 }
+		// }
+		// uniforms.topColor.value.copy( hemiLight.color )
+		// this.babs.scene.fog.color.copy( uniforms[ "bottomColor" ].value )
+		// const skyGeo = new SphereGeometry( 4000, 32, 15 )
+		// const skyMat = new ShaderMaterial( {
+		//     uniforms: uniforms,
+		//     vertexShader: vertexShader,
+		//     fragmentShader: fragmentShader,
+		//     side: BackSide
+		// } )
+		// const sky = new Mesh( skyGeo, skyMat )
+		// this.babs.scene.add( sky )
 
 
 		// New sky (not lighting)
@@ -257,16 +263,16 @@ export class WorldSys {
 		// let light = new AmbientLight(0xFFFFFF, 1)
 		// this.babs.scene.add(light)
 
-        this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
+		this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
 		this.hemiLight.name = 'hemilight'
-        const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
+		const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
 		hemiLightHelper.name = 'three-helper'
-        this.babs.scene.add(hemiLightHelper)
-        this.hemiLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
-        this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
-        this.babs.scene.add(this.hemiLight)
+		this.babs.scene.add(hemiLightHelper)
+		this.hemiLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
+		this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
+		this.babs.scene.add(this.hemiLight)
 
-        this.babs.scene.fog = new FogExp2(
+		this.babs.scene.fog = new FogExp2(
 			new Color(), 
 			// 1, 
 			// WorldSys.MAX_VIEW_DISTANCE
@@ -328,13 +334,17 @@ export class WorldSys {
 				}
 			})
 		})
-    }
+	}
 
 	shadowDist = 150
 	playerTarget
 	Event(type, data) {
 		if(type === 'controller-ready') {
 			if(!data.isSelf) return // Only add lights for self
+
+
+			log('WorldSys adding lights for self', data.controller.target)
+
 			// Directional light
 			this.playerTarget = data.controller.target
 
@@ -432,7 +442,7 @@ export class WorldSys {
 	// timeAccum = 60*60*12*122 // nighttime
 	timeAccum = 60*60*12*1223 // daytime
 
-    update(dt, camera) {
+	update(dt, camera) {
 
 		// Update sun position over time!
 		// let hourOfDay = Math.round(new Date().getTime() /1000) %24
@@ -543,7 +553,7 @@ export class WorldSys {
 				spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
 			))
 			this.quatRotation.multiply(rot)
-			.normalize() // Roundoff to prevent scaling
+				.normalize() // Roundoff to prevent scaling
 
 			// Compile
 			this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
@@ -554,22 +564,22 @@ export class WorldSys {
 			this.waterInstancedMesh.instanceMatrix.needsUpdate = true
 		}
 
-		this.csm?.update()
+		// this.csm?.update()
 
 		this.updateCount++
-    }
+	}
 
 	currentGround
 	groundMaterial
-    async loadStatics(urlFiles, zone, isStartingZone = false) {
-        let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
+	async loadStatics(urlFiles, zone, isStartingZone = false) {
+		let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
-        geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
-        geometry.translate(
+		geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
+		geometry.translate(
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.x, 
 			0,//zone.y -8000,
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.z,
-			)
+		)
 			
 		// const material = new MeshPhongMaterial({
 		// 	name: 'megamaterial',
@@ -586,14 +596,14 @@ export class WorldSys {
 		// 	// emissive: null,
 		// 	// color: new Color(0,0,0).convertSRGBToLinear(),
 		// })
-        this.groundMaterial = this.groundMaterial || new MeshLambertMaterial( {
+		this.groundMaterial = this.groundMaterial || new MeshLambertMaterial( {
 			side: FrontSide,
 			// side: Side,
 			shadowSide: FrontSide,
 			// depthFunc: NeverDepth,
 		} )
-        // const material = new MeshStandardMaterial({vertexColors: true})
-        // this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )
+		// const material = new MeshStandardMaterial({vertexColors: true})
+		// this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )
 		this.groundMaterial.vertexColors = true
 
 		// console.time('ele')
@@ -603,17 +613,17 @@ export class WorldSys {
 		await this.genLandcover(urlFiles, geometry, zone)
 		// console.timeEnd('landcover') // 32ms // meh
 		
-        geometry.computeVertexNormals()
+		geometry.computeVertexNormals()
 
 		const newGround = new Mesh( geometry, this.groundMaterial )
-        newGround.name = 'ground'
-        newGround.castShadow = true
-        newGround.receiveShadow = true
+		newGround.name = 'ground'
+		newGround.castShadow = true
+		newGround.receiveShadow = true
 		newGround.zone = zone
 		newGround.position.setX(WorldSys.ZoneLength *zone.x)
 		newGround.position.setZ(WorldSys.ZoneLength *zone.z)
 		zone.ground = newGround
-        this.babs.scene.add(newGround)
+		this.babs.scene.add(newGround)
 
 		if(isStartingZone) {
 			log('playerStartingZone', newGround)
@@ -630,16 +640,16 @@ export class WorldSys {
 			groundGrid.visible = on
 		})
 
-    }
+	}
 
-    async loadObjects(urlFiles, zone) {
+	async loadObjects(urlFiles, zone) {
 		const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
 		// log('fet.status', fet.status)
 		if(fet.status == 404) {// No such zone or zone with no objects cached yet
 			return []
 		}
 
-        const dataBlob = await fet.blob()
+		const dataBlob = await fet.blob()
 		// log('fet.blob', dataBlob)
 		if(dataBlob.size == 2) {  // hax on size (for `{}`)
 			return []
@@ -659,30 +669,30 @@ export class WorldSys {
 		const text = await decompressedBlob.text()
 		const wobs = JSON.parse(text)
 		return wobs
-    }
+	}
 
-    elevationData = {}
-    landcoverData
+	elevationData = {}
+	landcoverData
 	waterInstancedMesh
 	waterInstancedRands = []
-    async genElevation(urlFiles, geometry, zone) {
+	async genElevation(urlFiles, geometry, zone) {
 		// Save thigns onto zone for later
 		zone.geometry = geometry
 
 		const nCoordsComponents = 3; // x,y,z
-        const verticesRef = geometry.getAttribute('position').array
+		const verticesRef = geometry.getAttribute('position').array
 
-        for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
-            // j + 1 because it is the y component that we modify
+		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
+			// j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
 
 			// Set vertex height from elevations data
-            verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
-        }
-    }
+			verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
+		}
+	}
 
 	zones = []
-    async stitchElevation(zones) {
+	async stitchElevation(zones) {
 		this.zones = zones
 		for(let zone of zones) {
 			const nCoordsComponents = 3; // x,y,z
@@ -728,12 +738,12 @@ export class WorldSys {
 			}
 		}
 
-    }
-    async genLandcover(urlFiles, geometry, zone) {
+	}
+	async genLandcover(urlFiles, geometry, zone) {
 		// Get landcover data
         
 		// Vertex colors on BufferGeometry using a non-indexed array
-        const verticesRef = geometry.getAttribute('position').array
+		const verticesRef = geometry.getAttribute('position').array
 		const nColorComponents = 3;  // r,g,b
 		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2; // e.g. 6 for a pyramid (?)
 		// const nVerticesPerFace = 3; // 3 for Triangle faces
@@ -746,7 +756,7 @@ export class WorldSys {
 
 		let waterNearbyIndex = new Array(26*26).fill(0)
 
-        for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
+		for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 			let color = this.colorFromLc[lcString]
 
@@ -781,14 +791,14 @@ export class WorldSys {
 
 				}
 			}
-        }
+		}
 
 		// Water?  Delayed?
 		setTimeout(() => {
 			if(!
-				(
-					(zone.x == 0 && zone.z == 0)
-				)
+			(
+				(zone.x == 0 && zone.z == 0)
+			)
 			){
 				return // zonetodo
 			}
@@ -818,7 +828,7 @@ export class WorldSys {
 								zone: entZone,
 							})
 							const engineCoord = yardCoord.toEngineCoord()
-							const rayPosition = entZone.calcHeightAt(engineCoord).toVector3()
+							const rayPosition = entZone.calcHeightAt(engineCoord)
 							// New Coords are beautiful to work with...
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {
@@ -857,7 +867,7 @@ export class WorldSys {
 
 		}, 1) // todo race condition here
 
-    }
+	}
 
 	shiftiness = new Vector3()
 	shiftEverything(xShift, zShift, butPlayer = false) {
@@ -889,16 +899,16 @@ export class WorldSys {
 export class PatchableReadableStream extends ReadableStream {
 	constructor (reader) {
 	  super({
-		async start(controller) {
+			async start(controller) {
 		  while (true) {
-			const { done, value } = await reader.read()
-			if (done) break
-			controller.enqueue(value)
+					const { done, value } = await reader.read()
+					if (done) break
+					controller.enqueue(value)
 		  }
 		  controller.close()
 		  reader.releaseLock()
-		}
+			}
 	  })
 	}
-  }
+}
   

@@ -1,5 +1,5 @@
-import { Babs } from "@/Babs"
-import { log } from "../Utils"
+import { Babs } from '@/Babs'
+import { log } from '../Utils'
 
 export class Comp {
 	babs :Babs

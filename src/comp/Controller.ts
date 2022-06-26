@@ -1,24 +1,17 @@
-import * as THREE from 'three'
-import { EventSys } from '@/sys/EventSys'
-import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { Euler, MathUtils, Quaternion, Raycaster, Scene } from 'three'
-import { Vector3 } from 'three'
+import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4 } from 'three'
 import { Comp } from '@/comp/Comp'
-import { SocketSys } from '@/sys/SocketSys'
 import { WorldSys } from '@/sys/WorldSys'
-
-import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
-import { Matrix4 } from 'three'
+import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { WobAtPosition } from '@/Utils'
-import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
-import { EngineCoord, YardCoord } from './Coord'
+import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
 
-// Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
+// Begun from MIT licensed https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 class BasicCharacterControllerProxy {
+	_animations
 	constructor(animations) {
 		this._animations = animations
 	}
@@ -29,7 +22,6 @@ class BasicCharacterControllerProxy {
 }
 
 export class Controller extends Comp {
-
 	static MOVESTATE = {
 		Idle: 0,
 		Run: 1,
@@ -50,77 +42,91 @@ export class Controller extends Comp {
 		6: -45,
 		7: 0,
 	}
-
 	static sizeScaleDown = 0.80
-
-	raycaster
-	gDestination :Vector3
-	hover = 0
-
-	scene :Scene
-	target :Scene
 
 	constructor(arrival, babs) {
 		super(arrival.id, Controller, babs)
 	}
 
-	static async New(arrival, babs, scene :Scene) {
-		const cont = new Controller(arrival, babs)
-		log.info('new Controller()', arrival)
-		cont.arrival = arrival
-		cont.scene = babs.scene
+	static Create(arrival, babs, scene :Scene) {
+		return new Controller(arrival, babs).init(arrival, scene)
+	}
 
-		cont.vTerrainMin = new THREE.Vector3(0,0,0)
-		cont.vTerrainMax = new THREE.Vector3(1000,10_000,1000)
-		cont._decceleration = new THREE.Vector3(-5.0, 0, -5.0) // friction, basically
-		cont.acceleration = new THREE.Vector3(100 *this.sizeScaleDown, 0, 100 *this.sizeScaleDown)
-		cont.rotationSpeed = 1
-		cont.velocity = new THREE.Vector3(0, 0, 0)
-		cont.groundDistance = 0
-		cont.run = false
+	raycaster
+	gDestination :Vector3
+	hover = 0
+	groundDistance :number|boolean = 0
+	isSelf :boolean = false
 
-		cont._animations = {}
-		cont._stateMachine = new CharacterFSM(
-			new BasicCharacterControllerProxy(cont._animations)
+	target :Scene & {zone? :Zone}
+
+	arrival
+	vTerrainMin = new Vector3(0, 0, 0)
+	vTerrainMax = new Vector3(1000,10_000,1000)
+	_decceleration = new Vector3(-5.0, 0, -5.0) // friction, basically
+	acceleration = new Vector3(100 *Controller.sizeScaleDown, 0, 100 *Controller.sizeScaleDown)
+	velocity = new Vector3(0, 0, 0)
+	rotationSpeed = 1
+	run = false
+	idealTargetQuaternion
+
+
+	_animations = new Array<{
+		clip :any,
+		action :any,
+	}>()
+	_mixer :AnimationMixer
+	
+	_stateMachine :CharacterFSM
+
+
+	async init(arrival, scene :Scene) {
+		log.info('Controller.init()', arrival)
+		this.arrival = arrival
+		this.isSelf = this.idEnt === this.babs.idSelf
+
+		this.target = scene
+		this.target.zone = this.babs.ents.get(this.arrival.idzone) as Zone
+
+		this._stateMachine = new CharacterFSM(
+			new BasicCharacterControllerProxy(this._animations)
 		)
 
-		// Init
-		cont.target = scene
-		cont.idealTargetQuaternion = cont.target.quaternion.clone()
+		this.idealTargetQuaternion = this.target.quaternion.clone()
 
-		cont._mixer = new THREE.AnimationMixer(cont.target)
+		this._mixer = new AnimationMixer(this.target)
 		const animList = ['idle', 'run', 'walk']
 		await Promise.all(animList.map(async animName => {
-			const anim = await cont.babs.loaderSys.loadAnim(cont.arrival.char.gender, animName)
+			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
-			const action = cont._mixer.clipAction(clip)
+			const action = this._mixer.clipAction(clip)
 
-			cont._animations[animName] = {
+			this._animations[animName] = {
 				clip: clip,
 				action: action,
 			}
 		}))
 
-		cont._stateMachine.setState('idle')
+		this._stateMachine.setState('idle')
 
 		// Finally show the character
-		cont.target.visible = true
+		this.target.visible = true
 
 		// Raycast for ground snapping
-		cont.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
+		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
 
 		// Set position warped
-		log.info('controller init done, warp player to', cont.arrival.x, cont.arrival.z, cont.target)
-		cont.gDestination = new Vector3(cont.arrival.x, 0, cont.arrival.z)
-		cont.target.position.copy(cont.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
+		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
+		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
 
 		// Set rotation
-		const degrees = Controller.ROTATION_ANGLE_MAP[cont.arrival.r] -45 // Why -45?  Who knows! :p
+		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why -45?  Who knows! :p
 		const quat = new Quaternion()
 		quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
-		cont.setRotation(quat)
+		this.setRotation(quat)
 
-		return cont
+		return this
 	}
 
 	get Position() {
@@ -128,7 +134,7 @@ export class Controller extends Comp {
 	}
 
 	get Rotation() {
-		if (!this.target) return new THREE.Quaternion() 
+		if (!this.target) return new Quaternion() 
 		return this.target.quaternion
 	}
 
@@ -144,29 +150,21 @@ export class Controller extends Comp {
 		return this.headRotationX
 	}
 
-	zoningWait = false
+	selfZoningWait = false // Only applies to self!
 	setDestination(gVector3, movestate) {
-
-		// Let us change this from in-zone playermoves coords, to extrazone coords (for non-self)
-		if(this.idEnt !== this.babs.idSelf) {
-			gVector3 = 
-
-		}
-
-
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gVector3.equals(this.gDestination)) return // Do not process if unchanged
-		if(this.zoningWait) return // Do not process during zoning
+		if(this.selfZoningWait) return // Do not process during zoning
 
 		this.gDestination = gVector3.clone()
-		log('setDestination changed', this.gDestination, movestate)
+		log('setDestination changed', this.gDestination, movestate, this.isSelf)
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
 		
 
 
 		// const player = this.babs.ents.get(this.idEnt)
-		if(this.idEnt === this.babs.idSelf) {
+		if(this.isSelf) {
 			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
 			
 			// New destination!
@@ -179,10 +177,13 @@ export class Controller extends Comp {
 			})
 			log('gdest TYC', targetYardCoord)
 
-			let enterzone_id
-			if(this.gDestination.x < 0 || this.gDestination.z < 0 || this.gDestination.x > 249 || this.gDestination.z > 249){
+			let enterzone_id :number = undefined
+			const isOutsideOfZone = this.gDestination.x < 0 || this.gDestination.z < 0 ||
+									this.gDestination.x > 249 || this.gDestination.z > 249
+			if(isOutsideOfZone){
+				log.info('isOutsideOfZone', isOutsideOfZone)
 				enterzone_id = targetYardCoord.zone.id
-				this.zoningWait = true
+				this.selfZoningWait = true
 
 				this.gDestination.x = targetYardCoord.x
 				this.gDestination.z = targetYardCoord.z
@@ -190,8 +191,8 @@ export class Controller extends Comp {
 				const zonetarget = targetYardCoord.zone
 				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
-				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
 
+				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
 			}
 
 			this.babs.socketSys.send({
@@ -232,7 +233,7 @@ export class Controller extends Comp {
 		vector.setY(this.velocity.y)
 		this.velocity.copy(vector)
 
-		if(this.idEnt === this.babs.idSelf) {
+		if(this.isSelf) {
 			// Send turn amount to other players
 
 			// const euler = new Euler().setFromQuaternion(this.target.quaternion)
@@ -250,18 +251,18 @@ export class Controller extends Comp {
 			// let matrixtest = new Matrix4().makeRotationFromQuaternion(this.idealTargetQuaternion)
 			// let vectortest = new Vector3().setFromMatrixColumn( matrixtest, 1 )  // get X column of matrix
 			
-			var dir = new Vector3(1,0,1)
+			let dir = new Vector3(1,0,1)
 			dir.applyQuaternion(this.idealTargetQuaternion)		
-			var theta = Math.atan2(dir.x, dir.z)
+			let theta = Math.atan2(dir.x, dir.z)
 			const angle = MathUtils.radToDeg(theta)
 			const round = Math.round(angle)
 			// log('angle', dir, theta, round)
 
 			// Not sure what I'm doing here...but mapping what I've got
-			 // -180 can be 180, so that's item 3...
+			// -180 can be 180, so that's item 3...
 			const found = Object.entries(Controller.ROTATION_ANGLE_MAP).find(item => item[1] == round) || [3]
 
-			const rotationWord = parseInt(found[0])
+			const rotationWord = parseInt(`${found[0]}`)
 			this.babs.socketSys.send({
 				move: {
 					movestate: Controller.MOVESTATE.Rotate,
@@ -274,7 +275,7 @@ export class Controller extends Comp {
 	}
 
 	jump(height) {
-		log.info('jump!', this.groundDistance, this.velocity.y)
+		log('jump!', this.groundDistance, this.velocity.y)
 		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
 			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
 			this.groundDistance = this.groundDistance || 1 // Get off the ground at least
@@ -283,7 +284,7 @@ export class Controller extends Comp {
 		// if(this._stateMachine._currentState != 'jump') {
 		// 	this._stateMachine.setState('jump')
 		// } 
-		if(this.idEnt === this.babs.idSelf) {
+		if(this.isSelf) {
 			this.babs.socketSys.send({
 				move: {
 					movestate: Controller.MOVESTATE.Jump,
@@ -297,7 +298,7 @@ export class Controller extends Comp {
 	gPrevDestination // aka origin
 	update(dt) {
 
-		if (!this._stateMachine._currentState) {
+		if (!this._stateMachine?._currentState) {
 			return
 		}
 
@@ -334,7 +335,7 @@ export class Controller extends Comp {
 
 
 
-		this._stateMachine.update(dt, this._input)
+		this._stateMachine.update(dt)
 
 		const controlObject = this.target
 
@@ -351,8 +352,10 @@ export class Controller extends Comp {
 
 		// Now movement physics
 		// Women runners do about 10 ft/s over 4 mi, so should be made to do 1ft/100ms, 4ft/400ms
+
 		const velocity = this.velocity
-		const frameDecceleration = new THREE.Vector3(
+
+		const frameDecceleration = new Vector3(
 			velocity.x * this._decceleration.x,
 			0,
 			velocity.z * this._decceleration.z
@@ -414,7 +417,7 @@ export class Controller extends Comp {
 				}
 
 			}
-
+			
 			this.hover = 0
 			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
 				if(this._stateMachine._currentState != 'idle') {
@@ -441,7 +444,7 @@ export class Controller extends Comp {
 		else {
 			const gravityFtS = 32 *10 // Why does it feel off without *10?
 
-			if(!this.zoningWait) { // No gravity while walking between zones waiting for zonein
+			if(!this.selfZoningWait) { // No gravity while walking between zones waiting for zonein
 				velocity.y -= gravityFtS*dt
 			}
 		}
@@ -458,7 +461,7 @@ export class Controller extends Comp {
 		// }
 		// controlObject.quaternion.copy(_R)
 
-		const forward = new THREE.Vector3(1, 1, 1)
+		const forward = new Vector3(1, 1, 1)
 		// What if I change forward to include distance to destination, rather than just toward it?
 		// Hard, because velocity is used for movement.
 		// Another simpler approach is, if they're more than 1 block away from destination 
@@ -499,24 +502,45 @@ export class Controller extends Comp {
 			this._mixer.update(dt)
 		}
 
-		// Keep above ground
+		// Ground stickiness/gravity
+		// Setup
+		// const zone = this.target.zone
+		const ground = this.isSelf ? this.babs.worldSys.currentGround : null // zonetodo this null!
+
+		// Note that raycaster uses global coords
+
+		// const playerWorldPos = ground.localToWorld(controlObject.position)
 		this.raycaster.ray.origin.copy(controlObject.position)
 		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
-		const ground = this.babs.worldSys.currentGround // zonetodo handle handoff somehow
+		
 		if(ground && this.raycaster) {
-			const groundIntersect = this.raycaster.intersectObject(ground, true)
-			// log('groundIntersect', groundIntersect, ground)
-			const groundHeightY = groundIntersect?.[0]?.point.y
-			if(groundHeightY > controlObject.position.y || this.hover) {
+			const groundIntersect = this.raycaster.intersectObject(ground, false)
+			const worldGroundHeight = groundIntersect?.[0]?.point
+
+			if(worldGroundHeight?.y > controlObject?.position?.y || this.hover) {
+				// Keep above ground
 				this.groundDistance = true
-				controlObject.position.setY(groundHeightY +this.hover)
-				// If on ground, y velocity stops
+
+				controlObject.position.setY(worldGroundHeight.y +this.hover)
+				// const playerLocalPos = controlObject.position.clone()
+				// const playerGlobalPos = ground.localToWorld(playerLocalPos)
+				// const oldy = playerWorldPos.y
+				// playerWorldPos.setY(worldGroundHeight.y +this.hover)
+				// const updatedPlayerLocal = ground.worldToLocal(playerWorldPos)
+				// controlObject.position.copy(updatedPlayerLocal)
+
+				// Wait...the local and the world Y are the same, LOL!  Only x/z are not.
+
+				// If on ground, y velocity stops // ?
+				// if(!isSelf) {
+					
+				// }
 			}
 			if(!groundIntersect.length) {
 				velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
 			}
 			else {
-				this.groundDistance = controlObject.position.y - groundHeightY // Used for jump
+				this.groundDistance = controlObject.position.y - worldGroundHeight.y // Used for jump
 			}
 		}
 		
@@ -544,22 +568,23 @@ export class Controller extends Comp {
 
 		// this.target.position.y = engCoord.y
 
-		if(player.id === this.babs.idSelf) { // Self
+		if(this.isSelf) { // Self
 			this.babs.worldSys.currentGround = zone.ground
-			this.zoningWait = false
+
+			// Everything was already shifted around us locally, when we gDestination across the line!
+			this.selfZoningWait = false
+
+			this.target.position.setY(8362) // works since it will pop up back up to the ground
 		}
 		else { // Others
-			// Swap other players to a new zone
-			// zone.ground.add(player.model)
-			// log('other', )
+			// Translate other players to a new zone
 
-			// Add them to the zone they zoned into
-			// zone.ground.add(player)
-
+			// player.controller.target
 			// this.target.position.add(new Vector3(1000, 0, 0))
 
 			
 		}
+
 
 	}
 
@@ -567,6 +592,8 @@ export class Controller extends Comp {
 
 
 class FiniteStateMachine {
+	_states
+	_currentState
 	constructor() {
 		this._states = {}
 		this._currentState = null
@@ -592,15 +619,16 @@ class FiniteStateMachine {
 		state.enter(prevState)
 	}
 
-	update(timeElapsed, input) {
+	update(timeElapsed) {
 		if (this._currentState) {
-			this._currentState.update(timeElapsed, input)
+			this._currentState.update(timeElapsed)
 		}
 	}
 }
 
 
 class CharacterFSM extends FiniteStateMachine {
+	_proxy
 	constructor(proxy) {
 		super()
 		this._proxy = proxy

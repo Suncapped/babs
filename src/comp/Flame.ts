@@ -13,7 +13,7 @@ import { Matrix4 } from 'three'
 import { isPowerOfTwo } from 'three/src/math/MathUtils'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
-import { EngineCoord, YardCoord } from './Coord'
+import { YardCoord } from './Coord'
 
 
 let FireShader = {

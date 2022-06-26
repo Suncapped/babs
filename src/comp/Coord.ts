@@ -35,25 +35,63 @@ Coordinate formats:
 abstract class Coord {
 	// constructor() {}
 }
-type CoordAndZone = {x :number, z :number, zone: Zone} // Used for Create()s
+type XZandZone = {x :number, z :number, zone: Zone} // eg a wob with x, z, and zone on it.
+type PositionAndZone = {position :Vector3, zone: Zone} // eg a Mesh with position and zone on it.
 
 // Specific Coord Classes:
-
 
 type YardRange = UintRange<0, 250>
 export class YardCoord extends Coord {
 	static PER_ZONE = 250
-	static Create(coord :CoordAndZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
-		// This will replace worldSys.zoneAndPosFromCurrent()
-		// Zone, like in EngineCoord.toYardCoord() is a perspective zone from player?
-		const crossCoord = crosszoneCoord(coord, YardCoord.PER_ZONE)
-		return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, crossCoord.zone)
+	
+	private constructor() { super() }
+	static Create(coord :PositionAndZone | XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
+		if('position' in coord) {
+			// Engine coordinate; determine zone and inner-zone coordinate
+			// The zone passed in here is probably irrelevant.  We just want it to use its babs reference.
+
+			// return YardCoord.Create({
+			// 	x: Math.floor((this.x) /4), 
+			// 	z: Math.floor((this.z) /4),
+			// 	zone: fromPerspectiveOf,
+			// })
+
+			/*
+				What we want is to determine zone.  This will be relative to self.
+				Engine coordinates are literally always self-based on current zone!
+					When you convert to yards, it's going to be relative to player zone.
+					Like, if you have -5, That is player.zone.x -1 & 250-5
+			*/
+
+			const zoneSelf = coord.zone.babs.worldSys.currentGround.zone // lol hmm
+
+			// First let's find the target zone x,z relative to us.  (The engine position is already relative)
+			// Actually, crosszoneCoord does this.
+			const crossEngineCoord = crosszoneCoord({x: coord.position.x, z: coord.position.z, zone: zoneSelf}, 1000)
+			// log('crossEngineCoord', crossEngineCoord)
+			crossEngineCoord.x = Math.floor(crossEngineCoord.x /4)
+			crossEngineCoord.z = Math.floor(crossEngineCoord.z /4)
+
+			return new YardCoord().init(
+				crossEngineCoord.x as YardRange, 
+				crossEngineCoord.z as YardRange, 
+				crossEngineCoord.zone,
+			)
+
+		}
+		else {
+			// XZandZone
+			// Already includes zone and inner-zone coord.
+			// But inner-zone coord may overflow to another zone, so crosszone it.
+			const crossCoord = crosszoneCoord(coord, YardCoord.PER_ZONE)
+			return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, crossCoord.zone)
+		}
 	}
 
 	x :YardRange
 	z :YardRange
 	zone :Zone
-	init(x: YardRange, z :YardRange, zone :Zone) {
+	private init(x: YardRange, z :YardRange, zone :Zone) {
 		if(x < 0 || x >= 250 || z < 0 || z >= 250) {
 			console.error('Invalid YardCoord: ', x, z, zone)
 			return undefined
@@ -93,18 +131,22 @@ export class YardCoord extends Coord {
 
 		// const shiftiness = this.zone.babs.worldSys.shiftiness
 		// shiftiness not needed; it's built into this.zone.ground.position
-		return EngineCoord.Create(new Vector3(
+		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4, 
 			0, 
-			(this.zone.ground.position.z) +this.z *4
-		))
+			(this.zone.ground.position.z) +this.z *4,
+		)
 	}
 	toEngineCoordCentered() {
-		return EngineCoord.Create(new Vector3(
+		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4 +2, 
 			0, 
 			(this.zone.ground.position.z) +this.z *4 +2,
-		))
+		)
+	}
+
+	toString(){
+		return `${this.zone.id}(${this.zone.x},${this.zone.z})zn.(${this.x}, ${this.z})yd`
 	}
 }
 
@@ -123,7 +165,7 @@ export class YardCoord extends Coord {
 // 	}
 // }
 export class ZoneCoord extends Coord {
-	static Create(coord :CoordAndZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
+	static Create(coord :XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
 		if(!Number.isInteger(coord.x) || !Number.isInteger(coord.z)) {
 			console.error('Invalid ZoneCoord: ', coord.x, coord.z)
 			return undefined
@@ -142,70 +184,74 @@ export class ZoneCoord extends Coord {
 	}
 
 	toEngineCoord() {
-		return EngineCoord.Create(new Vector3(this.x *1000, 0, this.z *1000))
+		return new Vector3(this.x *1000, 0, this.z *1000)
 	}
 }
 
+// export class EngineCoord extends Coord {
+// 	// Note that an EngineCoord is always from the first person player's perspective.
 
-export class EngineCoord extends Coord {
-	// This patterns allows: const coord = await Coord.Create()
-	static Create(input: Vector3) {
-		if(input instanceof Vector3) {
-			return new EngineCoord().init(input)
-		}
-		// else if(input instanceof YardCoord) {
-		// 	return input.toEngineCoord()
-		// }
-	}
+// 	// This patterns allows: const coord = await Coord.Create()
+// 	static Create(input: Vector3) {
+// 		if(input instanceof Vector3) {
+// 			return new EngineCoord().init(input)
+// 		}
+// 		// else if(input instanceof YardCoord) {
+// 		// 	return input.toEngineCoord()
+// 		// }
+// 	}
 
-	x :number
-	y :number
-	z :number
-	init(float :Vector3) { 
-		this.x = float.x
-		this.y = float.y
-		this.z = float.z
-		return this
-	}
+// 	x :number
+// 	y :number
+// 	z :number
+// 	init(float :Vector3) { 
+// 		this.x = float.x
+// 		this.y = float.y
+// 		this.z = float.z
+// 		return this
+// 	}
 
-	toVector3() {
-		return new Vector3(this.x, this.y, this.z)
-	}
-	toYardCoord(fromPerspectiveOf :Zone) :YardCoord { // zonetodo
-		// I could ray down and find which zone that way?
-		// But zone should also be derivable from playeroffset with zone.xz *1000
-		// Though playeroffset would be zero in a future unending terrain.
-		// It would be more like playerCenter, which for my purposes is 0,0?
-		// What about just passing in zone, from context?
-		// There is no zone in context of a ray.  So how about passing in...wait...the ground itself?! lol
-		// So I could get the zone, but how does that help me? 
-		// 	For groundclick it does I guess.  I can take zone offsets and get remainder.
-		//	But for objects...well yeah.  
-		// But why even do this?  Click enginecoord, convert to yard, then back to engine for display?
-		// I guess because the original enginecoord is not grid-aware.
-		// Ohhh and we need elevation.  (But...wouldn't that be on the click ray?)
-		// Is this all for zone.calcHeightAt()??? lol
-		// Hmm also for getting the sub-zone landcover
-
-
-		// eg: x: 1017.9435729436972
-		// /4 =254.25, floor() = 254
-
-		// log('toYardCoord', fromPerspectiveOf.id, fromPerspectiveOf.x, this.x)
-
-		
-		return YardCoord.Create({
-			x: Math.floor((this.x) /4), 
-			z: Math.floor((this.z) /4),
-			zone: fromPerspectiveOf,
-		})
+// 	toVector3() {
+// 		return new Vector3(this.x, this.y, this.z)
+// 	}
+// 	toYardCoord(fromPerspectiveOf :Zone) :YardCoord { // zonetodo
+// 		// I could ray down and find which zone that way?
+// 		// But zone should also be derivable from playeroffset with zone.xz *1000
+// 		// Though playeroffset would be zero in a future unending terrain.
+// 		// It would be more like playerCenter, which for my purposes is 0,0?
+// 		// What about just passing in zone, from context?
+// 		// There is no zone in context of a ray.  So how about passing in...wait...the ground itself?! lol
+// 		// So I could get the zone, but how does that help me? 
+// 		// 	For groundclick it does I guess.  I can take zone offsets and get remainder.
+// 		//	But for objects...well yeah.  
+// 		// But why even do this?  Click enginecoord, convert to yard, then back to engine for display?
+// 		// I guess because the original enginecoord is not grid-aware.
+// 		// Ohhh and we need elevation.  (But...wouldn't that be on the click ray?)
+// 		// Is this all for zone.calcHeightAt()??? lol
+// 		// Hmm also for getting the sub-zone landcover
 
 
-		// So, to get playeroffset, 
-	}
-}
+// 		// eg: x: 1017.9435729436972
+// 		// /4 =254.25, floor() = 254
 
-function crosszoneCoord(startingCoord :CoordAndZone, perZone :number) :CoordAndZone {
+// 		// log('toYardCoord', fromPerspectiveOf.id, fromPerspectiveOf.x, this.x)
+
+// 		return YardCoord.Create({
+// 			x: Math.floor((this.x) /4), 
+// 			z: Math.floor((this.z) /4),
+// 			zone: fromPerspectiveOf,
+// 		})
+
+
+// 		// So, to get playeroffset, 
+// 	}
+
+// 	toString(){
+// 		return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)}, ${this.z.toFixed(2)})eng`
+// 	}
+// }
+
+function crosszoneCoord(startingCoord :XZandZone, perZone :number) {
 	const babs = startingCoord.zone.babs
 
 	// First find what zone this original coord is coming from
@@ -251,5 +297,5 @@ function crosszoneCoord(startingCoord :CoordAndZone, perZone :number) :CoordAndZ
 
 	// Now, do we need to translate this to player's zone?  I mean, why?  If we're using absolute zone coords, it should be fine!
 	
-	return remainderYards // contains idzone
+	return remainderYards
 }

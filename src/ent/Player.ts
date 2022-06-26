@@ -54,7 +54,11 @@ export class Player extends Ent {
 		gltfScene.visible = false
 		plr.babs.scene.add(gltfScene)
 
-		plr.controller = await Controller.New(arrival, plr.babs, gltfScene)
+		if(plr.self) {
+			plr.babs.idSelf = plr.id
+		}
+
+		plr.controller = await Controller.Create(arrival, plr.babs, gltfScene)
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -70,9 +74,6 @@ export class Player extends Ent {
 		if(arrival.idzip) {
 			plr.idzip = arrival.idzip
 			plr.babs.zips.set(arrival.idzip, plr.id)
-		}
-		if(plr.self) {
-			plr.babs.idSelf = plr.id
 		}
 
 		return plr

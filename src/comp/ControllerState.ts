@@ -149,7 +149,7 @@ export class RunState extends State {
 	exit() {
 	}
 
-	update(timeElapsed, input) {
+	update(timeElapsed) {
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (input._keys.shift) {
 		// 		this._parent.setState('walk')
@@ -196,7 +196,7 @@ export class BackwardState extends State {
 	exit() {
 	}
 
-	update(timeElapsed, input) {
+	update(timeElapsed) {
 		// if(input._keys.backward) {
 		// 	return
 		// }
@@ -249,7 +249,7 @@ export class WalkState extends State {
 	exit() {
 	}
 
-	update(timeElapsed, input) {
+	update(timeElapsed) {
 		// No longer needed, because it's set by controller via Input or Socket
 		// if (input._keys.forward || input._keys.backward) {
 		// 	if (!input._keys.shift) {
@@ -316,7 +316,7 @@ export class IdleState extends State {
 	exit() {
 	}
 
-	update(_, input) {
+	update(_) {
 		// log.info('idleup', _)
 		// if (input._keys.forward) {
 		// 	this._parent.setState('run')

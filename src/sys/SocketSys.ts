@@ -1,21 +1,21 @@
-import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from "../stores"
-import Cookies from "js-cookie"
+import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from '../stores'
+import Cookies from 'js-cookie'
 import { UiSys } from '@/sys/UiSys'
-import { EventSys } from "./EventSys"
-import { WorldSys } from "./WorldSys"
-import { LoaderSys } from "./LoaderSys"
+import { EventSys } from './EventSys'
+import { WorldSys } from './WorldSys'
+import { LoaderSys } from './LoaderSys'
 import { log, randIntInclusive } from './../Utils'
-import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from "three"
-import { Controller } from "@/comp/Controller"
-import { Player } from "@/ent/Player"
-import { CameraSys } from "./CameraSys"
-import { Raycaster } from "three"
-import { InputSys } from "./InputSys"
-import { Wob } from "@/ent/Wob"
-import Crafting from "../ui/Crafting.svelte"
-import { Zone } from "@/ent/Zone"
-import { Babs } from "@/Babs"
-import { EngineCoord, YardCoord } from "@/comp/Coord"
+import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { Controller } from '@/comp/Controller'
+import { Player } from '@/ent/Player'
+import { CameraSys } from './CameraSys'
+import { Raycaster } from 'three'
+import { InputSys } from './InputSys'
+import { Wob } from '@/ent/Wob'
+import Crafting from '../ui/Crafting.svelte'
+import { Zone } from '@/ent/Zone'
+import { Babs } from '@/Babs'
+import { YardCoord } from '@/comp/Coord'
 
 export class SocketSys {
 
@@ -187,7 +187,7 @@ export class SocketSys {
 	update(dt) {
 		const callTasks = async () => {
 		  for (const [task, payload] of this.processQueue) {
-			await task(this, payload);
+				await task(this, payload);
 		  }
 		}
 		callTasks()
@@ -205,317 +205,335 @@ export class SocketSys {
 	async process(context :SocketSys, payload){
 		for(const [op, data] of Object.entries(payload)) {
 			switch(op) {
-				case 'auth':
-					document.getElementById('charsave').disabled = false
-					// Handle failed login/register here
-					if(data === 'userpasswrong') {
-						document.getElementById('topleft').style.visibility = 'visible'
-						toprightText.set('Username/password does not match.')
-					}
-					else if(data === 'emailinvalid') {
-						document.getElementById('topleft').style.visibility = 'visible'
-						toprightText.set('Email is invalid.')
-					}
-					else if(data === 'accountfailed') {
-						document.getElementById('topleft').style.visibility = 'visible'
-						toprightText.set('Account creation error.')
-					}
-					else if(data === 'passtooshort') {
-						document.getElementById('topleft').style.visibility = 'visible'
-						toprightText.set('Password too short, must be 8.')
-					}
-				break
-				case 'visitor':
-					context.session = data
-					log('setting cookie, visitor', context.babs.baseDomain, context.babs.isProd)
-					Cookies.set('session', context.session, { 
-						domain: context.babs.baseDomain,
-						secure: context.babs.isProd,
-						sameSite: 'strict',
-					}) // Non-set expires means it's a session cookie only, not saved across sessions
-					toprightText.set('Visiting...')
-					window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
-				break
-				case 'session':
-					context.session = data
-					log('setting cookie, session', context.babs.baseDomain, context.babs.isProd)
-					const result = Cookies.set('session', context.session, { 
-						expires: 365,
-						domain: context.babs.baseDomain,
-						secure: context.babs.isProd,
-						sameSite: 'strict',
-					})
-					log.info('cookie set', result)
-					toprightText.set('Entering...')
-					window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
-				break
-				case 'alreadyin':
-					// Just have them repeat the auth if this was their second login device
-					
-					context.babs.uiSys.offerReconnect('Closed other session.')
-					
-				break
-				case 'load':
-					log('socket: load', data)
-					window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
-						context.send({ping:'ping'})
-					}, SocketSys.pingSeconds * 1000)
-
-					const loadSelf = data.self
-					const zonedatas = data.zones
-					log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
-					toprightText.set(context.babs.uiSys.toprightTextDefault)
+			case 'auth': {
+				document.getElementById('charsave').disabled = false
+				// Handle failed login/register here
+				if(data === 'userpasswrong') {
 					document.getElementById('topleft').style.visibility = 'visible'
-
-					debugMode.set(loadSelf.meta.debugmode === undefined ? false : loadSelf.meta.debugmode) // Handle meta value creation
-					dividerOffset.set(loadSelf.divider)
-
-					if(loadSelf.visitor !== true) {
-						document.getElementById('topleft').style.visibility = 'visible'
-						document.getElementById('topleft').textContent = 'Waking up...'
-
-						topmenuAvailable.set(true)
-
-						menuSelfData.set(loadSelf)
-					}
-
-					context.babsReady = true
-
-					let zones = []
-					for(let zonedata of zonedatas) {
-						log('Zone.Create(zonedata', zonedata)
-						zones.push(Zone.Create(zonedata, context.babs))
-					}
-
-					// Load some things ahead of time
-					const fetches = []
-					for(let zone of zones) {
-						zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
-						zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
-
-						fetches.push(zone.elevationData, zone.landcoverData)
-					}
-					await Promise.all(fetches)
-
-					for(let zone of zones) {
-						const fet = await zone.elevationData
-						const data = await fet.blob()
-						const buff = await data.arrayBuffer()
-						zone.elevationData = new Uint8Array(buff)
-
-						const fet2 = await zone.landcoverData
-						const data2 = await fet2.blob()
-						const buff2 = await data2.arrayBuffer()
-						zone.landcoverData = new Uint8Array(buff2)
-					}
-
-
-					const pStatics = []
-					for(let zone of zones) {
-						const isStartingZone = zone.id == loadSelf.idzone
-						pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isStartingZone))
-					}
-					// console.time('stitch')
-					await Promise.all(pStatics)
-					// console.timeEnd('stitch') // 182ms for 81 zones
-
-					await context.babs.worldSys.stitchElevation(zones)
-
-					// Create player entity
-					const playerPromise = Player.Arrive(loadSelf, true, context.babs)
+					toprightText.set('Username/password does not match.')
+				}
+				else if(data === 'emailinvalid') {
+					document.getElementById('topleft').style.visibility = 'visible'
+					toprightText.set('Email is invalid.')
+				}
+				else if(data === 'accountfailed') {
+					document.getElementById('topleft').style.visibility = 'visible'
+					toprightText.set('Account creation error.')
+				}
+				else if(data === 'passtooshort') {
+					document.getElementById('topleft').style.visibility = 'visible'
+					toprightText.set('Password too short, must be 8.')
+				}
+				break
+			}
+			case 'visitor': {
+				context.session = data
+				log('setting cookie, visitor', context.babs.baseDomain, context.babs.isProd)
+				Cookies.set('session', context.session, { 
+					domain: context.babs.baseDomain,
+					secure: context.babs.isProd,
+					sameSite: 'strict',
+				}) // Non-set expires means it's a session cookie only, not saved across sessions
+				toprightText.set('Visiting...')
+				window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+				break
+			}
+			case 'session': {
+				context.session = data
+				log('setting cookie, session', context.babs.baseDomain, context.babs.isProd)
+				const result = Cookies.set('session', context.session, { 
+					expires: 365,
+					domain: context.babs.baseDomain,
+					secure: context.babs.isProd,
+					sameSite: 'strict',
+				})
+				log.info('cookie set', result)
+				toprightText.set('Entering...')
+				window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+				break
+			}
+			case 'alreadyin': {
+				// Just have them repeat the auth if this was their second login device
 					
-					// Set up UIs
-					context.babs.uiSys.loadUis(data.uis)
-
-
-					// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
-					// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
-					const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
-					log('startingZone', startingZone)
-					context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-
-					let pObjects = []
-					for(let zone of zones) {
-						pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
-					}
-					const wobs = (await Promise.all(pObjects)).flat()
-					// We first load the object data above; then below we know which gltfs to pull
-					// Since in the future we might cache them locally.
-					// That's why we don't include them in the loadObjects /cache
-					// and since different zones also have different wobs anyway, this must be pull, not push.
-
-					// (However (sk), we can do a mass file request; see in ArriveMany)
-					const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
-					await Promise.all([playerPromise, arriveWobsPromise])
-
-					context.send({
-						ready: loadSelf.id,
-					})
-
-					if(loadSelf.visitor !== true) {
-						document.getElementById('welcomebar').style.display = 'none' 
-					}
-
-
-				break
-				case 'playersarrive':
-					log('playersarrive', data)
-
-					// EventSys.Dispatch('players-arrive', data)
-
-					for(let arrival of data) {
-						const existingPlayer = context.babs.ents.get(arrival.id)
-						log.info('existing player', existingPlayer)
-						if(existingPlayer) {
-							// If we already have that player, such as self, be sure to update it.
-							// This is primarily for getting movestate and .idzip, which server delays to set during tick.
-							// Self data is set on 'load'
-							existingPlayer.movestate = arrival.movestate
-
-							// This is also where self gets added to zips?
-							existingPlayer.idzip = arrival.idzip
-							context.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
-
-						}
-						else {
-							const bSelf = false
-							const player = await Player.Arrive(arrival, bSelf, context.babs)
-							context.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
-						}
-
-					}
-				break
-				case 'playerdepart':
-					const departPlayer = context.babs.ents.get(data)
-					log.info('departPlayer', data, departPlayer, context.babs.scene)
-
-					if(departPlayer && departPlayer.id !== context.babs.idSelf) {
-						// Could be self departing from a previous session, or person already otherwise departed?
-						if(departPlayer.id !== context.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-							context.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
-							departPlayer.remove()
-
-						}
-
-					}
-				break
-				case 'zonein':
-					// Handle self or others switching zones
-					const player = context.babs.ents.get(data.idplayer) as Player
-					const zone = context.babs.ents.get(data.idzone) as Zone
-
-					player.controller.zoneIn(player, zone)
-
-
-				break
-				case 'said':
-					const chattyPlayer = context.babs.ents.get(data.id)
-					log.info('said by chattyPlayer', chattyPlayer?.id, data.name, data.text)
-					// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
-					// In that case, data.name is set to their name.
-					context.babs.uiSys.playerSaid(chattyPlayer?.id, data.text, {color: data.color, show: data.show !== false, name: data.name})
-				break
-				case 'nicklist':
-					log.info('nicklist', data)
-					const nicklist = data
-					for(let pair of nicklist) {
-						const player = context.babs.ents.get(pair.idtarget)
-						log.info('nicklist player', player)
-						if(player) {
-							player.setNick(pair.nick)
-						}
-						context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
-					}
-				break
-				case 'wobsremove':
-					log.info('wobsremove', data)
-					for(let wobRemove of data.wobs) {
-						const wobExisting = context.babs.ents.get(wobRemove.id)
-						if(wobExisting) {
-							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
-							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
-							instanced.instanceMatrix.needsUpdate = true
-
-							if(wobExisting.attachments?.flame){
-								context.babs.scene.remove(wob.attachments.flame.fire)
-								delete wob.attachments.flame
-							}
-
-							context.babs.ents.delete(wobExisting.id)
-						}
-					}
-				break;
-				case 'wobsupdate':
-					log.info('wobsupdate', data)
-					await Wob.ArriveMany(data.wobs, context.babs, data.shownames)
-				break
-				case 'contains':
-					log.info('contains', data)
-					// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
-					// 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
-					for(let wobFresh of data.wobs) {
-						const wobExisting = context.babs.ents.get(wobFresh.id)
-						if(wobExisting && wobExisting.idzone) { // Wob in zone
-							const instanced = Wob.WobInstMeshes.get(wobExisting.name)
-							instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
-							instanced.instanceMatrix.needsUpdate = true
-						}
-					}
+				context.babs.uiSys.offerReconnect('Closed other session.')
 					
-					if(data.id === context.babs.idSelf) { // Is your own inventory
-						await Wob.ArriveMany(data.wobs, context.babs, false)
-					}
 				break
-				case 'journal':
-					log.info('journal', data)
-					context.babs.uiSys.serverSaid(data.text)
+			}
+			case 'load': {
+				log('socket: load', data)
+				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
+					context.send({ping:'ping'})
+				}, SocketSys.pingSeconds * 1000)
+
+				const loadSelf = data.self
+				const zonedatas = data.zones
+				log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
+				toprightText.set(context.babs.uiSys.toprightTextDefault)
+				document.getElementById('topleft').style.visibility = 'visible'
+
+				debugMode.set(loadSelf.meta.debugmode === undefined ? false : loadSelf.meta.debugmode) // Handle meta value creation
+				dividerOffset.set(loadSelf.divider)
+
+				if(loadSelf.visitor !== true) {
+					document.getElementById('topleft').style.visibility = 'visible'
+					document.getElementById('topleft').textContent = 'Waking up...'
+
+					topmenuAvailable.set(true)
+
+					menuSelfData.set(loadSelf)
+				}
+
+				context.babsReady = true
+
+				let zones = []
+				for(let zonedata of zonedatas) {
+					log('Zone.Create(zonedata', zonedata)
+					zones.push(Zone.Create(zonedata, context.babs))
+				}
+
+				// Load some things ahead of time
+				const fetches = []
+				for(let zone of zones) {
+					zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
+					zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+
+					fetches.push(zone.elevationData, zone.landcoverData)
+				}
+				await Promise.all(fetches)
+
+				for(let zone of zones) {
+					const fet = await zone.elevationData
+					const data = await fet.blob()
+					const buff = await data.arrayBuffer()
+					zone.elevationData = new Uint8Array(buff)
+
+					const fet2 = await zone.landcoverData
+					const data2 = await fet2.blob()
+					const buff2 = await data2.arrayBuffer()
+					zone.landcoverData = new Uint8Array(buff2)
+				}
+
+
+				const pStatics = []
+				for(let zone of zones) {
+					const isStartingZone = zone.id == loadSelf.idzone
+					pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isStartingZone))
+				}
+				// console.time('stitch')
+				await Promise.all(pStatics)
+				// console.timeEnd('stitch') // 182ms for 81 zones
+
+				await context.babs.worldSys.stitchElevation(zones)
+
+				// Create player entity
+				const playerPromise = Player.Arrive(loadSelf, true, context.babs)
+					
+				// Set up UIs
+				context.babs.uiSys.loadUis(data.uis)
+
+
+				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
+				// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
+				const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
+				log('startingZone', startingZone)
+				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
+
+				let pObjects = []
+				for(let zone of zones) {
+					pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
+				}
+				const wobs = (await Promise.all(pObjects)).flat()
+				// We first load the object data above; then below we know which gltfs to pull
+				// Since in the future we might cache them locally.
+				// That's why we don't include them in the loadObjects /cache
+				// and since different zones also have different wobs anyway, this must be pull, not push.
+
+				// (However (sk), we can do a mass file request; see in ArriveMany)
+				const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
+				await Promise.all([playerPromise, arriveWobsPromise])
+
+				context.send({
+					ready: loadSelf.id,
+				})
+
+				if(loadSelf.visitor !== true) {
+					document.getElementById('welcomebar').style.display = 'none' 
+				}
+
+
 				break
-				case 'serverrestart':
-					log('serverrestart', data)
-					if(context.babs.isProd) {
-						setTimeout(() => {
-							context.babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
-						}, 2000)
+			}
+			case 'playersarrive': {
+				log('playersarrive', data)
+
+				// EventSys.Dispatch('players-arrive', data)
+
+				for(let arrival of data) {
+					const existingPlayer = context.babs.ents.get(arrival.id)
+					log.info('existing player', existingPlayer)
+					if(existingPlayer) {
+						// If we already have that player, such as self, be sure to update it.
+						// This is primarily for getting movestate and .idzip, which server delays to set during tick.
+						// Self data is set on 'load'
+						existingPlayer.movestate = arrival.movestate
+
+						// This is also where self gets added to zips?
+						existingPlayer.idzip = arrival.idzip
+						context.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
+
 					}
+					else {
+						const bSelf = false
+						const player = await Player.Arrive(arrival, bSelf, context.babs)
+						context.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
+					}
+
+				}
+				break
+			}
+			case 'playerdepart': {
+				const departPlayer = context.babs.ents.get(data)
+				log.info('departPlayer', data, departPlayer, context.babs.scene)
+
+				if(departPlayer && departPlayer.id !== context.babs.idSelf) {
+					// Could be self departing from a previous session, or person already otherwise departed?
+					if(departPlayer.id !== context.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
+						context.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
+						departPlayer.remove()
+
+					}
+
+				}
+				break
+			}
+			case 'zonein': {
+				// Handle self or others switching zones
+				const player = context.babs.ents.get(data.idplayer) as Player
+				const zone = context.babs.ents.get(data.idzone) as Zone
+
+				player.controller.zoneIn(player, zone)
+
+
+				break
+			}
+			case 'said': {
+				const chattyPlayer = context.babs.ents.get(data.id)
+				log.info('said by chattyPlayer', chattyPlayer?.id, data.name, data.text)
+				// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
+				// In that case, data.name is set to their name.
+				context.babs.uiSys.playerSaid(chattyPlayer?.id, data.text, {color: data.color, show: data.show !== false, name: data.name})
+				break
+			}
+			case 'nicklist': {
+				log.info('nicklist', data)
+				const nicklist = data
+				for(let pair of nicklist) {
+					const player = context.babs.ents.get(pair.idtarget)
+					log.info('nicklist player', player)
+					if(player) {
+						player.setNick(pair.nick)
+					}
+					context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+				}
+				break
+			}
+			case 'wobsremove': {
+				log.info('wobsremove', data)
+				for(let wobRemove of data.wobs) {
+					const wobExisting = context.babs.ents.get(wobRemove.id)
+					if(wobExisting) {
+						const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
+						instanced.instanceMatrix.needsUpdate = true
+
+						if(wobExisting.attachments?.flame){
+							context.babs.scene.remove(wob.attachments.flame.fire)
+							delete wob.attachments.flame
+						}
+
+						context.babs.ents.delete(wobExisting.id)
+					}
+				}
+				break
+			}
+			case 'wobsupdate': {
+				log.info('wobsupdate', data)
+				await Wob.ArriveMany(data.wobs, context.babs, data.shownames)
+				break
+			}
+			case 'contains': {
+				log.info('contains', data)
+				// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
+				// 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
+				for(let wobFresh of data.wobs) {
+					const wobExisting = context.babs.ents.get(wobFresh.id)
+					if(wobExisting && wobExisting.idzone) { // Wob in zone
+						const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
+						instanced.instanceMatrix.needsUpdate = true
+					}
+				}
+					
+				if(data.id === context.babs.idSelf) { // Is your own inventory
+					await Wob.ArriveMany(data.wobs, context.babs, false)
+				}
+				break
+			}
+			case 'journal': {
+				log.info('journal', data)
+				context.babs.uiSys.serverSaid(data.text)
+				break
+			}
+			case 'serverrestart': {
+				log('serverrestart', data)
+				if(context.babs.isProd) {
 					setTimeout(() => {
-						window.location.reload()
-					}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
+						context.babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
+					}, 2000)
+				}
+				setTimeout(() => {
+					window.location.reload()
+				}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 				break
-				case 'energy':
-					log('energy', data)
+			}
+			case 'energy': {
+				log('energy', data)
 				break
-				case 'craftable':
-					log('craftable', data)
+			}
+			case 'craftable': {
+				log('craftable', data)
 
-					const wobId = data.wobId
-					const options = data.options
-					const craftWob = context.babs.ents.get(wobId)
+				const wobId = data.wobId
+				const options = data.options
+				const craftWob = context.babs.ents.get(wobId)
 
-					// Display a list of icons above the wobId wob, list of options available:
-					// Create a .svelte file for icons
-					// When crafting thing is received, create icons for everything in it.
-					// position like: const chatLabel = new CSS2DObject(chatDiv)
+				// Display a list of icons above the wobId wob, list of options available:
+				// Create a .svelte file for icons
+				// When crafting thing is received, create icons for everything in it.
+				// position like: const chatLabel = new CSS2DObject(chatDiv)
 
-					context.babs.uiSys.craftSaid(options, craftWob)
+				context.babs.uiSys.craftSaid(options, craftWob)
 					
-					// new Crafting({
-					// 	target: document.body,
-					// 	props: {
-					// 		options,
-					// 		wobId
-					// 	},
-					// })
+				// new Crafting({
+				// 	target: document.body,
+				// 	props: {
+				// 		options,
+				// 		wobId
+				// 	},
+				// })
 
 
 				break
-				case 'asktarget':
-					log('asktarget', data, document.body.style.cursor)
+			}
+			case 'asktarget': {
+				log('asktarget', data, document.body.style.cursor)
 
-					const wob = context.babs.ents.get(data.sourceWobId)
+				const wob = context.babs.ents.get(data.sourceWobId)
 
-					context.babs.inputSys.askTarget(data.sourceWobId, wob.name || '')
+				context.babs.inputSys.askTarget(data.sourceWobId, wob.name || '')
 
 				break
+			}
 			}
 		}
 	}

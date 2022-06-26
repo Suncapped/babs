@@ -1,23 +1,23 @@
-import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from "three"
-import { Wob } from "@/ent/Wob"
-import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from "../stores"
+import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
+import { FeInstancedMesh, Wob } from '@/ent/Wob'
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
-import { MathUtils } from "three"
-import { PlaneGeometry } from "three"
-import { MeshBasicMaterial } from "three"
-import { Mesh } from "three"
-import { DoubleSide } from "three"
-import { Matrix4 } from "three"
-import { Vector2 } from "three"
-import { Controller } from "@/comp/Controller"
-import { WorldSys } from "./WorldSys"
+import { MathUtils } from 'three'
+import { PlaneGeometry } from 'three'
+import { MeshBasicMaterial } from 'three'
+import { Mesh } from 'three'
+import { DoubleSide } from 'three'
+import { Matrix4 } from 'three'
+import { Vector2 } from 'three'
+import { Controller } from '@/comp/Controller'
+import { WorldSys } from './WorldSys'
 import * as Utils from './../Utils'
-import { UiSys } from "./UiSys"
-import { EngineCoord, YardCoord } from "@/comp/Coord"
-import { Babs } from "@/Babs"
-import { Player } from "@/ent/Player"
-import { Zone } from "@/ent/Zone"
+import { UiSys } from './UiSys'
+import { YardCoord } from '@/comp/Coord'
+import { Babs } from '@/Babs'
+import { Player } from '@/ent/Player'
+import { Zone } from '@/ent/Zone'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -100,19 +100,19 @@ export class InputSys {
 	headTurnMaxDegrees = 45 // Determines at what point the view will snap turn
 	doubleClickMs = 400 // MS was 500ms
 	movelock = false // Autorun
-	touchmove :boolean|number = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
+	touchmove :boolean|number|'auto' = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
 	runmode = true // Run mode, as opposed to walk mode
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
 
 	isAfk = false
 	babs :Babs
-	player :Player
+	playerSelf :Player
 	canvas :HTMLElement
 
 	constructor(babs :Babs, player :Player, mousedevice) {
 		this.babs = babs
-		this.player = player
+		this.playerSelf = player
 		this.canvas = document.getElementById('canvas')
 
 		this.setMouseDevice(mousedevice || 'mouse') 
@@ -156,7 +156,7 @@ export class InputSys {
 				if (this.mouse.right) {
 					// Jump on spacebar if mouse right held
 					if (this.keys.space === PRESS) {
-						this.player.controller.jump(Controller.JUMP_HEIGHT)
+						this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
 					}
 
 					// ev.stopImmediatePropagation() // Doesn't work to prevent Ctext.svelte chatbox from receiving this event
@@ -548,11 +548,13 @@ export class InputSys {
 								const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
 
 								if(this.babs.debugMode) {
-									log('this.pickedObject', this.pickedObject)
 									const pos = this.pickedObject?.instancedPosition
-									const engCoord = EngineCoord.Create(pos)
-									const yardCoord = engCoord.toYardCoord(wob.zone)
-									debugStuff += `: [${yardCoord.x}, ${yardCoord.z}]yd ^${Math.round(pos.y)}ft ii=`+this.pickedObject?.instancedIndex
+									log('this.pickedObject', this.pickedObject, pos)
+									const yardCoord = YardCoord.Create({
+										position: pos,
+										zone: this.babs.worldSys.currentGround.zone,
+									})
+									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex
 								}
 								
 								log('picked', this.pickedObject, this.pickedObject?.id, wob)
@@ -584,7 +586,10 @@ export class InputSys {
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
 							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-							const yardCoord = EngineCoord.Create(this.mouse.landtarget.point).toYardCoord(zone)
+							const yardCoord = YardCoord.Create({
+								position: this.mouse.landtarget.point,
+								zone: zone,
+							})
 
 							this.babs.socketSys.send({
 								action: {
@@ -707,16 +712,18 @@ export class InputSys {
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log('landdrop', this.mouse.landtarget)
-						// const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-						const engCoord = EngineCoord.Create(this.mouse.landtarget.point)
-						const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
+						const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+						const yardCoord = YardCoord.Create({
+							position: this.mouse.landtarget.point,
+							zone: zone,
+						})
 						
 						// Todo put distance limits, here and server
 						const wobContained = this.babs.ents.get(this.carrying.id) 
 						const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
 						const wob = wobContained || wobInstanced
 
-						log('Found', wob, this.carrying)
+						log('Found', wob, this.carrying, yardCoord)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -902,9 +909,9 @@ export class InputSys {
 				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
-					const instanced = Wob.WobInstMeshes.get(name)
+					const instanced = Wob.WobInstMeshes.get(name) as FeInstancedMesh
 					const index = this.mouseRayTargets[i].instanceId
-					const position = Wob.GetPositionFromIndex(instanced, index)
+					const position = instanced.coordFromIndex(index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
 					const wobId = instanced.wobIdsByIndex[index]
@@ -932,17 +939,21 @@ export class InputSys {
 						this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
-						if(this.player.controller.zoningWait) continue // don't deal with ground intersects while zoning
+						if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
 						
 						const ground = this.mouseRayTargets[i].object
 						const zone = ground.zone
-						const engCoord = EngineCoord.Create(this.mouseRayTargets[i].point)
-						const yardCoord = engCoord.toYardCoord(this.babs.worldSys.currentGround.zone)
+						const pos = this.mouseRayTargets[i].point
+						const yardCoord = YardCoord.Create({
+							position: pos,
+							zone: zone,
+						})
+
 						
 						const landcoverData = yardCoord.zone.landcoverData
 						// const newEngCoord = yardCoord.toEngineCoord()
 						// todo use actual PieceCoord
-						const pieceCoord = new Vector3(Math.floor(yardCoord.x /10), engCoord.y, Math.floor(yardCoord.z /10))
+						const pieceCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
 						const index = Utils.coordToIndex(pieceCoord.x, pieceCoord.z, 26)
 						
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
@@ -1027,7 +1038,7 @@ export class InputSys {
 					this.runmode = true
 				}
 				else { // If ready in runmode, jump!
-					this.player.controller.jump(Controller.JUMP_HEIGHT)
+					this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
 				}
 			}
 			else if (this.mouse.zoom < -40) {
@@ -1066,7 +1077,7 @@ export class InputSys {
 
 			// Delta accumulation for angle rotation snap
 			if (Math.abs(this.mouse.accumx) > this.mouseAccumThreshold) {
-				const gCurrentPosition = this.player.controller.target.position.clone().multiplyScalar(1 / 4).floor()
+				const gCurrentPosition = this.playerSelf.controller.target.position.clone().multiplyScalar(1 / 4).floor()
 				const eCurrentPositionCentered = gCurrentPosition.clone().multiplyScalar(4).addScalar(2)
 
 				// const eDiff = eCurrentPositionCentered.clone().sub(this.player.controller.target.position) // Distance from CENTER
@@ -1079,12 +1090,12 @@ export class InputSys {
 				if (characterNearMiddle) {
 					const _Q = new Quaternion()
 					const _A = new Vector3()
-					const _R = this.player.controller.idealTargetQuaternion.clone()
+					const _R = this.playerSelf.controller.idealTargetQuaternion.clone()
 
 					_A.set(0, this.mouse.accumx > 0 ? -1 : 1, 0)
 					_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
 					_R.multiply(_Q)
-					this.player.controller.setRotation(_R)
+					this.playerSelf.controller.setRotation(_R)
 
 					log.info('InputSys: call controller.setRotation')
 
@@ -1098,7 +1109,7 @@ export class InputSys {
 
 		// Keep head rotation going even when menu is not visible, but it has to be placed here
 		// The reason for doing head rotation is to visually indicate to the player when their character is about to turn
-		this.player.controller.setHeadRotationX((this.mouse.accumx / this.mouseAccumThreshold) / 100 * this.headTurnMaxDegrees)
+		this.playerSelf.controller.setHeadRotationX((this.mouse.accumx / this.mouseAccumThreshold) / 100 * this.headTurnMaxDegrees)
 
 		// Vertical mouse look
 		if (!this.topMenuVisibleLocal && this.mouse.right) {
@@ -1146,14 +1157,14 @@ export class InputSys {
 				// Rotate player
 				const _Q = new Quaternion()
 				const _A = new Vector3()
-				const _R = this.player.controller.idealTargetQuaternion.clone()
+				const _R = this.playerSelf.controller.idealTargetQuaternion.clone()
 
 				// Naive version
 				_A.set(0, this.keys.right ? -1 : 1, 0)
 				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
 				_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
 				_R.multiply(_Q)
-				this.player.controller.setRotation(_R)
+				this.playerSelf.controller.setRotation(_R)
 			}
 		}
 
@@ -1166,17 +1177,17 @@ export class InputSys {
 
 				)
 			)
-			&& !this.player.controller.zoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
+			&& !this.playerSelf.controller.selfZoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
 		)) {
 			
 			log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
 
-			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.player.controller.idealTargetQuaternion)
+			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.playerSelf.controller.idealTargetQuaternion)
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
 			// log.info('vector!', tempMatrix, vector)
 
 			if (this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
-				vector.crossVectors(this.player.controller.target.up, vector) // camera.up
+				vector.crossVectors(this.playerSelf.controller.target.up, vector) // camera.up
 			}
 
 			// Get direction
@@ -1186,7 +1197,7 @@ export class InputSys {
 			}
 
 			// Okay, that was direction.  Now get distance
-			let gCurrentPos = this.player.controller.target.position.clone()
+			let gCurrentPos = this.playerSelf.controller.target.position.clone()
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
 			log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
@@ -1199,7 +1210,7 @@ export class InputSys {
 
 			// Send to controller
 			log.info('InputSys: call controller.setDestination()', dest)
-			this.player.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
+			this.playerSelf.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
 
 			// Let's show a square in front of the player?  Their destination target square :)
 			if (this.babs.debugMode) {
@@ -1213,7 +1224,7 @@ export class InputSys {
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
 				const easyRaiseAbove = 0.1
-				this.displayDestinationMesh.position.add(new Vector3(0, this.player.controller.target.position.y - 2 + easyRaiseAbove, 0))
+				this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.target.position.y - 2 + easyRaiseAbove, 0))
 			}
 			else {
 				this.displayDestinationMesh?.position.setY(-1000)

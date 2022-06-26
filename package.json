@@ -22,11 +22,15 @@
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10"
   },
   "devDependencies": {
+    "@suncapped/eslint-plugin": "file:eslint",
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.45",
     "@tsconfig/svelte": "^3.0.0",
     "@types/dat.gui": "^0.7.7",
     "@types/three": "^0.140.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
     "bicubic-interpolate": "^1.0.4",
+    "eslint": "^8.18.0",
     "svelte": "^3.48.0",
     "svelte-check": "^2.7.1",
     "svelte-preprocess": "^4.10.6",
