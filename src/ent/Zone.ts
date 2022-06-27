@@ -35,9 +35,7 @@ export class Zone extends Ent {
 	calcHeightAt(coord :Vector3|YardCoord) :Vector3 {
 		let offset = new Vector3()
 		if(coord instanceof YardCoord) {
-			log('wobSaid YardCoord inside', coord)
 			coord = coord.toEngineCoordCentered()
-			log('wobSaid YardCoord inside AFTER', coord)
 		}
 		else {
 			// Offset engine things since they're otherwise not shiftiness-aware?  Not sure

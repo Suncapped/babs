@@ -66,6 +66,7 @@ import '@stardazed/streams-polyfill'
 import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
+import { Player } from '@/ent/Player'
 
 export class WorldSys {
 
@@ -341,9 +342,6 @@ export class WorldSys {
 	Event(type, data) {
 		if(type === 'controller-ready') {
 			if(!data.isSelf) return // Only add lights for self
-
-
-			log('WorldSys adding lights for self', data.controller.target)
 
 			// Directional light
 			this.playerTarget = data.controller.target
@@ -626,7 +624,7 @@ export class WorldSys {
 		this.babs.scene.add(newGround)
 
 		if(isStartingZone) {
-			log('playerStartingZone', newGround)
+			log.info('playerStartingZone', newGround)
 			this.currentGround = newGround
 		}
 
@@ -870,45 +868,52 @@ export class WorldSys {
 	}
 
 	shiftiness = new Vector3()
-	shiftEverything(xShift, zShift, butPlayer = false) {
+	shiftEverything(xShift, zShift, excludeSelf = false) {
+		const shiftVector = new Vector3(xShift, 0, zShift)
+
 		const excludeFromShift = [
 			// 'ground', 'groundgrid', 
-			butPlayer ? 'player' : 'asdf',
 			'camerahelper', 
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
 
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
+		if(excludeSelf) excludeFromShift.push('self')
+
+		let shiftingLog = []
 		this.babs.scene.children.forEach(child => {
 			if(!excludeFromShift.includes(child.name)) {
-				child.position.setX(child.position.x +xShift)
-				child.position.setZ(child.position.z +zShift)
+				child.position.setX(child.position.x +shiftVector.x)
+				child.position.setZ(child.position.z +shiftVector.z)
 				if(child.name != 'ground' && child.name != 'groundgrid' ) {
-					log('shifting', child.name || child)
+					shiftingLog.push(child.name || child)
+				}
+				if(child.name == 'player') {
+					const player = this.babs.ents.get(child.idplayer) as Player
+					// const shiftYards = shiftVector.clone().divideScalar(4).floor()
+					// player.controller.gDestination.add(shiftYards)
 				}
 			}
-			else {
-				log('NOT SHIFT', child.name)
-			}
 		})
-		this.shiftiness.add(new Vector3(xShift, 0, zShift))
+		this.shiftiness.add(shiftVector)
+
+		log.info('shifted', shiftingLog)
 	}
 
 }
 
 export class PatchableReadableStream extends ReadableStream {
-	constructor (reader) {
-	  super({
+	constructor(reader) {
+		super({
 			async start(controller) {
-		  while (true) {
+				while (true) {
 					const { done, value } = await reader.read()
 					if (done) break
 					controller.enqueue(value)
-		  }
-		  controller.close()
-		  reader.releaseLock()
+				}
+				controller.close()
+				reader.releaseLock()
 			}
-	  })
+		})
 	}
 }
-  

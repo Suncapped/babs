@@ -129,7 +129,7 @@
 			const tempReason = val.reason
 			setTimeout(() => {
 				if($menuSelfData.reason === tempReason) {
-					log('going to send savereason', )
+					// log('going to send savereason', ) // todo this still gets run at launch!
 					socketSend.set({
 						'savereason': $menuSelfData.reason,
 					})

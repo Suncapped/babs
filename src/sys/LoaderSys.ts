@@ -23,6 +23,8 @@ export class LoaderSys {
 	megaMaterial
 	loader
 	dracoLoader
+	urlFiles
+	objectTexture
 
 	constructor(urlFiles) {
 		this.urlFiles = urlFiles
@@ -106,7 +108,7 @@ export class LoaderSys {
 	}
 
 	
-	loadGltf(path) :Promise<Group> {
+	loadGltf(path) :Promise<{scene, animations}> {
 		return new Promise((resolve, reject) => {
 			log.info('loading gltf', path)
 

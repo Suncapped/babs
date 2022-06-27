@@ -43,13 +43,13 @@ export class Player extends Ent {
 		// plr.nick = arrival.meta?.nick // Too confusing for players
 		plr.setNick(babs.uiSys.nicklist.get(arrival.id))
 
-		log('New Player:', plr)
+		log.info('New Player:', plr)
 
 		const [gltfScene] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		]) as [Scene]
-		gltfScene.name = 'player'
+		gltfScene.name = plr.self ? 'self' : 'player'
 		gltfScene.idplayer = arrival.id
 		gltfScene.visible = false
 		plr.babs.scene.add(gltfScene)

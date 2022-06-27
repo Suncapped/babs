@@ -119,6 +119,7 @@ export class Controller extends Comp {
 		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+		this.target.position.add(this.target.zone.ground.position)
 
 		// Set rotation
 		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why -45?  Who knows! :p
@@ -170,12 +171,10 @@ export class Controller extends Comp {
 			// New destination!
 			// As soon as dest is next square (for the first time), send ENTERZONE
 
-			log('gdest', this.gDestination)
 			const targetYardCoord = YardCoord.Create({
 				...this.gDestination, 
 				zone: this.babs.worldSys.currentGround.zone,
 			})
-			log('gdest TYC', targetYardCoord)
 
 			let enterzone_id :number = undefined
 			const isOutsideOfZone = this.gDestination.x < 0 || this.gDestination.z < 0 ||
@@ -297,48 +296,12 @@ export class Controller extends Comp {
 
 	gPrevDestination // aka origin
 	update(dt) {
-
 		if (!this._stateMachine?._currentState) {
 			return
 		}
-
-		// Handle if frames dropped / tabout return / etc; if not close enough to destination,
-		//   warp them to the previous position so they'll be able to reach it during next updates.
-		// const eDest = gVector3.clone().multiplyScalar(4).addScalar(4/2)
-		// const eDiff = eDest.clone().sub(this.target.position) // Distance from CENTER
-		// const farAway = Math.abs(eDiff.x) > 2 *4 || Math.abs(eDiff.z) > 2 *4
-		// if(farAway) {
-		// 	const eWarpTarget = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
-		// 	log('warping', eDiff.z, eWarpTarget.z, this.target)
-		// 	this.target.position.copy(eWarpTarget)
-		// }
-		/*
-		This sort of worked in setDestination (awkwardly), but still doesn't fix when you tab back in after they stopped moving; 
-		since it's not receiving calls here, it doesn't warp.  Warp into update and save last position?
-		What if instead of setting destinations, I set current+direction?  Because that's what's really happening.
-		I mean, destination really just is current+direction.  You could get current by negating dest direction.
-		That's hard to reason about, though.
-		Anyway, overall I need to either: 
-		  1) When dt doesn't work, manually make things skip forward.  Relies on measurement to detect large dt.
-		  2) or Make all updates absolute rather than relative.  Seems best.
-		  3) Manually detect a tab-in and do manually catch up (warp etc).  Seems buggy, not load compatible.
-		#2 is the proper way.  In this case, what we'd want is...
-		Right now it gets dest, determines direction from that, normalizes to 1, then moves one.
-		We could say, if you're more than 1 away from dest (#1 measurement), then warp you to one away.
-		Or, set dest, and raise velocity to reach it - but causes velocity problems.
-		Or, take dest and reverse it to ...but that still requires determineing >1 (#1).
-		So how about we call movement a special (messed up lol) case and do #1.  But do it in update with an oldDest.
-
-		// doing this below during velocity sets 
-
-		*/
-
-
-
 		this._stateMachine.update(dt)
 
-		const controlObject = this.target
-
+		// overview: Figure out the direction of dest, accumulate velocity in that direction, then move player at velocity.  Then handle Y (height)
 
 		// First handle rotations
 		// Note that rotation does not dictate movement direction.  Only this.gDestination does.
@@ -346,26 +309,22 @@ export class Controller extends Comp {
 		// this._currentLookat.lerp(idealLookat, t)
 		// this._camera.position.copy(this._currentPosition)
 		// this._camera.lookAt(this._currentLookat)
-		// controlObject.quaternion.slerp(this.idealTargetQuaternion, dt)
-		// log(controlObject.rotation.x, controlObject.rotation.y, controlObject.rotation.z)
-		controlObject.quaternion.copy(this.idealTargetQuaternion)
+		// this.target.quaternion.slerp(this.idealTargetQuaternion, dt)
+		this.target.quaternion.copy(this.idealTargetQuaternion)
 
 		// Now movement physics
 		// Women runners do about 10 ft/s over 4 mi, so should be made to do 1ft/100ms, 4ft/400ms
 
-		const velocity = this.velocity
-
 		const frameDecceleration = new Vector3(
-			velocity.x * this._decceleration.x,
+			this.velocity.x * this._decceleration.x,
 			0,
-			velocity.z * this._decceleration.z
+			this.velocity.z * this._decceleration.z
 		)
 		frameDecceleration.multiplyScalar(dt)
-		frameDecceleration.z = Math.sign(frameDecceleration.z) * Math.min(Math.abs(frameDecceleration.z), Math.abs(velocity.z))
-		frameDecceleration.x = Math.sign(frameDecceleration.x) * Math.min(Math.abs(frameDecceleration.x), Math.abs(velocity.x))
-		// frameDecceleration.y = Math.sign(frameDecceleration.y) * Math.min(Math.abs(frameDecceleration.y), Math.abs(velocity.y))
+		frameDecceleration.z = Math.sign(frameDecceleration.z) * Math.min(Math.abs(frameDecceleration.z), Math.abs(this.velocity.z))
+		frameDecceleration.x = Math.sign(frameDecceleration.x) * Math.min(Math.abs(frameDecceleration.x), Math.abs(this.velocity.x))
 
-		velocity.add(frameDecceleration)
+		this.velocity.add(frameDecceleration)
 
 		const acc = this.acceleration.clone()
 		if (this.run) {
@@ -373,127 +332,111 @@ export class Controller extends Comp {
 		}
 
 		// Move toward destination
-		if(this.gDestination) {
-
-			const eDest = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
-			const eDiff = eDest.clone().sub(controlObject.position) // Distance from CENTER
-
-			// Far away due to frame drops (tab-in/out etc)
-			const zFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
-			const xFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
-			if(zFar) {
-				velocity.z = 0
-				controlObject.position.setZ(eDest.z)
-			}
-			if(xFar) {
-				velocity.x = 0
-				controlObject.position.setX(eDest.x)
-			}
-			if(!xFar && !zFar) {
-
-				if (Math.abs(eDiff.z) < 1) {
-					// If within tile, center it.  If far away (back from tabout), also warp and center.
-					velocity.z = 0
-					controlObject.position.setZ(eDest.z)
-				}
-				else if (eDiff.z > 0) {
-					// log.info('Controller: update(), addZ based on', eDiff)
-					velocity.z += acc.z * dt
-				}
-				else if (eDiff.z < 0) {
-					velocity.z -= acc.z * dt
-				}
-
-				if (Math.abs(eDiff.x) < 1) {
-					velocity.x = 0
-					controlObject.position.setX(eDest.x)
-				}
-				else if (eDiff.x > 0) {
-					// log.info('Controller: update(), addX based on', eDiff)
-					velocity.x += acc.x * dt
-				}
-				else if (eDiff.x < 0) {
-					velocity.x -= acc.x * dt
-				}
-
-			}
-			
-			this.hover = 0
-			if(Math.round(velocity.z) == 0 && Math.round(velocity.x) == 0) {
-				if(this._stateMachine._currentState != 'idle') {
-					this._stateMachine.setState('idle')
-
-					const wobAtDest = WobAtPosition(this.babs.ents, this.gDestination.x, this.gDestination.z)
-					if(wobAtDest?.name == 'hot spring') {
-						this.hover = -3
-					}
-					if(wobAtDest?.name == 'flat rock') {
-						this.hover = 0.8
-					}
-					if(wobAtDest?.name == 'ladder') {
-						this.hover = 7
-					}
-				}
-			}
-
+		// This just gets a destination in engine coords (but assumes gdest is in-zone!):
+		let eDest = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
+		if(!this.isSelf) {
+			eDest.add(this.target.zone.ground.position)
 		}
 
+		// This gets the difference between the edest and the player's current position:
+		const eDistance = eDest.clone().sub(this.target.position) // Distance from CENTER
+
+		// Destination is far away from current location, due to eg frame drops (tab-in/out etc)
+		const zDeltaFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
+		const xDeltaFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
+
+		// Move velocity toward the distance delta.  
+		const isFar = (zDeltaFar || xDeltaFar)
+		if(isFar) {
+			if(zDeltaFar) {
+				this.velocity.z = 0
+				this.target.position.setZ(eDest.z)
+			}
+			if(xDeltaFar) {
+				this.velocity.x = 0
+				this.target.position.setX(eDest.x)
+			}
+		}
+		else { // Not far
+			const zNearCenter = Math.abs(eDistance.z) < 1
+			const zPositiveDistance = eDistance.z > 0
+			const zNegativeDistance = eDistance.z < 0
+			if (zNearCenter) {
+				// But if there is little distance, just move player to center of square and set velocity 0.
+				this.velocity.z = 0
+				this.target.position.setZ(eDest.z)
+			}
+			else if (zPositiveDistance) {
+				this.velocity.z += acc.z * dt
+			}
+			else if (zNegativeDistance) {
+				this.velocity.z -= acc.z * dt
+			}
+
+			const xNearCenter = Math.abs(eDistance.x) < 1
+			const xPositiveDistance = eDistance.x > 0
+			const xNegativeDistance = eDistance.x < 0
+			if (xNearCenter) {
+				// But if there is little distance, just move player to center of square and set velocity 0.
+				this.velocity.x = 0
+				this.target.position.setX(eDest.x)
+			}
+			else if (xPositiveDistance) {
+				this.velocity.x += acc.x * dt
+			}
+			else if (xNegativeDistance) {
+				this.velocity.x -= acc.x * dt
+			}
+		}
+		
+		this.hover = 0
+		const isNoVelocity = Math.round(this.velocity.z) == 0 && Math.round(this.velocity.x) == 0
+		if(isNoVelocity) {
+			if(this._stateMachine._currentState != 'idle') {
+				this._stateMachine.setState('idle')
+
+				const wobAtDest = WobAtPosition(this.babs.ents, this.gDestination.x, this.gDestination.z)
+				if(wobAtDest?.name == 'hot spring') {
+					this.hover = -3
+				}
+				if(wobAtDest?.name == 'flat rock') {
+					this.hover = 0.8
+				}
+				if(wobAtDest?.name == 'ladder') {
+					this.hover = 7
+				}
+			}
+		}
+
+
 		if(this.groundDistance == 0) {
-			velocity.y = 0
+			this.velocity.y = 0
 		} 
 		else {
 			const gravityFtS = 32 *10 // Why does it feel off without *10?
 
 			if(!this.selfZoningWait) { // No gravity while walking between zones waiting for zonein
-				velocity.y -= gravityFtS*dt
+				this.velocity.y -= gravityFtS*dt
 			}
 		}
 
-		// if (this._input._keys.left) {
-		// 	_A.set(0, 1, 0)
-		// 	_Q.setFromAxisAngle(_A, 4.0 * Math.PI * dt * this._acceleration.y)
-		// 	_R.multiply(_Q)
-		// }
-		// if (this._input._keys.right) {
-		// 	_A.set(0, 1, 0)
-		// 	_Q.setFromAxisAngle(_A, 4.0 * -Math.PI * dt * this._acceleration.y)
-		// 	_R.multiply(_Q)
-		// }
-		// controlObject.quaternion.copy(_R)
-
 		const forward = new Vector3(1, 1, 1)
-		// What if I change forward to include distance to destination, rather than just toward it?
-		// Hard, because velocity is used for movement.
-		// Another simpler approach is, if they're more than 1 block away from destination 
-		//   (due to frames skipped from tabbing out), snap them there.
-		// Hmm I probably need something generally, where if dt is large, stuff gets skipped.
-		// In this case though, network sent a ton of setDestination, it's just only the last one is being run.
-		// dt isn't necessarily very large, could just have missed 1 frame; can't easily detect with dt.
-		// Could detect by multiple setDestinations stacking up.  
-		// Perhaps let them queue then pop, (but that breaks InputSys many-sets?)
-		// Well if setD is run many times before an update, update should warp to 2nd latest then velocity move?
-		// (this is kind of a problem of, multiple inputs between single frame; not handling dt correctly)
-		// Like, shouldn't dt take care of this?  
-		// The reason it doesn't is dt is used for velocity, so it's relative :/ Also then forward normalized.
-		// So without changing THAT, we need a way to know to warp.
-		// Perhaps when destination is more than one away.  Should work up to like half server framerate tiles/sec?
-		// So let's see how far we are from desintation.
-
-
 
 		// Sideeways needs doing for strafe
 		// const sideways = new THREE.Vector3(1, 0, 0)
 		// sideways.applyQuaternion(this.idealTargetQuaternion)
 		// sideways.normalize()
-
 		// sideways.multiplyScalar(velocity.x * dt)
 		// forward.multiplyScalar(velocity.z * dt)
-		forward.multiply(velocity.clone().multiplyScalar(dt))
+		
+		// This just creates a velocity vector (forward left in for sideways movement)
+		forward.multiply(this.velocity.clone().multiplyScalar(dt))
 
-		controlObject.position.add(forward)
-		// controlObject.position.add(sideways)
+		// This modifies the target position, adding in the velocity momentum.
+		this.target.position.add(forward)
+		// this.target.position.add(sideways)
 
-		// controlObject.position.clamp(
+		// this.target.position.clamp(
 		// 	WorldSys.ZoneTerrainMin,
 		// 	WorldSys.ZoneTerrainMax,
 		// )
@@ -505,29 +448,30 @@ export class Controller extends Comp {
 		// Ground stickiness/gravity
 		// Setup
 		// const zone = this.target.zone
-		const ground = this.isSelf ? this.babs.worldSys.currentGround : null // zonetodo this null!
+		// log('this.target', this.target)
+		const ground = this.isSelf ? this.babs.worldSys.currentGround : this.target.zone.ground // zonetodo this null!
 
 		// Note that raycaster uses global coords
 
-		// const playerWorldPos = ground.localToWorld(controlObject.position)
-		this.raycaster.ray.origin.copy(controlObject.position)
+		// const playerWorldPos = ground.localToWorld(this.target.position)
+		this.raycaster.ray.origin.copy(this.target.position)
 		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
 		
 		if(ground && this.raycaster) {
 			const groundIntersect = this.raycaster.intersectObject(ground, false)
 			const worldGroundHeight = groundIntersect?.[0]?.point
 
-			if(worldGroundHeight?.y > controlObject?.position?.y || this.hover) {
+			if(worldGroundHeight?.y > this.target?.position?.y || this.hover) {
 				// Keep above ground
 				this.groundDistance = true
 
-				controlObject.position.setY(worldGroundHeight.y +this.hover)
-				// const playerLocalPos = controlObject.position.clone()
+				this.target.position.setY(worldGroundHeight.y +this.hover)
+				// const playerLocalPos = this.target.position.clone()
 				// const playerGlobalPos = ground.localToWorld(playerLocalPos)
 				// const oldy = playerWorldPos.y
 				// playerWorldPos.setY(worldGroundHeight.y +this.hover)
 				// const updatedPlayerLocal = ground.worldToLocal(playerWorldPos)
-				// controlObject.position.copy(updatedPlayerLocal)
+				// this.target.position.copy(updatedPlayerLocal)
 
 				// Wait...the local and the world Y are the same, LOL!  Only x/z are not.
 
@@ -537,10 +481,10 @@ export class Controller extends Comp {
 				// }
 			}
 			if(!groundIntersect.length) {
-				velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
+				this.velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
 			}
 			else {
-				this.groundDistance = controlObject.position.y - worldGroundHeight.y // Used for jump
+				this.groundDistance = this.target.position.y - worldGroundHeight.y // Used for jump
 			}
 		}
 		
@@ -566,15 +510,16 @@ export class Controller extends Comp {
 		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone})
 		const engCoord = zone.calcHeightAt(yardCoord)
 
-		// this.target.position.y = engCoord.y
+		this.target.position.setY(0) // works since it will pop up back up to the ground
+		this.target.zone = zone
 
 		if(this.isSelf) { // Self
 			this.babs.worldSys.currentGround = zone.ground
 
+
 			// Everything was already shifted around us locally, when we gDestination across the line!
 			this.selfZoningWait = false
 
-			this.target.position.setY(8362) // works since it will pop up back up to the ground
 		}
 		else { // Others
 			// Translate other players to a new zone

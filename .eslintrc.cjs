@@ -29,22 +29,31 @@ module.exports = {
 		'quotes': [
 			'warn',
 			'single',
+			{
+				'allowTemplateLiterals': true,
+				'avoidEscape': true,
+			}
 		],
 		'semi': [
 			'warn',
 			'never',
 		],
-		'@suncapped/no-this-in-static': 'warn',
+		
+		// Custom disables
+		'@suncapped/no-this-in-static': 'warn', // `this.` in a class static function led to a difficult bug after I switched the class to non-static.
 
+		// Typescript disables
 		'@typescript-eslint/no-inferrable-types': 'off',
 		'@typescript-eslint/no-unused-vars': 'off',
 		'@typescript-eslint/no-explicit-any': 'off',
+		'@typescript-eslint/no-empty-function': 'off',
+
+		// Native disables
 		'prefer-const': 'off',
 		'no-var': 'warn',
 		'no-empty': 'off',
 		'no-mixed-spaces-and-tabs': 'warn',
-		'@typescript-eslint/no-empty-function': 'off',
-
+		'no-constant-condition': 'warn',
 		
 	},
 }

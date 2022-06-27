@@ -47,10 +47,10 @@ export class Babs {
 	renderSys :RenderSys
 
 
-	ents = new Map<Number, Ent>() // id key, value ent
+	ents = new Map<number, Ent>() // id key, value ent
 	compcats = new Map() // comType key, value is an array of those coms
 
-	zips = new Map() // idzip key, value idplayer
+	zips = new Map<number, number>() // idzip key, value idplayer
 
 	idSelf :Number
 

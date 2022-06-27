@@ -103,6 +103,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject(chatDiv)
+		chatLabel.name = 'playerSaid'
 		const chatStartingHeight = (idPlayer === this.babs.idSelf ? 26 : 29) 
 		chatLabel.position.set( 0, chatStartingHeight, 0 )
 
@@ -183,6 +184,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 
 		const chatLabel = new CSS2DObject(chatDiv)
+		chatLabel.name = 'landSaid'
 		chatLabel.position.copy(point)
 		// log('chatLabel targetPos', point, targetPos, targetZone)
 		this.babs.scene.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
@@ -211,6 +213,7 @@ export class UiSys {
 		this.labelElements.push(chatDiv)
 		
 		const chatLabel = new CSS2DObject(chatDiv)
+		chatLabel.name = 'wobSaid'
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
 		let point = wobZone.calcHeightAt(YardCoord.Create(wob))
 		log('wobSaid point', point, YardCoord.Create(wob))
@@ -225,6 +228,7 @@ export class UiSys {
 		const chatDiv = document.createElement('div')
 		chatDiv.id = 'Crafting'
 		const chatLabel = new CSS2DObject(chatDiv)
+		chatLabel.name = 'craftSaid'
 
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)

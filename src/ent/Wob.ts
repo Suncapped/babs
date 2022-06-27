@@ -24,7 +24,8 @@ export class FeInstancedMesh extends InstancedMesh {
 
 	babs :Babs
 	wobIdsByIndex :number[] = []
-	renderedIcon :Promise<IconData>|IconData
+	renderedIcon :() => Promise<IconData>|IconData
+	countMax :number
 	init(babs :Babs) {
 		this.babs = babs
 		return this
@@ -226,12 +227,12 @@ export class Wob extends Ent {
 		// Load gltf
 		// Assumes no object animation!
 		let instanced = Wob.WobInstMeshes.get(wob.name)
-		if(instanced instanceof Promise) { 
+		if(instanced instanceof Promise<FeInstancedMesh>) { 
 			// Wow okay.  The problem is, it was setting as the *returned* instance.  
 			// But we want the one modified by instance expansion below, so re-get from Map
 			// if(wob.name == 'hot spring') log('was promise', wob.name)
 			await instanced
-			instanced = Wob.WobInstMeshes.get(wob.name)
+			instanced = Wob.WobInstMeshes.get(wob.name) as FeInstancedMesh
 			// if(wob.name == 'hot spring') log('after promise', instanced)
 			// Huge side effect here: Only AFTER this point do other wobs have updated props like instancedIndex // Comment 1287y19y1
 		}
@@ -353,21 +354,14 @@ export class Wob extends Ent {
 		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
 		if(wob.idzone) { // Place in zone
 			const zone = babs.ents.get(wob.idzone) as Zone
-			log('--\n--\nnewwob with wob: ', wob.name, wob, zone)
 			const yardCoord = YardCoord.Create(wob)
-			log('newwob yardCoord', yardCoord)
 			const eCoord = yardCoord.toEngineCoord()
-			log('newwob eCoord', eCoord)
 			const heighted = zone.calcHeightAt(yardCoord)
-			log('newwob heighted', heighted)
 			let engPositionVector = heighted
-			log('newwob vector', engPositionVector)
 
 			// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
 
-			log('SHIFTINESS', babs.worldSys.shiftiness.x)
 			engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-
 
 			//
 

@@ -27,10 +27,10 @@ export class SocketSys {
 	static pingSeconds = 30
 
 	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
-		log('movePlayer', idzip, a, b)
+		log.info('movePlayer', idzip, a, b)
 		// log('attemping to move player, attempt', attempts)
 		const idPlayer = this.babs.zips.get(idzip)
-		const player = this.babs.ents.get(idPlayer)	
+		const player = this.babs.ents.get(idPlayer)	as Player
 		if(player) {
 			if(player.id !== this.babs.idSelf) { // Skip self movements
 				// log('finally actually moving player after attept', attempts, idzip)
@@ -50,8 +50,12 @@ export class SocketSys {
 			}
 		}
 		else { // Player not yet defined; probably still loading // todo check for defuncts
+			let tryCount = 0
 			setTimeout(() => {
-				this.movePlayer(idzip, movestate, a, b, attempts +1)
+				tryCount++
+				if(tryCount < 2) {
+					this.movePlayer(idzip, movestate, a, b, attempts +1)
+				}
 			}, 500)
 		}
 			
@@ -186,16 +190,15 @@ export class SocketSys {
 	item
 	update(dt) {
 		const callTasks = async () => {
-		  for (const [task, payload] of this.processQueue) {
+			for (const [task, payload] of this.processQueue) {
 				await task(this, payload);
-		  }
+			}
 		}
 		callTasks()
 		this.processQueue = []
 	}
 	processEnqueue(payload){
 		if(payload.load || payload.visitor || payload.session) { // First one happens immediately, to jumpstart babsReady
-			log('payload', payload )
 			this.process(this, payload)
 		}
 		else {
@@ -260,7 +263,7 @@ export class SocketSys {
 				break
 			}
 			case 'load': {
-				log('socket: load', data)
+				log.info('socket: load', data)
 				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 					context.send({ping:'ping'})
 				}, SocketSys.pingSeconds * 1000)
@@ -287,7 +290,6 @@ export class SocketSys {
 
 				let zones = []
 				for(let zonedata of zonedatas) {
-					log('Zone.Create(zonedata', zonedata)
 					zones.push(Zone.Create(zonedata, context.babs))
 				}
 
@@ -335,7 +337,6 @@ export class SocketSys {
 				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
 				// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
 				const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
-				log('startingZone', startingZone)
 				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
 				let pObjects = []
@@ -364,7 +365,7 @@ export class SocketSys {
 				break
 			}
 			case 'playersarrive': {
-				log('playersarrive', data)
+				log.info('playersarrive', data)
 
 				// EventSys.Dispatch('players-arrive', data)
 
@@ -417,7 +418,7 @@ export class SocketSys {
 				break
 			}
 			case 'said': {
-				const chattyPlayer = context.babs.ents.get(data.id)
+				const chattyPlayer = context.babs.ents.get(data.id) as Player
 				log.info('said by chattyPlayer', chattyPlayer?.id, data.name, data.text)
 				// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
 				// In that case, data.name is set to their name.
