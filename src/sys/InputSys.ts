@@ -210,7 +210,7 @@ export class InputSys {
 				// Instant Forest
 				if (this.keys.b === PRESS) {
 					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
-					// const [treesPerAxis, spacing] = [5, 50] // Property (5 pieces) posts
+					// const [treesPerAxis, spacing] = [5, 50] // Property (5 plots) posts
 					let count=0
 					let wobTrees = []
 					for(let a=0; a<treesPerAxis; a++) {
@@ -218,7 +218,7 @@ export class InputSys {
 							count++
 							wobTrees.push({
 								id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
-								idzone: 899279496,
+								idzone: 1883840645,
 								x: a*spacing,
 								z: b*spacing,
 								name: 'lodgepole simple',
@@ -227,7 +227,21 @@ export class InputSys {
 						}
 					}
 					log('Created '+count+' client side items')
-					await Wob.ArriveMany(wobTrees, this.babs, false)
+
+					wobTrees[1000].id = 1234 // for logging individually
+
+					// const uniqueGltfs = new Set(wobTrees.map(tree => tree.name))
+					// console.log('uniqueGltfs', uniqueGltfs)
+
+
+					// console.time('first')
+					// await Promise.all(Wob.ArriveMany([wobTrees[0]], this.babs, false))
+					// console.timeEnd('first')
+
+					console.time('all')
+					const res = await Wob.ArriveMany(wobTrees, this.babs, false)
+					console.timeEnd('all')
+					console.log('res', res)
 
 				}
 				if (this.keys.m === PRESS) {
@@ -403,8 +417,8 @@ export class InputSys {
 						// 2. Check whether over transparency 
 						const wobId = parseInt(item.id.split('-')[2])
 						const wob = this.babs.ents.get(wobId)
-						let instanced = Wob.WobInstMeshes.get(wob.name)
-						// log(wob,  Wob.WobInstMeshes, this.babs.ents)
+						let instanced = Wob.InstancedMeshes.get(wob.name)
+						// log(wob,  Wob.InstancedMeshes, this.babs.ents)
 
 						// if(instanced) {
 						const pixels = (await instanced.renderedIcon()).pixels
@@ -420,7 +434,7 @@ export class InputSys {
 							item.style.filter = 'brightness(200%)'
 
 							// Instanced things like wobjects, water, trees, etc unless caught above
-							const instanced = Wob.WobInstMeshes.get(wob.name)
+							const instanced = Wob.InstancedMeshes.get(wob.name)
 							// const index = this.mouseRayTargets[i].instanceId
 							// const position = Wob.GetPositionFromIndex(instanced, index)
 
@@ -909,8 +923,9 @@ export class InputSys {
 				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
-					const instanced = Wob.WobInstMeshes.get(name) as FeInstancedMesh
+					const instanced = Wob.InstancedMeshes.get(name) as FeInstancedMesh
 					const index = this.mouseRayTargets[i].instanceId
+					// log('mouse name', name, instanced, index)
 					const position = instanced.coordFromIndex(index)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
@@ -952,9 +967,9 @@ export class InputSys {
 						
 						const landcoverData = yardCoord.zone.landcoverData
 						// const newEngCoord = yardCoord.toEngineCoord()
-						// todo use actual PieceCoord
-						const pieceCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
-						const index = Utils.coordToIndex(pieceCoord.x, pieceCoord.z, 26)
+						// todo use actual PlotCoord
+						const plotCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
+						const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
 						
 						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 

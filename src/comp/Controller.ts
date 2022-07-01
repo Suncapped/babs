@@ -158,7 +158,7 @@ export class Controller extends Comp {
 		if(this.selfZoningWait) return // Do not process during zoning
 
 		this.gDestination = gVector3.clone()
-		log('setDestination changed', this.gDestination, movestate, this.isSelf)
+		log.info('setDestination changed', this.gDestination, movestate, this.isSelf)
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
 		

@@ -8,7 +8,7 @@ import { type UintRange } from '@/TypeUtils'
 import { Zone } from '@/ent/Zone'
 
 /*
-April '22: "Pllllease let's create types for engine vs yard vs piece, so I stop messing it up.  Start on Proxima, piece vs yard.  Maybe this is integrated into types, I dunno.  Or at least declare it, with size limits etc.  Or just named consts."
+April '22: "Pllllease let's create types for engine vs yard vs plot, so I stop messing it up.  Start on Proxima, plot vs yard.  Maybe this is integrated into types, I dunno.  Or at least declare it, with size limits etc.  Or just named consts."
 June '22...
 
 Coordinate transforms/spaces:
@@ -24,8 +24,8 @@ Coordinate transforms/spaces:
 Coordinate formats:
 	Yard 4ft res (1000/250)
 		YardCoord{centered:true} (x: 249, z:0)
-	Piece 40ft res (1000/40)
-		PieceCoord (x:20, z:0)
+	Plot 40ft res (1000/40)
+		PlotCoord (x:20, z:0)
 	Zone 1000ft res
 		ZoneCoord (x:1, z:0)
 	Engine float res
@@ -49,13 +49,6 @@ export class YardCoord extends Coord {
 		if('position' in coord) {
 			// Engine coordinate; determine zone and inner-zone coordinate
 			// The zone passed in here is probably irrelevant.  We just want it to use its babs reference.
-
-			// return YardCoord.Create({
-			// 	x: Math.floor((this.x) /4), 
-			// 	z: Math.floor((this.z) /4),
-			// 	zone: fromPerspectiveOf,
-			// })
-
 			/*
 				What we want is to determine zone.  This will be relative to self.
 				Engine coordinates are literally always self-based on current zone!
@@ -150,15 +143,15 @@ export class YardCoord extends Coord {
 	}
 }
 
-// type PieceRange = UintRange<0, 25>
-// export class PieceCoord extends Coord {
-// 	static Create(x :PieceRange, z :PieceRange) {
-// 		return new PieceCoord().init(x, z)
+// type PlotRange = UintRange<0, 25>
+// export class PlotCoord extends Coord {
+// 	static Create(x :PlotRange, z :PlotRange) {
+// 		return new PlotCoord().init(x, z)
 // 	}
 
-// 	x :PieceRange
-// 	z :PieceRange
-// 	init(x: PieceRange, z :PieceRange) {
+// 	x :PlotRange
+// 	z :PlotRange
+// 	init(x: PlotRange, z :PlotRange) {
 // 		this.x = x
 // 		this.z = z
 // 		return this

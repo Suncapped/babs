@@ -73,8 +73,8 @@ export class WorldSys {
 	static ZoneLength = 1000
 	
 	static Yard = 4
-	static Piece = WorldSys.Yard *10 // 40; 10 tiles
-	static Acre = WorldSys.Piece *5 // 200; 5 pieces
+	static Plot = WorldSys.Yard *10 // 40; 10 tiles
+	static Acre = WorldSys.Plot *5 // 200; 5 plots
 	
 	static MAX_VIEW_DISTANCE = 1_000_000 // ~200 miles
 	static DAYSKY_SCALE = 900_000
@@ -758,7 +758,7 @@ export class WorldSys {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 			let color = this.colorFromLc[lcString]
 
-			// Spread color from this vertex as well as to its +1 forward vertices (ie over the piece, the 40x40ft)
+			// Spread color from this vertex as well as to its +1 forward vertices (ie over the plot, the 40x40ft)
 			const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
 			for(let z=0; z<=1; z++) {
 				for(let x=0; x<=1; x++) {

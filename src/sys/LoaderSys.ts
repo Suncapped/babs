@@ -108,11 +108,8 @@ export class LoaderSys {
 	}
 
 	
-	loadGltf(path) :Promise<{scene, animations}> {
+	loadGltf(path, name) :Promise<{scene, animations}|{name :string}> {
 		return new Promise((resolve, reject) => {
-			log.info('loading gltf', path)
-
-
 			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
 					log.info('Loaded GLTF:', gltf)
@@ -123,6 +120,22 @@ export class LoaderSys {
 						}
 					})
 
+					if(gltf.scene) {
+						if(gltf.scene.children.length == 0) {
+							console.warn('Arrival wob has no children in scene: ', name)
+						}
+						else {
+							if(gltf.scene.children.length > 1) {
+								console.warn(`Loaded object with more than one child.`, name)
+							}
+						}
+					}
+					else {
+						console.warn('Arrival wob has no scene: ', name)
+					}
+
+					gltf.name = name
+
 					resolve(gltf)
 				},
 				(xhr) => { // onProgress callback
@@ -130,7 +143,7 @@ export class LoaderSys {
 				},
 				(err) => { // onError callback
 					log.info('loadGltf error:', err) // info because can just be missing model
-					reject(err)
+					resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
 				}
 			)
 

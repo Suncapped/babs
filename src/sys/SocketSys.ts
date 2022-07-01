@@ -441,11 +441,13 @@ export class SocketSys {
 			case 'wobsremove': {
 				log.info('wobsremove', data)
 				for(let wobRemove of data.wobs) {
-					const wobExisting = context.babs.ents.get(wobRemove.id)
+					const wobExisting = context.babs.ents.get(wobRemove.id) as Wob
 					if(wobExisting) {
-						const instanced = Wob.WobInstMeshes.get(wobExisting.name)
-						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-100,-100))) // todo change from just putting far away, to getting rid of
+						const instanced = Wob.InstancedMeshes.get(wobExisting.name)
+						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(0,-10000,0))) // todo change from just putting far away, to getting rid of
 						instanced.instanceMatrix.needsUpdate = true
+
+						// instanced.count = instanced.count -1
 
 						if(wobExisting.attachments?.flame){
 							context.babs.scene.remove(wob.attachments.flame.fire)
@@ -469,7 +471,7 @@ export class SocketSys {
 				for(let wobFresh of data.wobs) {
 					const wobExisting = context.babs.ents.get(wobFresh.id)
 					if(wobExisting && wobExisting.idzone) { // Wob in zone
-						const instanced = Wob.WobInstMeshes.get(wobExisting.name)
+						const instanced = Wob.InstancedMeshes.get(wobExisting.name)
 						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
 						instanced.instanceMatrix.needsUpdate = true
 					}

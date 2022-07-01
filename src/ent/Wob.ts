@@ -26,6 +26,10 @@ export class FeInstancedMesh extends InstancedMesh {
 	wobIdsByIndex :number[] = []
 	renderedIcon :() => Promise<IconData>|IconData
 	countMax :number
+	boundingSize = new Vector3()
+	lift = 0
+	sink = 0
+
 	init(babs :Babs) {
 		this.babs = babs
 		return this
@@ -180,268 +184,307 @@ export class Wob extends Ent {
 
 	}
 
-	static ArriveMany(arrivalWobs, babs, shownames) {
 
-		const prefix = 'environment/'
+	static SphereGeometry = new SphereGeometry(1, 12, 12)
+	static SphereMaterial = new MeshLambertMaterial({ color: 0xcccc00 })
+	static SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
+	static FullColor = new Color(1,1,1)
+
+	static LoadedGltfs = new Map<string, any>()
+	static InstancedMeshes = new Map<string, FeInstancedMesh>()
+	static async ArriveMany(arrivalWobs, babs, shownames) {
 
 		// We can do a mass file request so server doesn't have to handle so many requests.
-		let needNames = new Map()
-		arrivalWobs.forEach(wob => {
-			// if(wob.name == 'hot spring') log('needlog', wob.name)
-			if(!Wob.WobInstMeshes.get(wob.name)) { // Not loaded, not promised
-				const path = `${wob.name}`
-				needNames.set(path, null)
-			}
-		}) 
-
+		// For http2, doesn't matter.  And Cloudflare caches them, so not as bad between proxima->CF on http1
+		// let needNames = new Map()
+		// arrivalWobs.forEach(wob => {
+		// 	// if(wob.name == 'hot spring') log('needlog', wob.name)
+		// 	if(!Wob.InstancedMeshes.get(wob.name)) { // Not loaded, not promised
+		// 		const path = `${wob.name}`
+		// 		needNames.set(path, null)
+		// 	}
+		// }) 
 		// const filenames = [...needNames.keys()]
 		// if(filenames.length) {
 		// 	log('needNames', JSON.stringify(filenames))
 		// }
 
-		let arrivalPromises = arrivalWobs.map(wob => Wob._Arrive(wob, babs, shownames))
-		return arrivalPromises
-	}
-	
-	static WobInstMeshes = new Map<string, Promise<FeInstancedMesh> | FeInstancedMesh>()
-	static async _Arrive(arrivalWob, babs :Babs, shownames) {
-		const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
+		// Load unique gltfs
+		let path
+		let loads = []
+		let load
+		const counts = new Map<string, number>()
+		console.time('timing')
+		for(const wob of arrivalWobs) {
+			const currentCount = counts.get(wob.name) || 0
+			counts.set(wob.name, currentCount +1)
+			if(!Wob.LoadedGltfs.get(wob.name)){
+				path = '/environment/gltf/'+wob.name+'.glb'
 
-		let wob = new Wob(arrivalWob.id, babs)
-		wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
-		// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
-		// So ....uhh I guess set that later on? Comment 1287y19y1
-		babs.ents.set(arrivalWob.id, wob)
+				load = babs.loaderSys.loadGltf(path, wob.name)
 
-		if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
-			// It's been moved from container into zone
-			babs.uiSys.svContainers[0].delWob(wob.id)
+				Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
+				loads.push(load)
+			}
 		}
-		else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
-			// It's been moved bagtobag, or is being initial loaded into bag
-			babs.uiSys.svContainers[0].delWob(wob.id)
+		console.timeLog('timing')
+		// console.log('loads', loads)
+
+		const finishedLoads = await Promise.all(loads)
+		// console.log('finishedLoads', finishedLoads)
+		console.timeLog('timing')
+		// Use name passed in to loadGltf to set so we don't have to await later
+		for(const load of finishedLoads) {
+			Wob.LoadedGltfs.set(load.name, load)
 		}
+		// log('Wob.loadedGltfs', Wob.LoadedGltfs)
 
-		// if(wob.name == 'hot spring') log('----', 'arrive:', wob.name)
+		console.timeLog('timing')
+		// Create InstancedMeshes from loaded gltfs
+		// const countMax = 10 // How large the instancdedmesh starts out
+		const instancedExpansionAdd = 10 // How much larger the instancedmesh will get, eg +10
+		for(const [wobName, gltf] of Wob.LoadedGltfs) {
+			let instanced = Wob.InstancedMeshes.get(wobName)
+			let newWobsCount = counts.get(wobName) || 0
 
-		// Load gltf
-		// Assumes no object animation!
-		let instanced = Wob.WobInstMeshes.get(wob.name)
-		if(instanced instanceof Promise<FeInstancedMesh>) { 
-			// Wow okay.  The problem is, it was setting as the *returned* instance.  
-			// But we want the one modified by instance expansion below, so re-get from Map
-			// if(wob.name == 'hot spring') log('was promise', wob.name)
-			await instanced
-			instanced = Wob.WobInstMeshes.get(wob.name) as FeInstancedMesh
-			// if(wob.name == 'hot spring') log('after promise', instanced)
-			// Huge side effect here: Only AFTER this point do other wobs have updated props like instancedIndex // Comment 1287y19y1
-		}
-		// if(wob.name == 'hot spring') log('instanced', wob.name, instanced)
-
-		const countMax = 200
-		let currentCount = 0
-		if(!instanced) {
-			// if(wob.name == 'hot spring') log('not instanced', wob.name)
-			const path = `/environment/gltf/obj-${wob.name}.glb`
-
-			const loadstuff = async () => {
-
-				let mesh
+			// What this does is, either creates an instancedmesh, or expands its size with some margin for adding a few wobs without having to resize it again
+			if(!instanced) {
+				let wobMesh
 				try {
-					const gltf = await babs.loaderSys.loadGltf(path)
-					// if(wob.name == 'hot spring') log('downloading wob', wob.name)
-					if(gltf.scene) { 
-						if(gltf.scene.children.length == 0) {
-							console.warn('Arrival wob has no children in scene: ', wob.name)
-						}
-						else {
-							mesh = gltf.scene.children[0]
-							if(gltf.scene.children.length > 1) {
-								console.warn(`Loaded object with more than one child.`, wob.name)
-							}
-						}
-					}
-					else {
-						console.warn('Arrival wob has no scene: ', wob.name)
-					}
-					
+					wobMesh = gltf.scene.children[0]
 				}
 				catch(e) {
+					log.info('error loading gltf', wobName)
 				}
 
-				if(!mesh) { 
-					// Object wasn't loaded.  Make a sphere
-					const geometry = new SphereGeometry(1, 12, 12)
-					const material = new MeshLambertMaterial({ color: 0xcccc00 })
-					mesh = new Mesh(geometry, material)
+				if(!wobMesh) {
+					wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
 				}
 
-				instanced = FeInstancedMesh.Create(babs, mesh.geometry, mesh.material, countMax)
-				// ^ Up to one for each grid space; ignores stacking, todo optimize more?
+				const countMax = newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
+				instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
+				instanced.count = 0
 				instanced.countMax = countMax
-				instanced.count = currentCount
-				instanced.name = wob.name
+				instanced.name = wobName
+				// instanced.instanceMatrix.needsUpdate = true
 				instanced.instanceMatrix.setUsage(StreamDrawUsage) 
 				// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
-				// instanced.instanceMatrix.needsUpdate = true
 
-				let size = new Vector3()
-				instanced.geometry?.boundingBox?.getSize(size)
+				instanced.geometry.boundingBox?.getSize(instanced.boundingSize) // sets into vector // some don't have box, thus ?
+				instanced.sink = Math.min(instanced.boundingSize.y *0.05, 0.2)  
+				// ^ Sink by a percent but with a max for things like trees.
+				instanced.lift = instanced.boundingSize.y < 0.01 ? 0.066 : 0
+				// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 
-				instanced.castShadow = size.y >= 1
+				instanced.castShadow = instanced.boundingSize.y >= 1
 				instanced.receiveShadow = true
 
+				// 			const mudColors = []
+				// 			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
+				// 			for(let i=0; i<instanced.count; i++) {
+				// 				mudColors.push(color.r, color.g, color.b)
+				// 			}
+				// 			const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
+				// 			bufferAttr.needsUpdate = true
+				// 			instanced.instanceColor = bufferAttr
+
+				// Set to not modify color; used later for highlight by pickedObject in InputSys
+				const fullColors = new Float32Array(instanced.countMax *3)
+				for(let i=0; i<instanced.countMax *3; i+=3) {
+					fullColors[i +0] = Wob.FullColor.r
+					fullColors[i +1] = Wob.FullColor.g
+					fullColors[i +2] = Wob.FullColor.b
+				}
+				const bufferAttr = new InstancedBufferAttribute(fullColors, 3)
+				instanced.instanceColor = bufferAttr
+				instanced.instanceColor.needsUpdate = true
 
 				instanced.renderedIcon = async () => {
-					const {image, pixels} = await Wob.HiddenSceneRender(mesh)
+					const {image, pixels} = await Wob.HiddenSceneRender(wobMesh)
 					instanced.renderedIcon = () => { // Overwrite self?!  lol amazing
 						return {image, pixels}
 					}
 					return instanced.renderedIcon()
 				}
 
-				Wob.WobInstMeshes.set(wob.name, instanced)
-
 				instanced.position.setX(babs.worldSys.shiftiness.x)
 				instanced.position.setZ(babs.worldSys.shiftiness.z)
 
+				Wob.InstancedMeshes.set(wobName, instanced)
 				babs.scene.add(instanced)
-
-				return instanced
 			}
+			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for packpack items too, but that's okay)
+				log('instanced growing at', instanced.count, newWobsCount, instanced.countMax)
 
+				const newMax = instanced.count +newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
 
-			const prom = loadstuff()
-			Wob.WobInstMeshes.set(wob.name, prom)
-			await prom // Await here too so that this first-loaded object gets loaded below (needs this loaded instance)
-
-
-		}
-		else if(wob.idzone && instanced.count >= instanced.countMax -1) { // Is an actual instance, and needs more space
-			// Overflowing instance limit, need a larger one
-			// if(wob.name == 'hot spring') log('enlarging IM ', wob.name, currentCount, instanced.count, instanced.countMax)
-			currentCount = instanced.count
-
-			const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, instanced.countMax *2) // Up to one for each grid space; ignores stacking, todo optimize more?
-			newInstance.count = currentCount
-			newInstance.countMax = instanced.countMax *2
-			newInstance.name = wob.name
-			newInstance.instanceMatrix.setUsage(StreamDrawUsage)
-			for(let i=0; i<instanced.count; i++) {
+				const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, newMax)
+				newInstance.count = instanced.count
+				newInstance.countMax = newMax
+				newInstance.name = wobName
+				newInstance.instanceMatrix.setUsage(StreamDrawUsage) // todo optimize?
 				let transferMatrix = new Matrix4()
-				instanced.getMatrixAt(i, transferMatrix)
-				newInstance.setMatrixAt(i, transferMatrix)
+				for(let i=0; i<instanced.count; i++) {
+					instanced.getMatrixAt(i, transferMatrix)
+					newInstance.setMatrixAt(i, transferMatrix)
+				}
+	
+				// save rendered icons (they may have been added JIT)
+				newInstance.renderedIcon = instanced.renderedIcon
+	
+				newInstance.sink = instanced.sink
+				newInstance.lift = instanced.lift
+				newInstance.boundingSize = instanced.boundingSize
+
+				newInstance.castShadow = instanced.castShadow
+				newInstance.receiveShadow = instanced.receiveShadow
+
+				const fullColors = new Float32Array(newInstance.countMax *3)
+				for(let i=0; i<newInstance.countMax *3; i+=3) {
+					fullColors[i +0] = Wob.FullColor.r
+					fullColors[i +1] = Wob.FullColor.g
+					fullColors[i +2] = Wob.FullColor.b
+				}
+				newInstance.instanceColor = new InstancedBufferAttribute(fullColors, 3)
+				newInstance.instanceColor.needsUpdate = true
+	
+				newInstance.wobIdsByIndex = instanced.wobIdsByIndex
+				
+				newInstance.position.x = instanced.position.x
+				newInstance.position.z = instanced.position.z
+
+				babs.scene.remove(instanced)
+				instanced.dispose()
+				
+				Wob.InstancedMeshes.set(wobName, newInstance)
+				babs.scene.add(newInstance)
+			}
+			else {
+				// Instance exists, doesn't need expansion based on incoming item count
+				// instanced.count = instanced.count +count
 			}
 
-			// save rendered icons (they may have been added JIT)
-			newInstance.renderedIcon = instanced.renderedIcon
-
-			newInstance.castShadow = instanced.castShadow
-			newInstance.receiveShadow = instanced.receiveShadow
-
-			newInstance.wobIdsByIndex = instanced.wobIdsByIndex
-			newInstance.position.x = instanced.position.x
-			newInstance.position.z = instanced.position.z
 			
-			babs.scene.remove(instanced)
-			instanced.dispose()
-			instanced = newInstance
+		}
+		console.timeEnd('timing')
+		log('latter Wob.InstancedMeshes', Wob.InstancedMeshes)
 
-			Wob.WobInstMeshes.set(wob.name, newInstance)
-			babs.scene.add(newInstance)
+		// Now a properly sized instance exists.  So create wobs!
+		let zone :Zone
+		let yardCoord :YardCoord
+		let engPositionVector :Vector3
+		let matrix = new Matrix4()
+		for(const arrivalWob of arrivalWobs) {
+			const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
+			let wob = new Wob(arrivalWob.id, babs)
+			wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
+			// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
+			// So ....uhh I guess set that later on? Comment 1287y19y1
+			babs.ents.set(arrivalWob.id, wob)
+	
+			// If it's being removed from bag, delete it from bag UI
+			// todo buggy
+			if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
+				// It's been moved from container into zone
+				babs.uiSys.svContainers[0].delWob(wob.id)
+			}
+			else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
+				// It's been moved bagtobag, or is being initial loaded into bag
+				babs.uiSys.svContainers[0].delWob(wob.id)
+			}
+
+			if(wob.idzone) { // Place in zone (; is not a backpack item)
+				zone = babs.ents.get(wob.idzone) as Zone
+				yardCoord = YardCoord.Create(wob)
+				if(wob.id === 1234) console.time('placeinzone')
+				engPositionVector = zone.calcHeightAt(yardCoord) // todo could precalc this per zone? :)
+
+	
+				if(wob.id === 1234) console.timeLog('placeinzone')
+	
+				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
+	
+				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+	
+				const instanced = Wob.InstancedMeshes.get(wob.name)
+				// log('instanced got', instanced, wob.name, wob)
+				instanced.geometry.center() 
+				// ^ Fixes offset pivot point
+				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
+	
+				engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
+
+
+				if(wob.id === 1234) log('engPositionVector', engPositionVector)
+	
+				if(wob.id === 1234) console.timeLog('placeinzone')
+	
+				// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
+				wob.instancedIndex = wobPrevious?.instancedIndex
+				if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
+					// Only increment if adding one rather than updating previous
+					wob.instancedIndex = instanced.count
+					instanced.count = instanced.count +1
+				}
+	
+				if(wob.id === 1234) log('wob.instancedIndex', wobPrevious?.instancedIndex, wob.instancedIndex)
+
+				matrix.setPosition(engPositionVector)
+				if(wob.id === 1234) console.timeLog('placeinzone')
+				instanced.setMatrixAt(wob.instancedIndex, matrix)
+				if(wob.id === 1234) console.timeLog('placeinzone')
+	
+				instanced.wobIdsByIndex[wob.instancedIndex] = wob.id
+
+				instanced.instanceMatrix.needsUpdate = true
+	
+				// if(wob.id === 1234) console.timeLog('placeinzone')
+	
+				if(shownames) {
+					babs.uiSys.wobSaid(wob.name, wob)
+				}
+	
+			}
+			else {	// Send to bag
+
+				const instanced = Wob.InstancedMeshes.get(wob.name)
+				babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
+	
+			}
+	
+	
+			if(wob.id === 1234) console.timeEnd('placeinzone')
+	
+			if(wob.name === 'firepit' || wob.name === 'torch') {
+				let scale, yup
+				if(wob.name === 'firepit') {
+					scale = 3
+					yup = 2
+				}
+				else if(wob.name === 'torch') {
+					scale = 1.1
+					yup = 3.5
+				}
+	
+				// Remove any existing flame
+				if(wob.attachments?.flame){
+					babs.scene.remove(wob.attachments.flame.fire)
+					delete wob.attachments.flame
+				}
+	
+				// Add new flame
+				const flame = Flame.Create(wob, babs, scale, yup)
+				wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
+				flame.then((res) => {
+					wob.attachments.flame = res
+				})
+	
+	
+			}
+
 		}
 
-		// Now, if it's in zone (idzone), put it there.  Otherwise it's contained, send to container
-		if(wob.idzone) { // Place in zone
-			const zone = babs.ents.get(wob.idzone) as Zone
-			const yardCoord = YardCoord.Create(wob)
-			const eCoord = yardCoord.toEngineCoord()
-			const heighted = zone.calcHeightAt(yardCoord)
-			let engPositionVector = heighted
 
-			// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-
-			engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-
-			//
-
-			instanced.geometry?.center() 
-			// ^ Fixes offset pivot point
-			// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-
-			let size = new Vector3()
-			instanced.geometry?.boundingBox?.getSize(size)
-
-			// console.log('sizey', size.y, wob.name)
-			const sink = Math.min(size.y *0.05, 0.2)  
-			// ^ Sink by a percent but with a max for things like trees.
-			const lift = size.y < 0.01 ? 0.066 : 0
-			// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
-			engPositionVector.setY(engPositionVector.y +(size.y /2) -sink +lift)
-
-			// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
-			wob.instancedIndex = wobPrevious?.instancedIndex
-			if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
-				wob.instancedIndex = instanced.count
-				// if(wob.name == 'hot spring') log('COUNTBEF', instanced.count)
-				instanced.count += 1
-				// if(wob.name == 'hot spring') log('COUNT++', instanced.count)
-			}
-			instanced.setMatrixAt(wob.instancedIndex, new Matrix4().setPosition(engPositionVector))
-			instanced.instanceMatrix.needsUpdate = true
-
-			instanced.wobIdsByIndex[wob.instancedIndex] = wob.id
-
-			const mudColors = []
-			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
-			for(let i=0; i<instanced.count; i++) {
-				mudColors.push(color.r, color.g, color.b)
-			}
-			const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
-			bufferAttr.needsUpdate = true
-			instanced.instanceColor = bufferAttr
-
-			if(shownames) {
-				babs.uiSys.wobSaid(wob.name, wob)
-			}
-
-		}
-		else {	// Send to bag
-			babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
-
-		}
-
-		if(wob.name === 'firepit' || wob.name === 'torch') {
-			let scale, yup
-			if(wob.name === 'firepit') {
-				scale = 3
-				yup = 2
-			}
-			else if(wob.name === 'torch') {
-				scale = 1.1
-				yup = 3.5
-			}
-
-			// Remove any existing flame
-			if(wob.attachments?.flame){
-				babs.scene.remove(wob.attachments.flame.fire)
-				delete wob.attachments.flame
-			}
-
-			// Add new flame
-			const flame = Flame.Create(wob, babs, scale, yup)
-			wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
-			flame.then((res) => {
-				wob.attachments.flame = res
-			})
-
-
-		}
-
-		return wob
-		
 	}
 	
 }
-
-
