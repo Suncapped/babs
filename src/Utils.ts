@@ -177,47 +177,6 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 // // }
 
 
-// // Non-generation stuff:
-// // export function getMixMaterial(urlFiles, scene):MixMaterial {
-
-//     // var mixMaterial = new MixMaterial('mix', scene)
-//     // mixMaterial.diffuseTexture1 = new Texture(`${urlFiles}/texture/rock.jpg`, scene)
-//     // mixMaterial.diffuseTexture2 = new Texture(`${urlFiles}/texture/sand.jpg`, scene)
-//     // mixMaterial.diffuseTexture3 = new Texture(`${urlFiles}/texture/dirt-low.jpg`, scene)
-//     // mixMaterial.diffuseTexture4 = new Texture(`${urlFiles}/texture/grass.jpg`, scene)
-//     // mixMaterial.diffuseTexture5 = new Texture(`${urlFiles}/texture/water.jpg`, scene)
-//     // mixMaterial.diffuseTexture6 = new Texture(`${urlFiles}/texture/cliff.jpg`, scene)
-//     // mixMaterial.diffuseTexture7 = new Texture(`${urlFiles}/texture/TropicalSunnyDay_nx.jpg`, scene)
-//     // mixMaterial.diffuseTexture8 = new Texture(`${urlFiles}/texture/waterbump.png`, scene)
-//     // const textureScaleMultiplier = 1
-//     // mixMaterial.diffuseTexture1.uScale = mixMaterial.diffuseTexture1.vScale = 
-//     //     mixMaterial.diffuseTexture2.uScale = mixMaterial.diffuseTexture2.vScale = 
-//     //     mixMaterial.diffuseTexture3.uScale = mixMaterial.diffuseTexture3.vScale = 
-//     //     mixMaterial.diffuseTexture4.uScale = mixMaterial.diffuseTexture4.vScale = 
-//     //     mixMaterial.diffuseTexture5.uScale = mixMaterial.diffuseTexture5.vScale = 
-//     //     mixMaterial.diffuseTexture6.uScale = mixMaterial.diffuseTexture6.vScale = 
-//     //     mixMaterial.diffuseTexture7.uScale = mixMaterial.diffuseTexture7.vScale = 
-//     //     mixMaterial.diffuseTexture8.uScale = mixMaterial.diffuseTexture8.vScale = ZONE.ZONE_DATUMS * textureScaleMultiplier
-//     // // mixMaterial.diffuseTexture1.wrapU = mixMaterial.diffuseTexture1.wrapV = 
-//     // //     mixMaterial.diffuseTexture2.wrapU = mixMaterial.diffuseTexture2.wrapV = 
-//     // //     mixMaterial.diffuseTexture3.wrapU = mixMaterial.diffuseTexture3.wrapV = 
-//     // //     mixMaterial.diffuseTexture4.wrapU = mixMaterial.diffuseTexture4.wrapV = 
-//     // //     mixMaterial.diffuseTexture5.wrapU = mixMaterial.diffuseTexture5.wrapV = Texture.WRAP_ADDRESSMODE
-//     // mixMaterial.diffuseColor = new Color3(15, 15, 15) // Integrates with Utils.landcoverGenerate const full = 17; 17*15=255
-//     // mixMaterial.backFaceCulling = false
-//     // // mixMaterial.alpha = 0.8
-//     // // mixMaterial.specularColor = new Color3(0.5, 0.5, 0.5)
-//     // // mixMaterial.specularPower = 64
-//     // return mixMaterial
-// // }
-
-// export class Grid3 extends Vector3 {
-// 	constructor() {
-// 		super()
-// 	}
-// }
-
-
 export function findWobByInstance(ents, instancedIndex, instancedName) { // note also: wobIdsByIndex
 	for(let [key, ent] of ents) {
 		// log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
@@ -238,7 +197,6 @@ export function WobAtPosition(ents, gx, gz) {
 	return null
 
 }
-
 
 export function storageSet(key, value, ms) {
 	const now = new Date()

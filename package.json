@@ -9,8 +9,9 @@
     "node": "18.2.0"
   },
   "scripts": {
-    "dev": "vite --host",
     "playerdev": "vite --mode playerdev",
+	"predev": "ln -f ./../proxima/src/shared/* ./src/shared",
+    "dev": "vite --host",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "serve": "vite preview",

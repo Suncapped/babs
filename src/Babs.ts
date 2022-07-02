@@ -24,7 +24,6 @@ import { Controller } from '@/comp/Controller'
 import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
 
-
 export class Babs {
 
 	isProd = window.location.href.startsWith('https://earth.suncapped.com')
