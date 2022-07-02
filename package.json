@@ -2,6 +2,8 @@
   "name": "babs",
   "type": "module",
   "version": "0.3.0",
+  "author": "Suncapped",
+  "main": "main.cjs",
   "engines": {
     "node": "v18"
   },
@@ -10,6 +12,7 @@
   },
   "scripts": {
     "dev": "vite --host",
+    "start": "electron .",
     "playerdev": "vite --mode playerdev",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
     "serve": "vite preview",
@@ -26,6 +29,7 @@
     "@types/dat.gui": "^0.7.7",
     "@types/three": "^0.140.0",
     "bicubic-interpolate": "^1.0.4",
+    "electron": "^19.0.3",
     "svelte": "^3.48.0",
     "svelte-check": "^2.7.1",
     "svelte-preprocess": "^4.10.6",
