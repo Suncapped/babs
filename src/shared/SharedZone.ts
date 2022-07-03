@@ -19,7 +19,14 @@ zonewobs(0,0): {
 		}
 	]
 	locations: [
-		Byte[250, 222, 222, 251, 232, 128, 251, 121, 176] // height 0
+		Byte[
+			250, 222, 222, // Add r?
+			251, 232, 128, 
+			251, 121, 176
+			id (0-250), x (0-250), z (0-250)
+				// Jam rotation into Z!
+			250+250+250=750
+		] // height 0
 		//Byte[250, 222, 222, 251, 232, 128] // height 1
 		//Byte[] // height 2
 	]
@@ -39,6 +46,12 @@ export class FastWob extends Blueprint {
 }
 
 export class SharedZone {
+
+	id :number
+	x :number
+	z :number
+	y :number
+	yscale :number
 
 	elevations = new Uint8Array(25 * 25)
 	getElevation(x, z) { return this.elevations[x +(z *25)] }
