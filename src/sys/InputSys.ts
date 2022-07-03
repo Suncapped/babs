@@ -110,7 +110,12 @@ export class InputSys {
 	playerSelf :Player
 	canvas :HTMLElement
 
+
+
 	constructor(babs :Babs, player :Player, mousedevice) {
+
+
+
 		this.babs = babs
 		this.playerSelf = player
 		this.canvas = document.getElementById('canvas')
@@ -183,10 +188,10 @@ export class InputSys {
 				box.focus()
 			}
 			if (this.keys.aleft && this.keys.backspace) {
-				var el = document.getElementById('chatbox')
+				let el = document.getElementById('chatbox')
 				el.focus()
-				var range = document.createRange()
-				var sel = window.getSelection()
+				let range = document.createRange()
+				let sel = window.getSelection()
 
 				if (el.childNodes?.[0]) {
 					range.setStart(el.childNodes[0], el.textContent.length)
@@ -274,6 +279,20 @@ export class InputSys {
 			if (this.keys.left === LIFT || this.keys.right === LIFT) {
 				this.arrowHoldStartTime = 0
 			}
+		})
+
+		/*
+			When alt tabbing, meta (cmd) key was staying stuck down since the windows in the bakcground
+			and never receiving a keyup.
+			Solution: When window blurs, let's set all keys to off
+		*/
+		window.addEventListener('blur', () => {
+			this.keys.cleft = LIFT
+			this.keys.cright = LIFT
+			this.keys.aleft = LIFT
+			this.keys.aright = LIFT
+			this.keys.mleft = LIFT
+			this.keys.mright = LIFT
 		})
 
 		// No 'click' handling; we do it manually via mousedown/mouseup for more control
