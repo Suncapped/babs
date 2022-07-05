@@ -24,6 +24,7 @@ import { Controller } from '@/comp/Controller'
 import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
 
+
 export class Babs {
 
 	isProd = window.location.href.startsWith('https://earth.suncapped.com')
@@ -59,10 +60,10 @@ export class Babs {
 
 	constructor() {
 
-		log('Mode is:', import.meta.env.MODE)
+		console.log('Mode is:', import.meta.env.MODE)
 
 
-		var preservedConsoleLog = console.warn
+		let preservedConsoleLog = console.warn
 		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
 			if(
 				// !arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
@@ -86,7 +87,7 @@ export class Babs {
 			this.urlSocket = `ws://${this.baseDomain}:2567` /* Proxima */
 			this.urlFiles = `http://${this.baseDomain}:3000/files` /* Expressa */
 		}
-		log.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
+		console.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
 
 		// Send to Svelte
 		baseDomain.set(this.baseDomain)

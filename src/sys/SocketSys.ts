@@ -5,7 +5,7 @@ import { EventSys } from './EventSys'
 import { WorldSys } from './WorldSys'
 import { LoaderSys } from './LoaderSys'
 import { log, randIntInclusive } from './../Utils'
-import { AnimationMixer, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { AnimationMixer, Int8BufferAttribute, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Controller } from '@/comp/Controller'
 import { Player } from '@/ent/Player'
 import { CameraSys } from './CameraSys'
@@ -263,7 +263,7 @@ export class SocketSys {
 				break
 			}
 			case 'load': {
-				log.info('socket: load', data)
+				log('socket: load', data)
 				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 					context.send({ping:'ping'})
 				}, SocketSys.pingSeconds * 1000)
@@ -288,9 +288,9 @@ export class SocketSys {
 
 				context.babsReady = true
 
-				let zones = []
-				for(let zonedata of zonedatas) {
-					zones.push(Zone.Create(zonedata, context.babs))
+				let zones = new Array<Zone>()
+				for(let zd of zonedatas) {
+					zones.push(new Zone(context.babs, zd.id, zd.x, zd.z, zd.y, zd.yscale, [], []))
 				}
 
 				// Load some things ahead of time
@@ -298,8 +298,9 @@ export class SocketSys {
 				for(let zone of zones) {
 					zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 					zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+					zone.locationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/locations.bin`)
 
-					fetches.push(zone.elevationData, zone.landcoverData)
+					fetches.push(zone.elevationData, zone.landcoverData, zone.locationData)
 				}
 				await Promise.all(fetches)
 
@@ -313,8 +314,17 @@ export class SocketSys {
 					const data2 = await fet2.blob()
 					const buff2 = await data2.arrayBuffer()
 					zone.landcoverData = new Uint8Array(buff2)
-				}
 
+					const fet3 = await zone.locationData
+					const data3 = await fet3.blob()
+					if(data3.size == 2) {  // hax on size (for `{}`)
+						zone.locationData = new Uint8Array()
+					}
+					else {
+						const buff3 = await data3.arrayBuffer()
+						zone.locationData = new Uint8Array(buff3)
+					}
+				}
 
 				const pStatics = []
 				for(let zone of zones) {
@@ -339,19 +349,52 @@ export class SocketSys {
 				const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
 				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
-				let pObjects = []
-				for(let zone of zones) {
-					pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
-				}
-				const wobs = (await Promise.all(pObjects)).flat()
-				// We first load the object data above; then below we know which gltfs to pull
-				// Since in the future we might cache them locally.
-				// That's why we don't include them in the loadObjects /cache
-				// and since different zones also have different wobs anyway, this must be pull, not push.
+				// let pObjects = []
+				// for(let zone of zones) {
+				// 	pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
+				// }
+				// const wobs = (await Promise.all(pObjects)).flat()
+				// // We first load the object data above; then below we know which gltfs to pull
+				// // Since in the future we might cache them locally.
+				// // That's why we don't include them in the loadObjects /cache
+				// // and since different zones also have different wobs anyway, this must be pull, not push.
 
-				// (However (sk), we can do a mass file request; see in ArriveMany)
-				const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
-				await Promise.all([playerPromise, arriveWobsPromise])
+				// // (However (sk), we can do a mass file request; see in ArriveMany)
+				// const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
+
+
+				// Get the new, faster wobs locations array
+				// let fastWobLocationsPromises = new Array<Promise<Uint8Array>>(zones.length)
+				// for(let zone of zones) {
+				// 	zone.applyBlueprints(data.blueprints)
+					
+				// 	const locations = context.babs.worldSys.loadWobLocations(context.babs.urlFiles, zone)
+				// 	fastWobLocationsPromises.push(locations)
+				// }
+				// const fastWobLocations = await Promise.all(fastWobLocationsPromises)
+
+				let fWobs = []
+				for(const zone of zones) {
+					zone.applyBlueprints(data.blueprints)
+					const fastWobs = zone.applyLocationsToGrid(zone.locationData, true)
+					if(!fastWobs) continue
+
+					for(let wob of fastWobs) {
+						fWobs.push({
+							id: randIntInclusive(0, 10_000_000),
+							x: wob.x,
+							z: wob.z,
+							r: wob.r,
+							name: wob.blueprint_id,
+							idzone: zone.id,
+						})
+					}
+				}
+				const arriveFastwobsPromise = Wob.ArriveMany(fWobs, context.babs, false)
+
+				// await Promise.all([playerPromise, arriveWobsPromise])
+				await Promise.all([playerPromise, arriveFastwobsPromise])
+
 
 				context.send({
 					ready: loadSelf.id,

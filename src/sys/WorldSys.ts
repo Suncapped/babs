@@ -669,6 +669,23 @@ export class WorldSys {
 		return wobs
 	}
 
+	async loadWobLocations(urlFiles, zone) {
+		const fet = await fetch(`${urlFiles}/zone/${zone.id}/locations.bin`)
+		if(fet.status == 404) {// No such zone or zone with no objects cached yet
+			return new Uint8Array()
+		}
+
+		const dataBlob = await fet.blob()
+		if(dataBlob.size == 2) {  // hax on size (for `{}`)
+			return new Uint8Array()
+		}
+
+		const buff = await dataBlob.arrayBuffer()
+		const locations = new Uint8Array(buff)
+
+		return locations
+	}
+
 	elevationData = {}
 	landcoverData
 	waterInstancedMesh
@@ -742,13 +759,13 @@ export class WorldSys {
         
 		// Vertex colors on BufferGeometry using a non-indexed array
 		const verticesRef = geometry.getAttribute('position').array
-		const nColorComponents = 3;  // r,g,b
+		const nColorComponents = 3 // r,g,b
 		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2; // e.g. 6 for a pyramid (?)
 		// const nVerticesPerFace = 3; // 3 for Triangle faces
 		
 		// Add color attribute to geometry, so that I can use vertex colors
 		const colorArr = new Float32Array(verticesRef.length) 
-		geometry.setAttribute( 'color', new Float32BufferAttribute(colorArr, nColorComponents))
+		geometry.setAttribute('color', new Float32BufferAttribute(colorArr, nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array
 	
 
@@ -826,7 +843,7 @@ export class WorldSys {
 								zone: entZone,
 							})
 							const engineCoord = yardCoord.toEngineCoord()
-							const rayPosition = entZone.calcHeightAt(engineCoord)
+							const rayPosition = entZone.rayHeightAt(engineCoord)
 							// New Coords are beautiful to work with...
 
 							if(waterNearbyIndex[index] > 7 && rayPosition) {

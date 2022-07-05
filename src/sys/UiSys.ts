@@ -164,7 +164,7 @@ export class UiSys {
 			zone: zone,
 		})
 		
-		let point = zone.calcHeightAt(yardCoord)
+		let point = zone.rayHeightAt(yardCoord)
 		point.setY(point.y +1)
 
 		if(this.babs.debugMode) {
@@ -215,7 +215,7 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'wobSaid'
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
-		let point = wobZone.calcHeightAt(YardCoord.Create(wob))
+		let point = wobZone.rayHeightAt(YardCoord.Create(wob))
 		log('wobSaid point', point, YardCoord.Create(wob))
 
 		point.setY(point.y +4) // Raise up
@@ -232,7 +232,7 @@ export class UiSys {
 
 		const wobZone = this.babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
-		let point = wobZone.calcHeightAt(yardCoord)
+		let point = wobZone.rayHeightAt(yardCoord)
 		point.setY(point.y +2) // Raise up
 		chatLabel.position.copy(point)
 

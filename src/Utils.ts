@@ -78,13 +78,13 @@ export const log = (function() {
 
 
 export function clamp(n, min, max){
-    return Math.max(Math.min(n, max), min)
+	return Math.max(Math.min(n, max), min)
 }
 
 export function randIntInclusive(min, max) {
-	min = Math.ceil(min);
-	max = Math.floor(max);
-	return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+	min = Math.ceil(min)
+	max = Math.floor(max)
+	return Math.floor(Math.random() * (max - min + 1) + min) //The maximum is inclusive and the minimum is inclusive
 }
 
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms))

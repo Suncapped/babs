@@ -193,7 +193,6 @@ export class Wob extends Ent {
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
 	static async ArriveMany(arrivalWobs, babs, shownames) {
-
 		// We can do a mass file request so server doesn't have to handle so many requests.
 		// For http2, doesn't matter.  And Cloudflare caches them, so not as bad between proxima->CF on http1
 		// let needNames = new Map()
@@ -381,7 +380,7 @@ export class Wob extends Ent {
 			// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
 			// So ....uhh I guess set that later on? Comment 1287y19y1
 			babs.ents.set(arrivalWob.id, wob)
-	
+			
 			// If it's being removed from bag, delete it from bag UI
 			// todo buggy
 			if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
@@ -397,7 +396,7 @@ export class Wob extends Ent {
 				zone = babs.ents.get(wob.idzone) as Zone
 				yardCoord = YardCoord.Create(wob)
 				if(wob.id === 1234) console.time('placeinzone')
-				engPositionVector = zone.calcHeightAt(yardCoord) // todo could precalc this per zone? :)
+				engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone? :)
 
 	
 				if(wob.id === 1234) console.timeLog('placeinzone')

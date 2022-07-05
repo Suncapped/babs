@@ -1,38 +1,36 @@
 
 import { YardCoord } from '@/comp/Coord'
+import { SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
 import { Mesh, Raycaster, Vector3 } from 'three'
 import { Ent } from './Ent'
+import { Babs } from '@/Babs'
 
 
-export class Zone extends Ent {
-	static Create(zonedata, babs){
-		return new Zone(zonedata.id, babs).init(zonedata)
+export class Zone extends SharedZone {
+	constructor(
+		public babs :Babs,
+		public id :number,
+		public x :number,
+		public z :number,
+		public y :number,
+		public yscale :number,
+		public elevations :Uint8Array,
+		public landcovers :Uint8Array,
+	) {
+		super(id, x, z, y, yscale, elevations, landcovers)
+		this.babs.ents.set(id, this)
 	}
-
-
-	x
-	z
-	y
-	yscale
 
 	elevationData // Injected by SocketSys
 	landcoverData // Injected by SocketSys
+	locationData // Injected by SocketSys
 
 	geometry
 	ground :Mesh // ground 3d Mesh
 	
-	init(zonedata) { // This patterns allows an async new, using `this`
-		this.x = zonedata.x
-		this.z = zonedata.z
-		this.y = zonedata.y
-		this.yscale = zonedata.yscale
-		return this
-	}
-
-
-	calcHeightAt(coord :Vector3|YardCoord) :Vector3 {
+	rayHeightAt(coord :Vector3|YardCoord) :Vector3 {
 		let offset = new Vector3()
 		if(coord instanceof YardCoord) {
 			coord = coord.toEngineCoordCentered()

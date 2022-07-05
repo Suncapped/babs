@@ -4,7 +4,7 @@ import { Comp } from '@/comp/Comp'
 import { type Ent } from '@/ent/Ent'
 import { type Babs } from '@/Babs'
 import { RedIntegerFormat, Vector2, Vector3 } from 'three'
-import { type UintRange } from '@/TypeUtils'
+import { type UintRange } from '@/shared/TypeUtils'
 import { Zone } from '@/ent/Zone'
 
 /*

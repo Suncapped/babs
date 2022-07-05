@@ -8,6 +8,9 @@ export default defineConfig({
   server: {
 	  port: 3001,
   },
+  define: {
+    global: 'globalThis',
+  },
   build: {
 	sourcemap: true,
 	minify: false,
