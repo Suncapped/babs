@@ -16,6 +16,7 @@ import Crafting from '../ui/Crafting.svelte'
 import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
+import { FastWob } from '@/shared/SharedZone'
 
 export class SocketSys {
 
@@ -373,26 +374,14 @@ export class SocketSys {
 				// }
 				// const fastWobLocations = await Promise.all(fastWobLocationsPromises)
 
-				let fWobs = []
+				let fWobs :Array<FastWob> = []
 				for(const zone of zones) {
 					zone.applyBlueprints(data.blueprints)
 					const fastWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					if(!fastWobs) continue
-
-					for(let wob of fastWobs) {
-						fWobs.push({
-							id: randIntInclusive(0, 10_000_000),
-							x: wob.x,
-							z: wob.z,
-							r: wob.r,
-							name: wob.blueprint_id,
-							idzone: zone.id,
-						})
-					}
+					fWobs.push(...fastWobs)
 				}
 				const arriveFastwobsPromise = Wob.ArriveMany(fWobs, context.babs, false)
 
-				// await Promise.all([playerPromise, arriveWobsPromise])
 				await Promise.all([playerPromise, arriveFastwobsPromise])
 
 
@@ -488,9 +477,9 @@ export class SocketSys {
 					if(wobExisting) {
 						const instanced = Wob.InstancedMeshes.get(wobExisting.name)
 						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(0,-10000,0))) // todo change from just putting far away, to getting rid of
+						// instanced.count = instanced.count -1
 						instanced.instanceMatrix.needsUpdate = true
 
-						// instanced.count = instanced.count -1
 
 						if(wobExisting.attachments?.flame){
 							context.babs.scene.remove(wob.attachments.flame.fire)
@@ -503,8 +492,22 @@ export class SocketSys {
 				break
 			}
 			case 'wobsupdate': {
-				log.info('wobsupdate', data)
-				await Wob.ArriveMany(data.wobs, context.babs, data.shownames)
+				log('wobsupdate', data)
+
+
+				/*
+				Currently we are:
+					setting zone stuff like applyLocationsToGrid
+					...then also...
+					generating a bunch of FastWob{} and sending them to ArriveMany(), where graphics get created.
+				Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
+				So the purpose of ArriveMany is to load the graphics, pretty much.
+				*/
+				const zone = context.babs.ents.get(data.idzone) as Zone
+				if(data.blueprints) zone.applyBlueprints(data.blueprints)
+				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(data.locationData), true)
+
+				await Wob.ArriveMany(fastWobs, context.babs, data.shownames)
 				break
 			}
 			case 'contains': {

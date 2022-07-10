@@ -233,8 +233,6 @@ export class InputSys {
 					}
 					log('Created '+count+' client side items')
 
-					wobTrees[1000].id = 1234 // for logging individually
-
 					// const uniqueGltfs = new Set(wobTrees.map(tree => tree.name))
 					// console.log('uniqueGltfs', uniqueGltfs)
 

@@ -86,12 +86,15 @@ export class Blueprint {
 		public locid :number,
 		public name? :string,
 		public glb? :string,
-	){}
+	){
+		if(!name) this.name = blueprint_id // Default name to bpid
+	}
 }
 
 export type Rotation = UintRange<0, 4>
 export class FastWob extends Blueprint {
 	constructor(
+		public idzone :number,
 		public x :number,
 		public z :number,
 		public r :Rotation,
@@ -129,29 +132,28 @@ export class SharedZone {
 		}
 
 		const blueprint = this.locidToBlueprint[locid]
-		return new FastWob(x, z, r, blueprint)
+		return new FastWob(this.id, x, z, r, blueprint)
 	}
 	setWob(x :number, z :number, blueprint_id :string|0, rotation :Rotation = undefined) {
+		const isLocidBeingRemoved = !blueprint_id
 		let wob = this.getWob(x, z)
 
-		if(!wob) { // Spot is unset.  Create a new one, depending.
-			if(blueprint_id === 0) {
-				// We're unsetting; and since this spot is already unset, do nothing!
-				return
-			}
-			// We are setting on an unset spot: So create a new wob there
-			const locid = this.bpidToLocid[blueprint_id]
-			const bp = new Blueprint(blueprint_id, locid)
-			wob = new FastWob(x, z, 0, bp)
+		if(isLocidBeingRemoved) {
+			this.wobIdRotGrid[x +(z *250)] = 0
+			this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id)
+			return [0, 0, wob.x, wob.z]
 		}
 
-		const locidBeingRemoved = !blueprint_id
-		if(locidBeingRemoved) {
-			wob.locid = 0
+		// Otherwise, we are setting or updating locid in grid
+
+		const locid = this.bpidToLocid[blueprint_id]
+		const bp = this.locidToBlueprint[locid]
+		if(!wob) { // Unset spot && we are setting
+			wob = new FastWob(this.id, x, z, 0, bp)
 		}
-		else { // being set
-			wob.locid = this.bpidToLocid[blueprint_id]
-		}
+
+		wob.blueprint_id = blueprint_id
+		wob.locid = this.bpidToLocid[blueprint_id]
 
 		const isRotationBeingSet = rotation !== undefined
 		if(isRotationBeingSet) {
@@ -164,32 +166,48 @@ export class SharedZone {
 		const idAndRot = idShifted +rotShifted
 
 		this.wobIdRotGrid[x +(z *250)] = idAndRot
+
+		// Return locations array of newly added wob
+		const byte1 = idAndRot >>> 8
+		const byte2 = (idAndRot << 24) >> 24
+		return [byte1, byte2, wob.x, wob.z]
+
+	}
+	removeWobGraphic(x :number, z :number, blueprint_id :string) {
+		// To be overridden
 	}
 
-	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false) :Array<FastWob>|undefined {
-		if(!locations) {
+	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false) :Array<FastWob> {
+		if(!locations || !locations.length) {
 			// console.log('applyLocations: no locations!')
-			return undefined // locations are not set for this zone (empty zone)
+			return [] // locations are not set for this zone (empty zone)
 		}
 
-		let wobs = undefined
-		if(returnWobs) wobs = []// = new Array<FastWob>(locations.length /4)
+		let wobs = []
 
 		for(let i=0; i<locations.length; i+=4){
-			const x = locations[i+0]
-			const z = locations[i+1]
-			const left = (locations[i+2] << 8)
-			const right = locations[i+3]
+			const left = (locations[i+0] << 8)
+			const right = locations[i+1]
 			const locidrot = left +right
-			this.wobIdRotGrid[x +(z *250)] = locidrot
+			const x = locations[i+2]
+			const z = locations[i+3]
 
-			if(returnWobs) {
-				const locid = locidrot >> 4
-				const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
+			const locid = locidrot >> 4
 
-				const bpid = this.locidToBlueprint[locid].blueprint_id
-				wobs.push(new FastWob(x, z, r, new Blueprint(bpid, locid)))
+			const isLocidBeingRemoved = locid === 0
+			if(isLocidBeingRemoved) {
+				const oldWob = this.getWob(x, z)
+				this.removeWobGraphic(x, z, this.locidToBlueprint[oldWob.locid].blueprint_id)
+				this.wobIdRotGrid[x +(z *250)] = 0
 			}
+			else {
+				this.wobIdRotGrid[x +(z *250)] = locidrot
+				if(returnWobs) {
+					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
+					wobs.push(new FastWob(this.id, x, z, r, this.locidToBlueprint[locid]))
+				}
+			}
+
 		}
 		return wobs
 	}
@@ -215,7 +233,7 @@ export class SharedZone {
 				if(idAndRot) {
 					const byte1 = idAndRot >>> 8
 					const byte2 = (idAndRot << 24) >> 24
-					locs.push([x, z, byte1, byte2])
+					locs.push([byte1, byte2, x, z])
 					countValid++
 				}
 			}

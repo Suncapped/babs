@@ -13,6 +13,7 @@ import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
+import { Blueprint, FastWob, type Rotation } from '@/shared/SharedZone'
 
 type IconData = {image :string, pixels :Uint8Array}
 
@@ -48,23 +49,24 @@ export class FeInstancedMesh extends InstancedMesh {
 	}
 }
 
-export class Wob extends Ent {
-	private constructor(id, babs) {
-		super(id, babs)
+export class Wob extends FastWob {
+	constructor(
+		public babs :Babs,
+		public idzone :number,
+		public x :number,
+		public z :number,
+		public r :Rotation,
+		bp :Blueprint,
+	) {
+
+		super(idzone, x, z, r, bp)
 	}
-
-	x
-	z
-	name
-	color
-	instancedIndex
-
-	idzone
 
 	get zone() {
 		return this.babs.ents.get(this.idzone) as Zone
 	}
 
+	color
 
 	static HiddenScene = null
 	static HiddenSceneRender(mesh) :Promise<IconData> {
@@ -192,22 +194,7 @@ export class Wob extends Ent {
 
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
-	static async ArriveMany(arrivalWobs, babs, shownames) {
-		// We can do a mass file request so server doesn't have to handle so many requests.
-		// For http2, doesn't matter.  And Cloudflare caches them, so not as bad between proxima->CF on http1
-		// let needNames = new Map()
-		// arrivalWobs.forEach(wob => {
-		// 	// if(wob.name == 'hot spring') log('needlog', wob.name)
-		// 	if(!Wob.InstancedMeshes.get(wob.name)) { // Not loaded, not promised
-		// 		const path = `${wob.name}`
-		// 		needNames.set(path, null)
-		// 	}
-		// }) 
-		// const filenames = [...needNames.keys()]
-		// if(filenames.length) {
-		// 	log('needNames', JSON.stringify(filenames))
-		// }
-
+	static async ArriveMany(arrivalWobs :Array<FastWob>, babs, shownames) {
 		// Load unique gltfs
 		let path
 		let loads = []
@@ -373,33 +360,27 @@ export class Wob extends Ent {
 		let yardCoord :YardCoord
 		let engPositionVector :Vector3
 		let matrix = new Matrix4()
-		for(const arrivalWob of arrivalWobs) {
-			const wobPrevious = babs.ents.get(arrivalWob.id) as Wob
-			let wob = new Wob(arrivalWob.id, babs)
-			wob = Object.assign(wob, arrivalWob) // Add and overwrite with new arrival data
-			// Note that wobPrevious might not have all its values (like instancedIndex) set yet, because that is being awaited.
-			// So ....uhh I guess set that later on? Comment 1287y19y1
-			babs.ents.set(arrivalWob.id, wob)
+		// This is for SETting instance items.  UNSET happens in Zone.removeWobGraphic.
+		// Why separately?  Because this happens en-masse
+		for(const fwob of arrivalWobs) {
+			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
+			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {blueprint_id: fwob.blueprint_id, locid: fwob.locid})
 			
 			// If it's being removed from bag, delete it from bag UI
 			// todo buggy
-			if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
-				// It's been moved from container into zone
-				babs.uiSys.svContainers[0].delWob(wob.id)
-			}
-			else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
-				// It's been moved bagtobag, or is being initial loaded into bag
-				babs.uiSys.svContainers[0].delWob(wob.id)
-			}
+			// if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
+			// 	// It's been moved from container into zone
+			// 	// babs.uiSys.svContainers[0].delWob(wob.id) // fasttodo
+			// }
+			// else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
+			// 	// It's been moved bagtobag, or is being initial loaded into bag
+			// 	// babs.uiSys.svContainers[0].delWob(wob.id) // fasttodo
+			// }
 
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
 				yardCoord = YardCoord.Create(wob)
-				if(wob.id === 1234) console.time('placeinzone')
-				engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone? :)
-
-	
-				if(wob.id === 1234) console.timeLog('placeinzone')
+				engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
 	
 				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
 	
@@ -414,30 +395,27 @@ export class Wob extends Ent {
 				engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
 
 
-				if(wob.id === 1234) log('engPositionVector', engPositionVector)
-	
-				if(wob.id === 1234) console.timeLog('placeinzone')
-	
-				// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1
-				wob.instancedIndex = wobPrevious?.instancedIndex
-				if(wob.instancedIndex === null || wob.instancedIndex === undefined) { // Doesn't already have an index, so add a new one
-					// Only increment if adding one rather than updating previous
-					wob.instancedIndex = instanced.count
+				// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1 // fasttodo still true?
+
+				// wob.instancedIndex = wobPrevious?.instancedIndex
+				// if(wob.instancedIndex === null || wob.instancedIndex === undefined) { 
+				// 	// Doesn't already have an index, so add a new one
+				// 	// Only increment if adding one rather than updating previous
+				// 	wob.instancedIndex = instanced.count
+				// 	instanced.count = instanced.count +1
+				// }
+				let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
+				if(!existingIindex) {
+					existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
 					instanced.count = instanced.count +1
 				}
 	
-				if(wob.id === 1234) log('wob.instancedIndex', wobPrevious?.instancedIndex, wob.instancedIndex)
-
 				matrix.setPosition(engPositionVector)
-				if(wob.id === 1234) console.timeLog('placeinzone')
-				instanced.setMatrixAt(wob.instancedIndex, matrix)
-				if(wob.id === 1234) console.timeLog('placeinzone')
+				instanced.setMatrixAt(existingIindex, matrix)
 	
-				instanced.wobIdsByIndex[wob.instancedIndex] = wob.id
+				// instanced.wobIdsByIndex[wob.instancedIndex] = wob.id // fasttodo
 
 				instanced.instanceMatrix.needsUpdate = true
-	
-				// if(wob.id === 1234) console.timeLog('placeinzone')
 	
 				if(shownames) {
 					babs.uiSys.wobSaid(wob.name, wob)
@@ -451,8 +429,6 @@ export class Wob extends Ent {
 	
 			}
 	
-	
-			if(wob.id === 1234) console.timeEnd('placeinzone')
 	
 			if(wob.name === 'firepit' || wob.name === 'torch') {
 				let scale, yup

@@ -3,9 +3,10 @@ import { YardCoord } from '@/comp/Coord'
 import { SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
-import { Mesh, Raycaster, Vector3 } from 'three'
+import { Matrix4, Mesh, Raycaster, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
+import { Wob } from './Wob'
 
 
 export class Zone extends SharedZone {
@@ -25,10 +26,39 @@ export class Zone extends SharedZone {
 
 	elevationData // Injected by SocketSys
 	landcoverData // Injected by SocketSys
-	locationData // Injected by SocketSys
+	locationData // Injected by Socke`tSys
 
 	geometry
 	ground :Mesh // ground 3d Mesh
+
+	override removeWobGraphic(x :number, z :number, blueprint_id :string) {
+		const existingWob = this.getWob(x, z)
+		if(existingWob) {
+			const instanced = Wob.InstancedMeshes.get(blueprint_id)
+			const zone = this.babs.ents.get(existingWob.idzone) as Zone
+			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
+			instanced.setMatrixAt(iindex, new Matrix4().setPosition(new Vector3(0,-10000,0))) // todo change from just putting far away, to getting rid of
+			// instanced.count = instanced.count -1
+			instanced.instanceMatrix.needsUpdate = true
+
+			// if(wobExisting.attachments?.flame){ // fasttodo
+			// 	context.babs.scene.remove(wob.attachments.flame.fire)
+			// 	delete wob.attachments.flame
+			// }
+		}
+	}
+
+	coordToInstanceIndex :Record<string, number> = {}
+	// setInstanceIndex(x :number, z :number) {
+	// 	_coordToInstanceIndex
+	// }
+	// getInstanceIndex(x :number, z :number) {
+		
+	// }
+
+	elevHeightAt() { // fasttodo
+
+	}
 	
 	rayHeightAt(coord :Vector3|YardCoord) :Vector3 {
 		let offset = new Vector3()
