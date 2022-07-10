@@ -153,4 +153,161 @@ export const LandcoverSpawns = {
 	],
 }
 
+export enum UiTypes {
+	journal='journal',
+	container='container',
+	menu='menu',
+	spell='spell',
+	profile='profile',
+}
+export interface Ui {
+	id ?:number
+	type :UiTypes
+	idplayer :number
+	idobject ?:number
+	x ?:number
+	y ?:number
+	z ?:number
+	w ?:number
+	h ?:number
+	visible ?:boolean
+	unfurled ?:boolean
+	other ?:Record<string, unknown>
+}
+
+// Socket sendables
+
+export type BlueprintList = Array<number|string>
+
+export type SendWobsUpdate = {
+	wobsupdate :{
+		idzone :number,
+		locationData :Array<number>,
+		blueprints? :BlueprintList, // fasttodo optimize rather than sending them all
+		shownames? :boolean,
+	},
+}
+
+export type Zoneinfo = {
+	id :number,
+	y :number,
+	yscale :number,
+	x :number,
+	z :number,
+}
+export type SendLoad = {
+	load :{
+		self :{
+			id :number,
+			// idzip: player.idzip, // Happens within tick loop because it's syncly generated there
+			idzone :number,
+			visitor :boolean,
+			x :number,
+			z :number,
+			r :number,
+			
+			email :string,
+			created_at :string,
+			credits :number,
+			roles :string,
+			reason :string,
+			color :string,
+			debugmode :boolean,
+			divider :number,
+			
+			meta :{
+				mousedevice :string,
+				debugmode :boolean,
+			},
+			char :{
+				gender :string,
+			},
+		},
+		zones :Array<Zoneinfo>,
+		blueprints :BlueprintList,
+		uis :Ui[],
+	},
+}
+
+export type SendPlayerDepart = {
+	playerdepart :number,
+}
+
+export type PlayerArrive = {
+	id :number,
+	idzip :number,
+	idzone :number,
+	visitor :boolean
+	x :number,
+	z :number,
+	r :number,
+	movestate :number,
+	meta :{},
+	char :{
+		gender :string,
+		color :string,
+	},
+}
+export type SendPlayersArrive = {
+	playersarrive :Array<PlayerArrive>
+}
+
+export type NickList = [{idtarget :number, nick :string}]
+export type SendNickList = {
+	nicklist :NickList,
+}
+
+export type SendSaid = {
+	said :{
+		id :number|undefined
+		text :string,
+		color :string,
+		show? :boolean, // used for sending chat history
+		name? :number|string // used for sending chat history
+	}
+}
+
+export type SendEnergy = {
+	energy :number,
+}
+
+export type SendZoneIn = {
+	zonein :{
+		idplayer :number,
+		idzone :number,
+	},
+}
+
+export type SendJournal = {
+	journal :{
+		text :string,
+	},
+}
+
+export type SendCraftable = {
+	craftable :{
+		wobId :number,
+		options :Array<string>,
+	},
+}
+export type SendAskTarget = {
+	asktarget :{
+		sourceWobId :number,
+	},
+}
+// export type SendWobsRemove = {
+// 	wobsremove: {
+// 		wobs: [wob],
+// 	}
+// }
+
+export type SendAlreadyIn = {
+	alreadyin: true,
+}
+export type SendServerRestart = {
+	serverrestart: true,
+}
+
+export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
+	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
 

@@ -37,8 +37,14 @@ export class Zone extends SharedZone {
 			const instanced = Wob.InstancedMeshes.get(blueprint_id)
 			const zone = this.babs.ents.get(existingWob.idzone) as Zone
 			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
-			instanced.setMatrixAt(iindex, new Matrix4().setPosition(new Vector3(0,-10000,0))) // todo change from just putting far away, to getting rid of
-			// instanced.count = instanced.count -1
+
+			// Remove one by swapping the last item into this place, then decrease instanced count by 1
+			let swap :Matrix4 = new Matrix4()
+			instanced.getMatrixAt(instanced.count -1, swap)
+			instanced.setMatrixAt(iindex, swap)
+			instanced.count = instanced.count -1
+			zone.coordToInstanceIndex[existingWob.x +','+ existingWob.z] = null
+
 			instanced.instanceMatrix.needsUpdate = true
 
 			// if(wobExisting.attachments?.flame){ // fasttodo

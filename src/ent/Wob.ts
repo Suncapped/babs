@@ -299,7 +299,7 @@ export class Wob extends FastWob {
 				Wob.InstancedMeshes.set(wobName, instanced)
 				babs.scene.add(instanced)
 			}
-			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for packpack items too, but that's okay)
+			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for backpack items too, but that's okay)
 				log('instanced growing at', instanced.count, newWobsCount, instanced.countMax)
 
 				const newMax = instanced.count +newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
@@ -394,18 +394,9 @@ export class Wob extends FastWob {
 	
 				engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
 
-
-				// Yeah so per comment near top, wobPrevious.instancedIndex needs to be re-applied here because prior to the instanced await, it wasn't set on the first instance creation wob. // Comment 1287y19y1 // fasttodo still true?
-
-				// wob.instancedIndex = wobPrevious?.instancedIndex
-				// if(wob.instancedIndex === null || wob.instancedIndex === undefined) { 
-				// 	// Doesn't already have an index, so add a new one
-				// 	// Only increment if adding one rather than updating previous
-				// 	wob.instancedIndex = instanced.count
-				// 	instanced.count = instanced.count +1
-				// }
 				let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
-				if(!existingIindex) {
+				const indexDoesNotExist = !existingIindex && existingIindex !== 0
+				if(indexDoesNotExist) {
 					existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
 					instanced.count = instanced.count +1
 				}

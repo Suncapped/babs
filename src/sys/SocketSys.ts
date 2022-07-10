@@ -17,6 +17,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
+import type { SendLoad, SendWobsUpdate, Zoneinfo } from '@/shared/consts'
 
 export class SocketSys {
 
@@ -264,34 +265,34 @@ export class SocketSys {
 				break
 			}
 			case 'load': {
+				const load = data as (SendLoad['load'])
 				log('socket: load', data)
 				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 					context.send({ping:'ping'})
 				}, SocketSys.pingSeconds * 1000)
 
-				const loadSelf = data.self
-				const zonedatas = data.zones
-				log.info('Welcome to', loadSelf.idzone, loadSelf.id, loadSelf.visitor)
+				const zonedatas = load.zones
+				log.info('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
 				toprightText.set(context.babs.uiSys.toprightTextDefault)
 				document.getElementById('topleft').style.visibility = 'visible'
 
-				debugMode.set(loadSelf.meta.debugmode === undefined ? false : loadSelf.meta.debugmode) // Handle meta value creation
-				dividerOffset.set(loadSelf.divider)
+				debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
+				dividerOffset.set(load.self.divider)
 
-				if(loadSelf.visitor !== true) {
+				if(load.self.visitor !== true) {
 					document.getElementById('topleft').style.visibility = 'visible'
 					document.getElementById('topleft').textContent = 'Waking up...'
 
 					topmenuAvailable.set(true)
 
-					menuSelfData.set(loadSelf)
+					menuSelfData.set(load.self)
 				}
 
 				context.babsReady = true
 
 				let zones = new Array<Zone>()
-				for(let zd of zonedatas) {
-					zones.push(new Zone(context.babs, zd.id, zd.x, zd.z, zd.y, zd.yscale, [], []))
+				for(let zi of zonedatas) {
+					zones.push(new Zone(context.babs, zi.id, zi.x, zi.z, zi.y, zi.yscale, new Uint8Array, new Uint8Array))
 				}
 
 				// Load some things ahead of time
@@ -329,7 +330,7 @@ export class SocketSys {
 
 				const pStatics = []
 				for(let zone of zones) {
-					const isStartingZone = zone.id == loadSelf.idzone
+					const isStartingZone = zone.id == load.self.idzone
 					pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isStartingZone))
 				}
 				// console.time('stitch')
@@ -339,15 +340,15 @@ export class SocketSys {
 				await context.babs.worldSys.stitchElevation(zones)
 
 				// Create player entity
-				const playerPromise = Player.Arrive(loadSelf, true, context.babs)
+				const playerPromise = Player.Arrive(load.self, true, context.babs)
 					
 				// Set up UIs
-				context.babs.uiSys.loadUis(data.uis)
+				context.babs.uiSys.loadUis(load.uis)
 
 
 				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
 				// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
-				const startingZone = this.babs.ents.get(loadSelf.idzone) as Zone
+				const startingZone = this.babs.ents.get(load.self.idzone) as Zone
 				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
 				// let pObjects = []
@@ -367,7 +368,7 @@ export class SocketSys {
 				// Get the new, faster wobs locations array
 				// let fastWobLocationsPromises = new Array<Promise<Uint8Array>>(zones.length)
 				// for(let zone of zones) {
-				// 	zone.applyBlueprints(data.blueprints)
+				// 	zone.applyBlueprints(load.blueprints)
 					
 				// 	const locations = context.babs.worldSys.loadWobLocations(context.babs.urlFiles, zone)
 				// 	fastWobLocationsPromises.push(locations)
@@ -376,7 +377,7 @@ export class SocketSys {
 
 				let fWobs :Array<FastWob> = []
 				for(const zone of zones) {
-					zone.applyBlueprints(data.blueprints)
+					zone.applyBlueprints(load.blueprints)
 					const fastWobs = zone.applyLocationsToGrid(zone.locationData, true)
 					fWobs.push(...fastWobs)
 				}
@@ -386,10 +387,10 @@ export class SocketSys {
 
 
 				context.send({
-					ready: loadSelf.id,
+					ready: load.self.id,
 				})
 
-				if(loadSelf.visitor !== true) {
+				if(load.self.visitor !== true) {
 					document.getElementById('welcomebar').style.display = 'none' 
 				}
 
@@ -470,30 +471,9 @@ export class SocketSys {
 				}
 				break
 			}
-			case 'wobsremove': {
-				log.info('wobsremove', data)
-				for(let wobRemove of data.wobs) {
-					const wobExisting = context.babs.ents.get(wobRemove.id) as Wob
-					if(wobExisting) {
-						const instanced = Wob.InstancedMeshes.get(wobExisting.name)
-						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(0,-10000,0))) // todo change from just putting far away, to getting rid of
-						// instanced.count = instanced.count -1
-						instanced.instanceMatrix.needsUpdate = true
-
-
-						if(wobExisting.attachments?.flame){
-							context.babs.scene.remove(wob.attachments.flame.fire)
-							delete wob.attachments.flame
-						}
-
-						context.babs.ents.delete(wobExisting.id)
-					}
-				}
-				break
-			}
 			case 'wobsupdate': {
+				const wobsupdate = data as SendWobsUpdate['wobsupdate']
 				log('wobsupdate', data)
-
 
 				/*
 				Currently we are:
@@ -503,11 +483,11 @@ export class SocketSys {
 				Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
 				So the purpose of ArriveMany is to load the graphics, pretty much.
 				*/
-				const zone = context.babs.ents.get(data.idzone) as Zone
-				if(data.blueprints) zone.applyBlueprints(data.blueprints)
-				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(data.locationData), true)
+				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
+				if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
+				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 
-				await Wob.ArriveMany(fastWobs, context.babs, data.shownames)
+				await Wob.ArriveMany(fastWobs, context.babs, wobsupdate.shownames)
 				break
 			}
 			case 'contains': {
