@@ -492,7 +492,7 @@ export class InputSys {
 							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
 					}
 					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in mousemove), in UI
-						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id
+						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id // fasttodo
 						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
 					}
 
@@ -576,20 +576,20 @@ export class InputSys {
 							else if (this.pickedObject?.instanced) {
 								let debugStuff = ''
 								// Single click instanced
-								const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
+								// const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
+								const yardCoord = this.pickedObject?.yardCoord
+
 
 								if(this.babs.debugMode) {
 									const pos = this.pickedObject?.instancedPosition
 									log('this.pickedObject', this.pickedObject, pos)
-									const yardCoord = YardCoord.Create({
-										position: pos,
-										zone: this.babs.worldSys.currentGround.zone,
-									})
 									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex
 								}
+
+
 								
-								log('picked', this.pickedObject, this.pickedObject?.id, wob)
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, wob)
+								log('picked', this.pickedObject, yardCoord)
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, yardCoord)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
@@ -619,7 +619,7 @@ export class InputSys {
 							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
 							const yardCoord = YardCoord.Create({
 								position: this.mouse.landtarget.point,
-								zone: zone,
+								zoneOrBabs: this.babs,
 							})
 
 							this.babs.socketSys.send({
@@ -743,10 +743,10 @@ export class InputSys {
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log('landdrop', this.mouse.landtarget)
-						const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+						// const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
 						const yardCoord = YardCoord.Create({
 							position: this.mouse.landtarget.point,
-							zone: zone,
+							zoneOrBabs: this.babs,
 						})
 						
 						// Todo put distance limits, here and server
@@ -942,8 +942,11 @@ export class InputSys {
 					const name = this.mouseRayTargets[i].object.name
 					const instanced = Wob.InstancedMeshes.get(name) as FeInstancedMesh
 					const index = this.mouseRayTargets[i].instanceId
-					// log('mouse name', name, instanced, index)
 					const position = instanced.coordFromIndex(index)
+
+					const yard = YardCoord.Create({position: position, zoneOrBabs: this.babs})
+
+					// log('mouse name', this.mouseRayTargets[i].object, name, instanced, index, position, yard)
 
 					// How to highlight with IM?  Need to have a color thing on it, like with water.
 					const wobId = instanced.wobIdsByIndex[index]
@@ -952,7 +955,8 @@ export class InputSys {
 						instancedName: name,
 						instancedIndex: index,
 						instancedPosition: position,
-						id: wobId,
+						// id: wobId,
+						yardCoord: yard,
 						// isIcon: true,
 					}
 
@@ -978,7 +982,7 @@ export class InputSys {
 						const pos = this.mouseRayTargets[i].point
 						const yardCoord = YardCoord.Create({
 							position: pos,
-							zone: zone,
+							zoneOrBabs: this.babs,
 						})
 
 						

@@ -127,7 +127,7 @@ export class SharedZone {
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
 
 		if(locid === 0) {
-			// It's empty / unset!
+			// It's empty or unset!
 			return null
 		}
 

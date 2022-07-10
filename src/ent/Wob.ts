@@ -44,7 +44,7 @@ export class FeInstancedMesh extends InstancedMesh {
 		const position = new Vector3()
 		quat.setFromRotationMatrix(matrix)
 		position.setFromMatrixPosition(matrix)
-		const engWorldCoord = position.add(this.babs.worldSys.shiftiness)
+		const engWorldCoord = position.clone().add(this.babs.worldSys.shiftiness)
 		return engWorldCoord
 	}
 }

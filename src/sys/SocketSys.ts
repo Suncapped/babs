@@ -484,7 +484,7 @@ export class SocketSys {
 				So the purpose of ArriveMany is to load the graphics, pretty much.
 				*/
 				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
-				if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
+				// if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
 				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 
 				await Wob.ArriveMany(fastWobs, context.babs, wobsupdate.shownames)

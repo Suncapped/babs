@@ -161,7 +161,7 @@ export class UiSys {
 		const zone = this.babs.ents.get(landtarget.idzone) as Zone
 		const yardCoord = YardCoord.Create({
 			position: landtarget.point,
-			zone: zone,
+			zoneOrBabs: this.babs,
 		})
 		
 		let point = zone.rayHeightAt(yardCoord)
@@ -196,7 +196,7 @@ export class UiSys {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
 
-	wobSaid(text, wob :Wob) {
+	wobSaid(text, coord :YardCoord) {
 		log.info('wobSaid', text)
 		const chatDiv = document.createElement('div')
 		chatDiv.classList.add('label')
@@ -214,9 +214,8 @@ export class UiSys {
 		
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'wobSaid'
-		const wobZone = this.babs.ents.get(wob.idzone) as Zone
-		let point = wobZone.rayHeightAt(YardCoord.Create(wob))
-		log('wobSaid point', point, YardCoord.Create(wob))
+		let point = coord.zone.rayHeightAt(coord)
+		log('wobSaid point', point, coord)
 
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
