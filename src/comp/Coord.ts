@@ -2,7 +2,7 @@
 import { log } from '@/Utils'
 import { Comp } from '@/comp/Comp'
 import { type Ent } from '@/ent/Ent'
-import { type Babs } from '@/Babs'
+import { Babs } from '@/Babs'
 import { RedIntegerFormat, Vector2, Vector3 } from 'three'
 import { type UintRange } from '@/shared/TypeUtils'
 import { Zone } from '@/ent/Zone'
@@ -36,7 +36,7 @@ abstract class Coord {
 	// constructor() {}
 }
 type XZandZone = {x :number, z :number, zone: Zone} // eg a wob with x, z, and zone on it.
-type PositionAndZone = {position :Vector3, zone: Zone} // eg a Mesh with position and zone on it.
+type PositionAndZoneBabs = {position :Vector3, zoneOrBabs: Zone|Babs} // eg a Mesh with position and zone on it.
 
 // Specific Coord Classes:
 
@@ -45,10 +45,10 @@ export class YardCoord extends Coord {
 	static PER_ZONE = 250
 	
 	private constructor() { super() }
-	static Create(coord :PositionAndZone | XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
+	static Create(coord :PositionAndZoneBabs | XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
 		if('position' in coord) {
 			// Engine coordinate; determine zone and inner-zone coordinate
-			// The zone passed in here is probably irrelevant.  We just want it to use its babs reference.
+			// The zone passed in here is irrelevant.  We just want it to use its babs reference.
 			/*
 				What we want is to determine zone.  This will be relative to self.
 				Engine coordinates are literally always self-based on current zone!
@@ -56,7 +56,14 @@ export class YardCoord extends Coord {
 					Like, if you have -5, That is player.zone.x -1 & 250-5
 			*/
 
-			const zoneSelf = coord.zone.babs.worldSys.currentGround.zone // lol hmm
+			let babs
+			if(coord.zoneOrBabs instanceof Babs) {
+				babs = coord.zoneOrBabs
+			}
+			else if(coord.zoneOrBabs instanceof Zone) {
+				babs = coord.zoneOrBabs.babs
+			}
+			const zoneSelf = babs.worldSys.currentGround.zone // lol hmm
 
 			// First let's find the target zone x,z relative to us.  (The engine position is already relative)
 			// Actually, crosszoneCoord does this.
