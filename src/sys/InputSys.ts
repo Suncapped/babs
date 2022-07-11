@@ -18,6 +18,8 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
+import type { WobId } from '@/shared/consts'
+import { FastWob } from '@/shared/SharedZone'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -28,6 +30,15 @@ const ON = true
 
 const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
+
+type PickedObject = {
+	instanced :FeInstancedMesh,
+	instancedBpid :string,
+	isIcon? :boolean,
+	instancedIndex? :number,
+	instancedPosition? :Vector3,
+	yardCoord? :YardCoord,
+}
 
 export class InputSys {
 
@@ -457,12 +468,11 @@ export class InputSys {
 
 							// log('instanced?', wob)
 
+
+
 							this.pickedObject = {
 								instanced: instanced,
-								instancedName: wob.name,
-								// instancedIndex: index,
-								// instancedPosition: position,
-								id: wob.id,
+								instancedBpid: wob.name,
 								isIcon: true,
 							}
 						}
@@ -545,26 +555,31 @@ export class InputSys {
 					// Single click
 					if (this.mouse.ldouble === false) { // First click
 						if(this.isAskingTarget) { // In target selection mode
-							const wob = Utils.findWobByInstance(this.babs.ents, this.pickedObject?.instancedIndex, this.pickedObject?.instancedName)
 							// todo make work for non-instanced things, and ground, players, etc.
-
-							if(!wob || !this.pickedObject?.instanced) {
+							const coord = this.pickedObject?.yardCoord
+							if(!coord) {
 								this.babs.uiSys.playerSaid(this.babs.idSelf, 'There is no effect.', {journal: false, color: '#cccccc', italics: true})
+							}
+
+							const zone = coord.zone
+							const wob = zone.getWob(coord.x, coord.z)
+							if(!wob) {
+								this.babs.uiSys.playerSaid(this.babs.idSelf, 'Target not found.', {journal: false, color: '#cccccc', italics: true})
 							}
 							else {
 								this.babs.socketSys.send({
 									action: {
 										verb: 'used',
-										noun: this.askTargetSourceWobId,
+										noun: this.askTargetSourceWob.id(),
 										data: {
-											target: wob.id,
+											target: wob.id(),
 										},
 									}
 								})
 							}
 							document.body.style.cursor = 'auto'
 							this.isAskingTarget = false
-							this.askTargetSourceWobId = null
+							this.askTargetSourceWob = null
 
 						}
 						else {
@@ -589,7 +604,7 @@ export class InputSys {
 
 								
 								log('picked', this.pickedObject, yardCoord)
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedName +debugStuff, yardCoord)
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, yardCoord)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
@@ -619,7 +634,7 @@ export class InputSys {
 							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
 							const yardCoord = YardCoord.Create({
 								position: this.mouse.landtarget.point,
-								zoneOrBabs: this.babs,
+								babs: this.babs,
 							})
 
 							this.babs.socketSys.send({
@@ -635,18 +650,16 @@ export class InputSys {
 
 						} else {//} if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
-							log('wobclick', this.mouse, this.pickedObject, this.pickedObject?.instanced?.wobIdsByIndex)
+							log('wobclick', this.mouse, this.pickedObject)
 
 							if(this.pickedObject) {
-
-								const wobId = this.pickedObject.instanced.wobIdsByIndex[this.pickedObject.instancedIndex]
-								const wob = this.babs.ents.get(wobId)
-								log('WOBID', wobId, wob)
+								const coord = this.pickedObject?.yardCoord
+								const wob = coord.zone.getWob(coord.x, coord.z)
 	
 								this.babs.socketSys.send({
 									action: {
 										verb: 'used',
-										noun: wobId,
+										noun: wob.id(),
 									}
 								})
 							}
@@ -746,7 +759,7 @@ export class InputSys {
 						// const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
 						const yardCoord = YardCoord.Create({
 							position: this.mouse.landtarget.point,
-							zoneOrBabs: this.babs,
+							babs: this.babs,
 						})
 						
 						// Todo put distance limits, here and server
@@ -860,7 +873,7 @@ export class InputSys {
 	mouseRayTargets = []
 	displayDestinationMesh
 
-	pickedObject :any
+	pickedObject :PickedObject
 	pickedObjectSavedColor
 	pickedObjectSavedMaterial
 	lastMoveHoldPicked :any
@@ -889,7 +902,7 @@ export class InputSys {
 			else { // non-mega color materials?  Should there even be any anymore? :)
 				this.pickedObject.material.emissive.copy(this.pickedObjectSavedColor)
 			}
-			this.pickedObject = undefined;
+			this.pickedObject = undefined
 		}
 		if (this.mouse.landtarget.text) {
 			this.mouse.landtarget = {
@@ -944,20 +957,15 @@ export class InputSys {
 					const index = this.mouseRayTargets[i].instanceId
 					const position = instanced.coordFromIndex(index)
 
-					const yard = YardCoord.Create({position: position, zoneOrBabs: this.babs})
+					const yard = YardCoord.Create({position: position, babs: this.babs})
 
 					// log('mouse name', this.mouseRayTargets[i].object, name, instanced, index, position, yard)
-
-					// How to highlight with IM?  Need to have a color thing on it, like with water.
-					const wobId = instanced.wobIdsByIndex[index]
 					this.pickedObject = {
 						instanced: instanced,
-						instancedName: name,
+						instancedBpid: name,
 						instancedIndex: index,
 						instancedPosition: position,
-						// id: wobId,
 						yardCoord: yard,
-						// isIcon: true,
 					}
 
 				}
@@ -969,10 +977,10 @@ export class InputSys {
 							continue
 						}
 						// Player bounding box, not in first person view
-						this.pickedObject = this.mouseRayTargets[i].object
+						const temp = this.mouseRayTargets[i].object
 						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 						// log('player_bbox', this.pickedObject)
-						this.pickedObject = this.pickedObject.parent.children[0].children[1]  // gltf loaded
+						this.pickedObject = temp.parent.children[0].children[1]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 						if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
@@ -982,7 +990,7 @@ export class InputSys {
 						const pos = this.mouseRayTargets[i].point
 						const yardCoord = YardCoord.Create({
 							position: pos,
-							zoneOrBabs: this.babs,
+							babs: this.babs,
 						})
 
 						
@@ -1325,12 +1333,12 @@ export class InputSys {
 	}
 
 	isAskingTarget = false
-	askTargetSourceWobId
-	askTarget(sourceWobId, name) {
-		this.askTargetSourceWobId = sourceWobId
+	askTargetSourceWob :FastWob
+	askTarget(fwob :FastWob) {
+		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${name} on?`, {journal: false, color: '#cccccc', italics: true})
+		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${fwob.name} on?`, {journal: false, color: '#cccccc', italics: true})
 	}
 
 

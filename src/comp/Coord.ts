@@ -3,7 +3,7 @@ import { log } from '@/Utils'
 import { Comp } from '@/comp/Comp'
 import { type Ent } from '@/ent/Ent'
 import { Babs } from '@/Babs'
-import { RedIntegerFormat, Vector2, Vector3 } from 'three'
+import { InstancedMesh, RedIntegerFormat, Vector2, Vector3 } from 'three'
 import { type UintRange } from '@/shared/TypeUtils'
 import { Zone } from '@/ent/Zone'
 
@@ -35,8 +35,9 @@ Coordinate formats:
 abstract class Coord {
 	// constructor() {}
 }
-type XZandZone = {x :number, z :number, zone: Zone} // eg a wob with x, z, and zone on it.
-type PositionAndZoneBabs = {position :Vector3, zoneOrBabs: Zone|Babs} // eg a Mesh with position and zone on it.
+type PositionAndZoneBabs = {position :Vector3, zone? :Zone, babs? :Babs} // eg a Mesh with position and zone on it.
+type XZandZone = {x :number, z :number, zone :Zone} // eg a wob with x, z, and zone on it.
+type XZandZoneOrIdzoneBabs = {x :number, z :number, zone? :Zone, idzone? :number, babs? :Babs} // zone, or babs+idzone
 
 // Specific Coord Classes:
 
@@ -45,7 +46,7 @@ export class YardCoord extends Coord {
 	static PER_ZONE = 250
 	
 	private constructor() { super() }
-	static Create(coord :PositionAndZoneBabs | XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
+	static Create(coord :PositionAndZoneBabs | XZandZoneOrIdzoneBabs) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
 		if('position' in coord) {
 			// Engine coordinate; determine zone and inner-zone coordinate
 			// The zone passed in here is irrelevant.  We just want it to use its babs reference.
@@ -57,13 +58,13 @@ export class YardCoord extends Coord {
 			*/
 
 			let babs
-			if(coord.zoneOrBabs instanceof Babs) {
-				babs = coord.zoneOrBabs
+			if(coord.zone instanceof Zone) {
+				babs = coord.zone.babs
 			}
-			else if(coord.zoneOrBabs instanceof Zone) {
-				babs = coord.zoneOrBabs.babs
+			else if(coord.babs instanceof Babs) {
+				babs = coord.babs
 			}
-			const zoneSelf = babs.worldSys.currentGround.zone // lol hmm
+			const zoneSelf = babs.worldSys.currentGround.zone as Zone // lol hmm
 
 			// First let's find the target zone x,z relative to us.  (The engine position is already relative)
 			// Actually, crosszoneCoord does this.
@@ -81,9 +82,22 @@ export class YardCoord extends Coord {
 		}
 		else {
 			// XZandZone
-			// Already includes zone and inner-zone coord.
+			let zonedCoord :XZandZone
+			if(coord.zone instanceof Zone) {
+				zonedCoord = coord as XZandZone
+			} 
+			else if('idzone' in coord) {
+				const zone = coord.babs.ents.get(coord.idzone) as Zone
+				zonedCoord = {x: coord.x, z: coord.z, zone: zone}
+			}
+			else {
+				console.warn('Error: No zone info', coord)
+			}
+
+
+			// Includes zone and inner-zone coord.
 			// But inner-zone coord may overflow to another zone, so crosszone it.
-			const crossCoord = crosszoneCoord(coord, YardCoord.PER_ZONE)
+			const crossCoord = crosszoneCoord(zonedCoord, YardCoord.PER_ZONE)
 			return new YardCoord().init(crossCoord.x as YardRange, crossCoord.z as YardRange, crossCoord.zone)
 		}
 	}
@@ -165,7 +179,7 @@ export class YardCoord extends Coord {
 // 	}
 // }
 export class ZoneCoord extends Coord {
-	static Create(coord :XZandZone) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
+	static Create(coord :XZandZoneOrIdzoneBabs) { // Can be like a wob with xz, or just an object with them eg {x:,z:}
 		if(!Number.isInteger(coord.x) || !Number.isInteger(coord.z)) {
 			console.error('Invalid ZoneCoord: ', coord.x, coord.z)
 			return undefined

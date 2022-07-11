@@ -32,6 +32,7 @@ export class Zone extends SharedZone {
 	ground :Mesh // ground 3d Mesh
 
 	override removeWobGraphic(x :number, z :number, blueprint_id :string) {
+		console.log('silly removing graphic', x, z, blueprint_id)
 		const existingWob = this.getWob(x, z)
 		if(existingWob) {
 			const instanced = Wob.InstancedMeshes.get(blueprint_id)

@@ -176,17 +176,6 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 //     // return ground
 // // }
 
-
-export function findWobByInstance(ents, instancedIndex, instancedName) { // note also: wobIdsByIndex
-	for(let [key, ent] of ents) {
-		// log('findWobByInstance', ent.instancedIndex, instancedIndex, ent.name, instancedName)
-		if(ent.instancedIndex === instancedIndex && ent.name === instancedName) {
-			return ent
-		}
-	}
-	return null
-}
-
 export function WobAtPosition(ents, gx, gz) {
 	// todo make this use an abstracted grid (like server) instead of linear search
 	for(let [key, ent] of ents) {

@@ -177,6 +177,19 @@ export interface Ui {
 
 // Socket sendables
 
+export type WobId = {
+	idzone :number,
+	x :number,
+	z :number,
+	blueprint_id :string,
+}
+export function isWobId(item :any): item is WobId {
+	return (item as WobId).idzone !== undefined
+	&& (item as WobId).x !== undefined
+	&& (item as WobId).z !== undefined
+	&& (item as WobId).blueprint_id !== undefined
+}
+
 export type BlueprintList = Array<number|string>
 
 export type SendWobsUpdate = {
@@ -286,13 +299,13 @@ export type SendJournal = {
 
 export type SendCraftable = {
 	craftable :{
-		wobId :number,
+		wobId :WobId,
 		options :Array<string>,
 	},
 }
 export type SendAskTarget = {
 	asktarget :{
-		sourceWobId :number,
+		sourceWobId :WobId,
 	},
 }
 // export type SendWobsRemove = {
@@ -311,3 +324,22 @@ export type SendServerRestart = {
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
 
+
+
+export function toHexString(byteArray) {
+	console.log('silly byteArray', byteArray)
+	const result = []
+	for(let i in byteArray) {
+		console.log('i', i)
+		if (byteArray[i] < 16) {
+			result[i] = '0' + byteArray[i].toString(16)
+		} else {
+			result[i] = byteArray[i].toString(16)
+		}
+	}
+	const str = result.join('')
+	if(str.includes('-')) {
+		console.warn('toHexString has a negative:', byteArray, result, str)
+	}
+	return str
+}

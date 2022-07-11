@@ -27,7 +27,7 @@ export class UiSys {
 
 	static ICON_SIZE = 50
 
-    constructor(babs) {
+	constructor(babs) {
 		this.babs = babs
 
 		new Overlay({
@@ -44,7 +44,7 @@ export class UiSys {
 			this.toprightTextDefault = 'Welcome! <a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>'
 		}
 		toprightText.set(this.toprightTextDefault)
-    }
+	}
 
 	playerSaid(idPlayer, text, options) {
 		options = {
@@ -69,7 +69,7 @@ export class UiSys {
 		// 	chatDiv.style.color = svelteGet(menuSelfData).color
 		// }
 		// else {
-			chatDiv.style.color = options.color
+		chatDiv.style.color = options.color
 		// }
 
 		if(options.italics) chatDiv.style.fontStyle = 'italic'
@@ -161,7 +161,7 @@ export class UiSys {
 		const zone = this.babs.ents.get(landtarget.idzone) as Zone
 		const yardCoord = YardCoord.Create({
 			position: landtarget.point,
-			zoneOrBabs: this.babs,
+			babs: this.babs,
 		})
 		
 		let point = zone.rayHeightAt(yardCoord)
@@ -239,7 +239,7 @@ export class UiSys {
 			const chatButton = document.createElement('button')
 			chatButton.innerText = option
 			chatButton.id = option
-			chatButton.className = "craftbtn"
+			chatButton.className = 'craftbtn'
 			chatButton.style.cssText = 'pointer-events: auto;'
 			chatButton.onsubmit = (ev) => ev.preventDefault()
 			chatButton.onclick = (ev) => updateWOB(option)
@@ -250,7 +250,7 @@ export class UiSys {
 		})	
 		
 		const updateWOB = (opt) => {
-			log("User selected: " + opt + " wobID: " + wob.id)
+			log('User selected: ' + opt + ' wobID: ' + wob.id)
 			log('parent', chatLabel.parent)
 			this.babs.scene.remove(chatLabel)	
 
@@ -275,14 +275,14 @@ export class UiSys {
 		this.svJournal.appendText(reason, '#ff0000', 'right')
 	}
 
-    /** 
+	/** 
      * @param {'fps'|'mem'} which
      */
-    createStats(which) {
-        this[which] = Stats()
-        this[which].showPanel(which=="fps"?0:1)
-        this[which].dom.id = which
-        this[which].dom.style = ""
+	createStats(which) {
+		this[which] = Stats()
+		this[which].showPanel(which=='fps'?0:1)
+		this[which].dom.id = which
+		this[which].dom.style = ''
 
 		const waitForReady = () => {
 			const el = document.getElementById('stats')
@@ -294,7 +294,7 @@ export class UiSys {
 			}
 		}
 		waitForReady()
-    }
+	}
 
 	loadUis(uis) {
 		for(let ui of uis) {

@@ -17,7 +17,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendLoad, SendWobsUpdate, Zoneinfo } from '@/shared/consts'
+import type { SendLoad, SendWobsUpdate, WobId, Zoneinfo } from '@/shared/consts'
 
 export class SocketSys {
 
@@ -557,9 +557,12 @@ export class SocketSys {
 			case 'asktarget': {
 				log('asktarget', data, document.body.style.cursor)
 
-				const wob = context.babs.ents.get(data.sourceWobId)
+				const wobId = data.sourceWobId as WobId
 
-				context.babs.inputSys.askTarget(data.sourceWobId, wob.name || '')
+				const coord = YardCoord.Create({...wobId, babs: context.babs})
+				const fwob = coord.zone.getWob(coord.x, coord.z)
+
+				context.babs.inputSys.askTarget(fwob)
 
 				break
 			}

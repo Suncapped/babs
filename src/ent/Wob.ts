@@ -24,7 +24,6 @@ export class FeInstancedMesh extends InstancedMesh {
 	}
 
 	babs :Babs
-	wobIdsByIndex :number[] = []
 	renderedIcon :() => Promise<IconData>|IconData
 	countMax :number
 	boundingSize = new Vector3()
@@ -334,8 +333,6 @@ export class Wob extends FastWob {
 				newInstance.instanceColor = new InstancedBufferAttribute(fullColors, 3)
 				newInstance.instanceColor.needsUpdate = true
 	
-				newInstance.wobIdsByIndex = instanced.wobIdsByIndex
-				
 				newInstance.position.x = instanced.position.x
 				newInstance.position.z = instanced.position.z
 
@@ -404,8 +401,6 @@ export class Wob extends FastWob {
 				matrix.setPosition(engPositionVector)
 				instanced.setMatrixAt(existingIindex, matrix)
 	
-				// instanced.wobIdsByIndex[wob.instancedIndex] = wob.id // fasttodo
-
 				instanced.instanceMatrix.needsUpdate = true
 	
 				if(shownames) {

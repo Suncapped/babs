@@ -1,3 +1,4 @@
+import type { WobId } from './consts'
 import { type UintRange } from './TypeUtils'
 
 /*
@@ -57,7 +58,7 @@ const rotShifted = startRot << 0 // 3
 const idAndRot = idShifted +rotShifted // 64099
 const byte1 = idAndRot >>> 8 // 250
 // In JS you are dealing with 32 bit numbers by default?
-const byte2 = (idAndRot << 24) >> 24 // 99
+const byte2 = (idAndRot << 24) >>> 24 // 99
 console.log(byte1, byte2)
 
 // Proxima sends update of rotation to everyone
@@ -73,7 +74,7 @@ locations[3] = startZ
 const left = (locations[0] << 8) // 64000
 const right = locations[1] // 99
 const idAndRot2 = left +right // 64099
-const id = idAndRot2 >> 4
+const id = idAndRot2 >>> 4
 const r = (idAndRot2 << (16 + 12)) >>> (16 + 12)
 const x = locations[2] // 8 bits
 const z = locations[3] // 8 bits
@@ -102,6 +103,14 @@ export class FastWob extends Blueprint {
 	){
 		super(bp.blueprint_id, bp.locid, bp.name, bp.glb)
 	}
+	id() :WobId {
+		return {
+			idzone: this.idzone,
+			x: this.x,
+			z: this.z,
+			blueprint_id: this.blueprint_id,
+		}
+	}
 }
 
 export class SharedZone {	
@@ -123,8 +132,9 @@ export class SharedZone {
 
 	getWob(x :number, z :number) :FastWob|null {
 		const idAndRot = this.wobIdRotGrid[x +(z *250)] // this.wobIdRotGrid.get(x, z) was ndarray
-		const locid = idAndRot >> 4
+		const locid = idAndRot >>> 4
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
+		console.log('silly getwob', idAndRot, locid, r)
 
 		if(locid === 0) {
 			// It's empty or unset!
@@ -148,9 +158,12 @@ export class SharedZone {
 
 		const locid = this.bpidToLocid[blueprint_id]
 		const bp = this.locidToBlueprint[locid]
-		if(!wob) { // Unset spot && we are setting
-			wob = new FastWob(this.id, x, z, 0, bp)
+		if(wob) { // Updating an existing one
+			this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id) // Remove old graphic
 		}
+		else { // Unset spot && we are setting
+		}
+		wob = new FastWob(this.id, x, z, 0, bp)
 
 		wob.blueprint_id = blueprint_id
 		wob.locid = this.bpidToLocid[blueprint_id]
@@ -165,11 +178,13 @@ export class SharedZone {
 		const rotShifted = wob.r << 0
 		const idAndRot = idShifted +rotShifted
 
+		console.log('idAndRot', idShifted, rotShifted, idAndRot)
+
 		this.wobIdRotGrid[x +(z *250)] = idAndRot
 
 		// Return locations array of newly added wob
 		const byte1 = idAndRot >>> 8
-		const byte2 = (idAndRot << 24) >> 24
+		const byte2 = (idAndRot << 24) >>> 24
 		return [byte1, byte2, wob.x, wob.z]
 
 	}
@@ -191,16 +206,21 @@ export class SharedZone {
 			const locidrot = left +right
 			const x = locations[i+2]
 			const z = locations[i+3]
+			const locid = locidrot >>> 4
 
-			const locid = locidrot >> 4
+			const oldIdAndRot = this.wobIdRotGrid[x +(z *250)]
+			const oldLocid = oldIdAndRot >>> 4
 
 			const isLocidBeingRemoved = locid === 0
+			const isLocidbeingUpdated = oldLocid !== 0 && oldLocid !== locid
 			if(isLocidBeingRemoved) {
-				const oldWob = this.getWob(x, z)
-				this.removeWobGraphic(x, z, this.locidToBlueprint[oldWob.locid].blueprint_id)
+				this.removeWobGraphic(x, z, this.locidToBlueprint[oldLocid].blueprint_id)
 				this.wobIdRotGrid[x +(z *250)] = 0
 			}
 			else {
+				if(isLocidbeingUpdated) {
+					this.removeWobGraphic(x, z, this.locidToBlueprint[oldLocid].blueprint_id)
+				}
 				this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
@@ -232,7 +252,7 @@ export class SharedZone {
 				const idAndRot = this.wobIdRotGrid[x +(z *250)]
 				if(idAndRot) {
 					const byte1 = idAndRot >>> 8
-					const byte2 = (idAndRot << 24) >> 24
+					const byte2 = (idAndRot << 24) >>> 24
 					locs.push([byte1, byte2, x, z])
 					countValid++
 				}
