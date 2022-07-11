@@ -756,25 +756,27 @@ export class InputSys {
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log('landdrop', this.mouse.landtarget)
-						// const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-						const yardCoord = YardCoord.Create({
+						const coordDest = YardCoord.Create({
 							position: this.mouse.landtarget.point,
 							babs: this.babs,
 						})
-						
 						// Todo put distance limits, here and server
-						const wobContained = this.babs.ents.get(this.carrying.id) 
-						const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
-						const wob = wobContained || wobInstanced
+						// const wobContained = this.babs.ents.get(this.carrying.id) // bagtodo
+						// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
+						// const wob = wobContained || wobInstanced
+						const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
 
-						log('Found', wob, this.carrying, yardCoord)
+						const coordSource = this.carrying.yardCoord
+						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
+
+						log('Found', wobSource?.id(), wobDest?.id(), this.carrying, coordDest)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
-								noun: wob.id,
+								noun: wobSource.id(),
 								data: {
-									point: {x: yardCoord.x, z: yardCoord.z},
-									idzone: yardCoord.zone.id,
+									point: {x: coordDest.x, z: coordDest.z},
+									idzone:coordDest.zone.id,
 								},
 							}
 						})
@@ -782,7 +784,7 @@ export class InputSys {
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
 						log.info('Other drop', this.carrying)
-						this.babs.uiSys.clientSaid(`Cannot place ${this.carrying.instancedName} there.`)
+						this.babs.uiSys.clientSaid(`Cannot place ${this.carrying.instancedBpid} there.`)
 					}
 
 					this.carrying = null
@@ -873,11 +875,11 @@ export class InputSys {
 	mouseRayTargets = []
 	displayDestinationMesh
 
-	pickedObject :PickedObject
+	pickedObject :PickedObject|null
 	pickedObjectSavedColor
 	pickedObjectSavedMaterial
-	lastMoveHoldPicked :any
-	carrying :any
+	lastMoveHoldPicked :PickedObject|null
+	carrying :PickedObject|null
 
 	async update(dt, scene) {
 

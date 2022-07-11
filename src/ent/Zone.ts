@@ -33,7 +33,8 @@ export class Zone extends SharedZone {
 
 	getWob(x :number, z :number) :Wob|null { // Mainly to include babs reference
 		const wob = super.getWob(x, z)
-		return new Wob(this.babs, wob.idzone, wob.x, wob.z, wob.r, new Blueprint(wob.blueprint_id, wob.locid, wob.name, wob.glb))
+		if(!wob) return null
+		return new Wob(this.babs, this.id, wob.x, wob.z, wob.r, new Blueprint(wob.blueprint_id, wob.locid, wob.name, wob.glb))
 	}
 
 	override removeWobGraphic(x :number, z :number, blueprint_id :string) {
