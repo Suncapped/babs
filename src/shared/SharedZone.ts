@@ -134,7 +134,6 @@ export class SharedZone {
 		const idAndRot = this.wobIdRotGrid[x +(z *250)] // this.wobIdRotGrid.get(x, z) was ndarray
 		const locid = idAndRot >>> 4
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
-		console.log('silly getwob', idAndRot, locid, r)
 
 		if(locid === 0) {
 			// It's empty or unset!
@@ -142,6 +141,10 @@ export class SharedZone {
 		}
 
 		const blueprint = this.locidToBlueprint[locid]
+		if(!blueprint) {
+			console.warn('No blueprint found! For:', locid)
+			return null
+		}
 		return new FastWob(this.id, x, z, r, blueprint)
 	}
 	setWob(x :number, z :number, blueprint_id :string|0, rotation :Rotation = undefined) {
@@ -157,13 +160,18 @@ export class SharedZone {
 		// Otherwise, we are setting or updating locid in grid
 
 		const locid = this.bpidToLocid[blueprint_id]
-		const bp = this.locidToBlueprint[locid]
+		const blueprint = this.locidToBlueprint[locid]
+		if(!blueprint) {
+			console.warn('No blueprint found! For:', locid)
+			return null
+		}
+
 		if(wob) { // Updating an existing one
 			this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id) // Remove old graphic
 		}
 		else { // Unset spot && we are setting
 		}
-		wob = new FastWob(this.id, x, z, 0, bp)
+		wob = new FastWob(this.id, x, z, 0, blueprint)
 
 		wob.blueprint_id = blueprint_id
 		wob.locid = this.bpidToLocid[blueprint_id]

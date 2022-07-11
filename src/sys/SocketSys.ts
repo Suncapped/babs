@@ -17,7 +17,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendLoad, SendWobsUpdate, WobId, Zoneinfo } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, WobId, Zoneinfo } from '@/shared/consts'
 
 export class SocketSys {
 
@@ -531,17 +531,20 @@ export class SocketSys {
 			}
 			case 'craftable': {
 				log('craftable', data)
+				
+				const craftable = data as SendCraftable['craftable']
 
-				const wobId = data.wobId
-				const options = data.options
-				const craftWob = context.babs.ents.get(wobId)
+				const wobId = craftable.wobId
+				const options = craftable.options
+				const coord = YardCoord.Create({...wobId, babs: context.babs})
+				const wob = coord.zone.getWob(coord.x, coord.z)
 
 				// Display a list of icons above the wobId wob, list of options available:
 				// Create a .svelte file for icons
 				// When crafting thing is received, create icons for everything in it.
 				// position like: const chatLabel = new CSS2DObject(chatDiv)
 
-				context.babs.uiSys.craftSaid(options, craftWob)
+				context.babs.uiSys.craftSaid(options, wob)
 					
 				// new Crafting({
 				// 	target: document.body,

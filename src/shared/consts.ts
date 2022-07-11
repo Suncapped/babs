@@ -327,7 +327,6 @@ export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|
 
 
 export function toHexString(byteArray) {
-	console.log('silly byteArray', byteArray)
 	const result = []
 	for(let i in byteArray) {
 		console.log('i', i)

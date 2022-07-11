@@ -1,6 +1,6 @@
 
 import { YardCoord } from '@/comp/Coord'
-import { SharedZone } from '@/shared/SharedZone'
+import { Blueprint, SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
 import { Matrix4, Mesh, Raycaster, Vector3 } from 'three'
@@ -31,8 +31,12 @@ export class Zone extends SharedZone {
 	geometry
 	ground :Mesh // ground 3d Mesh
 
+	getWob(x :number, z :number) :Wob|null { // Mainly to include babs reference
+		const wob = super.getWob(x, z)
+		return new Wob(this.babs, wob.idzone, wob.x, wob.z, wob.r, new Blueprint(wob.blueprint_id, wob.locid, wob.name, wob.glb))
+	}
+
 	override removeWobGraphic(x :number, z :number, blueprint_id :string) {
-		console.log('silly removing graphic', x, z, blueprint_id)
 		const existingWob = this.getWob(x, z)
 		if(existingWob) {
 			const instanced = Wob.InstancedMeshes.get(blueprint_id)

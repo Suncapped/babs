@@ -223,15 +223,14 @@ export class UiSys {
 		this.babs.scene.add(chatLabel) // todo not ground // OMG this is why there's an offset
 	}
 
-	craftSaid(options, wob) {	
+	craftSaid(options :Array<string>, wob :Wob) {	
 		const chatDiv = document.createElement('div')
 		chatDiv.id = 'Crafting'
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'craftSaid'
 
-		const wobZone = this.babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
-		let point = wobZone.rayHeightAt(yardCoord)
+		let point = wob.zone.rayHeightAt(yardCoord)
 		point.setY(point.y +2) // Raise up
 		chatLabel.position.copy(point)
 
@@ -249,17 +248,17 @@ export class UiSys {
 			this.babs.scene.add(chatLabel)
 		})	
 		
-		const updateWOB = (opt) => {
-			log('User selected: ' + opt + ' wobID: ' + wob.id)
+		const updateWOB = (opt :string) => {
+			log('User selected: ' + opt + ' wobID: ' + wob.id())
 			log('parent', chatLabel.parent)
-			this.babs.scene.remove(chatLabel)	
+			this.babs.scene.remove(chatLabel)
 
 			// Need a way to send an update to the server, will circle back to this
 			socketSend.set({
 				'action': {
 					verb: 'craft',
-					noun: wob.id,
-					data: opt
+					noun: wob.id(),
+					data: opt,
 				}
 			})
 		}

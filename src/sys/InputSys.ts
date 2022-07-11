@@ -44,7 +44,7 @@ export class InputSys {
 
 	static NickPromptStart = '> Name for'
 
-	mouse = {
+	mouse :{[key :string] :boolean|number|Raycaster|Record<any,any>|any} = {
 		left: OFF,
 		right: OFF,
 		middle: OFF, // Mouse wheel button
@@ -315,19 +315,19 @@ export class InputSys {
 		const touchHandler = (event) => {
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 			if (event.target.id !== 'canvas') return
-			event.preventDefault();
+			event.preventDefault()
 
 			// log(event)
 			// let touches = event.changedTouches
 
 			let finger1 = event.changedTouches[0]
 			let finger2 = event.changedTouches[1]
-			let type = "";
+			let type = ''
 			switch (event.type) {
-				case "touchstart": type = "mousedown"; break;
-				case "touchmove": type = "mousemove"; break;
-				case "touchend": type = "mouseup"; break;
-				default: return;
+			case 'touchstart': type = 'mousedown'; break
+			case 'touchmove': type = 'mousemove'; break
+			case 'touchend': type = 'mouseup'; break
+			default: return
 			}
 			const newEvent = new MouseEvent(type, {
 				bubbles: true,
@@ -396,7 +396,7 @@ export class InputSys {
 		document.addEventListener('touchstart', touchHandler, {passive:false})
 		document.addEventListener('touchmove', touchHandler, {passive:false})
 		document.addEventListener('touchend', touchHandler, {passive:false})
-		document.addEventListener('touchcancel', touchHandler, {passive:false});
+		document.addEventListener('touchcancel', touchHandler, {passive:false})
 
 		this.lastMoveHoldPicked
 		this.carrying = null
@@ -824,8 +824,8 @@ export class InputSys {
 
 					// log(this.mouse.scrolldy)
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
-						// Only increase offsetHeight if camera is above ground, or moving camera up
-						this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
+					// Only increase offsetHeight if camera is above ground, or moving camera up
+					this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
 					// }
 
 				}
@@ -1187,8 +1187,8 @@ export class InputSys {
 			// if(this.babs.cameraSys.gh.y > groundBelowCamera)
 
 			// if (this.mouse.dy > 0 || !this.babs.cameraSys.gh || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
-				// Only increase offsetHeight if camera is above ground, or moving camera up
-				this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.05
+			// Only increase offsetHeight if camera is above ground, or moving camera up
+			this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.05
 			// }
 			// Above is matched to touchpad similar code
 		}
@@ -1261,7 +1261,7 @@ export class InputSys {
 				if (!this.displayDestinationMesh) {
 					const geometry = new PlaneGeometry(4, 4)
 					const material = new MeshBasicMaterial({ color: 0xffaaaa, side: DoubleSide })
-					geometry.rotateX(- Math.PI / 2); // Make the plane horizontal
+					geometry.rotateX(- Math.PI / 2) // Make the plane horizontal
 					this.displayDestinationMesh = new Mesh(geometry, material)
 					this.displayDestinationMesh.name = 'destinationmesh'
 					scene.add(this.displayDestinationMesh)
