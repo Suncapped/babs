@@ -603,12 +603,11 @@ export class InputSys {
 
 
 								
-								log('picked', this.pickedObject, yardCoord)
+								log.info('picked', this.pickedObject, yardCoord)
 								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, yardCoord)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
-								log('landSaid pre', this.mouse.landtarget)
 								this.babs.uiSys.landSaid(this.mouse.landtarget)
 							}
 	
@@ -733,7 +732,7 @@ export class InputSys {
 				// Handle carry drop
 				if (this.carrying) {
 
-					log('carry drop', this.mouse.movetarget, this.carrying, this.mouse.landtarget, this.pickedObject)
+					log.info('carry drop', this.mouse.movetarget, this.carrying, this.mouse.landtarget, this.pickedObject)
 					if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
 						&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
 					) { // UI main bag
@@ -741,7 +740,7 @@ export class InputSys {
 						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
 						const wob = this.babs.ents.get(this.carrying.id) 
 							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
-						log('Found', wob, this.carrying)
+						log.info('Found', wob, this.carrying)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'contained',
@@ -755,7 +754,7 @@ export class InputSys {
 
 					}
 					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
-						log('landdrop', this.mouse.landtarget)
+						log.info('landdrop', this.mouse.landtarget)
 						const coordDest = YardCoord.Create({
 							position: this.mouse.landtarget.point,
 							babs: this.babs,
@@ -769,7 +768,7 @@ export class InputSys {
 						const coordSource = this.carrying.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						log('Found', wobSource?.id(), wobDest?.id(), this.carrying, coordDest)
+						log.info('Found', wobSource?.id(), wobDest?.id(), this.carrying, coordDest)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -1067,7 +1066,7 @@ export class InputSys {
 		}
 
 		if (this.carrying) {
-			log('update carrying')
+			log.info('update carrying')
 			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
 				const riImage = (await this.carrying.instanced.renderedIcon()).image
 				document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`

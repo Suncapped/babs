@@ -215,7 +215,7 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'wobSaid'
 		let point = coord.zone.rayHeightAt(coord)
-		log('wobSaid point', point, coord)
+		log.info('wobSaid point', point, coord)
 
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
@@ -316,16 +316,16 @@ export class UiSys {
 				uiWindows.set([...svelteGet(uiWindows), this.svMenu])
 			}
 			else if(ui.type === 'container') {
-				this.svContainers = [
-					...this.svContainers || [],
-					new Container({
-						target: document.body,
-						props: {
-							ui,
-						},
-					})
-				]
-				uiWindows.set([...svelteGet(uiWindows), this.svContainers[this.svContainers.length -1]])
+				// this.svContainers = [ // bagtodo temporarily disabled bag!
+				// 	...this.svContainers || [],
+				// 	new Container({
+				// 		target: document.body,
+				// 		props: {
+				// 			ui,
+				// 		},
+				// 	})
+				// ]
+				// uiWindows.set([...svelteGet(uiWindows), this.svContainers[this.svContainers.length -1]])
 			}
 		}
 	}

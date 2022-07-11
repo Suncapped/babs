@@ -199,7 +199,7 @@ export class Wob extends FastWob {
 		let loads = []
 		let load
 		const counts = new Map<string, number>()
-		console.time('timing')
+		// console.time('timing')
 		for(const wob of arrivalWobs) {
 			const currentCount = counts.get(wob.name) || 0
 			counts.set(wob.name, currentCount +1)
@@ -212,19 +212,19 @@ export class Wob extends FastWob {
 				loads.push(load)
 			}
 		}
-		console.timeLog('timing')
+		// console.timeLog('timing')
 		// console.log('loads', loads)
 
 		const finishedLoads = await Promise.all(loads)
 		// console.log('finishedLoads', finishedLoads)
-		console.timeLog('timing')
+		// console.timeLog('timing')
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const load of finishedLoads) {
 			Wob.LoadedGltfs.set(load.name, load)
 		}
 		// log('Wob.loadedGltfs', Wob.LoadedGltfs)
 
-		console.timeLog('timing')
+		// console.timeLog('timing')
 		// Create InstancedMeshes from loaded gltfs
 		// const countMax = 10 // How large the instancdedmesh starts out
 		const instancedExpansionAdd = 10 // How much larger the instancedmesh will get, eg +10
@@ -349,8 +349,7 @@ export class Wob extends FastWob {
 
 			
 		}
-		console.timeEnd('timing')
-		log('latter Wob.InstancedMeshes', Wob.InstancedMeshes)
+		// console.timeEnd('timing')
 
 		// Now a properly sized instance exists.  So create wobs!
 		let zone :Zone

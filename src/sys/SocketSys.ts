@@ -473,7 +473,7 @@ export class SocketSys {
 			}
 			case 'wobsupdate': {
 				const wobsupdate = data as SendWobsUpdate['wobsupdate']
-				log('wobsupdate', data)
+				log.info('wobsupdate', data)
 
 				/*
 				Currently we are:
