@@ -222,17 +222,32 @@ export class SharedZone {
 			const isLocidBeingRemoved = locid === 0
 			const isLocidbeingUpdated = oldLocid !== 0 && oldLocid !== locid
 			if(isLocidBeingRemoved) {
-				this.removeWobGraphic(x, z, this.locidToBlueprint[oldLocid].blueprint_id)
+				const oldbp = this.locidToBlueprint[oldLocid]
+				if(!oldbp) {
+					console.warn('No blueprint found!', locid)
+					continue
+				}
+				this.removeWobGraphic(x, z, oldbp.blueprint_id)
 				this.wobIdRotGrid[x +(z *250)] = 0
 			}
 			else {
 				if(isLocidbeingUpdated) {
-					this.removeWobGraphic(x, z, this.locidToBlueprint[oldLocid].blueprint_id)
+					const oldbp = this.locidToBlueprint[oldLocid]
+					if(!oldbp) {
+						console.warn('No blueprint found!', locid)
+						continue
+					}
+					this.removeWobGraphic(x, z, oldbp.blueprint_id)
 				}
 				this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
-					wobs.push(new FastWob(this.id, x, z, r, this.locidToBlueprint[locid]))
+					const bp = this.locidToBlueprint[locid]
+					if(!bp) {
+						console.warn('No blueprint found!', locid)
+						continue
+					}
+					wobs.push(new FastWob(this.id, x, z, r, bp))
 				}
 			}
 

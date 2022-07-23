@@ -295,46 +295,57 @@ export class WorldSys {
 		// "If I map west to front (+Z), east to back (-Z), top to up (+Y), bottom to down (-Y) these all form a seamless whole. [...] if I map north to left (+X) and south to right (-X)"
 
 		// 				+x		-x		+y			-y		+z		-z
-		const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
+		const dayCheckInterval = 10_000
+		const delayLoadNightsky = () => {
+			if(this.isDaytimeWithShadows) {
+				// Wait until night to load
+				setTimeout(delayLoadNightsky, dayCheckInterval)
+				return
+			}
+			log('loading stars')
+			
+			const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
-		const tl = new TextureLoader()
-		const nightskyImages = sides.map(side => {
+			const tl = new TextureLoader()
+			const nightskyImages = sides.map(side => {
 
-			// Attempting to use precompiled textures but they ended up being huge file sizes and unloadable.  Try again later?
-			// var ktx2Loader = new KTX2Loader();
-			// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
-			// ktx2Loader.detectSupport( renderer );
-			// return ktx2Loader.load( `${this.babs.urlFiles}/texture/sky/stars-${side}.ktx2`, function ( texture ) {
-			// 	// var material = new MeshStandardMaterial( { map: texture } );
-			// 	return texture
-			// }, function () {
-			// 	console.log( 'onProgress' );
-			// }, function ( e ) {
-			// 	console.error( e );
-			// } );
+				// Attempting to use precompiled textures but they ended up being huge file sizes and unloadable.  Try again later?
+				// var ktx2Loader = new KTX2Loader();
+				// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
+				// ktx2Loader.detectSupport( renderer );
+				// return ktx2Loader.load( `${this.babs.urlFiles}/texture/sky/stars-${side}.ktx2`, function ( texture ) {
+				// 	// var material = new MeshStandardMaterial( { map: texture } );
+				// 	return texture
+				// }, function () {
+				// 	console.log( 'onProgress' );
+				// }, function ( e ) {
+				// 	console.error( e );
+				// } );
 
-			return tl.loadAsync(`${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
-		})
-
-		let materialArray = []
-		const buildSkybox = () => {
-			const size = WorldSys.NIGHTSKY_SIZE
-			const nightskyGeo = new BoxGeometry(size, size, size)
-			this.nightsky = new Mesh(nightskyGeo, materialArray)
-			this.nightsky.name = 'nightsky'
-
-			// todo perhaps use offscreencanvas to fix this? 
-			this.babs.scene.add(this.nightsky)
-		}
-		Promise.all(nightskyImages).then((images, index) => {
-			images.forEach((texture, index) => {
-				// Using index to ensure correct order
-				materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
-				if(index === images.length -1 && !this.nightsky) { // Done loading the final one
-					buildSkybox()
-				}
+				return tl.loadAsync(`${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
 			})
-		})
+
+			let materialArray = []
+			const buildSkybox = () => {
+				const size = WorldSys.NIGHTSKY_SIZE
+				const nightskyGeo = new BoxGeometry(size, size, size)
+				this.nightsky = new Mesh(nightskyGeo, materialArray)
+				this.nightsky.name = 'nightsky'
+
+				// todo perhaps use offscreencanvas to fix this? 
+				this.babs.scene.add(this.nightsky)
+			}
+			Promise.all(nightskyImages).then((images, index) => {
+				images.forEach((texture, index) => {
+					// Using index to ensure correct order
+					materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+					if(index === images.length -1 && !this.nightsky) { // Done loading the final one
+						buildSkybox()
+					}
+				})
+			})
+		}
+		setTimeout(delayLoadNightsky, dayCheckInterval)
 	}
 
 	shadowDist = 150
@@ -429,7 +440,7 @@ export class WorldSys {
 	vectorPosition = new Vector3()
 	quatRotation = new Quaternion()
 
-	// isDaytime = null
+	isDaytimeWithShadows
 	timeMultiplier = WorldSys.TIME_SPEED
 	duskMargin = -0.1
 
@@ -438,7 +449,7 @@ export class WorldSys {
 
 	// todo set from Proxima // need to think more about this!
 	// timeAccum = 60*60*12*122 // nighttime
-	timeAccum = 60*60*12*1223 // daytime
+	timeAccum = 60*60*12.1*1223 // daytime
 
 	update(dt, camera) {
 
@@ -465,7 +476,6 @@ export class WorldSys {
 			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
 				this.nightsky?.material.forEach(m => m.opacity = 1.0)
 			}
-			
 		}
 		else if(noonness >= 0 +this.duskMargin) { // daytime
 			this.timeMultiplier = WorldSys.TIME_SPEED
@@ -502,13 +512,17 @@ export class WorldSys {
 			// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
 
 			if(noonness < 0 +this.duskMargin /7) { 
+				this.isDaytimeWithShadows = false
 				// ^ todo have shadows fade out rather than just disappear?
 				// 	Or just have less ambient lighting of objects at night?
 				this.dirLight.castShadow = false
+				// this.isDaytime = false
 				this.dirLight.intensity = 0
 			}
 			else {
+				this.isDaytimeWithShadows = true
 				this.dirLight.castShadow = true
+				// this.isDaytime = true
 				// Intensity based on noonness
 				this.dirLight.intensity = MathUtils.lerp(
 					0.01, 
