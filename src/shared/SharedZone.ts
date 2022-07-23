@@ -142,7 +142,7 @@ export class SharedZone {
 
 		const blueprint = this.locidToBlueprint[locid]
 		if(!blueprint) {
-			console.warn('No blueprint found! For:', locid)
+			console.warn('No blueprint found @1! For:', locid)
 			return null
 		}
 		return new FastWob(this.id, x, z, r, blueprint)
@@ -153,8 +153,10 @@ export class SharedZone {
 
 		if(isLocidBeingRemoved) {
 			this.wobIdRotGrid[x +(z *250)] = 0
-			this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id)
-			return [0, 0, wob.x, wob.z]
+			if(wob) { // Is null on server
+				this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id)
+			}
+			return [0, 0, wob?.x | x, wob?.z | z]
 		}
 
 		// Otherwise, we are setting or updating locid in grid
@@ -162,7 +164,7 @@ export class SharedZone {
 		const locid = this.bpidToLocid[blueprint_id]
 		const blueprint = this.locidToBlueprint[locid]
 		if(!blueprint) {
-			console.warn('No blueprint found! For:', locid)
+			console.warn('No blueprint found @3! For:', locid)
 			return null
 		}
 
@@ -224,7 +226,7 @@ export class SharedZone {
 			if(isLocidBeingRemoved) {
 				const oldbp = this.locidToBlueprint[oldLocid]
 				if(!oldbp) {
-					console.warn('No blueprint found!', locid)
+					console.warn('No blueprint found @2!', locid)
 					continue
 				}
 				this.removeWobGraphic(x, z, oldbp.blueprint_id)
@@ -234,7 +236,7 @@ export class SharedZone {
 				if(isLocidbeingUpdated) {
 					const oldbp = this.locidToBlueprint[oldLocid]
 					if(!oldbp) {
-						console.warn('No blueprint found!', locid)
+						console.warn('No blueprint found @4!', locid)
 						continue
 					}
 					this.removeWobGraphic(x, z, oldbp.blueprint_id)
@@ -244,7 +246,7 @@ export class SharedZone {
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
-						console.warn('No blueprint found!', locid)
+						console.warn('No blueprint found @5!', locid)
 						continue
 					}
 					wobs.push(new FastWob(this.id, x, z, r, bp))
