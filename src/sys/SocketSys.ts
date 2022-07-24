@@ -584,7 +584,7 @@ export class SocketSys {
 				const diffSeconds = now.diff(witchingTime, 'seconds').seconds
 				log('witching diffSeconds', diffSeconds)
 				
-				context.babs.worldSys.timeAccum = 60*60*12*1000 +(diffSeconds *100_000)
+				context.babs.worldSys.timeAccum = 60*60*12*1200 +(diffSeconds *100_000)
 				// ^ Oh wow, that 100_000 number works.  probably 1000 ms * WorldSys.TIME_SPEED!
 
 
