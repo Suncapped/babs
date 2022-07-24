@@ -17,7 +17,8 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendCraftable, SendLoad, SendWobsUpdate, WobId, Zoneinfo } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendWitching, WobId, Zoneinfo } from '@/shared/consts'
+import { DateTime } from 'luxon'
 
 export class SocketSys {
 
@@ -566,6 +567,26 @@ export class SocketSys {
 				const fwob = coord.zone.getWob(coord.x, coord.z)
 
 				context.babs.inputSys.askTarget(fwob)
+
+				break
+			}
+			case 'witching': {
+				log('witching', data)
+
+				const witching = data as SendWitching['witching']
+
+				const witchingTime = DateTime.fromISO(witching.wasat).toUTC()
+				const now = DateTime.utc()
+				console.log(witchingTime.toISO())
+				console.log(now.toISO())
+
+				
+				const diffSeconds = now.diff(witchingTime, 'seconds').seconds
+				log('witching diffSeconds', diffSeconds)
+				
+				context.babs.worldSys.timeAccum = 60*60*12*1000 +(diffSeconds *100_000)
+				// ^ Oh wow, that 100_000 number works.  probably 1000 ms * WorldSys.TIME_SPEED!
+
 
 				break
 			}

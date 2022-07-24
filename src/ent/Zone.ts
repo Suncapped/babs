@@ -26,7 +26,7 @@ export class Zone extends SharedZone {
 
 	elevationData // Injected by SocketSys
 	landcoverData // Injected by SocketSys
-	locationData // Injected by Socke`tSys
+	locationData // Injected by SocketSys
 
 	geometry
 	ground :Mesh // ground 3d Mesh

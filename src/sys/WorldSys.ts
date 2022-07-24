@@ -448,8 +448,8 @@ export class WorldSys {
 	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
 
 	// todo set from Proxima // need to think more about this!
-	// timeAccum = 60*60*12*122 // nighttime
-	timeAccum = 60*60*12.1*1223 // daytime
+	timeAccum = 0//60*60*12*122 // nighttime
+	// timeAccum = 60*60*12.1*1223 // daytime
 
 	update(dt, camera) {
 

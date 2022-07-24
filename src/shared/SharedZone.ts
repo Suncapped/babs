@@ -187,8 +187,7 @@ export class SharedZone {
 		const idShifted = wob.locid << 4
 		const rotShifted = wob.r << 0
 		const idAndRot = idShifted +rotShifted
-
-		console.log('idAndRot', idShifted, rotShifted, idAndRot)
+		// console.log('idAndRot', idShifted, rotShifted, idAndRot)
 
 		this.wobIdRotGrid[x +(z *250)] = idAndRot
 

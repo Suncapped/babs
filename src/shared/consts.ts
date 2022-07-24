@@ -315,14 +315,21 @@ export type SendAskTarget = {
 // }
 
 export type SendAlreadyIn = {
-	alreadyin: true,
+	alreadyin :true,
 }
 export type SendServerRestart = {
-	serverrestart: true,
+	serverrestart :true,
+}
+
+export type SendWitching = {
+	witching :{
+		wasat :string,
+	},
 }
 
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
+	|SendWitching
 
 
 

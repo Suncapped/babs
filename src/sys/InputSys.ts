@@ -826,7 +826,9 @@ export class InputSys {
 					// log(this.mouse.scrolldy)
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 					// Only increase offsetHeight if camera is above ground, or moving camera up
-					this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
+					if(!this.topMenuVisibleLocal) {
+						this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
+					}
 					// }
 
 				}
