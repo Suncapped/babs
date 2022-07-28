@@ -454,7 +454,7 @@ export class WorldSys {
 	feTime :DateTime
 
 	update(dt, camera) {
-
+		// console.log('dt', dt)
 		// Update sun position over time!
 		// let hourOfDay = Math.round(new Date().getTime() /1000) %24
 		// let nowDate = new Date(`March 22, 2022 ${hourOfDay}:${minOfDay}:00 MDT`)
@@ -464,6 +464,14 @@ export class WorldSys {
 		// log(Math.round(this.timeAccum))
 
 		if(!this.feTime) return // Time comes before Earth :)
+		this.feTime.plus({milliseconds: dt *1000})
+
+
+		const date = this.feTime.toJSDate()
+		const jsDateUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(),
+			date.getUTCDate(), date.getUTCHours(),
+			date.getUTCMinutes(), date.getUTCSeconds())
+		console.log('this.feTime.toJSDate()',jsDateUtc )
 
 		const sunCalcPos = SunCalc.getPosition(this.feTime.toJSDate(), 39.7392, -104.985)
 

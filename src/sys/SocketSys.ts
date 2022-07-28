@@ -578,7 +578,7 @@ export class SocketSys {
 				const feTime = DateTime.fromISO(fetime).toUTC()
 				console.log(feTime.toISO())
 
-				context.babs.worldSys.feTime = feTime
+				context.babs.worldSys.feTime = feTime//DateTime.fromISO(feTime)
 
 				
 				// context.babs.worldSys.timeAccum = 60*60*12*1100 +(diffSeconds *100_000)
