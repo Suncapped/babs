@@ -321,15 +321,13 @@ export type SendServerRestart = {
 	serverrestart :true,
 }
 
-export type SendWitching = {
-	witching :{
-		wasat :string,
-	},
+export type SendFeTime = {
+	fetime :string,
 }
 
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
-	|SendWitching
+	|SendFeTime
 
 
 

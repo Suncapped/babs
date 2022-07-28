@@ -67,6 +67,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { Player } from '@/ent/Player'
+import { DateTime } from 'luxon'
 
 export class WorldSys {
 
@@ -295,7 +296,7 @@ export class WorldSys {
 		// "If I map west to front (+Z), east to back (-Z), top to up (+Y), bottom to down (-Y) these all form a seamless whole. [...] if I map north to left (+X) and south to right (-X)"
 
 		// 				+x		-x		+y			-y		+z		-z
-		const dayCheckInterval = 10_000
+		const dayCheckInterval = 1_000
 		const delayLoadNightsky = () => {
 			if(this.isDaytimeWithShadows) {
 				// Wait until night to load
@@ -448,8 +449,9 @@ export class WorldSys {
 	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
 
 	// todo set from Proxima // need to think more about this!
-	timeAccum = 0//60*60*12*122 // nighttime
+	// timeAccum = 0//60*60*12*122 // nighttime
 	// timeAccum = 60*60*12.1*1223 // daytime
+	feTime :DateTime
 
 	update(dt, camera) {
 
@@ -458,11 +460,12 @@ export class WorldSys {
 		// let nowDate = new Date(`March 22, 2022 ${hourOfDay}:${minOfDay}:00 MDT`)
 		// nowDate.setTime(nowDate.getTime() -(1000 *60 *60 *6)) // hours back
 
-		this.timeAccum += dt*1000 *this.timeMultiplier
+		// this.timeAccum += dt*1000 *this.timeMultiplier
 		// log(Math.round(this.timeAccum))
 
-		let nowDate = new Date(Math.round(this.timeAccum))
-		const sunCalcPos = SunCalc.getPosition(nowDate, 39.7392, -104.985)
+		if(!this.feTime) return // Time comes before Earth :)
+
+		const sunCalcPos = SunCalc.getPosition(this.feTime.toJSDate(), 39.7392, -104.985)
 
 		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
 		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
@@ -484,9 +487,9 @@ export class WorldSys {
 			this.dirLight ? this.dirLight.castShadow = true : 0
 		}
 
-		// Rotate sky // Todo more accurate lol!
-		this.nightsky?.rotateY(-0.0002)
-		this.nightsky?.rotateX(-0.0002)
+		// Rotate sky // Todo more accurate lol! // And make stars accurate in their positioning with Celestia?
+		this.nightsky?.rotateY(-0.00001)
+		this.nightsky?.rotateX(-0.00001)
 
 		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
 		// log(noonness, 90 -MathUtils.radToDeg(phi))

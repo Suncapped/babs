@@ -17,7 +17,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendWitching, WobId, Zoneinfo } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo } from '@/shared/consts'
 import { DateTime } from 'luxon'
 
 export class SocketSys {
@@ -570,21 +570,18 @@ export class SocketSys {
 
 				break
 			}
-			case 'witching': {
-				log('witching', data)
+			case 'fetime': {
+				log('fetime', data)
 
-				const witching = data as SendWitching['witching']
+				const fetime = data as SendFeTime['fetime']
 
-				const witchingTime = DateTime.fromISO(witching.wasat).toUTC()
-				const now = DateTime.utc()
-				console.log(witchingTime.toISO())
-				console.log(now.toISO())
+				const feTime = DateTime.fromISO(fetime).toUTC()
+				console.log(feTime.toISO())
+
+				context.babs.worldSys.feTime = feTime
 
 				
-				const diffSeconds = now.diff(witchingTime, 'seconds').seconds
-				log('witching diffSeconds', diffSeconds)
-				
-				context.babs.worldSys.timeAccum = 60*60*12*1200 +(diffSeconds *100_000)
+				// context.babs.worldSys.timeAccum = 60*60*12*1100 +(diffSeconds *100_000)
 				// ^ Oh wow, that 100_000 number works.  probably 1000 ms * WorldSys.TIME_SPEED!
 
 
