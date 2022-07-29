@@ -576,14 +576,9 @@ export class SocketSys {
 				const fetime = data as SendFeTime['fetime']
 
 				const feTime = DateTime.fromISO(fetime).toUTC()
-				console.log(feTime.toISO())
+				console.log('fetime utc iso' ,feTime.toISO())
 
-				context.babs.worldSys.feTime = feTime//DateTime.fromISO(feTime)
-
-				
-				// context.babs.worldSys.timeAccum = 60*60*12*1100 +(diffSeconds *100_000)
-				// ^ Oh wow, that 100_000 number works.  probably 1000 ms * WorldSys.TIME_SPEED!
-
+				context.babs.worldSys.feTime = feTime.plus({hours: 8})
 
 				break
 			}

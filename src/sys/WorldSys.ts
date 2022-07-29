@@ -86,8 +86,6 @@ export class WorldSys {
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
 
-	static TIME_SPEED = 100
-
 	babs :Babs
 	renderer
 
@@ -139,34 +137,35 @@ export class WorldSys {
 		200: 'Cliff',
 	}
 
+	libo = 0 // ground nighttime lightness boost
 	colorFromLc = {
 		// grass: new Color().setHSL(98/360, 100/100, 20/100),
 		// dirt: new Color().setHSL(35/360, 40/100, 40/100),
 		// sand: new Color().setHSL(49/360, 37/100, 68/100),
 
-		SnowIceTundra: new Color().setHSL(75/360, 3/100, 74/100), // light gray
-		BarrenRockSandClay: new Color().setHSL(39/360, 24/100, 64/100), // tan
+		SnowIceTundra: new Color().setHSL(75/360, 3/100, (74+this.libo)/100), // light gray
+		BarrenRockSandClay: new Color().setHSL(39/360, 24/100, (64+this.libo)/100), // tan
 
-		ForestDeciduous: new Color().setHSL(73/360, 22/100, 37/100), // green
-		ForestEvergreen: new Color().setHSL(92/360, 40/100, 23/100), // dark green
-		ForestMixed: new Color().setHSL(80/360, 30/100, 30/100), // in-between ish
+		ForestDeciduous: new Color().setHSL(73/360, 22/100, (37+this.libo)/100), // green
+		ForestEvergreen: new Color().setHSL(92/360, 40/100, (23+this.libo)/100), // dark green
+		ForestMixed: new Color().setHSL(80/360, 30/100, (30+this.libo)/100), // in-between ish
 
-		ShrubAndScrub: new Color().setHSL(85/360, 18/100, 47/100), // Browner light green
-		Grassland: new Color().setHSL(63/360, 15/100, 50/100), // Light green
+		ShrubAndScrub: new Color().setHSL(85/360, 18/100, (47+this.libo)/100), // Browner light green
+		Grassland: new Color().setHSL(63/360, 15/100, (50+this.libo)/100), // Light green
 
-		WetlandWoody: new Color().setHSL(8/360, 19/100, 37/100), // Brownish
-		WetlandHerbacious: new Color().setHSL(10/360, 14/100, 47/100), // Brownish lighter
+		WetlandWoody: new Color().setHSL(8/360, 19/100, (37+this.libo)/100), // Brownish
+		WetlandHerbacious: new Color().setHSL(10/360, 14/100, (47+this.libo)/100), // Brownish lighter
 
-		Lake: new Color().setHSL(222/360, 39/100, 34/100),
-		LakeShore: new Color().setHSL(51/360, 39/100, 34/100),
-		River: new Color().setHSL(222/360, 39/100, 34/100),
-		RiverShore: new Color().setHSL(51/360, 39/100, 34/100),
-		StreamSmall: new Color().setHSL(222/360, 39/100, 34/100),
-		StreamMedium: new Color().setHSL(222/360, 39/100, 34/100),
-		StreamLarge: new Color().setHSL(222/360, 39/100, 34/100),
-		StreamShore: new Color().setHSL(51/360, 39/100, 34/100),
+		Lake: new Color().setHSL(222/360, 39/100, (34+this.libo)/100),
+		LakeShore: new Color().setHSL(51/360, 39/100, (34+this.libo)/100),
+		River: new Color().setHSL(222/360, 39/100, (34+this.libo)/100),
+		RiverShore: new Color().setHSL(51/360, 39/100, (34+this.libo)/100),
+		StreamSmall: new Color().setHSL(222/360, 39/100, (34+this.libo)/100),
+		StreamMedium: new Color().setHSL(222/360, 39/100, (34+this.libo)/100),
+		StreamLarge: new Color().setHSL(222/360, 39/100, (34+this.libo)/100),
+		StreamShore: new Color().setHSL(51/360, 39/100, (34+this.libo)/100),
 
-		Cliff: new Color().setHSL(13/360, 61/100, 24/100),
+		Cliff: new Color().setHSL(13/360, 61/100, (24+this.libo)/100),
 	}
 
 	WaterTypes = [
@@ -442,38 +441,24 @@ export class WorldSys {
 	quatRotation = new Quaternion()
 
 	isDaytimeWithShadows
-	timeMultiplier = WorldSys.TIME_SPEED
 	duskMargin = -0.1
-
-	// Temp hack to roughly start people out at the same time
-	// tempTimeDiff = new Date().getTime() -new Date(`March 22, 2022 12:00:00`).getTime()
-
-	// todo set from Proxima // need to think more about this!
-	// timeAccum = 0//60*60*12*122 // nighttime
-	// timeAccum = 60*60*12.1*1223 // daytime
+	
 	feTime :DateTime
+	GAME_SPEED_MULTIPLIER = 24
 
 	update(dt, camera) {
-		// console.log('dt', dt)
 		// Update sun position over time!
-		// let hourOfDay = Math.round(new Date().getTime() /1000) %24
-		// let nowDate = new Date(`March 22, 2022 ${hourOfDay}:${minOfDay}:00 MDT`)
-		// nowDate.setTime(nowDate.getTime() -(1000 *60 *60 *6)) // hours back
-
-		// this.timeAccum += dt*1000 *this.timeMultiplier
-		// log(Math.round(this.timeAccum))
-
 		if(!this.feTime) return // Time comes before Earth :)
-		this.feTime.plus({milliseconds: dt *1000})
+		this.feTime = this.feTime.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
 
+		const date = new Date(this.feTime.toISO())
+		// const jsDateUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(),
+		// 	date.getUTCDate(), date.getUTCHours(),
+		// 	date.getUTCMinutes(), date.getUTCSeconds(), date.getUTCMilliseconds())
+		// console.log('this.feTime',this.feTime.toISO() )
 
-		const date = this.feTime.toJSDate()
-		const jsDateUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(),
-			date.getUTCDate(), date.getUTCHours(),
-			date.getUTCMinutes(), date.getUTCSeconds())
-		console.log('this.feTime.toJSDate()',jsDateUtc )
-
-		const sunCalcPos = SunCalc.getPosition(this.feTime.toJSDate(), 39.7392, -104.985)
+		// const sunCalcPos = SunCalc.getPosition(this.feTime.toJSDate(), 39.7392, -104.985)
+		const sunCalcPos = SunCalc.getPosition(date, 39.7392, -104.985)
 
 		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
 		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
@@ -483,21 +468,19 @@ export class WorldSys {
 		// log('time:', noonness)
 
 		if(noonness < 0 +this.duskMargin) { // nighttime
-			this.timeMultiplier = WorldSys.TIME_SPEED *10 // speed up nighttime
 			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
 				this.nightsky?.material.forEach(m => m.opacity = 1.0)
 			}
 		}
 		else if(noonness >= 0 +this.duskMargin) { // daytime
-			this.timeMultiplier = WorldSys.TIME_SPEED
 			const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
 			this.nightsky?.material.forEach(m => m.opacity = opacity)
 			this.dirLight ? this.dirLight.castShadow = true : 0
 		}
 
 		// Rotate sky // Todo more accurate lol! // And make stars accurate in their positioning with Celestia?
-		this.nightsky?.rotateY(-0.00001)
-		this.nightsky?.rotateX(-0.00001)
+		this.nightsky?.rotateY(-0.000015)
+		this.nightsky?.rotateX(-0.000015)
 
 		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
 		// log(noonness, 90 -MathUtils.radToDeg(phi))
@@ -537,8 +520,8 @@ export class WorldSys {
 				// Intensity based on noonness
 				this.dirLight.intensity = MathUtils.lerp(
 					0.01, 
-					1.0 *(1/this.renderer.toneMappingExposure), 
-					Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
+					1 *(1/this.renderer.toneMappingExposure), 
+					Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boots light around dusk!
 				)
 			}
 		}
@@ -547,7 +530,7 @@ export class WorldSys {
 			0.3 *(1/this.renderer.toneMappingExposure), 
 			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
 		)
-		// log('intensity', this.dirLight?.intensity, this.hemiLight.intensity)
+		// log('intensity', this.hemiLight.intensity, 0.3 *(1/this.renderer.toneMappingExposure), Math.max(this.duskMargin, noonness +0.5))
 
 		// Water randomized rotation
 		const spinSpeedMult = 5
@@ -623,6 +606,7 @@ export class WorldSys {
 			side: FrontSide,
 			// side: Side,
 			shadowSide: FrontSide,
+			// emissive: new Color().setHSL(0/360, 0/100, 10/100)
 			// depthFunc: NeverDepth,
 		} )
 		// const material = new MeshStandardMaterial({vertexColors: true})

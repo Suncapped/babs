@@ -52,7 +52,7 @@ export class Babs {
 
 	zips = new Map<number, number>() // idzip key, value idplayer
 
-	idSelf :Number
+	idSelf :number
 
 	debugMode :boolean
 
@@ -89,11 +89,6 @@ export class Babs {
 		}
 		console.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
 
-		// Send to Svelte
-		baseDomain.set(this.baseDomain)
-		urlFiles.set(this.urlFiles)
-		isProd.set(this.isProd)
-
 		// Cookies are required
 		const cookiesEnabled = (() => {
 			try {
@@ -106,10 +101,6 @@ export class Babs {
 				return false
 			}
 		})()
-
-		debugMode.subscribe(on => {
-			this.debugMode = on
-		})
 
 		this.loaderSys = new LoaderSys(this.urlFiles)
 
@@ -176,7 +167,6 @@ export class Babs {
 			}
 		}
 		waitForReady()
-
 	}
 
 
@@ -212,5 +202,16 @@ export class Babs {
 
 }
 
+
+console.info('LoaderSys', LoaderSys) // Force it to compile/import before continuing with Babs?  lol
 const babs = new Babs()
-export default babs
+
+// Send to Svelte
+baseDomain.set(babs.baseDomain)
+urlFiles.set(babs.urlFiles)
+isProd.set(babs.isProd)
+debugMode.subscribe(on => {
+	babs.debugMode = on
+})
+
+// export default babs

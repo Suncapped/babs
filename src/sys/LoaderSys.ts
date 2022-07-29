@@ -1,18 +1,9 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, Sphere, sRGBEncoding, Vector2 } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, sRGBEncoding } from 'three'
 import { Vector3 } from 'three'
-import { SocketSys } from './SocketSys'
-import { EventSys } from './EventSys'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
 import { MeshPhongMaterial } from 'three'
-import { AnimationMixer } from 'three'
-import { SkinnedMesh } from 'three'
-import { log, sleep } from './../Utils'
-import { Matrix4 } from 'three'
-import { Group } from 'three'
-import { Bone } from 'three'
-import { Vector4 } from 'three'
-import { Matrix3 } from 'three'
+import { log } from './../Utils'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Controller } from '@/comp/Controller'
@@ -27,13 +18,14 @@ export class LoaderSys {
 	objectTexture
 
 	constructor(urlFiles) {
+		log('LoaderSys', urlFiles)
 		this.urlFiles = urlFiles
 
 		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
 			this.objectTexture.encoding = sRGBEncoding // Should already be default
 			this.objectTexture.flipY = false 
-					// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
+			// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
 			const material = new MeshLambertMaterial({
 				name: 'megamaterial',
 				map: this.objectTexture,
@@ -113,6 +105,7 @@ export class LoaderSys {
 			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
 					log.info('Loaded GLTF:', gltf)
+					// log('Loaded GLTF:', gltf.scene.children[0])
 
 					gltf.scene.traverse(child => {
 						if (child.isMesh) {

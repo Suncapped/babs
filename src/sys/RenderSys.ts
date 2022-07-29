@@ -34,7 +34,7 @@ export class RenderSys {
 		this.renderer.toneMapping = ACESFilmicToneMapping
 		// this.renderer.toneMapping = NoToneMapping // LinearToneMapping(enables toneMappingExposure) // ACESFilmicToneMapping
 		// this.renderer.toneMapping = LinearToneMapping // (enables toneMappingExposure for sky) // ACESFilmicToneMapping
-		this.renderer.toneMappingExposure = 0.3///1//0.5
+		this.renderer.toneMappingExposure = 0.2///1//0.5
 		// I don't like having to do global exposure just for Sky.js, but perhaps that's considered "mid level" 5/10.  I don't know much about these kinds of things.  // Now re-setting to 1.0
 		// In that case, might as well use ACES until we know whether monitors support HDR (or make a player toggle)
 		// Now I've changed it to 0.3 but multiplied lights by (1/it), such that sky is less white and more blue, but light is still good.
