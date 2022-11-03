@@ -269,8 +269,8 @@ export class WorldSys {
 		const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
 		hemiLightHelper.name = 'three-helper'
 		this.babs.scene.add(hemiLightHelper)
-		this.hemiLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
-		this.hemiLight.groundColor.setHSL(245/360, 92/100, 1).convertSRGBToLinear()
+		this.hemiLight.color.setHSL(45/360, 1, 0.5).convertSRGBToLinear() // light from above
+		this.hemiLight.groundColor.setHSL(245/360, 92/100, 0.5).convertSRGBToLinear() // from below
 		this.babs.scene.add(this.hemiLight)
 
 		this.babs.scene.fog = new FogExp2(
@@ -443,22 +443,31 @@ export class WorldSys {
 	isDaytimeWithShadows
 	duskMargin = -0.1
 	
-	feTime :DateTime
+	proximaSecondsSinceHour :number
+	localTimeWhenGotProximaTime :DateTime
 	GAME_SPEED_MULTIPLIER = 24
 
 	update(dt, camera) {
 		// Update sun position over time!
-		if(!this.feTime) return // Time comes before Earth :)
-		this.feTime = this.feTime.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
+		if(!this.proximaSecondsSinceHour) return // Time comes before Earth :)
 
-		const date = new Date(this.feTime.toISO())
-		// const jsDateUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(),
-		// 	date.getUTCDate(), date.getUTCHours(),
-		// 	date.getUTCMinutes(), date.getUTCSeconds(), date.getUTCMilliseconds())
-		// console.log('this.feTime',this.feTime.toISO() )
-
-		// const sunCalcPos = SunCalc.getPosition(this.feTime.toJSDate(), 39.7392, -104.985)
+		// this.secondsSinceHour = this.secondsSinceHour.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
+		const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600
+		const localSecondsPassedSinceProxima = DateTime.utc().diff(this.localTimeWhenGotProximaTime, 'seconds').seconds
+		const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600
+		// console.log('localGameHoursPassedSinceProxima', proximaRealSecondsAsGameHours, localGameHoursPassedSinceProxima)
+		const secondsAsDatetime = DateTime.utc().set({
+			year: 2022, month: 8, day: 6, // Sat
+			hour: 0, minute: 0, second: 0, millisecond: 0,
+		})
+		const gameHourOfDay = 6 +proximaRealSecondsAsGameHours +localGameHoursPassedSinceProxima // 6am sunrise // MT
+		const timezoneOffset = +6
+		const hackOffset = 0//28.5
+		const datetimeWithSunriseOffset = secondsAsDatetime.plus({hours: gameHourOfDay +timezoneOffset +hackOffset})
+		const date = new Date(datetimeWithSunriseOffset.toISO())
+		// console.log('plusHours', gameHourOfDay, datetimeWithSunriseOffset.toISO(), '--', date.toUTCString())
 		const sunCalcPos = SunCalc.getPosition(date, 39.7392, -104.985)
+
 
 		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
 		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
@@ -531,6 +540,7 @@ export class WorldSys {
 			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
 		)
 		// log('intensity', this.hemiLight.intensity, 0.3 *(1/this.renderer.toneMappingExposure), Math.max(this.duskMargin, noonness +0.5))
+		// this.hemiLight.intensity = 0.2
 
 		// Water randomized rotation
 		const spinSpeedMult = 5

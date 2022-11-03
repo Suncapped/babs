@@ -57,7 +57,6 @@ export class Wob extends FastWob {
 		public r :Rotation,
 		bp :Blueprint,
 	) {
-
 		super(idzone, x, z, r, bp)
 	}
 

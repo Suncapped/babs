@@ -322,7 +322,10 @@ export type SendServerRestart = {
 }
 
 export type SendFeTime = {
-	fetime :string,
+	fetime: {
+		secondsSinceHour :number,
+		hoursSinceBeginning :number,
+	}
 }
 
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn

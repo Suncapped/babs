@@ -575,12 +575,13 @@ export class SocketSys {
 
 				const fetime = data as SendFeTime['fetime']
 
-				const feTime = DateTime.fromISO(fetime).toUTC()
-				console.log('fetime utc iso' ,feTime.toISO())
-
-				context.babs.worldSys.feTime = feTime.plus({hours: 8})
+				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
+				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
 
 				break
+			}
+			default: {
+				log('unknown command: ', op, data)
 			}
 			}
 		}

@@ -285,6 +285,10 @@ export class SharedZone {
 		return new Uint8Array(locs.flat())
 	}
 
+	calcElevationAtIndex(index :number) {
+		return (this.elevations[index] *this.yscale) +this.y
+	}
+
 }
 
 

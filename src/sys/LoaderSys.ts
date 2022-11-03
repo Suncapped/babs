@@ -23,7 +23,7 @@ export class LoaderSys {
 
 		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
-			this.objectTexture.encoding = sRGBEncoding // Should already be default
+			// this.objectTexture.encoding = sRGBEncoding // Should already be default
 			this.objectTexture.flipY = false 
 			// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
 			const material = new MeshLambertMaterial({
@@ -155,8 +155,8 @@ export class LoaderSys {
 			// bumpScale: bumpScale,
 			// color: diffuseColor,
 			specular: 0.16,
-			// reflectivity: 0.5,
 			shininess: 0.2,
+			// reflectivity: 0.5,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 			side: FrontSide,
 			shadowSide: FrontSide,
