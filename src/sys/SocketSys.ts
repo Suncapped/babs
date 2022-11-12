@@ -576,6 +576,8 @@ export class SocketSys {
 				const fetime = data as SendFeTime['fetime']
 
 				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
+				// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
+				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip day&night
 				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
 
 				break

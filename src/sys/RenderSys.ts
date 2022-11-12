@@ -48,6 +48,7 @@ export class RenderSys {
 
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
+		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
 		const near = 0.1
@@ -82,34 +83,24 @@ export class RenderSys {
 
 	firstTime = true
 	handleResize() {
-		// const resizeStuff = () => {
-			let width
-			if(!this.renderer?.domElement) {
-				setTimeout(() => this.handleResize(), 10) 
-				return
-			}
-			width = parseFloat(getComputedStyle(this.renderer.domElement, null)?.width)			
-			if(!width) {
-				setTimeout(() => this.handleResize(), 10) 
-				return
-			}
-			
-			const height = parseFloat(getComputedStyle(this.renderer.domElement, null)?.height)
-			this.renderer.setSize(width, height)
-			this.labelRenderer.setSize(width, height)
-			this._camera.aspect = width / height
-			this._camera.updateProjectionMatrix()
+		let width
+		if(!this.renderer?.domElement) {
+			setTimeout(() => this.handleResize(), 10) 
+			return
+		}
+		width = parseFloat(getComputedStyle(this.renderer.domElement, null)?.width)			
+		if(!width) {
+			setTimeout(() => this.handleResize(), 10) 
+			return
+		}
+		
+		const height = parseFloat(getComputedStyle(this.renderer.domElement, null)?.height)
+		this.renderer.setSize(width, height)
+		this.labelRenderer.setSize(width, height)
+		this._camera.aspect = width / height
+		this._camera.updateProjectionMatrix()
 
-			this.babs.worldSys?.csm?.updateFrustums()
-			// setTimeout(this.handleResize, 10) 
-		// }
-		// if(this.firstTime) { // Hax to deal with Overlay.svelte update happening 'too early'
-		// 	this.firstTime = false
-		// 	setTimeout(() => resizeStuff, 1) 
-		// }
-		// else { 
-		// 	resizeStuff()
-		// }
+		this.babs.worldSys?.csm?.updateFrustums()
 	}
 
 	update(dt) {

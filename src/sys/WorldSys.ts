@@ -49,6 +49,7 @@ import {
 	PCFShadowMap,
 	VSMShadowMap,
 	Material,
+	NearestFilter,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -68,6 +69,7 @@ import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { Player } from '@/ent/Player'
 import { DateTime } from 'luxon'
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 
 export class WorldSys {
 
@@ -85,6 +87,8 @@ export class WorldSys {
 
 	static ZoneTerrainMin = new Vector3(0,0,0)
 	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
+
+	static FogDefaultDensity = 0.0000012
 
 	babs :Babs
 	renderer
@@ -277,7 +281,7 @@ export class WorldSys {
 			new Color(), 
 			// 1, 
 			// WorldSys.MAX_VIEW_DISTANCE
-			0.0000012 // Default is 0.00025 // Has to be low enough to see stars/skybox
+			WorldSys.FogDefaultDensity // Default is 0.00025 // Has to be low enough to see stars/skybox
 		)
 		// May have to do like sun.material.fog = false ?  Not for sun since it's shader, but perhaps for other far things
 		// https://www.youtube.com/watch?v=k1zGz55EqfU Fog video, would be great for rain
@@ -306,23 +310,35 @@ export class WorldSys {
 			
 			const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
-			const tl = new TextureLoader()
+			// const tl = new TextureLoader()
+			let ktx2Loader = new KTX2Loader()
+			// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
+			ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/basis/')
+			ktx2Loader.detectSupport(this.babs.renderSys.renderer)
+			// dracoLoader.setDecoderConfig({ type: 'js' })
+			// this.dracoLoader.preload()
+			// this.loader.setDRACOLoader(this.dracoLoader)
+
 			const nightskyImages = sides.map(side => {
+				// return tl.loadAsync(`${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
 
 				// Attempting to use precompiled textures but they ended up being huge file sizes and unloadable.  Try again later?
-				// var ktx2Loader = new KTX2Loader();
-				// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
-				// ktx2Loader.detectSupport( renderer );
-				// return ktx2Loader.load( `${this.babs.urlFiles}/texture/sky/stars-${side}.ktx2`, function ( texture ) {
-				// 	// var material = new MeshStandardMaterial( { map: texture } );
-				// 	return texture
-				// }, function () {
-				// 	console.log( 'onProgress' );
-				// }, function ( e ) {
-				// 	console.error( e );
-				// } );
+				// Second try!
+				// Install kronos ktx tools from https://github.com/KhronosGroup/KTX-Software/releases
+				/* 
+				3.3MB to 2.9 (2.2 if zcmp set to 20):
+				toktx --target_type RGB --t2 --encode uastc --uastc_quality 2 --zcmp 3 --uastc_rdo_l --verbose ktx2/stars-bottom old-fullres-pre-tinypng/stars-bottom.png
+				
+				Cranked compression: 2.1MB (so zcmp did most of the work, rdo didn't do much...for filesize, maybe for mem though)
+				toktx --target_type RGB --t2 --encode uastc --uastc_quality 2 --zcmp 20 --uastc_rdo_l 10 --verbose ktx2/stars-bottom old-fullres-pre-tinypng/stars-bottom.png
 
-				return tl.loadAsync(`${this.babs.urlFiles}/texture/sky/stars-${side}.png`)
+				Let's try ETC1S
+				toktx --target_type RGB --t2 --encode etc1s --clevel 5 --qlevel 128 --verbose ktx2/stars-bottom old-fullres-pre-tinypng/stars-bottom.png
+
+				*/
+
+				return ktx2Loader.loadAsync(`${this.babs.urlFiles}/texture/sky/etc1s-128/stars-${side}.ktx2`)
+
 			})
 
 			let materialArray = []
@@ -338,6 +354,10 @@ export class WorldSys {
 			Promise.all(nightskyImages).then((images, index) => {
 				images.forEach((texture, index) => {
 					// Using index to ensure correct order
+					// console.log(texture.anisotropy, texture)
+					texture.magFilter = NearestFilter // These make them sparkle
+					texture.minFilter = NearestFilter //   !
+					// texture.anisotropy = 16
 					materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
 					if(index === images.length -1 && !this.nightsky) { // Done loading the final one
 						buildSkybox()
@@ -477,7 +497,8 @@ export class WorldSys {
 		// log('time:', noonness)
 
 		if(noonness < 0 +this.duskMargin) { // nighttime
-			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once
+			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once 
+				// Doesn't happen on nighttime launch I think, since material opacity starts out as 1.0
 				this.nightsky?.material.forEach(m => m.opacity = 1.0)
 			}
 		}
@@ -521,6 +542,8 @@ export class WorldSys {
 				this.dirLight.castShadow = false
 				// this.isDaytime = false
 				this.dirLight.intensity = 0
+
+				;(this.babs.scene.fog as FogExp2).density = 0
 			}
 			else {
 				this.isDaytimeWithShadows = true
@@ -532,6 +555,8 @@ export class WorldSys {
 					1 *(1/this.renderer.toneMappingExposure), 
 					Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boots light around dusk!
 				)
+
+				;(this.babs.scene.fog as FogExp2).density = WorldSys.FogDefaultDensity
 			}
 		}
 		this.hemiLight.intensity = MathUtils.lerp(
