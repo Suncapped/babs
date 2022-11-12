@@ -474,7 +474,7 @@ export class WorldSys {
 		// this.secondsSinceHour = this.secondsSinceHour.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
 		const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600
 		const localSecondsPassedSinceProxima = DateTime.utc().diff(this.localTimeWhenGotProximaTime, 'seconds').seconds
-		const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600
+		const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600 //        *3600 /20
 		// console.log('localGameHoursPassedSinceProxima', proximaRealSecondsAsGameHours, localGameHoursPassedSinceProxima)
 		const secondsAsDatetime = DateTime.utc().set({
 			year: 2022, month: 8, day: 6, // Sat
@@ -564,8 +564,17 @@ export class WorldSys {
 			0.3 *(1/this.renderer.toneMappingExposure), 
 			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
 		)
-		// log('intensity', this.hemiLight.intensity, 0.3 *(1/this.renderer.toneMappingExposure), Math.max(this.duskMargin, noonness +0.5))
-		// this.hemiLight.intensity = 0.2
+
+		// Make hemiLight more intense at night
+		this.hemiLight.intensity += -noonness *7 // *x brings this to ~3.5 at night
+		if(noonness < 1) this.hemiLight.intensity += 1 // todo does it need smoothing?
+
+		this.hemiLight.color.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // light from above
+		this.hemiLight.groundColor.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // from below
+		// ^ Fine to use night color there since intensity is negative during the day anyway (sunlight takes over)
+		this.hemiLight.intensity = Math.max(this.hemiLight.intensity, 2)
+		// ^ todo make hemilight functional during daylight too; that is a hack, blue daytime light :/
+		// console.log('noonness', noonness, this.hemiLight.intensity)
 
 		// Water randomized rotation
 		const spinSpeedMult = 5
