@@ -312,8 +312,10 @@ export class WorldSys {
 
 			// const tl = new TextureLoader()
 			let ktx2Loader = new KTX2Loader()
-			// ktx2Loader.setTranscoderPath( '/node_modules/three/examples/js/libs/basis/' );
-			ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/basis/')
+			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/js/libs/basis/');
+			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/basis/')
+			ktx2Loader.setTranscoderPath('/basis/')
+			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/webgl/transcoder/build/')
 			ktx2Loader.detectSupport(this.babs.renderSys.renderer)
 			// dracoLoader.setDecoderConfig({ type: 'js' })
 			// this.dracoLoader.preload()
