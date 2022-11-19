@@ -44,7 +44,7 @@ export class Babs {
 	uiSys :UiSys
 	worldSys :WorldSys
 	socketSys :SocketSys
-	renderSys :RenderSys
+	public renderSys :RenderSys
 
 
 	ents = new Map<number, Ent>() // id key, value ent

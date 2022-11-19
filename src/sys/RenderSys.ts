@@ -4,6 +4,7 @@ import { ACESFilmicToneMapping, CullFaceBack, LinearEncoding, LinearToneMapping,
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
+import { VRButton } from 'three/examples/jsm/webxr/VRButton'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -11,10 +12,11 @@ import { dividerOffset } from '../stores'
 export class RenderSys {
 
 	babs
-	renderer
+	renderer :WebGLRenderer
 	labelRenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
+	public isVr = false
 
 	constructor(babs) {
 		this.babs = babs
@@ -26,6 +28,7 @@ export class RenderSys {
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true,
 		})
+		this.renderer.xr.enabled = true
 		// this.renderer.outputEncoding = LinearEncoding
 		this.renderer.outputEncoding = sRGBEncoding
 		this.renderer.gammaFactor = 2.2 // SO says it's not really deprecated any time soon as of ~Feb2021
@@ -45,6 +48,15 @@ export class RenderSys {
 
 		// document.body.appendChild(this.renderer.domElement) // Now done in html
 		// this.renderer.domElement.id = 'canvas'
+
+		// Detect and offer VR
+		navigator.xr.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
+			if(vrSupported) {
+				const vrButton = VRButton.createButton(this.renderer)
+				document.body.appendChild(vrButton)
+				this.isVr = true
+			}
+		})
 
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)

@@ -28,7 +28,7 @@
     "@tsconfig/svelte": "^3.0.0",
     "@types/dat.gui": "^0.7.7",
     "@types/luxon": "^3.0.0",
-    "@types/three": "^0.140.0",
+    "@types/three": "^0.146.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "bicubic-interpolate": "^1.0.4",
@@ -50,6 +50,6 @@
     "luxon": "^3.0.1",
     "papercss": "^1.8.3",
     "suncalc": "^1.9.0",
-    "three": "^0.141.0"
+    "three": "^0.146.0"
   }
 }

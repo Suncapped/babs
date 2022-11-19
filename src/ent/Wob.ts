@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, SmoothShading, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from 'three'
 import { SocketSys } from '@/sys/SocketSys'
 import { UiSys } from '@/sys/UiSys'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
@@ -122,7 +122,7 @@ export class Wob extends FastWob {
 			// color: 0x555555
 			// specular: 0xffffff
 			// shininess: 50
-			// shading: SmoothShading
+			// shading: SmoothShading // was deprecated?
 
 			// const cube = new Mesh(geometry, material)
 			// scene.add(cube)

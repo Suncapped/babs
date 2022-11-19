@@ -2,15 +2,20 @@ import { log } from './../Utils'
 import * as THREE from 'three'
 import { MathUtils, Vector3 } from 'three'
 import { Quaternion } from 'three'
+import { Babs } from '@/Babs'
 
 // Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 export class CameraSys {
 	static DefaultOffsetHeight = 15
 
-	constructor(camera, targetController, babs) {
-		this.babs = babs
-		this.camera = camera
+	_target
+	offsetHeight
+	gh
+	idealOffset
+	_currentPosition
+	_currentLookat
+	constructor(public camera, targetController, public babs :Babs) {
 		this._target = targetController
 
 		this.offsetHeight = CameraSys.DefaultOffsetHeight
@@ -99,6 +104,36 @@ export class CameraSys {
 		// this.camera.lookAt(this._currentLookat)
 
 		this.camera.position.copy(this.idealOffset)
+
+		if(this.babs.renderSys.isVr) {
+			const xrCam = this.babs.renderSys.renderer.xr.getCamera()?.cameras[0]
+			if(xrCam) {
+
+				// const renderer = this.babs.renderSys.renderer
+				// // console.log(xrCam)
+				// // this.babs.renderSys.isVr = false
+
+				// const frame = renderer.xr.getFrame();
+				// const refSpace = renderer.xr.getReferenceSpace();
+				// const views = frame.getViewerPose(refSpace).views;
+				// let pos = views[0].transform.position;
+				// // const c = renderer.xr.getCamera().cameras[0].position;
+				
+
+			
+				// renderer.xr.getCamera().cameras[0].position.x = pos.x +this.camera.position.x +10000
+				// renderer.xr.getCamera().cameras[0].position.y = pos.y +this.camera.position.y +10000
+				// renderer.xr.getCamera().cameras[0].position.z = pos.z +this.camera.position.z +10000
+				// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
+
+				this.babs.scene.children.forEach(child => {
+					child.position.add(new Vector3(-100, -8360, -500))
+					this.babs.renderSys.isVr = false
+
+				})
+
+			}
+		}
 
 
 		this.camera.lookAt(idealLookat)
