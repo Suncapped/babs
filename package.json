@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.3.0",
   "engines": {
-    "node": "v18"
+    "node": "v19"
   },
   "volta": {
-    "node": "18.2.0"
+    "node": "19.1.0"
   },
   "scripts": {
     "playerdev": "vite --mode playerdev",
@@ -29,15 +29,15 @@
     "@types/dat.gui": "^0.7.7",
     "@types/luxon": "^3.0.0",
     "@types/three": "^0.146.0",
-    "@typescript-eslint/eslint-plugin": "^5.29.0",
-    "@typescript-eslint/parser": "^5.29.0",
+    "@typescript-eslint/eslint-plugin": "^5.43.0",
+    "@typescript-eslint/parser": "^5.43.0",
     "bicubic-interpolate": "^1.0.4",
-    "eslint": "^8.18.0",
+    "eslint": "^8.28.0",
     "svelte": "^3.48.0",
     "svelte-check": "^2.7.1",
     "svelte-preprocess": "^4.10.6",
-    "tslib": "^2.4.0",
-    "typescript": "^4.7.3",
+    "tslib": "^2.4.1",
+    "typescript": "^4.9.3",
     "vite": "^2.9.9",
     "webhook-discord": "^3.7.8"
   },
