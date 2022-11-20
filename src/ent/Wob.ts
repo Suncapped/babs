@@ -414,9 +414,9 @@ export class Wob extends FastWob {
 			}
 	
 	
-			if(wob.name === 'firepit' || wob.name === 'torch') {
+			if(wob.name === 'campfire' || wob.name === 'torch') {
 				let scale, yup
-				if(wob.name === 'firepit') {
+				if(wob.name === 'campfire') {
 					scale = 3
 					yup = 2
 				}
