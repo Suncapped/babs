@@ -217,7 +217,7 @@
 			<ul>			
 			<li>Welcome to First Earth!</li>
 			<li>
-					Speech color: <span id="speechColorEl" on:click={clickColor}>&block;&block;&block;</span>
+					Speech color: <span id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
 			</li>
 			{#if $menuSelfData.nick}
 				<li>Known as: {$menuSelfData.nick}</li>
