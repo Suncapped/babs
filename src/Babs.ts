@@ -171,33 +171,52 @@ export class Babs {
 
 
 	prevTime = performance.now()
+	dtSinceLastFocus = 0
 	update(time) {
-		// log.info(time -this.prevTime)
 		const dt = (time -this.prevTime) /1000 // In seconds!
+		// const dt = time /1000 // In seconds!
 
-		this.socketSys.update(dt)
+		this.socketSys.update()
 
-		this.uiSys.updateBegin(dt)
-		
-		// LoaderSys.update(dt)
-		this.inputSys?.update(dt, this.scene)
-		this.worldSys.update(dt, this.camera)
-
-		for(let [name, coms] of this.compcats) {
-			if(coms) {
-				for(let com of coms) {
-					com.update(dt)
-				}
-			}
+		if(this.debugMode) {
+			this.uiSys['fps']?.begin()
+			this.uiSys['mem']?.begin()
 		}
 
-		this.cameraSys?.update(dt)
+		// console.log('dt', dt)
+		this.dtSinceLastFocus += dt
+		if(this.renderSys.documentHasFocus 
+			|| this.dtSinceLastFocus > 1) { // Allow a frame once per 0.5 second
+			// console.log('this.dtSinceLastFocus', this.dtSinceLastFocus)
+			this.uiSys.update()
+			
+			// LoaderSys.update(this.dtSinceLastFocus)
+			this.inputSys?.update(this.dtSinceLastFocus, this.scene)
+			this.worldSys.update(this.dtSinceLastFocus, this.camera)
 
-		this.renderSys.update(dt)
+			for(let [name, coms] of this.compcats) {
+				if(coms) {
+					for(let com of coms) {
+						com.update(this.dtSinceLastFocus)
+					}
+				}
+			}
+
+			this.cameraSys?.update(this.dtSinceLastFocus)
+
+			this.renderSys.update(this.dtSinceLastFocus)
+
+			this.dtSinceLastFocus = 0
+		}
 
 
 		this.prevTime = time
-		this.uiSys.updateEnd(dt)
+
+
+		if(this.debugMode) {
+			this.uiSys['fps']?.end()
+			this.uiSys['mem']?.end()
+		}
 	}
 
 }

@@ -921,7 +921,20 @@ export class InputSys {
 		) {
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 			this.mouseRayTargets = []
-			this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets)
+			// this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets) 
+			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
+			this.mouse.ray.intersectObjects(scene.children, false, this.mouseRayTargets) // Gets everything but player?
+			const mouseRayPlayers = []
+			const players = scene.children.filter(c=>c.name=='self'||c.name=='player')
+			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
+			// console.log('playerBboxes', playerBboxes)
+			if(playerBboxes.length) {
+				this.mouse.ray.intersectObjects(playerBboxes, false, mouseRayPlayers)
+				this.mouseRayTargets = this.mouseRayTargets.concat(mouseRayPlayers)
+				// console.log('push', playerBboxes)
+			}
+			
+
 
 			// if(this.mouseRayTargets.length > 1) {
 			// 	log(this.mouseRayTargets)
@@ -946,12 +959,6 @@ export class InputSys {
 					|| this.mouseRayTargets[i].object?.name === 'camerahelper' // zonetodo
 					|| this.mouseRayTargets[i].object?.name === 'flame') { // flame effect
 					continue // Skip
-				}
-
-
-				else if (this.mouseRayTargets[i].object?.type instanceof SkinnedMesh) { // Player
-					// log('skinnedmesh')
-
 				}
 				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
@@ -1035,6 +1042,8 @@ export class InputSys {
 				}
 
 				if (this.pickedObject) { // We've set a picked object in ifs above
+					// console.log(scene.children)
+					// console.log(scene.children.find(c => c.children.length))
 
 					if (this.pickedObject.instanced) { // InstancedMesh 
 						let oldColor = new Color()

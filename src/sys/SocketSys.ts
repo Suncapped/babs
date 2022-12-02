@@ -191,7 +191,7 @@ export class SocketSys {
 
 	processQueue = []
 	item
-	update(dt) {
+	update() {
 		const callTasks = async () => {
 			for (const [task, payload] of this.processQueue) {
 				await task(this, payload);

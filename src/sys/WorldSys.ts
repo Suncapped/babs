@@ -312,8 +312,8 @@ export class WorldSys {
 
 			// const tl = new TextureLoader()
 			let ktx2Loader = new KTX2Loader()
-			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/js/libs/basis/');
-			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/js/libs/basis/')
+			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
+			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/basis/')
 			ktx2Loader.setTranscoderPath('/basis/')
 			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/webgl/transcoder/build/')
 			ktx2Loader.detectSupport(this.babs.renderSys.renderer)
@@ -416,7 +416,7 @@ export class WorldSys {
 			// this.renderer.shadowMap.type = PCFSoftShadowMap
 			// this.renderer.shadowMap.type = VSMShadowMap
 
-			this.renderer.shadowMap.autoUpdate = true // /needsUpdate 
+			this.renderer.shadowMap.autoUpdate = false // /needsUpdate 
 			// ^ Only needed to false if updating manually; true updates every frame
 
 			debugMode.subscribe(on => {
@@ -469,114 +469,127 @@ export class WorldSys {
 	localTimeWhenGotProximaTime :DateTime
 	GAME_SPEED_MULTIPLIER = 24
 
+
+	frameCount = 0
+	// DO_EVERY_FRAMES = 120
+	DO_EVERY_FRAMES = 1
+
 	update(dt, camera) {
 		// Update sun position over time!
 		if(!this.proximaSecondsSinceHour) return // Time comes before Earth :)
 
-		// this.secondsSinceHour = this.secondsSinceHour.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
-		const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600
-		const localSecondsPassedSinceProxima = DateTime.utc().diff(this.localTimeWhenGotProximaTime, 'seconds').seconds
-		const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600 //        *3600 /20
-		// console.log('localGameHoursPassedSinceProxima', proximaRealSecondsAsGameHours, localGameHoursPassedSinceProxima)
-		const secondsAsDatetime = DateTime.utc().set({
-			year: 2022, month: 8, day: 6, // Sat
-			hour: 0, minute: 0, second: 0, millisecond: 0,
-		})
-		const gameHourOfDay = 6 +proximaRealSecondsAsGameHours +localGameHoursPassedSinceProxima // 6am sunrise // MT
-		const timezoneOffset = +6
-		const hackOffset = 0//28.5
-		const datetimeWithSunriseOffset = secondsAsDatetime.plus({hours: gameHourOfDay +timezoneOffset +hackOffset})
-		const date = new Date(datetimeWithSunriseOffset.toISO())
-		// console.log('plusHours', gameHourOfDay, datetimeWithSunriseOffset.toISO(), '--', date.toUTCString())
-		const sunCalcPos = SunCalc.getPosition(date, 39.7392, -104.985)
+
+		this.frameCount++
+		// if(this.frameCount % this.DO_EVERY_FRAMES === 0) // Shadows and sun too jerky.
+		{
+			this.frameCount = 0
+			this.renderer.shadowMap.needsUpdate = true
+
+			// this.secondsSinceHour = this.secondsSinceHour.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
+			const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600
+			const localSecondsPassedSinceProxima = DateTime.utc().diff(this.localTimeWhenGotProximaTime, 'seconds').seconds
+			const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600 //        *3600 /20
+			// console.log('localGameHoursPassedSinceProxima', proximaRealSecondsAsGameHours, localGameHoursPassedSinceProxima)
+			const secondsAsDatetime = DateTime.utc().set({
+				year: 2022, month: 8, day: 6, // Sat
+				hour: 0, minute: 0, second: 0, millisecond: 0,
+			})
+			const gameHourOfDay = 6 +proximaRealSecondsAsGameHours +localGameHoursPassedSinceProxima // 6am sunrise // MT
+			const timezoneOffset = +6
+			const hackOffset = 0//28.5
+			const datetimeWithSunriseOffset = secondsAsDatetime.plus({hours: gameHourOfDay +timezoneOffset +hackOffset})
+			const date = new Date(datetimeWithSunriseOffset.toISO())
+			// console.log('plusHours', gameHourOfDay, datetimeWithSunriseOffset.toISO(), '--', date.toUTCString())
+			const sunCalcPos = SunCalc.getPosition(date, 39.7392, -104.985)
 
 
-		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
-		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
+			const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
+			const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
 
-		// Adjust fog lightness (white/black) to sun elevation
-		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
-		// log('time:', noonness)
+			// Adjust fog lightness (white/black) to sun elevation
+			const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
+			// log('time:', noonness)
 
-		if(noonness < 0 +this.duskMargin) { // nighttime
-			if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once 
-				// Doesn't happen on nighttime launch I think, since material opacity starts out as 1.0
-				this.nightsky?.material.forEach(m => m.opacity = 1.0)
+			if(noonness < 0 +this.duskMargin) { // nighttime
+				if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once 
+					// Doesn't happen on nighttime launch I think, since material opacity starts out as 1.0
+					this.nightsky?.material.forEach(m => m.opacity = 1.0)
+				}
 			}
-		}
-		else if(noonness >= 0 +this.duskMargin) { // daytime
-			const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
-			this.nightsky?.material.forEach(m => m.opacity = opacity)
-			this.dirLight ? this.dirLight.castShadow = true : 0
-		}
-
-		// Rotate sky // Todo more accurate lol! // And make stars accurate in their positioning with Celestia?
-		this.nightsky?.rotateY(-0.000015)
-		this.nightsky?.rotateX(-0.000015)
-
-		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
-		// log(noonness, 90 -MathUtils.radToDeg(phi))
-		this.babs.scene.fog.color.setHSL(
-			34/360, // Which color
-			0.1, // How much color
-			0.02 + (elevationRatioCapped *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
-		)
-		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
-
-		// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
-		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, phi, theta)
-		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
-
-
-		if(this.dirLight){
-			// Put directional light at sun position, but closer in!
-			this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
-			this.dirLight.position.add(this.playerTarget.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
-
-			this.dirLightHelper.update()
-			this.cameraHelper.update()
-			// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
-
-			if(noonness < 0 +this.duskMargin /7) { 
-				this.isDaytimeWithShadows = false
-				// ^ todo have shadows fade out rather than just disappear?
-				// 	Or just have less ambient lighting of objects at night?
-				this.dirLight.castShadow = false
-				// this.isDaytime = false
-				this.dirLight.intensity = 0
-
-				;(this.babs.scene.fog as FogExp2).density = 0
+			else if(noonness >= 0 +this.duskMargin) { // daytime
+				const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
+				this.nightsky?.material.forEach(m => m.opacity = opacity)
+				this.dirLight ? this.dirLight.castShadow = true : 0
 			}
-			else {
-				this.isDaytimeWithShadows = true
-				this.dirLight.castShadow = true
-				// this.isDaytime = true
-				// Intensity based on noonness
-				this.dirLight.intensity = MathUtils.lerp(
-					0.01, 
-					1 *(1/this.renderer.toneMappingExposure), 
-					Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boots light around dusk!
-				)
 
-				;(this.babs.scene.fog as FogExp2).density = WorldSys.FogDefaultDensity
+			// Rotate sky // Todo more accurate lol! // And make stars accurate in their positioning with Celestia?
+			this.nightsky?.rotateY(-0.0015 *this.DO_EVERY_FRAMES *dt)
+			this.nightsky?.rotateX(-0.0015 *this.DO_EVERY_FRAMES *dt)
+
+			const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
+			// log(noonness, 90 -MathUtils.radToDeg(phi))
+			this.babs.scene.fog.color.setHSL(
+				34/360, // Which color
+				0.1, // How much color
+				0.02 + (elevationRatioCapped *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
+			)
+			// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
+
+			// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
+			this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, phi, theta)
+			this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
+
+
+			if(this.dirLight){
+				// Put directional light at sun position, but closer in!
+				this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
+				this.dirLight.position.add(this.playerTarget.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
+
+				this.dirLightHelper.update()
+				this.cameraHelper.update()
+				// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
+
+				if(noonness < 0 +this.duskMargin /7) { 
+					this.isDaytimeWithShadows = false
+					// ^ todo have shadows fade out rather than just disappear?
+					// 	Or just have less ambient lighting of objects at night?
+					this.dirLight.castShadow = false
+					// this.isDaytime = false
+					this.dirLight.intensity = 0
+
+					;(this.babs.scene.fog as FogExp2).density = 0
+				}
+				else {
+					this.isDaytimeWithShadows = true
+					this.dirLight.castShadow = true
+					// this.isDaytime = true
+					// Intensity based on noonness
+					this.dirLight.intensity = MathUtils.lerp(
+						0.01, 
+						1 *(1/this.renderer.toneMappingExposure), 
+						Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boots light around dusk!
+					)
+
+					;(this.babs.scene.fog as FogExp2).density = WorldSys.FogDefaultDensity
+				}
 			}
+			this.hemiLight.intensity = MathUtils.lerp(
+				0.5,//0.05, 
+				0.3 *(1/this.renderer.toneMappingExposure), 
+				Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
+			)
+
+			// Make hemiLight more intense at night
+			this.hemiLight.intensity += -noonness *7 // *x brings this to ~3.5 at night
+			if(noonness < 1) this.hemiLight.intensity += 1 // todo does it need smoothing?
+
+			this.hemiLight.color.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // light from above
+			this.hemiLight.groundColor.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // from below
+			// ^ Fine to use night color there since intensity is negative during the day anyway (sunlight takes over)
+			this.hemiLight.intensity = Math.max(this.hemiLight.intensity, 2)
+			// ^ todo make hemilight functional during daylight too; that is a hack, blue daytime light :/
+			// console.log('noonness', noonness, this.hemiLight.intensity)
 		}
-		this.hemiLight.intensity = MathUtils.lerp(
-			0.5,//0.05, 
-			0.3 *(1/this.renderer.toneMappingExposure), 
-			Math.max(this.duskMargin, noonness +0.5) // +0.5 boots light around dusk!
-		)
-
-		// Make hemiLight more intense at night
-		this.hemiLight.intensity += -noonness *7 // *x brings this to ~3.5 at night
-		if(noonness < 1) this.hemiLight.intensity += 1 // todo does it need smoothing?
-
-		this.hemiLight.color.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // light from above
-		this.hemiLight.groundColor.setHSL(222/360, 60/100, 66/100).convertSRGBToLinear() // from below
-		// ^ Fine to use night color there since intensity is negative during the day anyway (sunlight takes over)
-		this.hemiLight.intensity = Math.max(this.hemiLight.intensity, 2)
-		// ^ todo make hemilight functional during daylight too; that is a hack, blue daytime light :/
-		// console.log('noonness', noonness, this.hemiLight.intensity)
 
 		// Water randomized rotation
 		const spinSpeedMult = 5

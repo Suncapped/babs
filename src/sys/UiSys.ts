@@ -132,7 +132,7 @@ export class UiSys {
 				chatDiv.style.visibility = 'visible' 
 			}
 			else {
-				setTimeout(moveUpCheck, 10)
+				setTimeout(moveUpCheck, 100)
 			}
 		}
 		moveUpCheck()
@@ -332,9 +332,7 @@ export class UiSys {
 
 	oldPos = new Vector3(0,0,0)
 	logText = ''
-	updateBegin() {
-		this['fps']?.begin()
-		this['mem']?.begin()
+	update() {
 
 		if(this.babs?.idSelf) { // Player is loaded
 			const playerPos = this.babs.ents.get(this.babs.idSelf)?.controller?.target?.position
@@ -359,10 +357,6 @@ export class UiSys {
 		})
 
 
-	}
-	updateEnd() {
-		this['fps']?.end()
-		this['mem']?.end()
 	}
 
 }
