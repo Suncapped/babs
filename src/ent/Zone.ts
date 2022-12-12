@@ -7,6 +7,8 @@ import { Matrix4, Mesh, Raycaster, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
+import { Flame } from '@/comp/Flame'
+import type { WobId } from '@/shared/consts'
 
 
 export class Zone extends SharedZone {
@@ -44,6 +46,19 @@ export class Zone extends SharedZone {
 			const zone = this.babs.ents.get(existingWob.idzone) as Zone
 			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
 
+			// Remove attachments
+			const flameComps = this.babs.compcats.get('Flame') as Flame[]
+			const flame = flameComps.find(fc => {
+				return (fc.idEnt as WobId).idzone === existingWob.id().idzone
+					&& (fc.idEnt as WobId).x === existingWob.id().x
+					&& (fc.idEnt as WobId).z === existingWob.id().z
+					&& (fc.idEnt as WobId).blueprint_id === existingWob.id().blueprint_id
+			})
+			log.info('flame to remove', flame)
+			if(flame) {
+				this.babs.scene.remove(flame.fire)
+			}
+
 			// Remove one by swapping the last item into this place, then decrease instanced count by 1
 			let swap :Matrix4 = new Matrix4()
 			instanced.getMatrixAt(instanced.count -1, swap)
@@ -53,10 +68,7 @@ export class Zone extends SharedZone {
 
 			instanced.instanceMatrix.needsUpdate = true
 
-			// if(wobExisting.attachments?.flame){ // fasttodo
-			// 	context.babs.scene.remove(wob.attachments.flame.fire)
-			// 	delete wob.attachments.flame
-			// }
+
 		}
 	}
 

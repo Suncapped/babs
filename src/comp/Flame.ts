@@ -13,6 +13,7 @@ import { isPowerOfTwo } from 'three/src/math/MathUtils'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
+import { Wob } from '@/ent/Wob'
 
 
 let FireShader = {
@@ -213,7 +214,7 @@ let FireShader = {
 }
 
 class ThreeFire extends Mesh {
-	constructor( fireTex, color ) {
+	constructor( fireTex, color = new Color( 0xeeeeee )) {
 		const fireMaterial = new ShaderMaterial( {
 			defines         : FireShader.defines,
 			uniforms        : UniformsUtils.clone( FireShader.uniforms ),
@@ -233,7 +234,7 @@ class ThreeFire extends Mesh {
 		fireTex.wrapS = ClampToEdgeWrapping
 		
 		fireMaterial.uniforms.fireTex.value = fireTex
-		fireMaterial.uniforms.color.value = color || new Color( 0xeeeeee )
+		fireMaterial.uniforms.color.value = color
 		fireMaterial.uniforms.invModelMatrix.value = new Matrix4()
 		fireMaterial.uniforms.scale.value = new Vector3( 1, 1, 1 )
 		fireMaterial.uniforms.seed.value = Math.random() * 19.19
@@ -257,10 +258,9 @@ class ThreeFire extends Mesh {
 		this.material.uniforms.scale.value = this.scale
 
 	}
+	
+}
 
-
-
-};
 
 
 export class Flame extends Comp {
@@ -272,8 +272,10 @@ export class Flame extends Comp {
 
 	static wantsLight = []
 
-	constructor(wob, babs) {
-		super(wob.id, Flame, babs)
+	static allFlames = []
+
+	constructor(wob :Wob, babs) {
+		super(wob.id(), Flame, babs)
 	}
 
 	fire
@@ -289,7 +291,7 @@ export class Flame extends Comp {
 	}
 
 	static fireTex
-	static async Create(wob, babs :Babs, scale, yup) {
+	static async Create(wob :Wob, babs :Babs, scale, yup) {
 		const com = new Flame(wob, babs)
 
 		// Init static singletons
@@ -331,28 +333,16 @@ export class Flame extends Comp {
 		// Add a glow of light
 		Flame.wantsLight.push(com.fire)
 
+		// Flame.allFlames.push()
+
 
 		return com
 	}
 
 	update(dt) {
 
-		if(Flame.player && performance.now() %15 < 1) {
-			const playerpos = Flame.player.controller.target.position
 
-			const nearestWants = Flame.wantsLight.sort((a, b) => {
-				return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
-			})
-
-			for(const index in Flame.lightPool) {
-				if(index > nearestWants.length -1) break
-				Flame.lightPool[index].position.copy(nearestWants[index].position)
-				Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
-				// Hmm I think there's a bug where some are getting double
-			}
-		}
-
-		this.fire?.update(dt *Flame.speed)
+		this.fire?.update(dt *Flame.settings.speed)
 
 	}
 

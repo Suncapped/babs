@@ -5,6 +5,7 @@ import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton'
+import { Flame } from '@/comp/Flame'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -112,6 +113,23 @@ export class RenderSys {
 				this.documentHasFocus = hasFocusNow
 			}
 		}, 500)
+
+		setInterval(() => {
+			if(Flame.player?.controller?.target) {
+				const playerpos = Flame.player.controller.target.position
+
+				const nearestWants = Flame.wantsLight.sort((a, b) => {
+					return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
+				})
+
+				for(let index=0; index<Flame.lightPool.length; index++) {
+					if(index > nearestWants.length -1) break
+					Flame.lightPool[index].position.copy(nearestWants[index].position)
+					Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
+					// Hmm I think there's a bug where some are getting double
+				}
+			}
+		}, 1000)
 	}
 
 	firstTime = true

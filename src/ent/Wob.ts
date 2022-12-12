@@ -65,6 +65,7 @@ export class Wob extends FastWob {
 	}
 
 	color
+	attachments
 
 	static HiddenScene = null
 	static HiddenSceneRender(mesh) :Promise<IconData> {
@@ -425,19 +426,8 @@ export class Wob extends FastWob {
 					yup = 3.5
 				}
 	
-				// Remove any existing flame
-				if(wob.attachments?.flame){
-					babs.scene.remove(wob.attachments.flame.fire)
-					delete wob.attachments.flame
-				}
-	
 				// Add new flame
 				const flame = Flame.Create(wob, babs, scale, yup)
-				wob.attachments = wob.attachments || {} // For later deletion if wob is removed (moved etc)
-				flame.then((res) => {
-					wob.attachments.flame = res
-				})
-	
 	
 			}
 
