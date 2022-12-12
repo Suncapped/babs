@@ -301,7 +301,6 @@ export class Flame extends Comp {
 		}
 		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
 
-		// var fireTex = THREE.ImageUtils.loadTexture("");
 		Flame.fireTex = Flame.fireTex || await new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
 		// fireTex.encoding = sRGBEncoding // This too, though the default seems right
 

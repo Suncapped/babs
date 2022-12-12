@@ -22,10 +22,10 @@ module.exports = {
 			'warn',
 			'tab',
 		],
-		'linebreak-style': [
-			'warn',
-			'unix',
-		],
+		// 'linebreak-style': [
+		// 	'warn',
+		// 	'unix',
+		// ], // Disabling, git default for Windows development is to keep locally as CRLF, then commit as unix/LF
 		'quotes': [
 			'warn',
 			'single',

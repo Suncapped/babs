@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, sRGBEncoding } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, sRGBEncoding, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -15,7 +15,7 @@ export class LoaderSys {
 	loader
 	dracoLoader
 	urlFiles
-	objectTexture
+	objectTexture :Texture
 
 	constructor(urlFiles) {
 		log('LoaderSys', urlFiles)
@@ -26,6 +26,9 @@ export class LoaderSys {
 			// this.objectTexture.encoding = sRGBEncoding // Should already be default
 			this.objectTexture.flipY = false 
 			// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
+			// this.objectTexture.minFilter = 
+			// this.objectTexture.magFilter = 
+
 			const material = new MeshLambertMaterial({
 				name: 'megamaterial',
 				map: this.objectTexture,

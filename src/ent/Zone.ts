@@ -92,7 +92,7 @@ export class Zone extends SharedZone {
 
 		let [intersect] = raycaster.intersectObject(this.ground, true)
 		if(!intersect) {
-			log('calcHeightAt: no ground intersect!', coord, raycaster)
+			log.info('calcHeightAt: no ground intersect!', coord, raycaster)
 			intersect = {
 				point: new Vector3(0,0,0),
 				distance: null,

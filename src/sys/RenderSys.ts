@@ -17,7 +17,7 @@ export class RenderSys {
 	_camera :PerspectiveCamera
 	_scene :Scene
 	public isVr = false
-	public documentHasFocus :boolean|'startup' = true
+	public documentHasFocus :boolean|'forced' = true
 
 	constructor(babs) {
 		this.babs = babs
@@ -96,15 +96,19 @@ export class RenderSys {
 		// ro.observe(this.renderer.domElement);
 		// this.handleResize()
 
-		this.documentHasFocus = 'startup' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
+		this.documentHasFocus = 'forced' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
 		setInterval(() => {
+			if(this.babs.isVr) {
+				this.documentHasFocus = true
+				return // Don't do this for VR, since the browser itself can lose focus while user clicks elsewhere!
+			}
 			let hasFocusNow = document.hasFocus()
 			if (this.documentHasFocus !== hasFocusNow && this.documentHasFocus) {
 				// console.log('unfocused')
 			} else if (this.documentHasFocus !== hasFocusNow) {
 				// console.log('focused')
 			}
-			if(!(this.documentHasFocus === 'startup' && hasFocusNow == false)) { // Don't turn off focus if we're still in startup mode (eg was loaded in background and hasn't yet been focused)
+			if(!(this.documentHasFocus === 'forced' && hasFocusNow == false)) { // Don't turn off focus if we're still in forced mode (eg was loaded in background and hasn't yet been focused)
 				this.documentHasFocus = hasFocusNow
 			}
 		}, 500)
