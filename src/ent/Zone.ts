@@ -47,7 +47,8 @@ export class Zone extends SharedZone {
 			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
 
 			// Remove attachments
-			const flameComps = this.babs.compcats.get('Flame') as Flame[]
+			const flameComps = this.babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
+			// log('flameComps', flameComps, this.babs.compcats)
 			const flame = flameComps.find(fc => {
 				return (fc.idEnt as WobId).idzone === existingWob.id().idzone
 					&& (fc.idEnt as WobId).x === existingWob.id().x
