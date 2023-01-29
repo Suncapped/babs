@@ -1,10 +1,14 @@
 import { log } from './../Utils'
 import * as THREE from 'three'
-import { MathUtils, Vector3 } from 'three'
+import { Group, MathUtils, Object3D, PerspectiveCamera, Vector3 } from 'three'
 import { Quaternion } from 'three'
 import { Babs } from '@/Babs'
 
-// Taken and inspired from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
+import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
+import { Controller } from '@/comp/Controller'
+
+
+// Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 export class CameraSys {
 	static DefaultOffsetHeight = 15
@@ -15,7 +19,8 @@ export class CameraSys {
 	idealOffset
 	_currentPosition
 	_currentLookat
-	constructor(public camera, targetController, public babs :Babs) {
+	cameraGroup :Group
+	constructor(public camera :PerspectiveCamera, targetController :Controller, public babs :Babs) {
 		this._target = targetController
 
 		this.offsetHeight = CameraSys.DefaultOffsetHeight
@@ -24,6 +29,13 @@ export class CameraSys {
 
 		this._currentPosition = new Vector3()
 		this._currentLookat = new Vector3()
+		
+		this.cameraGroup = new Group()
+		this.cameraGroup.add(camera)
+		
+		this.cameraGroup.position.set(12, 8, 12)
+
+		log('cameraGroup', this.cameraGroup)
 	}
 
 	_CalculateIdealOffset() {
@@ -80,14 +92,12 @@ export class CameraSys {
 		idealLookat.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		idealLookat.applyQuaternion(this._target.Rotation)
 
-		// let pos = this._target.Position.clone()
-		// pos.setY(pos.y + 40)
-		// hmm, can't get it right now
-
 		idealLookat.add(this._target.Position)
 		return idealLookat
 	}
 
+	vrSetupDone = false
+	xrCam
 	update(dt) {
 		// const idealOffset = this._CalculateIdealOffset()
 		this._CalculateIdealOffset()
@@ -103,39 +113,78 @@ export class CameraSys {
 		// this.camera.position.copy(this._currentPosition)
 		// this.camera.lookAt(this._currentLookat)
 
-		this.camera.position.copy(this.idealOffset)
-
-		if(this.babs.renderSys.isVr) {
-			const xrCam = this.babs.renderSys.renderer.xr.getCamera()?.cameras[0]
-			if(xrCam) {
-
-				// const renderer = this.babs.renderSys.renderer
-				// // console.log(xrCam)
-				// // this.babs.renderSys.isVr = false
-
-				// const frame = renderer.xr.getFrame();
-				// const refSpace = renderer.xr.getReferenceSpace();
-				// const views = frame.getViewerPose(refSpace).views;
-				// let pos = views[0].transform.position;
-				// // const c = renderer.xr.getCamera().cameras[0].position;
-				
-
-			
-				// renderer.xr.getCamera().cameras[0].position.x = pos.x +this.camera.position.x +10000
-				// renderer.xr.getCamera().cameras[0].position.y = pos.y +this.camera.position.y +10000
-				// renderer.xr.getCamera().cameras[0].position.z = pos.z +this.camera.position.z +10000
-				// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
-
-				this.babs.scene.children.forEach(child => {
-					child.position.add(new Vector3(-100, -8360, -500))
-					this.babs.renderSys.isVr = false
-
-				})
-
-			}
-		}
+		// this.camera.lookAt(idealLookat)
+		// this.camera.position.copy(this.idealOffset) // But, cannot move camera in VR
+		this.cameraGroup.position.copy(this.idealOffset)
 
 
 		this.camera.lookAt(idealLookat)
+		// this.cameraGroup.lookAt(idealLookat) // Not needed; let VR handle its own rotation
+		
+		// this.cameraGroup.matrixWorldNeedsUpdate = true
+		// this.camera.matrixWorldNeedsUpdate = true
+		this.cameraGroup.updateMatrixWorld()
+
+		if(this.babs.renderSys.isVrSupported) {
+
+			if(this.vrSetupDone === false) {
+				this.vrSetupDone = true
+
+				const renderer = this.babs.renderSys.renderer
+				this.xrCam = renderer.xr.getCamera()?.cameras[0]
+				if(this.xrCam) {
+	
+					// const renderer = this.babs.renderSys.renderer
+					// // console.log(xrCam)
+					// // this.babs.renderSys.isVrSupported = false
+	
+					// const frame = renderer.xr.getFrame();
+					// const refSpace = renderer.xr.getReferenceSpace();
+					// const views = frame.getViewerPose(refSpace).views;
+					// let pos = views[0].transform.position;
+					// // const c = renderer.xr.getCamera().cameras[0].position;
+					
+	
+				
+					// renderer.xr.getCamera().cameras[0].position.x = pos.x +this.camera.position.x +10000
+					// renderer.xr.getCamera().cameras[0].position.y = pos.y +this.camera.position.y +10000
+					// renderer.xr.getCamera().cameras[0].position.z = pos.z +this.camera.position.z +10000
+					// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
+	
+					// Temporary hack to offset everything to where the camera seems to start.
+					this.babs.scene.children.forEach(child => {
+						child.position.add(new Vector3(-100, -8360, -500))
+					})
+	
+	
+					// Controllers
+					// Get the 1st controller
+					const [ct0, ct1] = [renderer.xr.getController(0), renderer.xr.getController(1)]
+					console.log('controllers', ct0, ct1)
+					const [ctGrip0, ctGrip1] = [renderer.xr.getControllerGrip(0), renderer.xr.getControllerGrip(1)]
+					console.log('grips', ctGrip0, ctGrip1)
+	
+	
+					const controllerModelFactory = new XRControllerModelFactory()
+	
+					const model0 = controllerModelFactory.createControllerModel( ctGrip0 )
+					ctGrip0.add( model0 )
+					// this.babs.group.add( ctGrip0 )
+					this.cameraGroup.add(ct0)
+					this.cameraGroup.add(ctGrip0)
+
+					
+					const model1 = controllerModelFactory.createControllerModel( ctGrip1 )
+					ctGrip1.add( model1 )
+					this.babs.group.add( ctGrip1 )
+
+	
+				}
+			}
+		
+			// VR every frame
+			
+		}
+
 	}
 }

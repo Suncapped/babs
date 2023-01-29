@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Scene, sRGBEncoding, Texture } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, sRGBEncoding, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -170,19 +170,20 @@ export class LoaderSys {
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
 		const path = `/char/${gender}/female-rig.glb`
 		const cached = this.mapPathRigCache.get(path)
-		let scene :Scene
+		let groupScene :Object3D
 		if(cached) {
 			log.info('cached rig', path)
-			scene = SkeletonUtils.clone(cached)
+			groupScene = SkeletonUtils.clone(cached)
 		}
 		else {
 			log.info('download rig', path)
 			let group = await this.loadGltf(path)
 			this.mapPathRigCache.set(path, group.scene)
-			scene = SkeletonUtils.clone(group.scene)
+			groupScene = SkeletonUtils.clone(group.scene)
 		}
 		
-		const skinnedMesh = scene.children[0].children[1]//group.traverse(c => c instanceof SkinnedMesh)
+		const skinnedMesh = groupScene.children[0].children[0]//group.traverse(c => c instanceof SkinnedMesh)
+		log('scene', groupScene)
 		skinnedMesh.material = material
 
 		skinnedMesh.castShadow = true
@@ -196,17 +197,17 @@ export class LoaderSys {
 		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
 		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
-		scene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
+		groupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
 
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
-		cube.scale.multiplyScalar(1 /scene.scale.x)
-		cube.position.setY(3*(1 /scene.scale.x))
+		cube.scale.multiplyScalar(1 /groupScene.scale.x)
+		cube.position.setY(3*(1 /groupScene.scale.x))
 		cube.visible = false
 		cube.clickable = true
-		scene.add(cube)
+		groupScene.add(cube)
 
 		skinnedMesh.geometry.computeBoundingSphere();
 		// skinnedMesh.geometry.boundingSphere.center = new Vector3(0, 3, 0)
@@ -238,7 +239,7 @@ export class LoaderSys {
 			// skinnedMesh.geometry.matrixWorldNeedsUpdate = true
 		}, 1)
 
-		return scene
+		return groupScene
 	}
 
 	mapPathAnimCache = new Map()

@@ -187,7 +187,7 @@ export class UiSys {
 		chatLabel.name = 'landSaid'
 		chatLabel.position.copy(point)
 		// log('chatLabel targetPos', point, targetPos, targetZone)
-		this.babs.scene.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
+		this.babs.group.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
 	}
 	serverSaid(text, point) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
@@ -220,7 +220,7 @@ export class UiSys {
 		point.setY(point.y +4) // Raise up
 		chatLabel.position.copy(point)
 
-		this.babs.scene.add(chatLabel) // todo not ground // OMG this is why there's an offset
+		this.babs.group.add(chatLabel) // todo not ground // OMG this is why there's an offset
 	}
 
 	craftSaid(options :Array<string>, wob :Wob) {	
@@ -245,7 +245,7 @@ export class UiSys {
 
 			chatDiv.appendChild(chatButton)
 
-			this.babs.scene.add(chatLabel)
+			this.babs.group.add(chatLabel)
 		})	
 		
 		const updateWOB = (opt :string) => {

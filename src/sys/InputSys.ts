@@ -882,7 +882,7 @@ export class InputSys {
 	lastMoveHoldPicked :PickedObject|null
 	carrying :PickedObject|null
 
-	async update(dt, scene) {
+	async update(dt) {
 
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
 			this.isAfk = true
@@ -923,9 +923,9 @@ export class InputSys {
 			this.mouseRayTargets = []
 			// this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets) 
 			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
-			this.mouse.ray.intersectObjects(scene.children, false, this.mouseRayTargets) // Gets everything but player?
+			this.mouse.ray.intersectObjects(this.babs.group.children, false, this.mouseRayTargets) // Gets everything but player?
 			const mouseRayPlayers = []
-			const players = scene.children.filter(c=>c.name=='self'||c.name=='player')
+			const players = this.babs.scene.children.filter(c=>c.name=='self'||c.name=='player')
 			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
 			// console.log('playerBboxes', playerBboxes)
 			if(playerBboxes.length) {
@@ -1276,7 +1276,7 @@ export class InputSys {
 					geometry.rotateX(- Math.PI / 2) // Make the plane horizontal
 					this.displayDestinationMesh = new Mesh(geometry, material)
 					this.displayDestinationMesh.name = 'destinationmesh'
-					scene.add(this.displayDestinationMesh)
+					this.babs.group.add(this.displayDestinationMesh)
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
 				const easyRaiseAbove = 0.1

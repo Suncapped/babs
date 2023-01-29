@@ -299,7 +299,7 @@ export class Flame extends Comp {
 			const pointLight = new PointLight(0xff0000, 1, 1000, 4)
 			pointLight.name = 'flamelight'
 			Flame.lightPool.push(pointLight)
-			babs.scene.add(pointLight)
+			babs.group.add(pointLight)
 		}
 		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
 
@@ -308,7 +308,7 @@ export class Flame extends Comp {
 
 		com.fire = new ThreeFire(Flame.fireTex)
 		com.fire.name = 'flame'
-		babs.scene.add(com.fire)
+		babs.group.add(com.fire)
 
 		com.fire.scale.set(scale,scale*1.33,scale)
 

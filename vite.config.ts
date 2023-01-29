@@ -8,6 +8,9 @@ export default defineConfig({
 	server: {
 		port: 3001,
 		host: '0.0.0.0',
+		// watch: {
+		// 	ignored: ['!**/node_modules/three/**'],
+		// },
 	},
 	build: {
 		sourcemap: true,
@@ -18,4 +21,7 @@ export default defineConfig({
 			'@': path.resolve(__dirname, './src'),
 		},
 	},
+	// optimizeDeps: {
+	// 	exclude: ['three'],
+	// },
 })

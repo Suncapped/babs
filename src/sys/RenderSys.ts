@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, CullFaceBack, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, sRGBEncoding, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
@@ -17,7 +17,7 @@ export class RenderSys {
 	labelRenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
-	public isVr = false
+	public isVrSupported = false
 	public documentHasFocus :boolean|'forced' = true
 
 	constructor(babs) {
@@ -28,12 +28,17 @@ export class RenderSys {
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
-			// physicallyCorrectLights: true,
+			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
 		})
 		this.renderer.xr.enabled = true
 		// this.renderer.outputEncoding = LinearEncoding
 		this.renderer.outputEncoding = sRGBEncoding
 		this.renderer.gammaFactor = 2.2 // SO says it's not really deprecated any time soon as of ~Feb2021
+
+
+		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
+		this.renderer.physicallyCorrectLights = false
+		ColorManagement.legacyMode = false
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10
 		this.renderer.toneMapping = ACESFilmicToneMapping
@@ -56,7 +61,7 @@ export class RenderSys {
 			if(vrSupported) {
 				const vrButton = VRButton.createButton(this.renderer)
 				document.body.appendChild(vrButton)
-				this.isVr = true
+				this.isVrSupported = true
 			}
 		})
 
@@ -67,7 +72,6 @@ export class RenderSys {
 		const fov = 45
 		const near = 0.1
 		this._camera = new PerspectiveCamera(fov, undefined, near, WorldSys.MAX_VIEW_DISTANCE*2)
-		this._camera.position.set(12, 8, 12)
 
 		this._scene = new Scene()
 
@@ -99,7 +103,7 @@ export class RenderSys {
 
 		this.documentHasFocus = 'forced' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
 		setInterval(() => {
-			if(this.babs.isVr) {
+			if(this.babs.isVrSupported) {
 				this.documentHasFocus = true
 				return // Don't do this for VR, since the browser itself can lose focus while user clicks elsewhere!
 			}

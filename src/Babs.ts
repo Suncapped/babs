@@ -9,6 +9,7 @@ import {
 	MeshPhongMaterial,
 	AxesHelper,
 	Cache,
+	Group,
 } from 'three'
 import { WorldSys } from '@/sys/WorldSys'
 import { SocketSys } from '@/sys/SocketSys'
@@ -37,6 +38,8 @@ export class Babs {
 	camera
 	scene :Scene
 	renderer
+
+	group :Group
 
 	cameraSys :CameraSys
 	inputSys :InputSys
@@ -133,6 +136,11 @@ export class Babs {
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
 
+		this.group = new Group
+		this.scene.add(this.group)
+		// this.group.scale.set(1.01,1.01,1.01)
+
+
 		/** @type {WorldSys} */
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 		
@@ -146,6 +154,7 @@ export class Babs {
 				document.getElementById('password')['value']
 			)
 		})
+
 
 
 		// this.scene.children.forEach((node) => {
@@ -192,7 +201,7 @@ export class Babs {
 			
 			// LoaderSys.update(this.dtSinceLastFocus)
 			this.inputSys?.update(this.dtSinceLastFocus, this.scene)
-			this.worldSys.update(this.dtSinceLastFocus, this.camera)
+			this.worldSys.update(this.dtSinceLastFocus)
 
 			for(let [name, coms] of this.compcats) {
 				if(coms) {

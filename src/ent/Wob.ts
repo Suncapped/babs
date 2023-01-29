@@ -296,7 +296,7 @@ export class Wob extends FastWob {
 				instanced.position.setZ(babs.worldSys.shiftiness.z)
 
 				Wob.InstancedMeshes.set(wobName, instanced)
-				babs.scene.add(instanced)
+				babs.group.add(instanced)
 			}
 			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for backpack items too, but that's okay)
 				log('instanced growing at', instanced.count, newWobsCount, instanced.countMax)
@@ -340,7 +340,7 @@ export class Wob extends FastWob {
 				instanced.dispose()
 				
 				Wob.InstancedMeshes.set(wobName, newInstance)
-				babs.scene.add(newInstance)
+				babs.group.add(newInstance)
 			}
 			else {
 				// Instance exists, doesn't need expansion based on incoming item count

@@ -5,7 +5,7 @@ import { Controller } from '@/comp/Controller'
 import { log } from '@/Utils'
 import { Ent } from './Ent'
 import { EventSys } from '@/sys/EventSys'
-import { Scene } from 'three'
+import { Object3D, Scene } from 'three'
 
 // Player Character
 export class Player extends Ent {
@@ -46,11 +46,11 @@ export class Player extends Ent {
 		const [gltfScene] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
-		]) as [Scene]
+		]) as [Object3D]
 		gltfScene.name = plr.self ? 'self' : 'player'
 		gltfScene.idplayer = arrival.id
 		gltfScene.visible = false
-		plr.babs.scene.add(gltfScene)
+		plr.babs.group.add(gltfScene)
 
 		if(plr.self) {
 			plr.babs.idSelf = plr.id

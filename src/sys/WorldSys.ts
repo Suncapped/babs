@@ -216,14 +216,14 @@ export class WorldSys {
 		//     side: BackSide
 		// } )
 		// const sky = new Mesh( skyGeo, skyMat )
-		// this.babs.scene.add( sky )
+		// this.babs.group.add( sky )
 
 
 		// New sky (not lighting)
 		this.daysky = new Sky()
 		this.daysky.name = 'daysky'
 		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE )
-		this.babs.scene.add(this.daysky)
+		this.babs.group.add(this.daysky)
 		
 		this.sunPosition = new Vector3()
 
@@ -266,16 +266,16 @@ export class WorldSys {
 		// New lighting
 		// Might want ambient light in addition to hemispheric?  Maybe for indoors?
 		// let light = new AmbientLight(0xFFFFFF, 1)
-		// this.babs.scene.add(light)
+		// this.babs.group.add(light)
 
 		this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
 		this.hemiLight.name = 'hemilight'
 		const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
 		hemiLightHelper.name = 'three-helper'
-		this.babs.scene.add(hemiLightHelper)
+		this.babs.group.add(hemiLightHelper)
 		this.hemiLight.color.setHSL(45/360, 1, 0.5).convertSRGBToLinear() // light from above
 		this.hemiLight.groundColor.setHSL(245/360, 92/100, 0.5).convertSRGBToLinear() // from below
-		this.babs.scene.add(this.hemiLight)
+		this.babs.group.add(this.hemiLight)
 
 		this.babs.scene.fog = new FogExp2(
 			new Color(), 
@@ -351,9 +351,9 @@ export class WorldSys {
 				this.nightsky.name = 'nightsky'
 
 				// todo perhaps use offscreencanvas to fix this? 
-				this.babs.scene.add(this.nightsky)
+				this.babs.group.add(this.nightsky)
 			}
-			Promise.all(nightskyImages).then((images, index) => {
+			Promise.all(nightskyImages).then((images) => {
 				images.forEach((texture, index) => {
 					// Using index to ensure correct order
 					// console.log(texture.anisotropy, texture)
@@ -386,7 +386,7 @@ export class WorldSys {
 
 			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 1000)
 			this.dirLightHelper.name = 'three-helper'
-			this.babs.scene.add(this.dirLightHelper)
+			this.babs.group.add(this.dirLightHelper)
 			
 			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
 			
@@ -403,11 +403,11 @@ export class WorldSys {
 			this.dirLight.shadow.camera.top = this.shadowDist
 			this.dirLight.shadow.camera.bottom = -this.shadowDist
 
-			this.babs.scene.add(this.dirLight)
+			this.babs.group.add(this.dirLight)
 
 			this.cameraHelper = new CameraHelper(this.dirLight.shadow.camera)
 			this.cameraHelper.name = 'camerahelper'
-			this.babs.scene.add(this.cameraHelper)
+			this.babs.group.add(this.cameraHelper)
 
 			this.renderer.shadowMap.enabled = true
 
@@ -474,7 +474,7 @@ export class WorldSys {
 	// DO_EVERY_FRAMES = 120
 	DO_EVERY_FRAMES = 1
 
-	update(dt, camera) {
+	update(dt) {
 		// Update sun position over time!
 		if(!this.proximaSecondsSinceHour) return // Time comes before Earth :)
 
@@ -689,7 +689,7 @@ export class WorldSys {
 		newGround.position.setX(WorldSys.ZoneLength *zone.x)
 		newGround.position.setZ(WorldSys.ZoneLength *zone.z)
 		zone.ground = newGround
-		this.babs.scene.add(newGround)
+		this.babs.group.add(newGround)
 
 		if(isStartingZone) {
 			log.info('playerStartingZone', newGround)
@@ -701,7 +701,7 @@ export class WorldSys {
 		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
 		groundGrid.position.setX(WorldSys.ZoneLength *zone.x)
 		groundGrid.position.setZ(WorldSys.ZoneLength *zone.z)
-		this.babs.scene.add(groundGrid)
+		this.babs.group.add(groundGrid)
 		debugMode.subscribe(on => {
 			groundGrid.visible = on
 		})
@@ -933,7 +933,7 @@ export class WorldSys {
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
 			this.waterInstancedMesh.name = 'water'
 			this.waterInstancedMesh.instanceMatrix.setUsage( StreamDrawUsage ) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
-			this.babs.scene.add(this.waterInstancedMesh)
+			this.babs.group.add(this.waterInstancedMesh)
 
 
 			const bufferAttr = new InstancedBufferAttribute(new Float32Array( waterCubeColors), 3)
@@ -966,7 +966,7 @@ export class WorldSys {
 		if(excludeSelf) excludeFromShift.push('self')
 
 		let shiftingLog = []
-		this.babs.scene.children.forEach(child => {
+		this.babs.group.children.forEach(child => {
 			if(!excludeFromShift.includes(child.name)) {
 				child.position.setX(child.position.x +shiftVector.x)
 				child.position.setZ(child.position.z +shiftVector.z)
