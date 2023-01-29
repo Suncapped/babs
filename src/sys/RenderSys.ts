@@ -29,6 +29,8 @@ export class RenderSys {
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
+			logarithmicDepthBuffer: true,
+
 		})
 		this.renderer.xr.enabled = true
 		// this.renderer.outputEncoding = LinearEncoding

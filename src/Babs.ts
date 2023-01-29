@@ -61,7 +61,7 @@ export class Babs {
 
 
 
-	constructor() {
+	constructor(loaderSys) {
 
 		console.log('Mode is:', import.meta.env.MODE)
 
@@ -90,7 +90,7 @@ export class Babs {
 			this.urlSocket = `ws://${this.baseDomain}:2567` /* Proxima */
 			this.urlFiles = `http://${this.baseDomain}:3000/files` /* Expressa */
 		}
-		console.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
+		log.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
 
 		// Cookies are required
 		const cookiesEnabled = (() => {
@@ -138,7 +138,7 @@ export class Babs {
 
 		this.group = new Group
 		this.scene.add(this.group)
-		// this.group.scale.set(1.01,1.01,1.01)
+		// this.group.scale.set(1.001,1.001,1.001)
 
 
 		/** @type {WorldSys} */
@@ -231,8 +231,8 @@ export class Babs {
 }
 
 
-console.info('LoaderSys', LoaderSys) // Force it to compile/import before continuing with Babs?  lol
-const babs = new Babs()
+// console.info('LoaderSys', LoaderSys) // Force it to compile/import before continuing with Babs?  lol
+const babs = new Babs(LoaderSys) // Or this way?
 
 // Send to Svelte
 baseDomain.set(babs.baseDomain)

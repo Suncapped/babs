@@ -65,7 +65,7 @@
 
 		urlFiles.subscribe(urlFiles => {
 			if(!urlFiles) return
-			console.log('svelte urlfiles', urlFiles)
+			// console.log('svelte urlfiles', urlFiles)
 			right.style.backgroundImage = `url(${urlFiles}/icon/knotlight.png)`
 			right.style.backgroundRepeat = 'repeat-y'
 			right.style.backgroundSize = '9px'

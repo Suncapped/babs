@@ -12,13 +12,13 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 export class LoaderSys {
 
 	megaMaterial
-	loader
+	loader :GLTFLoader
 	dracoLoader
 	urlFiles
 	objectTexture :Texture
 
 	constructor(urlFiles) {
-		log('LoaderSys', urlFiles)
+		// log('LoaderSys', urlFiles)
 		this.urlFiles = urlFiles
 
 		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
@@ -67,9 +67,9 @@ export class LoaderSys {
 	async loadFbx(path) {
 
 		return new Promise( (resolve, reject) => {
-			const loader = new FBXLoader()
+			const fbxLoader = new FBXLoader()
 
-			loader.load(
+			fbxLoader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
 					log.info('Loaded FBX:', path, group)
@@ -140,10 +140,11 @@ export class LoaderSys {
 					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
-					log.info('loadGltf error:', err) // info because can just be missing model
+					log.info('loadGltf error:', err.message) // info because can just be missing model
 					resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
 				}
 			)
+		
 
 		})
 
@@ -183,7 +184,6 @@ export class LoaderSys {
 		}
 		
 		const skinnedMesh = groupScene.children[0].children[0]//group.traverse(c => c instanceof SkinnedMesh)
-		log('scene', groupScene)
 		skinnedMesh.material = material
 
 		skinnedMesh.castShadow = true

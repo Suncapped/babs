@@ -306,7 +306,7 @@ export class WorldSys {
 				setTimeout(delayLoadNightsky, dayCheckInterval)
 				return
 			}
-			log('loading stars')
+			log.info('loading stars')
 			
 			const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
@@ -778,7 +778,7 @@ export class WorldSys {
 	async stitchElevation(zones) {
 		this.zones = zones
 		for(let zone of zones) {
-			const nCoordsComponents = 3; // x,y,z
+			const nCoordsComponents = 3 // x,y,z
 			const verticesRef = zone.geometry.getAttribute('position').array
 	
 			const zoneMinusZ = zones.find(z => z.x==zone.x && z.z==zone.z-1)

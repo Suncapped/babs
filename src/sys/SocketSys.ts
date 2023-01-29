@@ -267,7 +267,7 @@ export class SocketSys {
 			}
 			case 'load': {
 				const load = data as (SendLoad['load'])
-				log('socket: load', data)
+				log.info('socket: load', data)
 				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 					context.send({ping:'ping'})
 				}, SocketSys.pingSeconds * 1000)
@@ -527,7 +527,7 @@ export class SocketSys {
 				break
 			}
 			case 'energy': {
-				log('energy', data)
+				log.info('energy', data)
 				break
 			}
 			case 'craftable': {
@@ -571,7 +571,7 @@ export class SocketSys {
 				break
 			}
 			case 'fetime': {
-				log('fetime', data)
+				log.info('fetime', data)
 
 				const fetime = data as SendFeTime['fetime']
 

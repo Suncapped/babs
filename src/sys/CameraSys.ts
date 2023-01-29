@@ -35,7 +35,7 @@ export class CameraSys {
 		
 		this.cameraGroup.position.set(12, 8, 12)
 
-		log('cameraGroup', this.cameraGroup)
+		// log('cameraGroup', this.cameraGroup)
 	}
 
 	_CalculateIdealOffset() {
