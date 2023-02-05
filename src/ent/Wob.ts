@@ -336,7 +336,7 @@ export class Wob extends FastWob {
 				newInstance.position.x = instanced.position.x
 				newInstance.position.z = instanced.position.z
 
-				babs.scene.remove(instanced)
+				babs.group.remove(instanced)
 				instanced.dispose()
 				
 				Wob.InstancedMeshes.set(wobName, newInstance)
@@ -403,7 +403,7 @@ export class Wob extends FastWob {
 				instanced.instanceMatrix.needsUpdate = true
 	
 				if(shownames) {
-					babs.uiSys.wobSaid(wob.name, wob)
+					babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
 				}
 	
 			}

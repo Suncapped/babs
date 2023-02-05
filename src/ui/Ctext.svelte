@@ -148,16 +148,26 @@
 
 	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
         /* font-family: "Nunito", sans-serif; */
-		/* font-weight:bold; */
-		font-size: 18px;
+		/* font-weight: bold; */
+		font-size: 22px;
         /* color: white; */
-        /* text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;  */
-		/* -webkit-text-stroke: 1px #333; */ /* Actually works on chrome/ff too */
+        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
+		/* letter-spacing: 1.5px; */
+		/* -webkit-text-stroke: 3px #000; */ /* Actually works on chrome/ff too */
 		position: absolute; /* UiSys counts on this for placement */
-		/* background-color:green; */
+	}
+	:global #Ctext > #labelRenderer > .label > span {
+		background-color:rgba(0, 0, 0, 0.75);
+		padding: 3px;
+		padding-top: 2px;
+		padding-left: 8px;
+		padding-right: 8px;
+		border-radius: 5px;
 	}
 
+
 	#chatbox{
+		background-color:rgba(0, 0, 0, 0.75);
 		/* height: 100px; */
 		width: 100%;
 		/* background-color:white; */

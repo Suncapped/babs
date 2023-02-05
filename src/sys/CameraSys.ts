@@ -152,7 +152,7 @@ export class CameraSys {
 					// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
 	
 					// Temporary hack to offset everything to where the camera seems to start.
-					this.babs.scene.children.forEach(child => {
+					this.babs.group.children.forEach(child => {
 						child.position.add(new Vector3(-100, -8360, -500))
 					})
 	

@@ -89,14 +89,14 @@ export class Player extends Ent {
 		this.babs.zips.delete(this.idzip)
 
 		if(this.controller?.target) {
-			this.babs.scene.remove(this.controller.target) 
+			this.babs.group.remove(this.controller.target) 
 			// Needed to avoid latency of interval below
 		}
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting')
 				if(player.controller.target) {
-					this.babs.scene.remove(this.controller.target) 
+					this.babs.group.remove(this.controller.target) 
 					clearInterval(waitForMesh)
 				}
 			}, 200)

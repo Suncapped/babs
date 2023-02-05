@@ -192,27 +192,27 @@ export class Babs {
 			this.uiSys['mem']?.begin()
 		}
 
-		// console.log('dt', dt)
-		this.dtSinceLastFocus += dt
-		if(this.renderSys.documentHasFocus 
-			|| this.dtSinceLastFocus > 1) { // Allow a frame once per 0.5 second
-			// console.log('this.dtSinceLastFocus', this.dtSinceLastFocus)
-			this.uiSys.update()
-			
-			// LoaderSys.update(this.dtSinceLastFocus)
-			this.inputSys?.update(this.dtSinceLastFocus, this.scene)
-			this.worldSys.update(this.dtSinceLastFocus)
-
-			for(let [name, coms] of this.compcats) {
-				if(coms) {
-					for(let com of coms) {
-						com.update(this.dtSinceLastFocus)
-					}
+		// Always update these every frame
+		// (prevents other players rubberbanding from movement initiated by network input)
+		this.uiSys.update()
+		// LoaderSys.update(this.dtSinceLastFocus)
+		this.inputSys?.update(dt, this.scene)
+		this.worldSys.update(dt)
+		for(let [name, coms] of this.compcats) {
+			if(coms) {
+				for(let com of coms) {
+					com.update(dt)
 				}
 			}
+		}
+
+		// Only update these if window has focus
+		this.dtSinceLastFocus += dt
+		if(this.renderSys.documentHasFocus 
+			|| this.dtSinceLastFocus > 0.5) { // Allow a frame once per 0.5 second
+			// console.log('this.dtSinceLastFocus', this.dtSinceLastFocus)
 
 			this.cameraSys?.update(this.dtSinceLastFocus)
-
 			this.renderSys.update(this.dtSinceLastFocus)
 
 			this.dtSinceLastFocus = 0

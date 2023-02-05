@@ -925,7 +925,7 @@ export class InputSys {
 			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
 			this.mouse.ray.intersectObjects(this.babs.group.children, false, this.mouseRayTargets) // Gets everything but player?
 			const mouseRayPlayers = []
-			const players = this.babs.scene.children.filter(c=>c.name=='self'||c.name=='player')
+			const players = this.babs.group.children.filter(c=>c.name=='self'||c.name=='player')
 			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
 			// console.log('playerBboxes', playerBboxes)
 			if(playerBboxes.length) {
@@ -990,7 +990,7 @@ export class InputSys {
 						const temp = this.mouseRayTargets[i].object
 						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 						// log('player_bbox', this.pickedObject)
-						this.pickedObject = temp.parent.children[0].children[1]  // gltf loaded
+						this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
 						if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning

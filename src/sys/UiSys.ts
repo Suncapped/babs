@@ -125,7 +125,7 @@ export class UiSys {
 				// Indent multiline instead of using hyphens
 				const singleLineTypicalHeight = 18
 				if(newSpanHeight > singleLineTypicalHeight *1.5) { // *1.5 just in case font change etc
-					chatDiv.style.left = `${chatDiv.offsetWidth * 0.05}px` // % of width
+					// chatDiv.style.left = `${chatDiv.offsetWidth * 0.05}px` // % of width
 				}
 
 				// Make new one visible finally
@@ -203,9 +203,14 @@ export class UiSys {
 
 		const chatSpan = document.createElement('span')
 		chatSpan.innerText = text
+		// chatSpan.style.backgroundColor = 'black'
+		// chatSpan.style.padding = '3px'
+		// chatSpan.style.paddingTop = '1px'
+		// chatSpan.style.border = `1px solid ${svelteGet(menuSelfData).color || 'white'}`
+		// chatSpan.style.border = `1px solid #aaaaaa`
 		chatDiv.appendChild(chatSpan)
 		
-		chatDiv.style.color = '#aaaaaa'
+		// chatDiv.style.color = '#aaaaaa'
 		// this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
 
 		const expiresInSeconds = this.babs.debugMode ? 10 : 3
@@ -217,7 +222,7 @@ export class UiSys {
 		let point = coord.zone.rayHeightAt(coord)
 		log.info('wobSaid point', point, coord)
 
-		point.setY(point.y +4) // Raise up
+		point.setY(point.y -1.75) // Lower down
 		chatLabel.position.copy(point)
 
 		this.babs.group.add(chatLabel) // todo not ground // OMG this is why there's an offset
@@ -251,7 +256,7 @@ export class UiSys {
 		const updateWOB = (opt :string) => {
 			log('User selected: ' + opt + ' wobID: ' + wob.id())
 			log('parent', chatLabel.parent)
-			this.babs.scene.remove(chatLabel)
+			this.babs.group.remove(chatLabel)
 
 			// Need a way to send an update to the server, will circle back to this
 			socketSend.set({

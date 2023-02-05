@@ -57,7 +57,7 @@ export class Zone extends SharedZone {
 			})
 			log.info('flame to remove', flame)
 			if(flame) {
-				this.babs.scene.remove(flame.fire)
+				this.babs.group.remove(flame.fire)
 			}
 
 			// Remove one by swapping the last item into this place, then decrease instanced count by 1
