@@ -209,7 +209,7 @@ export class LoaderSys {
 		cube.clickable = true
 		groupScene.add(cube)
 
-		skinnedMesh.geometry.computeBoundingSphere();
+		skinnedMesh.geometry.computeBoundingSphere()
 		// skinnedMesh.geometry.boundingSphere.center = new Vector3(0, 3, 0)
 		// skinnedMesh.geometry.boundingSphere.radius = 1
 		// skinnedMesh.matrixWorldNeedsUpdate = true

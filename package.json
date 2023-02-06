@@ -48,7 +48,7 @@
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.1",
     "luxon": "^3.1.0",
-    "papercss": "^1.8.3",
+    "papercss": "^1.9.1",
     "suncalc": "^1.9.0",
     "three": "^0.149.0"
   }

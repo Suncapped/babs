@@ -135,6 +135,18 @@
 		/* border: 2px solid green; */
 		
 	}
+
+	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
+        /* font-family: "Nunito", sans-serif; */
+		/* font-weight: bold; */
+		font-size: 22px;
+		vertical-align: top;
+        /* color: white; */
+        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
+		/* letter-spacing: 1.5px; */
+		/* -webkit-text-stroke: 3px #000; */ /* Actually works on chrome/ff too */
+		position: absolute; /* UiSys counts on this for placement */
+	}
 	:global #Ctext > #labelRenderer > .label > span{
         display: inline-block;
 		text-align: left;
@@ -144,24 +156,14 @@
 
 		/* background-color:blue; opacity: 0.5; */
 		/* border:1px solid red; */
-	}
 
-	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
-        /* font-family: "Nunito", sans-serif; */
-		/* font-weight: bold; */
-		font-size: 22px;
-        /* color: white; */
-        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
-		/* letter-spacing: 1.5px; */
-		/* -webkit-text-stroke: 3px #000; */ /* Actually works on chrome/ff too */
-		position: absolute; /* UiSys counts on this for placement */
-	}
-	:global #Ctext > #labelRenderer > .label > span {
 		background-color:rgba(0, 0, 0, 0.75);
-		padding: 3px;
-		padding-top: 2px;
+		/* padding-top: 4px;
+		padding-bottom: 1px;
 		padding-left: 8px;
-		padding-right: 8px;
+		padding-right: 8px; */
+		padding: 4pt; /* ugh Windows vs Macos font-itself paddings are different?! */
+		padding-top: 5pt; /* this too */
 		border-radius: 5px;
 	}
 
