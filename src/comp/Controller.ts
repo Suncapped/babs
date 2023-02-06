@@ -504,8 +504,8 @@ export class Controller extends Comp {
 	}
 
 	zoneIn(player :Player, zone :Zone) {
-		log('zonein', player.id, zone.id, this.babs.worldSys.currentGround, zone.ground)
-		log('this.gDestination', this.gDestination)
+		log.info('zonein', player.id, zone.id, this.babs.worldSys.currentGround, zone.ground)
+		log.info('this.gDestination', this.gDestination)
 
 		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: zone})
 		const engCoord = zone.rayHeightAt(yardCoord)

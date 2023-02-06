@@ -31,6 +31,7 @@ export class CameraSys {
 		this._currentLookat = new Vector3()
 		
 		this.cameraGroup = new Group()
+		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
 		
 		this.cameraGroup.position.set(12, 8, 12)

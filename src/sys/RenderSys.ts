@@ -23,13 +23,14 @@ export class RenderSys {
 	constructor(babs) {
 		this.babs = babs
 		this.renderer = new WebGLRenderer({ 
-			antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
+			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
+			antialias: true,
 			// powerPreference: 'high-performance',
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
-			logarithmicDepthBuffer: true,
+			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017 
 
 		})
 		this.renderer.xr.enabled = true
@@ -52,7 +53,8 @@ export class RenderSys {
 		// Now I've changed it to 0.3 but multiplied lights by (1/it), such that sky is less white and more blue, but light is still good.
 
 
-		this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
+		// this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
+		this.renderer.setPixelRatio(window.devicePixelRatio)
 		this.renderer.setSize(0,0)
 
 		// document.body.appendChild(this.renderer.domElement) // Now done in html

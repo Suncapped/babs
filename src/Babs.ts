@@ -137,6 +137,7 @@ export class Babs {
 		this.camera = this.renderSys._camera
 
 		this.group = new Group
+		this.group.name = 'fegroup'
 		this.scene.add(this.group)
 		// this.group.scale.set(1.001,1.001,1.001)
 

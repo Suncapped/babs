@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { BoxGeometry, ClampToEdgeWrapping, Color, Euler, LinearFilter, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -272,13 +272,14 @@ export class Flame extends Comp {
 
 	static wantsLight = []
 
-	static allFlames = []
-
 	constructor(wob :Wob, babs) {
 		super(wob.id(), Flame, babs)
 	}
 
-	fire
+	fire :ThreeFire
+
+	points
+	line
 
 	static settings = {
 		speed       : 5.0,//1
@@ -315,13 +316,14 @@ export class Flame extends Comp {
 		const zone = babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
 		const {y} = zone.rayHeightAt(yardCoord) // zonetodo is this even working?
-		log('flamy', y)
 		// Problems: Flames only in the right spot when you load into their zone
-		// 				And don't show up with new group
+		// com.fire.frustumCulled = false
 
 		com.fire.position.setY(y +yup)
 		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(wob.z *4 +2)
+
+		com.fire.position.add(babs.worldSys.shiftiness)
 
 		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
 		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
@@ -336,14 +338,38 @@ export class Flame extends Comp {
 		// Add a glow of light
 		Flame.wantsLight.push(com.fire)
 
-		// Flame.allFlames.push()
-
+		// Debug flames not showing!
+		// const material = new LineBasicMaterial({ color: 0xff00ff })
+		// const geometry = new BufferGeometry
+		// com.points = [];
+		// com.points.push( babs.group.position )
+		// com.points.push( babs.group.position )
+		// geometry.setFromPoints(com.points)
+		// com.line = new Line( geometry, material )
+		// com.line.name = 'myline'
+		// babs.group.add( com.line )
 
 		return com
 	}
 
 	update(dt) {
 
+		// if(this.babs?.inputSys?.playerSelf?.controller?.target && this.line) {
+			
+		// 	const positions = this.line.geometry.attributes.position.array
+		// 	const temppos = this.babs.inputSys.playerSelf.controller.target.position//new Vector3(35.78, 8361.13 +10, 77.47)
+		// 	const temppos2 = this.fire.position//new Vector3(55.78, 8361.13 +40, 67.47)
+		// 	positions[0 +0] = temppos.x
+		// 	positions[0 +1] = temppos.y
+		// 	positions[0 +2] = temppos.z
+		// 	positions[0 +3] = temppos2.x
+		// 	positions[0 +4] = temppos2.y
+		// 	positions[0 +5] = temppos2.z
+			
+		// 	this.line.geometry.attributes.position.needsUpdate = true
+		// 	this.line.geometry.computeBoundingBox()
+		// 	this.line.geometry.computeBoundingSphere()
+		// }
 
 		this.fire?.update(dt *Flame.settings.speed)
 
