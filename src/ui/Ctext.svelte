@@ -158,13 +158,15 @@
 		/* border:1px solid red; */
 
 		background-color:rgba(0, 0, 0, 0.75);
-		/* padding-top: 4px;
+
+
+		border-radius: 5px;
+		
+		/* ugh Windows vs Macos font-itself paddings are different?! So there is a Babs.js js modification of this style */
+		padding-top: 5px;
 		padding-bottom: 1px;
 		padding-left: 8px;
-		padding-right: 8px; */
-		padding: 4pt; /* ugh Windows vs Macos font-itself paddings are different?! */
-		padding-top: 5pt; /* this too */
-		border-radius: 5px;
+		padding-right: 8px;
 	}
 
 
