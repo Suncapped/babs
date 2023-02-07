@@ -315,15 +315,13 @@ export class Flame extends Comp {
 
 		const zone = babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
-		const {y} = zone.rayHeightAt(yardCoord) // zonetodo is this even working?
+		const rayPos = zone.rayHeightAt(yardCoord) // zonetodo is this even working?
 		// Problems: Flames only in the right spot when you load into their zone
 		// com.fire.frustumCulled = false
 
-		com.fire.position.setY(y +yup)
-		com.fire.position.setX(wob.x *4 +1.96) // 1.96 because torch was slightly offcenter :p  
-		com.fire.position.setZ(wob.z *4 +2)
-
-		com.fire.position.add(babs.worldSys.shiftiness)
+		com.fire.position.setY(rayPos.y +yup)
+		com.fire.position.setX(rayPos.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
+		com.fire.position.setZ(rayPos.z)// +2)
 
 		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
 		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity

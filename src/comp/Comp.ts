@@ -9,12 +9,12 @@ export class Comp {
 		this.idEnt = idEnt
 		this.babs = babs
 		const babsCompCategory = this.babs.compcats.get(comClass.name)
-		// Create if needed!
-		if(babsCompCategory) {
-			babsCompCategory.push(this)
+		
+		if(!babsCompCategory) { // Create if needed!
+			this.babs.compcats.set(comClass.name, [this])
 		}
 		else {
-			this.babs.compcats.set(comClass.name, [this])
+			babsCompCategory.push(this)
 		}
 	}
 
