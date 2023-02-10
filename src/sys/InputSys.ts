@@ -599,6 +599,7 @@ export class InputSys {
 									const pos = this.pickedObject?.instancedPosition
 									log('this.pickedObject', this.pickedObject, pos)
 									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex
+									// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 								}
 
 

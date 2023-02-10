@@ -285,7 +285,7 @@ export class SharedZone {
 		return new Uint8Array(locs.flat())
 	}
 
-	calcElevationAtIndex(index :number) {
+	calcElevationAtIndex(index :number) { // todo move to proxima exclusive?
 		return (this.elevations[index] *this.yscale) +this.y
 	}
 

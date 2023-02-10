@@ -213,10 +213,7 @@ export class Wob extends FastWob {
 			}
 		}
 		// console.timeLog('timing')
-		// console.log('loads', loads)
-
 		const finishedLoads = await Promise.all(loads)
-		// console.log('finishedLoads', finishedLoads)
 		// console.timeLog('timing')
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const load of finishedLoads) {
@@ -295,6 +292,10 @@ export class Wob extends FastWob {
 				instanced.position.setX(babs.worldSys.shiftiness.x)
 				instanced.position.setZ(babs.worldSys.shiftiness.z)
 
+				instanced.geometry.center() 
+				// ^ Fixes offset pivot point
+				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
+
 				Wob.InstancedMeshes.set(wobName, instanced)
 				babs.group.add(instanced)
 			}
@@ -338,6 +339,10 @@ export class Wob extends FastWob {
 
 				babs.group.remove(instanced)
 				instanced.dispose()
+
+				newInstance.geometry.center() 
+				// ^ Fixes offset pivot point
+				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 				
 				Wob.InstancedMeshes.set(wobName, newInstance)
 				babs.group.add(newInstance)
@@ -349,7 +354,7 @@ export class Wob extends FastWob {
 
 			
 		}
-		// console.timeEnd('timing')
+		// console.timeLog('timing')
 
 		// Now a properly sized instance exists.  So create wobs!
 		let zone :Zone
@@ -358,10 +363,26 @@ export class Wob extends FastWob {
 		let matrix = new Matrix4()
 		// This is for SETting instance items.  UNSET happens in Zone.removeWobGraphic.
 		// Why separately?  Because this happens en-masse
+		let count = 0
+		// console.log('fwobs to load:', arrivalWobs.length)
 		for(const fwob of arrivalWobs) {
-			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
+			let isTargetWob =false//count === 10
+			// if(fwob.idzone == 1495567058 && fwob.name === 'campfire') { // 0,0
+			// 	count++
+			// 	if(count === 1) {
+			// 		isTargetWob = true
+			// 	}
+			// 	else {
+			// 		isTargetWob = false
+			// 	}
+			// }
+			// else {
+			// 	isTargetWob = false
+			// }
+
 			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {blueprint_id: fwob.blueprint_id, locid: fwob.locid})
 			
+			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI
 			// todo buggy
 			// if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
@@ -376,18 +397,16 @@ export class Wob extends FastWob {
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
 				yardCoord = YardCoord.Create(wob)
-				engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
-	
+
+				const engCoordCentered = yardCoord.toEngineCoordCentered()
+				// engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
+				// engPositionVector = new Vector3(engCoordCentered.x, zone.yardHeightAt(wob.x, wob.z, zone), engCoordCentered.z)
+				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+
 				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
 	
 				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-	
 				const instanced = Wob.InstancedMeshes.get(wob.name)
-				// log('instanced got', instanced, wob.name, wob)
-				instanced.geometry.center() 
-				// ^ Fixes offset pivot point
-				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-	
 				engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
 
 				let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
@@ -408,12 +427,9 @@ export class Wob extends FastWob {
 	
 			}
 			else {	// Send to bag
-
 				const instanced = Wob.InstancedMeshes.get(wob.name)
 				babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
-	
 			}
-	
 	
 			if(wob.name === 'campfire' || wob.name === 'torch') {
 				let scale, yup
@@ -427,11 +443,13 @@ export class Wob extends FastWob {
 				}
 	
 				// Add new flame
-				const flame = Flame.Create(wob, babs, scale, yup)
-	
+				const flame = Flame.Create(wob, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
 			}
 
 		}
+
+
+		// console.timeEnd('timing')
 
 
 	}

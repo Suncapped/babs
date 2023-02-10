@@ -342,50 +342,24 @@ export class SocketSys {
 
 				// Create player entity
 				const playerPromise = Player.Arrive(load.self, true, context.babs)
-					
+				
 				// Set up UIs
 				context.babs.uiSys.loadUis(load.uis)
-
 
 				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
 				// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
 				const startingZone = this.babs.ents.get(load.self.idzone) as Zone
 				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
-				// let pObjects = []
-				// for(let zone of zones) {
-				// 	pObjects.push(context.babs.worldSys.loadObjects(context.babs.urlFiles, zone))
-				// }
-				// const wobs = (await Promise.all(pObjects)).flat()
-				// // We first load the object data above; then below we know which gltfs to pull
-				// // Since in the future we might cache them locally.
-				// // That's why we don't include them in the loadObjects /cache
-				// // and since different zones also have different wobs anyway, this must be pull, not push.
-
-				// // (However (sk), we can do a mass file request; see in ArriveMany)
-				// const arriveWobsPromise = Wob.ArriveMany(wobs, context.babs, false)
-
-
-				// Get the new, faster wobs locations array
-				// let fastWobLocationsPromises = new Array<Promise<Uint8Array>>(zones.length)
-				// for(let zone of zones) {
-				// 	zone.applyBlueprints(load.blueprints)
-					
-				// 	const locations = context.babs.worldSys.loadWobLocations(context.babs.urlFiles, zone)
-				// 	fastWobLocationsPromises.push(locations)
-				// }
-				// const fastWobLocations = await Promise.all(fastWobLocationsPromises)
-
-				let fWobs :Array<FastWob> = []
+				let fastWobs :Array<FastWob> = []
 				for(const zone of zones) {
 					zone.applyBlueprints(load.blueprints)
-					const fastWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					fWobs.push(...fastWobs)
+					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+					fastWobs.push(...fWobs)
 				}
-				const arriveFastwobsPromise = Wob.ArriveMany(fWobs, context.babs, false)
+				const arriveFastwobsPromise = Wob.ArriveMany(fastWobs, context.babs, false)
 
 				await Promise.all([playerPromise, arriveFastwobsPromise])
-
 
 				context.send({
 					ready: load.self.id,

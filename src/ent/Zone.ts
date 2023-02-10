@@ -1,14 +1,15 @@
 
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, SharedZone } from '@/shared/SharedZone'
+import { Blueprint, FastWob, SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
-import { Matrix4, Mesh, Raycaster, Vector3 } from 'three'
+import { Matrix4, Mesh, Raycaster, Triangle, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
 import { Flame } from '@/comp/Flame'
 import type { WobId } from '@/shared/consts'
+import * as Utils from '@/Utils'
 
 
 export class Zone extends SharedZone {
@@ -81,9 +82,102 @@ export class Zone extends SharedZone {
 		
 	// }
 
-	elevHeightAt() { // fasttodo
+	// yardHeightAt(x :number, z :number, zone :Zone) { // Height from original data
+	// 	// This isn't great for replacing raycast yet, because it would need similar features to engineHeightAt below.
+	// 	const index = Utils.coordToIndex((x /10)>>0, (z /10)>>0, 26, 1) // >>0 is integer division instead of Math.floor()
+	// 	const unscaledElev = zone.elevationData[index]
+	// 	const scaledElev = unscaledElev * zone.yscale +zone.y
+	// 	// console.log('yardHeightAtWob', index, zone.elevationData.length, unscaledElev, scaledElev)
+	// 	return scaledElev
+	// }
+	engineHeightAt(coord :YardCoord, doCenter = true) { // fasttodo // Height of (corner or center) in engine
+		// Fetch from actual ground mesh vertices!
 
+		const verticesRef = coord.zone.geometry.getAttribute('position').array
+		const nCoordsComponents = 3 // x,y,z
+
+		const ten = 10
+
+		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /10), Math.floor((coord.z +0) /10), 26, nCoordsComponents)
+		const height00 = verticesRef[index00 +1]  // +1 is to get y
+
+		const index10 = Utils.coordToIndex(Math.floor((coord.x +ten) /10), Math.floor((coord.z +0) /10), 26, nCoordsComponents)
+		const height10 = verticesRef[index10 +1]
+
+		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /10), Math.floor((coord.z +ten) /10), 26, nCoordsComponents)
+		const height01 = verticesRef[index01 +1]
+
+		const index11 = Utils.coordToIndex(Math.floor((coord.x +ten) /10), Math.floor((coord.z +ten) /10), 26, nCoordsComponents)
+		const height11 = verticesRef[index11 +1]
+
+		/* 
+		// First attempt was:
+		const avg = (height00 +height01 +height10 +height11) /4
+		console.log('engineHeightAt internal', height00, height01, height10, height11, avg)
+		return avg
+		// But ^that average is the center of the 40x40 piece, NOT the center of a 4x4 tile.
+
+		// Next attempt was naive proportions:
+		const towardX = (coord.x % 10) +(doCenter ? 0.5 : 0)
+		const towardZ = (coord.z % 10) +(doCenter ? 0.5 : 0)
+		const xHeightDiff = height10 -height00
+		const zHeightDiff = height11 -height01
+		// ^ Bug: Only compares diff of 2 vertices. 
+		// Might need real math here?  Because as X increases it can increase the influence of Z height changes.
+		const weightedX = (xHeightDiff *(towardX /10))
+		const weightedZ = (zHeightDiff *(towardZ /10))
+		const finalHeight = height00 +(weightedX +weightedZ)
+		return finalHeight
+		
+		// Final, working attempt: Barycentric Coordinates https://codeplea.com/triangular-interpolation
+		// Built-in is: https://threejs.org/docs/#api/en/math/Triangle .getBarycoord()
+
+		// Naively, we will need to determine whether this point is in the first-half triangle, or the second triangle.
+		// ↑ [\ ]
+		// x [ \]
+		//   z →
+		*/
+
+		const xPiece = Math.floor(coord.x /10) *10
+		const zPiece = Math.floor(coord.z /10) *10
+		let xInnerCoord = coord.x -xPiece
+		let zInnerCoord = coord.z -zPiece
+
+		const isFirstHalf = xInnerCoord +zInnerCoord < 9
+
+		let triangle
+		if(isFirstHalf){ // First triangle (less than halfway across, diagonally)
+			triangle = new Triangle(
+				new Vector3(0, 	0, 0), // z0, x0
+				new Vector3(0 +10, 0, 0), // x1
+				new Vector3(0, 	0, 0 +10), // z1
+			)
+		}
+		else { // Second triangle (more than halfway across)
+			triangle = new Triangle(
+				new Vector3(0, 		0, 0 +10), // z1
+				new Vector3(0 +10, 	0, 0	), // x1
+				new Vector3(0 +10, 	0, 0 +10), // z1, x1
+			)
+		}
+
+		const halfTileCenter = doCenter ? 0.5 : 0
+		let baryOut = new Vector3()
+		triangle.getBarycoord(new Vector3(xInnerCoord +halfTileCenter, 0, zInnerCoord +halfTileCenter), baryOut)
+
+		let combinedWeights
+		if(isFirstHalf) {
+			combinedWeights = (height00 *baryOut.x) +(height10 *baryOut.y) +(height01 *baryOut.z)
+		}
+		else {
+			combinedWeights = (height01 *baryOut.x) +(height10 *baryOut.y) +(height11 *baryOut.z)
+		}
+		return combinedWeights
 	}
+
+	// calcElevationAtIndex(index :number) {
+	// 	return (this.elevationData[index] *this.yscale) +this.y
+	// }
 	
 	rayHeightAt(coord :Vector3|YardCoord) :Vector3 {
 		let offset = new Vector3()

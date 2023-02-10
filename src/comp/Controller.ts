@@ -508,7 +508,6 @@ export class Controller extends Comp {
 		log.info('this.gDestination', this.gDestination)
 
 		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: zone})
-		const engCoord = zone.rayHeightAt(yardCoord)
 
 		this.target.position.setY(0) // works since it will pop up back up to the ground
 		this.target.zone = zone
