@@ -319,7 +319,7 @@ export class Flame extends Comp {
 		// const rayPos = zone.rayHeightAt(yardCoord)
 		const engCoordCentered = yardCoord.toEngineCoordCentered()
 		const engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
-		engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 
 		com.fire.position.setY(engPositionVector.y +yup)
 		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
