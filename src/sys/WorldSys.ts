@@ -50,6 +50,7 @@ import {
 	VSMShadowMap,
 	Material,
 	NearestFilter,
+	IcosahedronGeometry,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
@@ -762,7 +763,7 @@ export class WorldSys {
 		// Save thigns onto zone for later
 		zone.geometry = geometry
 
-		const nCoordsComponents = 3; // x,y,z
+		const nCoordsComponents = 3 // x,y,z
 		const verticesRef = geometry.getAttribute('position').array
 
 		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
@@ -910,12 +911,15 @@ export class WorldSys {
 								z: Utils.clamp(zpos, 0, 249),
 								zone: entZone,
 							})
-							const engineCoord = yardCoord.toEngineCoord()
-							const rayPosition = entZone.rayHeightAt(engineCoord)
+							// const engineCoord = yardCoord.toEngineCoord()
+							// const rayPosition = entZone.rayHeightAt(engineCoord)
 							// New Coords are beautiful to work with...
+							const engCoordCentered = yardCoord.toEngineCoordCentered()
+							const engPositionVector = new Vector3(engCoordCentered.x, entZone.engineHeightAt(yardCoord), engCoordCentered.z)
+							engPositionVector.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
 
-							if(waterNearbyIndex[index] > 7 && rayPosition) {
-								waterCubePositions.push(rayPosition)
+							if(waterNearbyIndex[index] > 7) {
+								waterCubePositions.push(engPositionVector)
 
 								const riverBaseColor = this.colorFromLc.River.clone()
 								riverBaseColor.offsetHSL(0, 0, (Math.random() -0.1) * 20/100) // -0.1 biases it toward dark
@@ -928,7 +932,9 @@ export class WorldSys {
 				}
 			}
 
-			const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
+			// const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
+			const sizeish = cubeSize *3.5
+			const geometry = new IcosahedronGeometry(sizeish, 1)
 			const material = new MeshLambertMaterial({})
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
 			this.waterInstancedMesh.name = 'water'
@@ -942,7 +948,7 @@ export class WorldSys {
 
 
 			for(let i=0, l=waterCubePositions.length; i<l; i++) {
-				let matrix = new Matrix4().setPosition(waterCubePositions[i].setY(waterCubePositions[i].y -(cubeSize *4)/2))
+				let matrix = new Matrix4().setPosition(waterCubePositions[i].setY(waterCubePositions[i].y -sizeish/1.5))
 				this.waterInstancedMesh.setMatrixAt(i, matrix)
 				// this.waterInstancedMesh.setColorAt(i, new Color(0xffffff))
 				this.waterInstancedRands[i] = Math.random() - 0.5
