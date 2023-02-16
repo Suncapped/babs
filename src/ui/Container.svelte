@@ -4,7 +4,6 @@
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 	import { UiSys } from '@/sys/UiSys';
-	import { BufferGeometryLoader } from 'three';
 
 	const DRAG_THRESHOLD = 2
 	let Container

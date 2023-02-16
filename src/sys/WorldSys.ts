@@ -590,49 +590,50 @@ export class WorldSys {
 			this.hemiLight.intensity = Math.max(this.hemiLight.intensity, 2)
 			// ^ todo make hemilight functional during daylight too; that is a hack, blue daytime light :/
 			// console.log('noonness', noonness, this.hemiLight.intensity)
+		
+
+			// Water randomized rotation
+			const spinSpeedMult = 5 * this.DO_EVERY_FRAMES
+			const secondsFrequency = 1
+			const normalFps = 60
+			if(this.updateCount % (normalFps *secondsFrequency) === 0) {
+				const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
+				this.rand.add(updated).clampScalar(-0.5, 0.5)
+			}
+
+			// Instanced mesh version
+			// https://www.cs.uaf.edu/2015/spring/cs482/lecture/02_16_rotation.html
+			// https://medium.com/@joshmarinacci/quaternions-are-spooky-3a228444956d
+			for(let i=0, l=this.waterInstancedMesh?.count; i<l; i++) {
+				// Get
+				this.waterInstancedMesh.getMatrixAt(i, this.waterMatrix)
+				
+				// Extract
+				this.quatRotation.setFromRotationMatrix(this.waterMatrix)
+				this.vectorPosition.setFromMatrixPosition(this.waterMatrix)
+
+				// Rotate
+				const rot = new Quaternion().setFromEuler(new Euler(
+					spinSpeedMult *this.rand.x *this.waterInstancedRands[i] *dt,
+					spinSpeedMult *this.rand.y *this.waterInstancedRands[i] *dt,
+					spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
+				))
+				this.quatRotation.multiply(rot)
+					.normalize() // Roundoff to prevent scaling
+
+				// Compile
+				this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
+				this.waterMatrix.setPosition(this.vectorPosition)
+				
+				// Update
+				this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
+				this.waterInstancedMesh.instanceMatrix.needsUpdate = true
+			}
+
+			// this.csm?.update()
+
+			this.updateCount++
 		}
-
-		// Water randomized rotation
-		const spinSpeedMult = 5
-		const secondsFrequency = 1
-		const normalFps = 60
-		if(this.updateCount % (normalFps *secondsFrequency) === 0) {
-			const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
-			this.rand.add(updated).clampScalar(-0.5, 0.5)
-		}
-
-		// Instanced mesh version
-		// https://www.cs.uaf.edu/2015/spring/cs482/lecture/02_16_rotation.html
-		// https://medium.com/@joshmarinacci/quaternions-are-spooky-3a228444956d
-		for(let i=0, l=this.waterInstancedMesh?.count; i<l; i++) {
-			// Get
-			this.waterInstancedMesh.getMatrixAt(i, this.waterMatrix)
-			
-			// Extract
-			this.quatRotation.setFromRotationMatrix(this.waterMatrix)
-			this.vectorPosition.setFromMatrixPosition(this.waterMatrix)
-
-			// Rotate
-			const rot = new Quaternion().setFromEuler(new Euler(
-				spinSpeedMult *this.rand.x *this.waterInstancedRands[i] *dt,
-				spinSpeedMult *this.rand.y *this.waterInstancedRands[i] *dt,
-				spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
-			))
-			this.quatRotation.multiply(rot)
-				.normalize() // Roundoff to prevent scaling
-
-			// Compile
-			this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
-			this.waterMatrix.setPosition(this.vectorPosition)
-			
-			// Update
-			this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
-			this.waterInstancedMesh.instanceMatrix.needsUpdate = true
-		}
-
-		// this.csm?.update()
-
-		this.updateCount++
 	}
 
 	currentGround
@@ -640,8 +641,8 @@ export class WorldSys {
 	async loadStatics(urlFiles, zone, isStartingZone = false) {
 		let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
-		geometry.rotateX( -Math.PI / 2 ); // Make the plane horizontal
-		geometry.translate(
+		geometry.rotateX( -Math.PI / 2 ) // Make the plane horizontal
+		geometry.translate( // Uncenter it, align at corner
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.x, 
 			0,//zone.y -8000,
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.z,
@@ -916,7 +917,7 @@ export class WorldSys {
 							// New Coords are beautiful to work with...
 							const engCoordCentered = yardCoord.toEngineCoordCentered()
 							const engPositionVector = new Vector3(engCoordCentered.x, entZone.engineHeightAt(yardCoord), engCoordCentered.z)
-							engPositionVector.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
+							// engPositionVector.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
 
 							if(waterNearbyIndex[index] > 7) {
 								waterCubePositions.push(engPositionVector)
@@ -938,7 +939,8 @@ export class WorldSys {
 			const material = new MeshLambertMaterial({})
 			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
 			this.waterInstancedMesh.name = 'water'
-			this.waterInstancedMesh.instanceMatrix.setUsage( StreamDrawUsage ) // So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
+			this.waterInstancedMesh.instanceMatrix.setUsage( StreamDrawUsage ) 
+			// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 			this.babs.group.add(this.waterInstancedMesh)
 
 

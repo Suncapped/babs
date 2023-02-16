@@ -928,11 +928,9 @@ export class InputSys {
 			const mouseRayPlayers = []
 			const players = this.babs.group.children.filter(c=>c.name=='self'||c.name=='player')
 			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
-			// console.log('playerBboxes', playerBboxes)
 			if(playerBboxes.length) {
 				this.mouse.ray.intersectObjects(playerBboxes, false, mouseRayPlayers)
 				this.mouseRayTargets = this.mouseRayTargets.concat(mouseRayPlayers)
-				// console.log('push', playerBboxes)
 			}
 			
 

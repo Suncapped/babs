@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage } from 'three'
 import { SocketSys } from '@/sys/SocketSys'
 import { UiSys } from '@/sys/UiSys'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
@@ -194,16 +194,27 @@ export class Wob extends FastWob {
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
 	static async ArriveMany(arrivalWobs :Array<FastWob>, babs, shownames) {
+		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
+		log('arrivalWobs', arrivalWobs.length)
 		// Load unique gltfs
 		let path
 		let loads = []
 		let load
 		const counts = new Map<string, number>()
 		// console.time('timing')
+		let gltfCounts = 0
+
+		// let arrivalCounter = 0
 		for(const wob of arrivalWobs) {
+			// if(arrivalCounter % 1 === 0) {
+			// 	continue
+			// }
+			// arrivalCounter++
+
 			const currentCount = counts.get(wob.name) || 0
 			counts.set(wob.name, currentCount +1)
 			if(!Wob.LoadedGltfs.get(wob.name)){
+				gltfCounts++
 				path = '/environment/gltf/'+wob.name+'.glb'
 
 				load = babs.loaderSys.loadGltf(path, wob.name)
@@ -212,6 +223,7 @@ export class Wob extends FastWob {
 				loads.push(load)
 			}
 		}
+		log('gltfCounts', gltfCounts)
 		// console.timeLog('timing')
 		const finishedLoads = await Promise.all(loads)
 		// console.timeLog('timing')
@@ -249,8 +261,8 @@ export class Wob extends FastWob {
 				instanced.countMax = countMax
 				instanced.name = wobName
 				// instanced.instanceMatrix.needsUpdate = true
-				instanced.instanceMatrix.setUsage(StreamDrawUsage) 
-				// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
+				instanced.instanceMatrix.setUsage(DynamicDrawUsage) 
+				// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 
 				instanced.geometry.boundingBox?.getSize(instanced.boundingSize) // sets into vector // some don't have box, thus ?
 				instanced.sink = Math.min(instanced.boundingSize.y *0.05, 0.2)  
@@ -308,7 +320,7 @@ export class Wob extends FastWob {
 				newInstance.count = instanced.count
 				newInstance.countMax = newMax
 				newInstance.name = wobName
-				newInstance.instanceMatrix.setUsage(StreamDrawUsage) // todo optimize?
+				newInstance.instanceMatrix.setUsage(DynamicDrawUsage) // todo optimize?
 				let transferMatrix = new Matrix4()
 				for(let i=0; i<instanced.count; i++) {
 					instanced.getMatrixAt(i, transferMatrix)

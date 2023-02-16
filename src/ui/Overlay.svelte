@@ -190,6 +190,10 @@
 		top: 68px;
 		left: 100px;
 		text-align:left;
+		background-color: white;
+		opacity: 0.75;
+		padding: 7px;
+		padding-bottom: 2px;
 	}
 	#info{
 		color:black;

@@ -179,7 +179,7 @@ export class SocketSys {
 	}
 
 	async send(json) {
-		if(!json.ping && !json.move) log.info('Send:', json)
+		if(!json.ping && !json.move) log('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
@@ -551,7 +551,7 @@ export class SocketSys {
 
 				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
 				// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
-				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip day&night
+				context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip daytime&nighttime
 				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
 
 				break

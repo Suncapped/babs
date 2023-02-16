@@ -118,14 +118,14 @@ export class Babs {
 
 		this.browser = (function (agent) {
 			switch (true) {
-			case agent.indexOf("edge") > -1: return "MS Edge (EdgeHtml)"
-			case agent.indexOf("edg") > -1: return "MS Edge Chromium"
-			case agent.indexOf("opr") > -1 && !!window['opr']: return "opera"
-			case agent.indexOf("chrome") > -1 && !!window['chrome']: return "chrome"
-			case agent.indexOf("trident") > -1: return "Internet Explorer"
-			case agent.indexOf("firefox") > -1: return "firefox"
-			case agent.indexOf("safari") > -1: return "safari"
-			default: return "other"
+			case agent.indexOf('edge') > -1: return 'MS Edge (EdgeHtml)'
+			case agent.indexOf('edg') > -1: return 'MS Edge Chromium'
+			case agent.indexOf('opr') > -1 && !!window['opr']: return 'opera'
+			case agent.indexOf('chrome') > -1 && !!window['chrome']: return 'chrome'
+			case agent.indexOf('trident') > -1: return 'Internet Explorer'
+			case agent.indexOf('firefox') > -1: return 'firefox'
+			case agent.indexOf('safari') > -1: return 'safari'
+			default: return 'other'
 			}
 		})(window.navigator.userAgent.toLowerCase())
 		log.info('Browser is', this.browser)
@@ -204,24 +204,34 @@ export class Babs {
 
 		// Always update these every frame
 		// (prevents other players rubberbanding from movement initiated by network input)
-		this.uiSys.update()
-		// LoaderSys.update(this.dtSinceLastFocus)
-		this.inputSys?.update(dt, this.scene)
-		this.worldSys.update(dt)
-		for(let [name, coms] of this.compcats) {
-			if(coms) {
-				for(let com of coms) {
-					com.update(dt)
-				}
-			}
-		}
+		// this.uiSys.update()
+		// this.inputSys?.update(dt, this.scene)
+		// for(let [name, coms] of this.compcats) {
+		// 	if(coms) {
+		// 		for(let com of coms) {
+		// 			com.update(dt)
+		// 		}
+		// 	}
+		// }
+		
 
 		// Only update these if window has focus
 		this.dtSinceLastFocus += dt
 		if(this.renderSys.documentHasFocus 
-			|| this.dtSinceLastFocus > 0.5) { // Allow a frame once per 0.5 second
-			// console.log('this.dtSinceLastFocus', this.dtSinceLastFocus)
+			|| this.dtSinceLastFocus > 0.15) { // Allow a frame a few times per second; just about right for not breaking movement.
+			// todo just fix Controller.ts:update() to not break so badly on longer dt?
 
+			this.uiSys.update()
+			this.inputSys?.update(this.dtSinceLastFocus)
+			for(let [name, coms] of this.compcats) {
+				if(coms) {
+					for(let com of coms) {
+						com.update(this.dtSinceLastFocus)
+					}
+				}
+			}
+
+			this.worldSys.update(this.dtSinceLastFocus)
 			this.cameraSys?.update(this.dtSinceLastFocus)
 			this.renderSys.update(this.dtSinceLastFocus)
 
