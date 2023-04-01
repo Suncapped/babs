@@ -1317,10 +1317,14 @@ export class InputSys {
 
 			// Create a MediaRecorder instance and start recording:
 			// Check browser support for preferred format
-			const mimeType = 'audio/webm;codecs=opus'
+			let mimeType = 'audio/webm;codecs=opus'
 			if (!MediaRecorder.isTypeSupported(mimeType)) {
+				// Try for Safari // Actually let's not add the complexity :p
+				// mimeType = 'audio/mp4;codecs=mp4a'
+				// if (!MediaRecorder.isTypeSupported(mimeType)) {
 				console.error('Unsupported MIME type')
 				return;
+				// }
 			}
 			this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })
 			// Collect recorded chunks
@@ -1401,6 +1405,8 @@ export class InputSys {
 		if (newDevice === 'fingers') { // Exception hax, show more screen on mobile devices
 			if (window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
 				document.getElementById('Journal').style.display = 'none'
+				document.getElementById('topleft').style.display = 'none'
+				document.getElementById('topright').style.paddingBottom = '12px'
 				dividerOffset.set(5)
 			}
 		}

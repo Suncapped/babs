@@ -17,7 +17,7 @@ import { Babs } from '@/Babs'
 
 export class UiSys {
 	babs :Babs
-	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>'
+	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/suncapped">Discord</a>'
 	ctext
 	labelElements = []
 	svJournal
@@ -41,7 +41,7 @@ export class UiSys {
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
-			this.toprightTextDefault = 'Welcome! <a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>'
+			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/suncapped">Discord</a>'
 		}
 		toprightText.set(this.toprightTextDefault)
 	}
