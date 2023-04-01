@@ -182,6 +182,7 @@
 		pointer-events: auto; /* Clicks affect it */
 
 		padding: 5px 10px;
+		padding-top:10px;
 		z-index: 40;
 	}
 

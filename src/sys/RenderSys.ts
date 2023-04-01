@@ -40,7 +40,8 @@ export class RenderSys {
 
 
 		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
-		this.renderer.physicallyCorrectLights = false
+		// this.renderer.physicallyCorrectLights = false
+		this.renderer.useLegacyLights = true
 		ColorManagement.legacyMode = false
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10

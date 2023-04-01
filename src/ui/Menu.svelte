@@ -86,7 +86,7 @@
 		$topmenuUnfurled = ui.unfurled
 		if(!$topmenuUnfurled) { // If closing menu, hide picker and stuff too
 			document.getElementById('picker').style.display = 'none'
-			movementTips = false
+			movementTips = true
 		}
 	}
 
@@ -180,7 +180,7 @@
 
 	}
 
-	let movementTips = false
+	let movementTips = true
 
 	topmenuUnfurled.subscribe(vis => {
 		ui.unfurled = vis
@@ -247,10 +247,14 @@
 					</label>
 				</fieldset>
 			</li>
-			<li><a href on:click|preventDefault={()=> { movementTips = !movementTips; updateDimensions()} }>Movement Tips</a>
+			<li>
+				<br/>
+				<!-- <a href on:click|preventDefault={()=> { movementTips = !movementTips; updateDimensions()} }>Keys:</a> -->
 				<div hidden="{!movementTips}">
-					<li>Touchpad:<br/>Slide two fingers around, click.</li>
-					<li>Mouse:<br/>Hold right button, look around, then tap left.</li>
+					<li>Touchpad: Slide two fingers, click both to move.</li>
+					<li>Mouse: Hold right button to look, both to move.</li>
+					<li>Hold Option/Alt for voice-to-text!</li>
+					<li>Keyboard is exclusively for chatting.</li>
 				</div>
 			</li>
 			<!-- <li>

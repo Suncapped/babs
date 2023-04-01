@@ -405,6 +405,13 @@ export class InputSys {
 		this.lastMoveHoldPicked
 		this.carrying = null
 		document.addEventListener('mousemove', async ev => { // :MouseEvent
+			// Close top menu if it's open
+			if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
+				topmenuUnfurled.set(false)
+			}
+
+			this.babs.renderSys.documentHasFocus = 'forced'
+
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
 			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
