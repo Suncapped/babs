@@ -426,10 +426,6 @@ export class SocketSys {
 				const playerIsSelf = player.id === context.babs.idSelf
 
 				// Calculate the zones we're exiting and the zones we're entering
-				// const exitx = exitZone.x -enterZone.x
-				// const exitz = exitZone.z -enterZone.z
-				// log('exit', exitx, exitz)
-
 				const oldZoneGroupIds = exitZone.getZonesAround().map(z=>z.id)
 				const newZoneGroupIds = enterZone.getZonesAround().map(z=>z.id)
 				const removedZones = oldZoneGroupIds
@@ -441,23 +437,31 @@ export class SocketSys {
 				
 				log.info('zonediff', removedZones, addedZones)
 
-
-
 				// 1. Change exited zone to far tree wobs
 				// 2. Change entered zone to detailed wobs
 				
-				let exitFwobs :FastWob[] = []
+				const farBigTreesToAdd :FastWob[] = []
 				if(playerIsSelf) {
-					for(const exitZoneOf3 of removedZones) {
-						const newExitFwobs = exitZoneOf3.getFastwobsBasedOnLocations()
-						log.info('exit wobs to remove', exitZoneOf3.id, newExitFwobs.length)//JSON.stringify(exitFwobs))
-						for(const fwob of newExitFwobs) { // First remove existing detailed graphics
-							exitZoneOf3.removeWobGraphic(fwob)
-							fwob.blueprint_id = Wob.FarwobName // Prep for LoadInstancedGraphics
-							fwob.name = Wob.FarwobName // Prep for LoadInstancedGraphics
+					for(const removedZone of removedZones) {
+						const removedFwobs = removedZone.getFastwobsBasedOnLocations()
+						log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+						for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
+							removedZone.removeWobGraphic(zoneFwob)
+
+							// Prepare replacement trees for farther below.
+							// Get only short height items?  I will need the graphic.  Can I get the related instance?
+							const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+							const wobIsFar = true // By definition it's going to be far
+							const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
+							if(wobIsFar && !wobIsSmall) {
+								zoneFwob.blueprint_id = Wob.FarwobName
+								zoneFwob.name = Wob.FarwobName
+								farBigTreesToAdd.push(zoneFwob)
+							}
+
 						}
-						exitFwobs.push(...newExitFwobs)
-						// log('exit wobs to add', exitZone.id, exitFwobs.length)//JSON.stringify(exitFwobs))
+						// exitFwobs.push(...newExitFwobs)
+						// log('exit wobs to add', exitZone.id, exitFwobs.length)
 						// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
 						/*
 							^ So um, having this here ruined everything.  Because why?
@@ -473,26 +477,30 @@ export class SocketSys {
 
 				player.controller.zoneIn(player, enterZone)
 
-				let enterFwobs :FastWob[] = []
+				let detailedWobsToAdd :FastWob[] = []
 				if(playerIsSelf) {
-					for(let enterZoneOf3 of addedZones) {
-						const newEnterFwobs = enterZoneOf3.getFastwobsBasedOnLocations() 
-						log.info('enter wobs to remove', enterZoneOf3.id, newEnterFwobs.length)//JSON.stringify(enterFwobs))
-						for(const fwob of newEnterFwobs) { // First remove existing far tree graphics
-							enterZoneOf3.removeWobGraphic(fwob, Wob.FarwobName) 
+					for(let addedZone of addedZones) {
+						log.info('entered zone: far trees to remove', addedZone.id)
+						
+						const zoneFwobs = addedZone.getFastwobsBasedOnLocations()
+						detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
+
+						// Now remove only fartrees; things that are far and big
+						for(const zoneFwob of zoneFwobs) { 
+							const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+							const wobIsFar = true // By definition it was far
+							const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
+							if(wobIsFar && !wobIsSmall) {
+								addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName)
+							}
 						}
-						enterFwobs.push(...newEnterFwobs)
 					}
 
-					for(let exitZoneOf3 of removedZones) {
-						log.info('exit wobs to add', exitZoneOf3.id, exitFwobs.length)//JSON.stringify(exitFwobs))
-						await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
+					log.info('exited zones: detailed wobs to add', farBigTreesToAdd.length)
+					await Wob.LoadInstancedGraphics(farBigTreesToAdd, context.babs, false) // Then add far tree ones
 
-					}
-					for(let enterZoneOf3 of addedZones) {
-						log.info('enter wobs to add', enterZoneOf3.id, enterFwobs.length)//JSON.stringify(enterFwobs))
-						await Wob.LoadInstancedGraphics(enterFwobs, context.babs, false) // Then add real ones
-					}
+					log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+					await Wob.LoadInstancedGraphics(detailedWobsToAdd, context.babs, false) // Then add real ones
 				}
 
 				break

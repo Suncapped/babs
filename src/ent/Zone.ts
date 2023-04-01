@@ -64,60 +64,69 @@ export class Zone extends SharedZone {
 		if(!existingWob.blueprint_id) {
 			console.warn('existingWob does not have a blueprint_id:', existingWob)
 		}
-		if(existingWob) {
-			const instanced = Wob.InstancedMeshes.get(existingWob.blueprint_id)
-			if(!instanced) {
-				console.warn('no matching instanced to:', existingWob.blueprint_id)
-			}
-			const zone = this.babs.ents.get(existingWob.idzone) as Zone
-			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
 
-			// Remove attachments
-			const flameComps = this.babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-			// log('flameComps', flameComps, this.babs.compcats)
-			const flame = flameComps.find(fc => {
-				return (fc.idEnt as WobId).idzone === existingWob.id().idzone
-					&& (fc.idEnt as WobId).x === existingWob.id().x
-					&& (fc.idEnt as WobId).z === existingWob.id().z
-					&& (fc.idEnt as WobId).blueprint_id === existingWob.id().blueprint_id
-			})
-			if(flame) {
-				const oldlen = Flame.wantsLight.length
-				// log('flame to remove', flame, Flame.wantsLight.length)
-				Flame.wantsLight = Flame.wantsLight.filter(f => {
-					// console.log('fl', f.uuid, flame.fire.uuid)
-					return f.uuid !== flame.fire.uuid
-				})
-				this.babs.group.remove(flame.fire)
-
-				flame.fire.geometry.dispose()
-				flame.fire.visible = false
-				if(Array.isArray(flame.fire.material)) {
-					flame.fire.material[0].dispose()
-					flame.fire.material[0].visible = false
-				}
-				else {
-					flame.fire.material.dispose()
-					flame.fire.material.visible = false
-				}
-				
-				this.babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
-			}
-
-			// Remove one by swapping the last item into this place, then decrease instanced count by 1
-			let matrixLastItem :Matrix4 = new Matrix4()
-			instanced.getMatrixAt(instanced.count -1, matrixLastItem)
-			instanced.setMatrixAt(iindex, matrixLastItem)
-			instanced.count = instanced.count -1
-			zone.coordToInstanceIndex[existingWob.x +','+ existingWob.z] = null
-
-			// Problem: What if iindex IS the last item?  (Hmm maybe ok.)  
-			// Also, don't know if this handles shrink+growth properly?
-
-			instanced.instanceMatrix.needsUpdate = true
-
-
+		const instanced = Wob.InstancedMeshes.get(existingWob.blueprint_id)
+		if(!instanced) {
+			console.warn('no matching instanced to:', existingWob.blueprint_id)
 		}
+		const zone = this.babs.ents.get(existingWob.idzone) as Zone
+
+		// Remove attachments
+		const flameComps = this.babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
+		// log('flameComps', flameComps, this.babs.compcats)
+		const flame = flameComps.find(fc => {
+			return (fc.idEnt as WobId).idzone === existingWob.id().idzone
+				&& (fc.idEnt as WobId).x === existingWob.id().x
+				&& (fc.idEnt as WobId).z === existingWob.id().z
+				&& (fc.idEnt as WobId).blueprint_id === existingWob.id().blueprint_id
+		})
+		if(flame) {
+			const oldlen = Flame.wantsLight.length
+			// log('flame to remove', flame, Flame.wantsLight.length)
+			Flame.wantsLight = Flame.wantsLight.filter(f => {
+				// console.log('fl', f.uuid, flame.fire.uuid)
+				return f.uuid !== flame.fire.uuid
+			})
+			this.babs.group.remove(flame.fire)
+
+			flame.fire.geometry.dispose()
+			flame.fire.visible = false
+			if(Array.isArray(flame.fire.material)) {
+				flame.fire.material[0].dispose()
+				flame.fire.material[0].visible = false
+			}
+			else {
+				flame.fire.material.dispose()
+				flame.fire.material.visible = false
+			}
+			
+			this.babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
+		}
+
+		// Remove one by swapping the last item into this place, then decrease instanced count by 1
+		const oldIndex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
+		let matrixLastItem :Matrix4 = new Matrix4()
+		instanced.getMatrixAt(instanced.count -1, matrixLastItem)
+		instanced.setMatrixAt(oldIndex, matrixLastItem)
+
+		// Problem: What if iindex IS the last item?  (Hmm maybe ok.) 
+
+		// Try as if: zone.coordToInstanceIndex[movedIndex.x +','+ movedIndex.z] = oldIndex
+		// const posOfMovedIndex = new Vector3().setFromMatrixPosition(matrixLastItem)
+		// console.log('posOfMovedIndex', posOfMovedIndex)
+		// const localPos = posOfMovedIndex.sub(instanced.position)
+		// const localPos = instanced.worldToLocal(posOfMovedIndex)
+		// console.log('localPos', localPos)
+		for(let key in zone.coordToInstanceIndex) { // todo optimize, this is slow.  I'm not even certain it's necessary.
+			if(zone.coordToInstanceIndex[key] === instanced.count -1) {
+				zone.coordToInstanceIndex[key] = oldIndex
+				break
+			}
+		}
+		instanced.count = instanced.count -1
+		// Also, don't know if this handles shrink+growth properly?
+		zone.coordToInstanceIndex[existingWob.x +','+ existingWob.z] = null
+		instanced.instanceMatrix.needsUpdate = true 
 
 		// Don't mutate these
 		if(overrideNameAndBlueprint) {

@@ -260,9 +260,9 @@ export class Wob extends FastWob {
 		// Create InstancedMeshes from loaded gltfs
 		// const countMax = 10 // How large the instancdedmesh starts out
 		const instancedExpansionAdd = 10 // How much larger the instancedmesh will get, eg +10
-		for(const [wobName, gltf] of Wob.LoadedGltfs) {
-			let instanced = Wob.InstancedMeshes.get(wobName)
-			let newWobsCount = nameCounts.get(wobName)
+		for(const [instancedMeshName, gltf] of Wob.LoadedGltfs) {
+			let instanced = Wob.InstancedMeshes.get(instancedMeshName)
+			let newWobsCount = nameCounts.get(instancedMeshName)
 
 			// What this does is, either creates an instancedmesh, or expands its size with some margin for adding a few wobs without having to resize it again
 			if(!instanced) {
@@ -271,7 +271,7 @@ export class Wob extends FastWob {
 					wobMesh = gltf.scene.children[0]
 				}
 				catch(e) {
-					log.info('error loading gltf', wobName)
+					log.info('error loading gltf', instancedMeshName)
 				}
 
 				if(!wobMesh) {
@@ -280,12 +280,10 @@ export class Wob extends FastWob {
 
 				let boundingSize :Vector3 = new Vector3
 				wobMesh.geometry.boundingBox?.getSize(boundingSize) // sets into vector // some don't have box, thus ?
-
 				// log('boundingSize.y', boundingSize.y.toFixed(3), wobName)
 
-				// const farThingHeight = 42
-				const isFarwob = wobName.indexOf(Wob.FarwobName) !== -1
-				if(isFarwob) {
+				const isMeshForFarWob = instancedMeshName.indexOf(Wob.FarwobName) !== -1
+				if(isMeshForFarWob) {
 					wobMesh.geometry.scale(4, 1, 4)
 				}
 
@@ -293,7 +291,7 @@ export class Wob extends FastWob {
 				instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
 				instanced.count = 0
 				instanced.countMax = countMax
-				instanced.name = wobName
+				instanced.name = instancedMeshName
 				// instanced.instanceMatrix.needsUpdate = true
 				instanced.instanceMatrix.setUsage(DynamicDrawUsage) 
 				// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
@@ -342,7 +340,7 @@ export class Wob extends FastWob {
 				// ^ Fixes offset pivot point
 				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 
-				Wob.InstancedMeshes.set(wobName, instanced)
+				Wob.InstancedMeshes.set(instancedMeshName, instanced)
 				babs.group.add(instanced)
 
 				log.info('instanced created at', instanced.name, instanced.count, newWobsCount, instanced.countMax)
@@ -355,7 +353,7 @@ export class Wob extends FastWob {
 				const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, newMax)
 				newInstance.count = instanced.count
 				newInstance.countMax = newMax
-				newInstance.name = wobName
+				newInstance.name = instancedMeshName
 				newInstance.instanceMatrix.setUsage(DynamicDrawUsage) // todo optimize?
 				let transferMatrix = new Matrix4()
 				for(let i=0; i<instanced.count; i++) {
@@ -392,7 +390,7 @@ export class Wob extends FastWob {
 				// ^ Fixes offset pivot point
 				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 				
-				Wob.InstancedMeshes.set(wobName, newInstance)
+				Wob.InstancedMeshes.set(instancedMeshName, newInstance)
 				babs.group.add(newInstance)
 			}
 			else {
@@ -444,26 +442,8 @@ export class Wob extends FastWob {
 
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
-				yardCoord = YardCoord.Create(wob)
 
-				const engCoordCentered = yardCoord.toEngineCoordCentered()
-				// engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
-				// engPositionVector = new Vector3(engCoordCentered.x, zone.yardHeightAt(wob.x, wob.z, zone), engCoordCentered.z)
-				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
-
-				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-	
-				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 				const instanced = Wob.InstancedMeshes.get(wob.name)
-				engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
-
-				let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
-				const indexDoesNotExist = !existingIindex && existingIindex !== 0
-				if(indexDoesNotExist) {
-					existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
-					instanced.count = instanced.count +1
-				}
-
 				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
 				const wobFromData = zone.getFastWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
 				const instancedFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
@@ -472,24 +452,49 @@ export class Wob extends FastWob {
 				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
 				const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
 				const wobIsSmall = instancedFromData.boundingSize.y < Wob.FarwobShownHeightMinimum
+				// const wobIsFarWob = wob.name === Wob.FarwobName
 				if(wobIsFar && wobIsSmall) {
-					engPositionVector.setY(engPositionVector.y -Wob.FarwobHiddenBuryDepth) // Bury it!
-					// log('burying', instanced.name, engPositionVector.y, instanced.boundingSize.y)
-				}
-				else {
-					// log('KEEPING', instanced.name, engPositionVector.y, instanced.boundingSize.y)
-				}
-				// Why is console crashing about vertexes?
+					// console.log(wob.name)
+					// engPositionVector.setY(engPositionVector.y -Wob.FarwobHiddenBuryDepth) // Bury it!
 
-				matrix.setPosition(engPositionVector)
-				instanced.setMatrixAt(existingIindex, matrix)
-	
-				instanced.instanceMatrix.needsUpdate = true
-	
-				if(shownames) {
-					babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
+					// optimization: What if I did another pass here that was like...reduce nameCount if the loaded boundingSize.y is small and it's in a far zone?
+					// Or...what if I didn't count anything in far zones until 
+					// Third idea...let it allocate the instance memory, whatever.  But skip loading them in afterward.
+					// instanced.count = instanced.count -1
+					// 	^ Nice!  Third idea doubled framerate
 				}
-	
+				else { // Keep it
+					yardCoord = YardCoord.Create(wob)
+					const engCoordCentered = yardCoord.toEngineCoordCentered()
+					// engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
+					// engPositionVector = new Vector3(engCoordCentered.x, zone.yardHeightAt(wob.x, wob.z, zone), engCoordCentered.z)
+					engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+
+					// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
+		
+					engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+					engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
+
+					let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
+					const indexDoesNotExist = !existingIindex && existingIindex !== 0
+					if(indexDoesNotExist) {
+						existingIindex = instanced.count
+						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
+						instanced.count = instanced.count +1
+					}
+
+
+					// log('KEEPING', instanced.name, engPositionVector.y, instanced.boundingSize.y)
+					matrix.setPosition(engPositionVector)
+					instanced.setMatrixAt(existingIindex, matrix)
+		
+					instanced.instanceMatrix.needsUpdate = true
+
+					if(shownames) {
+						babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
+					}
+				}
+
 			}
 			else {	// Send to bag
 				const instanced = Wob.InstancedMeshes.get(wob.name)
