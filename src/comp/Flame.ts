@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -291,8 +291,9 @@ export class Flame extends Comp {
 		noiseScaleZ : 1.5,//1.0,
 	}
 
-	static fireTex
+	static fireTex :Texture
 	static async Create(wob :Wob, babs :Babs, scale, yup) {
+		// log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Flame(wob, babs)
 
 		// Init static singletons
@@ -336,6 +337,7 @@ export class Flame extends Comp {
 		)
 
 		// Add a glow of light
+		// console.log('Flame.wantsLight.push', com.fire.uuid)
 		Flame.wantsLight.push(com.fire)
 
 		// Debug flames not showing!

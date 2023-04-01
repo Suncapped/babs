@@ -26,7 +26,7 @@
 			const nickparts = chatbox.textContent.split(':')
 			nickparts.shift()
 			socketSend.set({
-				'savenick': {
+				savenick: {
 					idplayer: $nickTargetId,
 					nick: nickparts.join(':'),
 				},
@@ -35,7 +35,7 @@
 		else { // Regular chat
 			if(chatbox.textContent !== 'w') {
 				socketSend.set({
-					'chat': {
+					chat: {
 						text: chatbox.textContent
 					},
 				})
@@ -163,8 +163,8 @@
 		border-radius: 5px;
 		
 		/* ugh Windows vs Macos font-itself paddings are different?! So there is a Babs.js js modification of this style */
-		padding-top: 5px;
-		padding-bottom: 1px;
+		padding-top: 8px;
+		padding-bottom: 4px;
 		padding-left: 8px;
 		padding-right: 8px;
 	}

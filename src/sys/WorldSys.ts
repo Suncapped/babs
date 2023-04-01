@@ -638,7 +638,7 @@ export class WorldSys {
 
 	currentGround
 	groundMaterial
-	async loadStatics(urlFiles, zone, isStartingZone = false) {
+	async loadStatics(urlFiles, zone, isLoadinZone = false) {
 		let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
 		// geometry = geometry.toNonIndexed()
 		geometry.rotateX( -Math.PI / 2 ) // Make the plane horizontal
@@ -693,7 +693,7 @@ export class WorldSys {
 		zone.ground = newGround
 		this.babs.group.add(newGround)
 
-		if(isStartingZone) {
+		if(isLoadinZone) {
 			log.info('playerStartingZone', newGround)
 			this.currentGround = newGround
 		}

@@ -14,6 +14,7 @@ import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { Blueprint, FastWob, type Rotation } from '@/shared/SharedZone'
+import { Player } from './Player'
 
 type IconData = {image :string, pixels :Uint8Array}
 
@@ -190,40 +191,62 @@ export class Wob extends FastWob {
 	static SphereMaterial = new MeshLambertMaterial({ color: 0xcccc00 })
 	static SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
 	static FullColor = new Color(1,1,1)
+	static FarwobName = 'tree twotris'
+	static FarwobShownHeightMinimum = 12
+	static FarwobHiddenBuryDepth = 1000
 
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
-	static async ArriveMany(arrivalWobs :Array<FastWob>, babs, shownames) {
+	static async LoadInstancedGraphics(arrivalWobs :Array<FastWob>, babs :Babs, shownames :boolean) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
-		log('arrivalWobs', arrivalWobs.length)
+		log.info('arrivalWobs', arrivalWobs.length)
 		// Load unique gltfs
-		let path
+		// Also load far tree visuals for taller wobs
 		let loads = []
 		let load
-		const counts = new Map<string, number>()
+		const nameCounts = new Map<string, number>()
 		// console.time('timing')
 		let gltfCounts = 0
 
-		// let arrivalCounter = 0
-		for(const wob of arrivalWobs) {
-			// if(arrivalCounter % 1 === 0) {
-			// 	continue
-			// }
-			// arrivalCounter++
 
-			const currentCount = counts.get(wob.name) || 0
-			counts.set(wob.name, currentCount +1)
+		const playerSelf = babs.ents.get(babs.idSelf) as Player
+		const playerZone = playerSelf.controller.target.zone
+		const zoneIdsAroundPlayerZone = playerZone.getZonesAround().map(z=>z.id)
+
+		for(const wob of arrivalWobs) {
+			// log('nameCount of', wob.name, nameCount)
+
+			// Generate far trees for far zones
+			const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
+			if(wobIsFar) { // Useful during initial loading
+				// Make it always load the instanced at least, so later we can check boundingSize.y for hiding short things as far trees
+				// Optimization note, this forces loading of every gltf in objects sent :/
+
+				if(nameCounts.get(wob.name) === undefined) {
+					// log('Manual loading:', wob.name)
+					nameCounts.set(wob.name, 0)
+
+					gltfCounts++
+					load = babs.loaderSys.loadGltf(`/environment/gltf/${wob.name}.glb`, wob.name)
+					Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
+					loads.push(load)
+				}
+
+				// Now set up for treating as far tree
+				// log(wob.name, '->', Wob.FarwobName)
+				wob.name = Wob.FarwobName
+				wob.blueprint_id = Wob.FarwobName
+			}
+
+			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 			if(!Wob.LoadedGltfs.get(wob.name)){
 				gltfCounts++
-				path = '/environment/gltf/'+wob.name+'.glb'
-
-				load = babs.loaderSys.loadGltf(path, wob.name)
-
+				load = babs.loaderSys.loadGltf(`/environment/gltf/${wob.name}.glb`, wob.name)
 				Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
 				loads.push(load)
 			}
 		}
-		log('gltfCounts', gltfCounts)
+		// log('gltfCounts', gltfCounts)
 		// console.timeLog('timing')
 		const finishedLoads = await Promise.all(loads)
 		// console.timeLog('timing')
@@ -239,11 +262,11 @@ export class Wob extends FastWob {
 		const instancedExpansionAdd = 10 // How much larger the instancedmesh will get, eg +10
 		for(const [wobName, gltf] of Wob.LoadedGltfs) {
 			let instanced = Wob.InstancedMeshes.get(wobName)
-			let newWobsCount = counts.get(wobName) || 0
+			let newWobsCount = nameCounts.get(wobName)
 
 			// What this does is, either creates an instancedmesh, or expands its size with some margin for adding a few wobs without having to resize it again
 			if(!instanced) {
-				let wobMesh
+				let wobMesh :Mesh
 				try {
 					wobMesh = gltf.scene.children[0]
 				}
@@ -255,6 +278,17 @@ export class Wob extends FastWob {
 					wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
 				}
 
+				let boundingSize :Vector3 = new Vector3
+				wobMesh.geometry.boundingBox?.getSize(boundingSize) // sets into vector // some don't have box, thus ?
+
+				// log('boundingSize.y', boundingSize.y.toFixed(3), wobName)
+
+				// const farThingHeight = 42
+				const isFarwob = wobName.indexOf(Wob.FarwobName) !== -1
+				if(isFarwob) {
+					wobMesh.geometry.scale(4, 1, 4)
+				}
+
 				const countMax = newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
 				instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
 				instanced.count = 0
@@ -264,10 +298,10 @@ export class Wob extends FastWob {
 				instanced.instanceMatrix.setUsage(DynamicDrawUsage) 
 				// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 
-				instanced.geometry.boundingBox?.getSize(instanced.boundingSize) // sets into vector // some don't have box, thus ?
-				instanced.sink = Math.min(instanced.boundingSize.y *0.05, 0.2)  
+				instanced.boundingSize = boundingSize 
+				instanced.sink = Math.min(instanced.boundingSize.y *0.05, 0.2) // +(boundingSize.y /(1/scaleFartrees))
 				// ^ Sink by a percent but with a max for things like trees.
-				instanced.lift = instanced.boundingSize.y < 0.01 ? 0.066 : 0
+				instanced.lift = (instanced.boundingSize.y < 0.01 ? 0.066 : 0)
 				// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 
 				instanced.castShadow = instanced.boundingSize.y >= 1
@@ -310,9 +344,11 @@ export class Wob extends FastWob {
 
 				Wob.InstancedMeshes.set(wobName, instanced)
 				babs.group.add(instanced)
+
+				log.info('instanced created at', instanced.name, instanced.count, newWobsCount, instanced.countMax)
 			}
 			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for backpack items too, but that's okay)
-				log('instanced growing at', instanced.count, newWobsCount, instanced.countMax)
+				log.info('instanced growing with', instanced.name, instanced.count, newWobsCount, instanced.countMax)
 
 				const newMax = instanced.count +newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
 
@@ -427,7 +463,24 @@ export class Wob extends FastWob {
 					existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
 					instanced.count = instanced.count +1
 				}
-	
+
+				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
+				const wobFromData = zone.getFastWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
+				const instancedFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
+				// console.log('wobFromData', wobFromData.name, instancedFromData.name, instanced.name, wob.name)
+
+				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
+				const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
+				const wobIsSmall = instancedFromData.boundingSize.y < Wob.FarwobShownHeightMinimum
+				if(wobIsFar && wobIsSmall) {
+					engPositionVector.setY(engPositionVector.y -Wob.FarwobHiddenBuryDepth) // Bury it!
+					// log('burying', instanced.name, engPositionVector.y, instanced.boundingSize.y)
+				}
+				else {
+					// log('KEEPING', instanced.name, engPositionVector.y, instanced.boundingSize.y)
+				}
+				// Why is console crashing about vertexes?
+
 				matrix.setPosition(engPositionVector)
 				instanced.setMatrixAt(existingIindex, matrix)
 	

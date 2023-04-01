@@ -131,12 +131,13 @@ export class SharedZone {
 	bpidToLocid :Record<string, number> = {}
 
 	getWob(x :number, z :number) :FastWob|null {
-		const idAndRot = this.wobIdRotGrid[x +(z *250)] // this.wobIdRotGrid.get(x, z) was ndarray
+		const idAndRot = this.wobIdRotGrid[x +(z *250)]
 		const locid = idAndRot >>> 4
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
 
 		if(locid === 0) {
 			// It's empty or unset!
+			// console.log('noloc')
 			return null
 		}
 
@@ -154,7 +155,7 @@ export class SharedZone {
 		if(isLocidBeingRemoved) {
 			this.wobIdRotGrid[x +(z *250)] = 0
 			if(wob) { // Is null on server
-				this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id)
+				this.removeWobGraphicAt(wob.x, wob.z)
 			}
 			return [0, 0, wob?.x | x, wob?.z | z]
 		}
@@ -169,7 +170,7 @@ export class SharedZone {
 		}
 
 		if(wob) { // Updating an existing one
-			this.removeWobGraphic(wob.x, wob.z, wob.blueprint_id) // Remove old graphic
+			this.removeWobGraphicAt(wob.x, wob.z) // Remove old graphic
 		}
 		else { // Unset spot && we are setting
 		}
@@ -197,7 +198,7 @@ export class SharedZone {
 		return [byte1, byte2, wob.x, wob.z]
 
 	}
-	removeWobGraphic(x :number, z :number, blueprint_id :string) {
+	removeWobGraphicAt(x :number, z :number) {
 		// To be overridden
 	}
 
@@ -216,6 +217,7 @@ export class SharedZone {
 			const x = locations[i+2]
 			const z = locations[i+3]
 			const locid = locidrot >>> 4
+			// ^ Note, also used in 'getFastwobsBasedOnLocations'
 
 			const oldIdAndRot = this.wobIdRotGrid[x +(z *250)]
 			const oldLocid = oldIdAndRot >>> 4
@@ -228,7 +230,7 @@ export class SharedZone {
 					console.warn('No blueprint found @2!', locid)
 					continue
 				}
-				this.removeWobGraphic(x, z, oldbp.blueprint_id)
+				this.removeWobGraphicAt(x, z)
 				this.wobIdRotGrid[x +(z *250)] = 0
 			}
 			else {
@@ -238,10 +240,11 @@ export class SharedZone {
 						console.warn('No blueprint found @4!', locid)
 						continue
 					}
-					this.removeWobGraphic(x, z, oldbp.blueprint_id)
+					this.removeWobGraphicAt(x, z)
 				}
 				this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
+					// Note, also used in 'getFastwobsBasedOnLocations':
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
@@ -254,6 +257,28 @@ export class SharedZone {
 
 		}
 		return wobs
+	}
+	getFastwobsBasedOnLocations() {
+		const locations = this.getLocationsFromGrid()
+		let fwobs :FastWob[] = []
+		for(let i=0; i<locations.length; i+=4){
+			const left = (locations[i+0] << 8)
+			const right = locations[i+1]
+			const locidrot = left +right
+			const x = locations[i+2]
+			const z = locations[i+3]
+			const locid = locidrot >>> 4
+
+			// Extracted from above 'applyLocationsToGrid'
+			const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
+			const bp = this.locidToBlueprint[locid]
+			if(!bp) {
+				console.warn('No blueprint found @5!', locid)
+				continue
+			}
+			fwobs.push(new FastWob(this.id, x, z, r, bp))
+		}
+		return fwobs
 	}
 
 	applyBlueprints(blueprints :Array<string|number>) { // [bpid, locid, ..., ...]
@@ -288,6 +313,7 @@ export class SharedZone {
 	calcElevationAtIndex(index :number) { // todo move to proxima exclusive?
 		return (this.elevations[index] *this.yscale) +this.y
 	}
+
 
 }
 

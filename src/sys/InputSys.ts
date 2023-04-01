@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
 import { FeInstancedMesh, Wob } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
@@ -121,7 +122,10 @@ export class InputSys {
 	playerSelf :Player
 	canvas :HTMLElement
 
-
+	mediaStream :MediaStream
+	mediaRecorder :MediaRecorder
+	recordedChunks :Blob[] = []
+	mediaHasListener = false
 
 	constructor(babs :Babs, player :Player, mousedevice) {
 
@@ -249,11 +253,11 @@ export class InputSys {
 
 
 					// console.time('first')
-					// await Promise.all(Wob.ArriveMany([wobTrees[0]], this.babs, false))
+					// await Promise.all(Wob.LoadInstancedGraphics([wobTrees[0]], this.babs, false))
 					// console.timeEnd('first')
 
 					console.time('all')
-					const res = await Wob.ArriveMany(wobTrees, this.babs, false)
+					const res = await Wob.LoadInstancedGraphics(wobTrees, this.babs, false)
 					console.timeEnd('all')
 					console.log('res', res)
 
@@ -269,7 +273,7 @@ export class InputSys {
 					// 	color: '0xff0000',
 					// }
 					// log('Created scroll at 4,4')
-					// await Wob.ArriveMany([wobScroll], this.babs, false)
+					// await Wob.LoadInstancedGraphics([wobScroll], this.babs, false)
 					log('m', this.babs.ents, this.babs.ents.size)
 
 					// Show zones
@@ -1284,8 +1288,85 @@ export class InputSys {
 			else {
 				this.displayDestinationMesh?.position.setY(-1000)
 			}
+
+
+
 		}
 
+
+		// Voice
+		if(this.keys.aleft === PRESS) {
+			// console.log('aleft')
+			// Start recording?
+
+			// Request access to the user's microphone:
+			if(!this.mediaStream) {
+				try {
+					this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+				} catch (err) {
+					console.error('Error accessing microphone:', err)
+				}
+			}
+
+			// Create a MediaRecorder instance and start recording:
+			// Check browser support for preferred format
+			const mimeType = 'audio/webm;codecs=opus'
+			if (!MediaRecorder.isTypeSupported(mimeType)) {
+				console.error('Unsupported MIME type')
+				return;
+			}
+			this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })
+			// Collect recorded chunks
+			this.mediaRecorder.addEventListener('dataavailable', (event) => {
+				if (event.data.size > 0) {
+					this.recordedChunks.push(event.data)
+				}
+
+				if(this.mediaRecorder.state != 'recording') { // After it's totally finished (final blob, after .stop() call)
+					const blob = new Blob(this.recordedChunks, { type: 'audio/webm' })
+					this.recordedChunks = [] // Clear recorded chunks for next recording
+				
+					// You can now send this blob to your server or process it further
+					log.info('Recording stopped, created Blob:', blob)
+
+					const uploadAudio = async (blob :Blob) => {
+						const formData = new FormData()
+						formData.append('audio', blob, 'audio.webm')
+						try {
+							const response = await fetch(`${this.babs.urlFiles}/voice`, {
+								method: 'POST',
+								body: formData,
+							})
+						
+							if (!response.ok) {
+								throw new Error(`HTTP error ${response.status}`)
+							}
+						
+							const data = await response.json()
+							const text = data.text
+							log.info('Audio converted successfully:', data.text)
+
+							// this.babs.uiSys.playerSaid(this.babs.idSelf, text)
+							this.babs.socketSys.send({
+								chat: {
+									text: text,
+								},
+							})
+						} catch(e) {
+							console.warn('error posting audio', e)
+						}
+					}
+					uploadAudio(blob)
+				}
+			})
+			this.mediaRecorder.start()
+
+		}
+		if(this.keys.aleft === LIFT) {
+			if(this.mediaRecorder?.state == 'recording') {
+				this.mediaRecorder.stop()
+			}
+		}
 
 		// Decay some stuff down over time
 		[this.mouse.scrollaccumy, this.mouse.zoom] = new Vector2(this.mouse.scrollaccumy, this.mouse.zoom)

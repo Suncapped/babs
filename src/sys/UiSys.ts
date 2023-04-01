@@ -46,7 +46,7 @@ export class UiSys {
 		toprightText.set(this.toprightTextDefault)
 	}
 
-	playerSaid(idPlayer, text, options) {
+	playerSaid(idPlayer, text, options?) {
 		options = {
 			color: '#eeeeee',
 			italics: false,

@@ -261,7 +261,8 @@
 			<li>&nbsp;</li>
 
 			<li>{$menuSelfData.email}</li>
-			<li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> <!-- // Free / Credit Months: 2 / _Monthly Sub_ / _Yearly Sub_ -->
+			<!-- <li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> -->
+			<li>Free Account</li>
 			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
 			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
 			

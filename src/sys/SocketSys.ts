@@ -17,7 +17,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo, SendPlayersArrive, SendZoneIn } from '@/shared/consts'
 import { DateTime } from 'luxon'
 
 export class SocketSys {
@@ -331,35 +331,36 @@ export class SocketSys {
 
 				const pStatics = []
 				for(let zone of zones) {
-					const isStartingZone = zone.id == load.self.idzone
-					pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isStartingZone))
+					const isLoadinZone = zone.id == load.self.idzone
+					pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isLoadinZone))
 				}
 				// console.time('stitch')
 				await Promise.all(pStatics)
 				// console.timeEnd('stitch') // 182ms for 81 zones
 
+				Zone.loadedZones = zones
+
 				await context.babs.worldSys.stitchElevation(zones)
 
-				// Create player entity
-				const playerPromise = Player.Arrive(load.self, true, context.babs)
-				
 				// Set up UIs
 				context.babs.uiSys.loadUis(load.uis)
 
 				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
-				// I was trying to do this after ArriveMany, but that was missing the ones in wobsupdate.
+				// I was trying to do this after LoadInstancedGraphics, but that was missing the ones in wobsupdate.
 				const startingZone = this.babs.ents.get(load.self.idzone) as Zone
 				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
+				// Create player entity
+				await Player.Arrive(load.self, true, context.babs)
+				
 				let fastWobs :Array<FastWob> = []
 				for(const zone of zones) {
 					zone.applyBlueprints(load.blueprints)
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
 					fastWobs.push(...fWobs)
 				}
-				const arriveFastwobsPromise = Wob.ArriveMany(fastWobs, context.babs, false)
-
-				await Promise.all([playerPromise, arriveFastwobsPromise])
+				await Wob.LoadInstancedGraphics(fastWobs, context.babs, false)
+				// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs.
 
 				context.send({
 					ready: load.self.id,
@@ -375,10 +376,12 @@ export class SocketSys {
 			case 'playersarrive': {
 				log.info('playersarrive', data)
 
+				const playersArrive =  data as SendPlayersArrive['playersarrive']
+
 				// EventSys.Dispatch('players-arrive', data)
 
-				for(let arrival of data) {
-					const existingPlayer = context.babs.ents.get(arrival.id)
+				for(let arrival of playersArrive) {
+					const existingPlayer = context.babs.ents.get(arrival.id) as Player
 					log.info('existing player', existingPlayer)
 					if(existingPlayer) {
 						// If we already have that player, such as self, be sure to update it.
@@ -415,13 +418,82 @@ export class SocketSys {
 				}
 				break
 			}
-			case 'zonein': {
-				// Handle self or others switching zones
-				const player = context.babs.ents.get(data.idplayer) as Player
-				const zone = context.babs.ents.get(data.idzone) as Zone
+			case 'zonein': { // Handle self or others switching zones
+				const zoneIn = data as SendZoneIn['zonein']
+				const player = context.babs.ents.get(zoneIn.idplayer) as Player
+				const enterZone = context.babs.ents.get(zoneIn.idzone) as Zone
+				const exitZone = context.babs.ents.get(player.controller.target.zone.id) as Zone // player.controller.target.zone ?
+				const playerIsSelf = player.id === context.babs.idSelf
 
-				player.controller.zoneIn(player, zone)
+				// Calculate the zones we're exiting and the zones we're entering
+				// const exitx = exitZone.x -enterZone.x
+				// const exitz = exitZone.z -enterZone.z
+				// log('exit', exitx, exitz)
 
+				const oldZoneGroupIds = exitZone.getZonesAround().map(z=>z.id)
+				const newZoneGroupIds = enterZone.getZonesAround().map(z=>z.id)
+				const removedZones = oldZoneGroupIds
+					.filter(id => !newZoneGroupIds.includes(id))
+					.map(id=>context.babs.ents.get(id) as Zone)
+				const addedZones = newZoneGroupIds
+					.filter(id => !oldZoneGroupIds.includes(id))
+					.map(id=>context.babs.ents.get(id) as Zone)
+				
+				log.info('zonediff', removedZones, addedZones)
+
+
+
+				// 1. Change exited zone to far tree wobs
+				// 2. Change entered zone to detailed wobs
+				
+				let exitFwobs :FastWob[] = []
+				if(playerIsSelf) {
+					for(const exitZoneOf3 of removedZones) {
+						const newExitFwobs = exitZoneOf3.getFastwobsBasedOnLocations()
+						log.info('exit wobs to remove', exitZoneOf3.id, newExitFwobs.length)//JSON.stringify(exitFwobs))
+						for(const fwob of newExitFwobs) { // First remove existing detailed graphics
+							exitZoneOf3.removeWobGraphic(fwob)
+							fwob.blueprint_id = Wob.FarwobName // Prep for LoadInstancedGraphics
+							fwob.name = Wob.FarwobName // Prep for LoadInstancedGraphics
+						}
+						exitFwobs.push(...newExitFwobs)
+						// log('exit wobs to add', exitZone.id, exitFwobs.length)//JSON.stringify(exitFwobs))
+						// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
+						/*
+							^ So um, having this here ruined everything.  Because why?
+							Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
+							Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
+							Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
+							Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
+							Is removal just messed up?
+							*Later*: Other things were messed up, so I'm not sure this still is.
+						*/
+					}
+				}
+
+				player.controller.zoneIn(player, enterZone)
+
+				let enterFwobs :FastWob[] = []
+				if(playerIsSelf) {
+					for(let enterZoneOf3 of addedZones) {
+						const newEnterFwobs = enterZoneOf3.getFastwobsBasedOnLocations() 
+						log.info('enter wobs to remove', enterZoneOf3.id, newEnterFwobs.length)//JSON.stringify(enterFwobs))
+						for(const fwob of newEnterFwobs) { // First remove existing far tree graphics
+							enterZoneOf3.removeWobGraphic(fwob, Wob.FarwobName) 
+						}
+						enterFwobs.push(...newEnterFwobs)
+					}
+
+					for(let exitZoneOf3 of removedZones) {
+						log.info('exit wobs to add', exitZoneOf3.id, exitFwobs.length)//JSON.stringify(exitFwobs))
+						await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
+
+					}
+					for(let enterZoneOf3 of addedZones) {
+						log.info('enter wobs to add', enterZoneOf3.id, enterFwobs.length)//JSON.stringify(enterFwobs))
+						await Wob.LoadInstancedGraphics(enterFwobs, context.babs, false) // Then add real ones
+					}
+				}
 
 				break
 			}
@@ -454,15 +526,15 @@ export class SocketSys {
 				Currently we are:
 					setting zone stuff like applyLocationsToGrid
 					...then also...
-					generating a bunch of FastWob{} and sending them to ArriveMany(), where graphics get created.
+					generating a bunch of FastWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
 				Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
-				So the purpose of ArriveMany is to load the graphics, pretty much.
+				So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
 				*/
 				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
 				// if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
 				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 
-				await Wob.ArriveMany(fastWobs, context.babs, wobsupdate.shownames)
+				await Wob.LoadInstancedGraphics(fastWobs, context.babs, wobsupdate.shownames)
 				break
 			}
 			case 'contains': {
@@ -479,7 +551,7 @@ export class SocketSys {
 				}
 					
 				if(data.id === context.babs.idSelf) { // Is your own inventory
-					await Wob.ArriveMany(data.wobs, context.babs, false)
+					await Wob.LoadInstancedGraphics(data.wobs, context.babs, false)
 				}
 				break
 			}
@@ -549,10 +621,12 @@ export class SocketSys {
 
 				const fetime = data as SendFeTime['fetime']
 
+				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
 				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
 				// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
-				context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip daytime&nighttime
-				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
+				context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
+				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip daytime&nighttime
+				
 
 				break
 			}

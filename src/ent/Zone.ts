@@ -13,6 +13,9 @@ import * as Utils from '@/Utils'
 
 
 export class Zone extends SharedZone {
+
+	static loadedZones :Zone[] = []
+
 	constructor(
 		public babs :Babs,
 		public id :number,
@@ -35,15 +38,37 @@ export class Zone extends SharedZone {
 	ground :Mesh // ground 3d Mesh
 
 	getWob(x :number, z :number) :Wob|null { // Mainly to include babs reference
-		const wob = super.getWob(x, z)
-		if(!wob) return null
-		return new Wob(this.babs, this.id, wob.x, wob.z, wob.r, new Blueprint(wob.blueprint_id, wob.locid, wob.name, wob.glb))
+		const fwob = super.getWob(x, z)
+		if(!fwob) return null
+		return new Wob(this.babs, this.id, fwob.x, fwob.z, fwob.r, new Blueprint(fwob.blueprint_id, fwob.locid, fwob.name, fwob.glb))
 	}
 
-	override removeWobGraphic(x :number, z :number, blueprint_id :string) {
-		const existingWob = this.getWob(x, z)
+	getFastWob(x :number, z :number) :FastWob|null { // Should refactor this since super.gotWob returns a fastwob and that naming is confusing.
+		return super.getWob(x, z)
+	}
+
+	override removeWobGraphicAt(x :number, z :number) {
+		const existingWob = this.getFastWob(x, z)
+		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
+		return this.removeWobGraphic(existingWob)
+
+	}
+	removeWobGraphic(existingWob :FastWob, overrideNameAndBlueprint? :string) {
+		const originalName = existingWob.name
+		const originalBlueprintId = existingWob.blueprint_id
+		if(overrideNameAndBlueprint) {
+			existingWob.name = overrideNameAndBlueprint
+			existingWob.blueprint_id = overrideNameAndBlueprint
+		} // These get un-mutated below
+
+		if(!existingWob.blueprint_id) {
+			console.warn('existingWob does not have a blueprint_id:', existingWob)
+		}
 		if(existingWob) {
-			const instanced = Wob.InstancedMeshes.get(blueprint_id)
+			const instanced = Wob.InstancedMeshes.get(existingWob.blueprint_id)
+			if(!instanced) {
+				console.warn('no matching instanced to:', existingWob.blueprint_id)
+			}
 			const zone = this.babs.ents.get(existingWob.idzone) as Zone
 			const iindex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
 
@@ -56,21 +81,48 @@ export class Zone extends SharedZone {
 					&& (fc.idEnt as WobId).z === existingWob.id().z
 					&& (fc.idEnt as WobId).blueprint_id === existingWob.id().blueprint_id
 			})
-			log.info('flame to remove', flame)
 			if(flame) {
+				const oldlen = Flame.wantsLight.length
+				// log('flame to remove', flame, Flame.wantsLight.length)
+				Flame.wantsLight = Flame.wantsLight.filter(f => {
+					// console.log('fl', f.uuid, flame.fire.uuid)
+					return f.uuid !== flame.fire.uuid
+				})
 				this.babs.group.remove(flame.fire)
+
+				flame.fire.geometry.dispose()
+				flame.fire.visible = false
+				if(Array.isArray(flame.fire.material)) {
+					flame.fire.material[0].dispose()
+					flame.fire.material[0].visible = false
+				}
+				else {
+					flame.fire.material.dispose()
+					flame.fire.material.visible = false
+				}
+				
+				this.babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
 			}
 
 			// Remove one by swapping the last item into this place, then decrease instanced count by 1
-			let swap :Matrix4 = new Matrix4()
-			instanced.getMatrixAt(instanced.count -1, swap)
-			instanced.setMatrixAt(iindex, swap)
+			let matrixLastItem :Matrix4 = new Matrix4()
+			instanced.getMatrixAt(instanced.count -1, matrixLastItem)
+			instanced.setMatrixAt(iindex, matrixLastItem)
 			instanced.count = instanced.count -1
 			zone.coordToInstanceIndex[existingWob.x +','+ existingWob.z] = null
+
+			// Problem: What if iindex IS the last item?  (Hmm maybe ok.)  
+			// Also, don't know if this handles shrink+growth properly?
 
 			instanced.instanceMatrix.needsUpdate = true
 
 
+		}
+
+		// Don't mutate these
+		if(overrideNameAndBlueprint) {
+			existingWob.name = originalName
+			existingWob.blueprint_id = originalBlueprintId
 		}
 	}
 
@@ -210,6 +262,25 @@ export class Zone extends SharedZone {
 		// log('intersect', result)
 
 		return result
+	}
+
+
+	getZonesAround(includeThisZone :boolean = true) {
+		const zonesAround = Zone.loadedZones.filter(zone => {
+			return (includeThisZone && zone.x==this.x && zone.z==this.z)
+				// Clockwise starting at 12 (ie forward ie positivex):
+				|| zone.x==this.x +1 && zone.z==this.z +0
+				|| zone.x==this.x +1 && zone.z==this.z +1
+				|| zone.x==this.x +0 && zone.z==this.z +1
+				|| zone.x==this.x -1 && zone.z==this.z +1
+				|| zone.x==this.x -1 && zone.z==this.z +0
+				|| zone.x==this.x -1 && zone.z==this.z -1
+				|| zone.x==this.x -0 && zone.z==this.z -1
+				|| zone.x==this.x +1 && zone.z==this.z -1
+
+		})
+		// log('zonesAround', Zone.loadedZones.length, this.x, ',', this.z, ': ', zonesAround.map(z=>`${z.x},${z.z}`))
+		return zonesAround
 	}
 
 

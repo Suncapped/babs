@@ -6,6 +6,8 @@ import { log } from '@/Utils'
 import { Ent } from './Ent'
 import { EventSys } from '@/sys/EventSys'
 import { Object3D, Scene } from 'three'
+import { Babs } from '@/Babs'
+import type { PlayerArrive } from '@/shared/consts'
 
 // Player Character
 export class Player extends Ent {
@@ -17,7 +19,7 @@ export class Player extends Ent {
 	animation
 
 	// Properties:
-	self
+	self :boolean
 	idzip
 	char
 	
@@ -30,7 +32,7 @@ export class Player extends Ent {
 	constructor(id, babs) {
 		super(id, babs)
 	}
-	static async Arrive(arrival, bSelf, babs) {
+	static async Arrive(arrival :PlayerArrive, bSelf :boolean, babs :Babs) {
 
 		const plr = new Player(arrival.id, babs)
 		plr.babs = babs
