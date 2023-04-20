@@ -30,6 +30,7 @@ export class FeInstancedMesh extends InstancedMesh {
 	boundingSize = new Vector3()
 	lift = 0
 	sink = 0
+	instanceIndexToWob = new Map<number, Wob>
 
 	init(babs :Babs) {
 		this.babs = babs
@@ -259,7 +260,11 @@ export class Wob extends FastWob {
 		// console.timeLog('timing')
 		// Create InstancedMeshes from loaded gltfs
 		// const countMax = 10 // How large the instancdedmesh starts out
-		const instancedExpansionAdd = 10 // How much larger the instancedmesh will get, eg +10
+
+		const instancedExpansionAdd = 0 // How much larger the instancedmesh will get, eg +10 
+		// ^ Is now set to zero (do nothing) because it's buggy thus: /clear zone, refresh, /gen 1, exit zone; items disappear.
+		// ^ But only when zonesAround() is narrowed to one.  :S  Anyway, simpler without it.
+
 		for(const [instancedMeshName, gltf] of Wob.LoadedGltfs) {
 			let instanced = Wob.InstancedMeshes.get(instancedMeshName)
 			let newWobsCount = nameCounts.get(instancedMeshName)
@@ -336,7 +341,7 @@ export class Wob extends FastWob {
 				instanced.position.setX(babs.worldSys.shiftiness.x)
 				instanced.position.setZ(babs.worldSys.shiftiness.z)
 
-				instanced.geometry.center() 
+				instanced.geometry.center()
 				// ^ Fixes offset pivot point
 				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 
@@ -382,6 +387,8 @@ export class Wob extends FastWob {
 	
 				newInstance.position.x = instanced.position.x
 				newInstance.position.z = instanced.position.z
+
+				newInstance.instanceIndexToWob = new Map(instanced.instanceIndexToWob)
 
 				babs.group.remove(instanced)
 				instanced.dispose()
@@ -452,22 +459,15 @@ export class Wob extends FastWob {
 				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
 				const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
 				const wobIsSmall = instancedFromData.boundingSize.y < Wob.FarwobShownHeightMinimum
-				// const wobIsFarWob = wob.name === Wob.FarwobName
 				if(wobIsFar && wobIsSmall) {
-					// console.log(wob.name)
-					// engPositionVector.setY(engPositionVector.y -Wob.FarwobHiddenBuryDepth) // Bury it!
-
-					// optimization: What if I did another pass here that was like...reduce nameCount if the loaded boundingSize.y is small and it's in a far zone?
-					// Or...what if I didn't count anything in far zones until 
 					// Third idea...let it allocate the instance memory, whatever.  But skip loading them in afterward.
 					// instanced.count = instanced.count -1
 					// 	^ Nice!  Third idea doubled framerate
 				}
-				else { // Keep it
+				else 
+				{ // Keep it
 					yardCoord = YardCoord.Create(wob)
 					const engCoordCentered = yardCoord.toEngineCoordCentered()
-					// engPositionVector = zone.rayHeightAt(yardCoord) // todo could precalc this per zone, or use elevations?
-					// engPositionVector = new Vector3(engCoordCentered.x, zone.yardHeightAt(wob.x, wob.z, zone), engCoordCentered.z)
 					engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
 
 					// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
@@ -476,17 +476,19 @@ export class Wob extends FastWob {
 					engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
 
 					let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
-					const indexDoesNotExist = !existingIindex && existingIindex !== 0
+					const indexDoesNotExist = existingIindex === null || existingIindex === undefined
 					if(indexDoesNotExist) {
 						existingIindex = instanced.count
 						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
+						// console.log('Wob.ts setting '+wob.blueprint_id+' coordToInstanceIndex['+wob.x +','+ wob.z+'] = '+instanced.count+'(+-) ', instanced.count +1, instanced.count -1)
 						instanced.count = instanced.count +1
 					}
 
-
-					// log('KEEPING', instanced.name, engPositionVector.y, instanced.boundingSize.y)
 					matrix.setPosition(engPositionVector)
 					instanced.setMatrixAt(existingIindex, matrix)
+
+					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
+					instanced.instanceIndexToWob.set(existingIindex, wob)
 		
 					instanced.instanceMatrix.needsUpdate = true
 

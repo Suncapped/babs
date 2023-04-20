@@ -273,7 +273,7 @@ export class IdleState extends State {
 
 	enter(prevState) {
 		const idleAction = this._parent._proxy._animations['idle'].action
-		log.info('idleenter', prevState, idleAction)
+		// log.info('idleenter', prevState, idleAction)
 
 
 		const mixer = idleAction.getMixer()

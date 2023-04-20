@@ -113,7 +113,6 @@
 	</div>
 
 	<div id="info" hidden="{!$debugMode}">
-		Move: Hold right mouse, two finger press, or touchpad swipe.<br />
 		Built build_time (build_info).<br />
 		<span id="log"></span>
 	</div>

@@ -345,7 +345,7 @@ export class UiSys {
 				this.oldPos = playerPos.clone()
 			}
 		}
-		const newLogText = `${Math.floor(this.oldPos.x/4)}.${Math.floor(this.oldPos.y)}.${Math.floor(this.oldPos.z/4)} / d${this.babs.renderSys.renderer.info.render.calls} t${this.babs.renderSys.renderer.info.render.triangles} g${this.babs.renderSys.renderer.info.memory.geometries} x${this.babs.renderSys.renderer.info.memory.textures} p${this.babs.renderSys.renderer.info.programs.length}`
+		const newLogText = `zone: ${this.babs.ents.get(this.babs.idSelf)?.controller?.target.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length}`
 		if(this.logText !== newLogText) {
 			this.logText = newLogText
 			window.document.getElementById('log').innerText = this.logText

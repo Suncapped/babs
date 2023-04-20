@@ -458,8 +458,9 @@ export class SocketSys {
 								zoneFwob.name = Wob.FarwobName
 								farBigTreesToAdd.push(zoneFwob)
 							}
-
+							
 						}
+						removedZone.coordToInstanceIndex = {}
 						// exitFwobs.push(...newExitFwobs)
 						// log('exit wobs to add', exitZone.id, exitFwobs.length)
 						// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
@@ -480,7 +481,7 @@ export class SocketSys {
 				let detailedWobsToAdd :FastWob[] = []
 				if(playerIsSelf) {
 					for(let addedZone of addedZones) {
-						log.info('entered zone: far trees to remove', addedZone.id)
+						log.info('entered zone: far trees to remove.  id:', addedZone.id)
 						
 						const zoneFwobs = addedZone.getFastwobsBasedOnLocations()
 						detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
@@ -491,10 +492,12 @@ export class SocketSys {
 							const wobIsFar = true // By definition it was far
 							const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
 							if(wobIsFar && !wobIsSmall) {
-								addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName)
+								addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName) // todo
 							}
 						}
+						addedZone.coordToInstanceIndex = {}
 					}
+					
 
 					log.info('exited zones: detailed wobs to add', farBigTreesToAdd.length)
 					await Wob.LoadInstancedGraphics(farBigTreesToAdd, context.babs, false) // Then add far tree ones
@@ -540,6 +543,7 @@ export class SocketSys {
 				*/
 				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
 				// if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
+				log('wobsupdate locationdata ', wobsupdate.locationData.length)
 				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 
 				await Wob.LoadInstancedGraphics(fastWobs, context.babs, wobsupdate.shownames)

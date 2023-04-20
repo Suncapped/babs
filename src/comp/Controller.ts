@@ -504,10 +504,8 @@ export class Controller extends Comp {
 	}
 
 	zoneIn(player :Player, zone :Zone) {
-		log.info('zonein', player.id, zone.id, this.babs.worldSys.currentGround, zone.ground)
+		log.info('zonein player zone', player.id, zone.id, )
 		log.info('this.gDestination', this.gDestination)
-
-		log.info('zonein', zone)
 
 		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: zone})
 

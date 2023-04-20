@@ -1246,7 +1246,7 @@ export class InputSys {
 			&& !this.playerSelf.controller.selfZoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
 		)) {
 			
-			log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
+			// log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
 
 			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.playerSelf.controller.idealTargetQuaternion)
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
@@ -1266,7 +1266,7 @@ export class InputSys {
 			let gCurrentPos = this.playerSelf.controller.target.position.clone()
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
-			log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
+			// log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
 
 			gCurrentPos = gCurrentPosFloored
 			gCurrentPos.setY(0) // Y needs a lot of work in this area...(8 months later: or does it? :D)
@@ -1275,7 +1275,7 @@ export class InputSys {
 			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 
 			// Send to controller
-			log.info('InputSys: call controller.setDestination()', dest)
+			// log.info('InputSys: call controller.setDestination()', dest)
 			this.playerSelf.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
 
 			// Let's show a square in front of the player?  Their destination target square :)

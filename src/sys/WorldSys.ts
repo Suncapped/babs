@@ -760,7 +760,7 @@ export class WorldSys {
 	landcoverData
 	waterInstancedMesh
 	waterInstancedRands = []
-	async genElevation(urlFiles, geometry, zone) {
+	async genElevation(urlFiles :string, geometry :PlaneGeometry, zone :Zone) {
 		// Save thigns onto zone for later
 		zone.geometry = geometry
 
@@ -824,7 +824,7 @@ export class WorldSys {
 		}
 
 	}
-	async genLandcover(urlFiles, geometry, zone) {
+	async genLandcover(urlFiles :string, geometry :PlaneGeometry, zone :Zone) {
 		// Get landcover data
         
 		// Vertex colors on BufferGeometry using a non-indexed array
@@ -990,7 +990,7 @@ export class WorldSys {
 		})
 		this.shiftiness.add(shiftVector)
 
-		log.info('shifted', shiftingLog)
+		// log.info('shifted', shiftingLog)
 	}
 
 }

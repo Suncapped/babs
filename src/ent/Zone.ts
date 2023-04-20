@@ -3,10 +3,10 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, FastWob, SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
-import { Matrix4, Mesh, Raycaster, Triangle, Vector3 } from 'three'
+import { InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
-import { Wob } from './Wob'
+import { FeInstancedMesh, Wob } from './Wob'
 import { Flame } from '@/comp/Flame'
 import type { WobId } from '@/shared/consts'
 import * as Utils from '@/Utils'
@@ -34,7 +34,7 @@ export class Zone extends SharedZone {
 	landcoverData // Injected by SocketSys
 	locationData // Injected by SocketSys
 
-	geometry
+	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
 
 	getWob(x :number, z :number) :Wob|null { // Mainly to include babs reference
@@ -53,32 +53,32 @@ export class Zone extends SharedZone {
 		return this.removeWobGraphic(existingWob)
 
 	}
-	removeWobGraphic(existingWob :FastWob, overrideNameAndBlueprint? :string) {
-		const originalName = existingWob.name
-		const originalBlueprintId = existingWob.blueprint_id
+	removeWobGraphic(deletingWob :FastWob, overrideNameAndBlueprint :string|boolean = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
+		const originalName = deletingWob.name
+		const originalBlueprintId = deletingWob.blueprint_id
 		if(overrideNameAndBlueprint) {
-			existingWob.name = overrideNameAndBlueprint
-			existingWob.blueprint_id = overrideNameAndBlueprint
+			deletingWob.name = overrideNameAndBlueprint
+			deletingWob.blueprint_id = overrideNameAndBlueprint
 		} // These get un-mutated below
 
-		if(!existingWob.blueprint_id) {
-			console.warn('existingWob does not have a blueprint_id:', existingWob)
+		if(!deletingWob.blueprint_id) {
+			console.warn('deletingWob does not have a blueprint_id:', deletingWob)
 		}
 
-		const instanced = Wob.InstancedMeshes.get(existingWob.blueprint_id)
-		if(!instanced) {
-			console.warn('no matching instanced to:', existingWob.blueprint_id)
+		const instancedMesh = Wob.InstancedMeshes.get(deletingWob.blueprint_id)
+		if(!instancedMesh) {
+			console.warn('no matching instanced to:', deletingWob.blueprint_id)
 		}
-		const zone = this.babs.ents.get(existingWob.idzone) as Zone
+		const deletingWobZone = this.babs.ents.get(deletingWob.idzone) as Zone
 
 		// Remove attachments
 		const flameComps = this.babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		// log('flameComps', flameComps, this.babs.compcats)
-		const flame = flameComps.find(fc => {
-			return (fc.idEnt as WobId).idzone === existingWob.id().idzone
-				&& (fc.idEnt as WobId).x === existingWob.id().x
-				&& (fc.idEnt as WobId).z === existingWob.id().z
-				&& (fc.idEnt as WobId).blueprint_id === existingWob.id().blueprint_id
+		const flame = flameComps?.find(fc => {
+			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
+				&& (fc.idEnt as WobId).x === deletingWob.id().x
+				&& (fc.idEnt as WobId).z === deletingWob.id().z
+				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
 		})
 		if(flame) {
 			const oldlen = Flame.wantsLight.length
@@ -103,36 +103,78 @@ export class Zone extends SharedZone {
 			this.babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
 		}
 
-		// Remove one by swapping the last item into this place, then decrease instanced count by 1
-		const oldIndex = zone.coordToInstanceIndex[existingWob.x +','+existingWob.z]
-		let matrixLastItem :Matrix4 = new Matrix4()
-		instanced.getMatrixAt(instanced.count -1, matrixLastItem)
-		instanced.setMatrixAt(oldIndex, matrixLastItem)
 
-		// Problem: What if iindex IS the last item?  (Hmm maybe ok.) 
+		
+		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.
+		// Source is the last item in the instance index.
+		const sourceIndex = instancedMesh.count -1
+		// Target is the item being deleted.
+		const targetIndex = deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z]
 
-		// Try as if: zone.coordToInstanceIndex[movedIndex.x +','+ movedIndex.z] = oldIndex
-		// const posOfMovedIndex = new Vector3().setFromMatrixPosition(matrixLastItem)
-		// console.log('posOfMovedIndex', posOfMovedIndex)
-		// const localPos = posOfMovedIndex.sub(instanced.position)
-		// const localPos = instanced.worldToLocal(posOfMovedIndex)
-		// console.log('localPos', localPos)
-		for(let key in zone.coordToInstanceIndex) { // todo optimize, this is slow.  I'm not even certain it's necessary.
-			if(zone.coordToInstanceIndex[key] === instanced.count -1) {
-				zone.coordToInstanceIndex[key] = oldIndex
-				break
-			}
+		// console.log('--------- deletingWobXZ, sourceIndex, targetIndex', deletingWob.name, 'at', deletingWobZone.id+':['+deletingWob.x+','+deletingWob.z+']', 'will', sourceIndex+' ==> '+ targetIndex, deletingWobZone.coordToInstanceIndex)
+
+		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, instancedMesh, 'delete')
+		instancedMesh.count = instancedMesh.count -1
+
+		instancedMesh.instanceMatrix.needsUpdate = true 
+
+		if(deletingWob.blueprint_id !== instancedMesh.name) {
+			console.warn('deletingWob.blueprint_id mismatch with instancedMesh.name', deletingWob.blueprint_id, instancedMesh.name)
 		}
-		instanced.count = instanced.count -1
-		// Also, don't know if this handles shrink+growth properly?
-		zone.coordToInstanceIndex[existingWob.x +','+ existingWob.z] = null
-		instanced.instanceMatrix.needsUpdate = true 
+		Wob.InstancedMeshes.set(deletingWob.blueprint_id, instancedMesh)
 
 		// Don't mutate these
 		if(overrideNameAndBlueprint) {
-			existingWob.name = originalName
-			existingWob.blueprint_id = originalBlueprintId
+			deletingWob.name = originalName
+			deletingWob.blueprint_id = originalBlueprintId
 		}
+	}
+
+	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, instancedMesh :FeInstancedMesh, doDeleteSource :'delete' = null) {
+		const sourceMatrix = new Matrix4(); instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
+		const targetMatrix = new Matrix4(); instancedMesh.getMatrixAt(targetIndex, targetMatrix)
+
+		const showSwapLogs = false
+
+		// Get source and target wobs from instanceIndexToWob
+		const sourceWobAnyZone = instancedMesh.instanceIndexToWob.get(sourceIndex)
+		const targetWobAnyZone = instancedMesh.instanceIndexToWob.get(targetIndex)
+		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${sourceIndex} result: ${sourceWobAnyZone.name}`)
+		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${targetIndex} result: ${targetWobAnyZone.name}`)
+
+		// Copy into target from source matrix, and vice versa
+		instancedMesh.setMatrixAt(sourceIndex, targetMatrix)
+		instancedMesh.setMatrixAt(targetIndex, sourceMatrix)
+
+		// Update coordToInstanceIndex for the source and target wobs
+		sourceWobAnyZone.zone.coordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
+		targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = sourceIndex
+		if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${sourceWobAnyZone.zone.id}:[${sourceWobAnyZone.x},${sourceWobAnyZone.z}] = ${targetIndex}`)
+		if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${targetWobAnyZone.zone.id}:[${targetWobAnyZone.x},${targetWobAnyZone.z}] = ${sourceIndex}`)
+
+		// Update instanceIndexToWob
+		instancedMesh.instanceIndexToWob.set(sourceIndex, targetWobAnyZone)
+		instancedMesh.instanceIndexToWob.set(targetIndex, sourceWobAnyZone)		
+		if(showSwapLogs) console.log(`instancedMesh.instanceIndexToWob.set: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}'.set(${sourceIndex}, `, targetWobAnyZone, ')')
+		if(showSwapLogs) console.log(`instancedMesh.instanceIndexToWob.set: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}'.set(${targetIndex}, `, sourceWobAnyZone, ')')
+
+		if(doDeleteSource) {
+			instancedMesh.instanceIndexToWob.delete(sourceIndex)
+			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' delete ${sourceIndex} `)
+
+			// delete sourceWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z]
+			targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = null
+			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' for ${targetWobAnyZone.name} set coordToInstanceIndex[${targetWobAnyZone.x},${targetWobAnyZone.z}] = null`)
+
+			// // "Remove" source matrix by reducing instanced count
+			// instancedMesh.count = instancedMesh.count -1
+			// instancedMesh.instanceMatrix.needsUpdate = true 
+			// Wob.InstancedMeshes.set(instancedMesh.name, instancedMesh)
+		}
+
+		instancedMesh.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone)
+		instancedMesh.babs.ents.set(targetWobAnyZone.zone.id, targetWobAnyZone.zone)
+
 	}
 
 	coordToInstanceIndex :Record<string, number> = {}
@@ -274,18 +316,18 @@ export class Zone extends SharedZone {
 	}
 
 
-	getZonesAround(includeThisZone :boolean = true) {
+	getZonesAround(includeThisZone :'includeThisZone' = 'includeThisZone') {
 		const zonesAround = Zone.loadedZones.filter(zone => {
 			return (includeThisZone && zone.x==this.x && zone.z==this.z)
-				// Clockwise starting at 12 (ie forward ie positivex):
-				|| zone.x==this.x +1 && zone.z==this.z +0
-				|| zone.x==this.x +1 && zone.z==this.z +1
-				|| zone.x==this.x +0 && zone.z==this.z +1
-				|| zone.x==this.x -1 && zone.z==this.z +1
-				|| zone.x==this.x -1 && zone.z==this.z +0
-				|| zone.x==this.x -1 && zone.z==this.z -1
-				|| zone.x==this.x -0 && zone.z==this.z -1
-				|| zone.x==this.x +1 && zone.z==this.z -1
+			// Clockwise starting at 12 (ie forward ie positivex):
+			|| zone.x==this.x +1 && zone.z==this.z +0
+			|| zone.x==this.x +1 && zone.z==this.z +1
+			|| zone.x==this.x +0 && zone.z==this.z +1
+			|| zone.x==this.x -1 && zone.z==this.z +1
+			|| zone.x==this.x -1 && zone.z==this.z +0
+			|| zone.x==this.x -1 && zone.z==this.z -1
+			|| zone.x==this.x -0 && zone.z==this.z -1
+			|| zone.x==this.x +1 && zone.z==this.z -1
 
 		})
 		// log('zonesAround', Zone.loadedZones.length, this.x, ',', this.z, ': ', zonesAround.map(z=>`${z.x},${z.z}`))
