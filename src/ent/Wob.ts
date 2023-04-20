@@ -294,6 +294,7 @@ export class Wob extends FastWob {
 
 				const countMax = newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
 				instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
+				instanced.frustumCulled = false
 				instanced.count = 0
 				instanced.countMax = countMax
 				instanced.name = instancedMeshName
@@ -356,6 +357,7 @@ export class Wob extends FastWob {
 				const newMax = instanced.count +newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
 
 				const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, newMax)
+				newInstance.frustumCulled = instanced.frustumCulled
 				newInstance.count = instanced.count
 				newInstance.countMax = newMax
 				newInstance.name = instancedMeshName
