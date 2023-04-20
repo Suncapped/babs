@@ -3,7 +3,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, FastWob, SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
-import { InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
+import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { FeInstancedMesh, Wob } from './Wob'
@@ -53,7 +53,7 @@ export class Zone extends SharedZone {
 		return this.removeWobGraphic(existingWob)
 
 	}
-	removeWobGraphic(deletingWob :FastWob, overrideNameAndBlueprint :string|boolean = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
+	removeWobGraphic(deletingWob :FastWob, overrideNameAndBlueprint :string|false = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
 		const originalName = deletingWob.name
 		const originalBlueprintId = deletingWob.blueprint_id
 		if(overrideNameAndBlueprint) {
@@ -115,13 +115,11 @@ export class Zone extends SharedZone {
 
 		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, instancedMesh, 'delete')
 		instancedMesh.count = instancedMesh.count -1
-
 		instancedMesh.instanceMatrix.needsUpdate = true 
-
 		if(deletingWob.blueprint_id !== instancedMesh.name) {
 			console.warn('deletingWob.blueprint_id mismatch with instancedMesh.name', deletingWob.blueprint_id, instancedMesh.name)
 		}
-		Wob.InstancedMeshes.set(deletingWob.blueprint_id, instancedMesh)
+		// Wob.InstancedMeshes.set(deletingWob.blueprint_id, instancedMesh)
 
 		// Don't mutate these
 		if(overrideNameAndBlueprint) {
@@ -167,9 +165,9 @@ export class Zone extends SharedZone {
 			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' for ${targetWobAnyZone.name} set coordToInstanceIndex[${targetWobAnyZone.x},${targetWobAnyZone.z}] = null`)
 
 			// // "Remove" source matrix by reducing instanced count
+			// // Now done outside of the swap function
 			// instancedMesh.count = instancedMesh.count -1
 			// instancedMesh.instanceMatrix.needsUpdate = true 
-			// Wob.InstancedMeshes.set(instancedMesh.name, instancedMesh)
 		}
 
 		instancedMesh.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone)
@@ -196,7 +194,7 @@ export class Zone extends SharedZone {
 	engineHeightAt(coord :YardCoord, doCenter = true) { // fasttodo // Height of (corner or center) in engine
 		// Fetch from actual ground mesh vertices!
 
-		const verticesRef = coord.zone.geometry.getAttribute('position').array
+		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
 		const nCoordsComponents = 3 // x,y,z
 
 		const ten = 10
