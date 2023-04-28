@@ -19,8 +19,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
-import type { WobId } from '@/shared/consts'
-import { FastWob } from '@/shared/SharedZone'
+import type { WobId, SharedWob } from '@/shared/SharedWob'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -1438,8 +1437,8 @@ export class InputSys {
 	}
 
 	isAskingTarget = false
-	askTargetSourceWob :FastWob
-	askTarget(fwob :FastWob = null) {
+	askTargetSourceWob :SharedWob
+	askTarget(fwob :SharedWob = null) {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`

@@ -1,6 +1,5 @@
 
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, FastWob, SharedZone } from '@/shared/SharedZone'
 import { WorldSys } from '@/sys/WorldSys'
 import { log } from '@/Utils'
 import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
@@ -8,7 +7,8 @@ import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { FeInstancedMesh, Wob } from './Wob'
 import { Flame } from '@/comp/Flame'
-import type { WobId } from '@/shared/consts'
+import { SharedWob, Blueprint } from '@/shared/SharedWob'
+import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 
 
@@ -43,17 +43,17 @@ export class Zone extends SharedZone {
 		return new Wob(this.babs, this.id, fwob.x, fwob.z, fwob.r, new Blueprint(fwob.blueprint_id, fwob.locid, fwob.name, fwob.glb))
 	}
 
-	getFastWob(x :number, z :number) :FastWob|null { // Should refactor this since super.getWob returns a fastwob and that naming is confusing.
+	getSharedWob(x :number, z :number) :SharedWob|null { // Should refactor this since super.getWob returns a sharedwob and that naming is confusing.
 		return super.getWob(x, z)
 	}
 
 	override removeWobGraphicAt(x :number, z :number) {
-		const existingWob = this.getFastWob(x, z)
+		const existingWob = this.getSharedWob(x, z)
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
 		return this.removeWobGraphic(existingWob)
 
 	}
-	removeWobGraphic(deletingWob :FastWob, overrideNameAndBlueprint :string|false = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
+	removeWobGraphic(deletingWob :SharedWob, overrideNameAndBlueprint :string|false = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
 		const originalName = deletingWob.name
 		const originalBlueprintId = deletingWob.blueprint_id
 		if(overrideNameAndBlueprint) {

@@ -14,8 +14,7 @@ import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Wob } from '@/ent/Wob'
-import type { FastWob } from '@/shared/SharedZone'
-import type { WobId } from '@/shared/consts'
+import type { WobId, SharedWob } from '@/shared/SharedWob'
 
 
 let FireShader = {
@@ -357,7 +356,7 @@ export class Flame extends Comp {
 	}
 
 
-	static async Delete(deletingWob :FastWob, babs :Babs) {
+	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		// log('flameComps', flameComps, this.babs.compcats)
 		const flame = flameComps?.find(fc => {

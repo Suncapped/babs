@@ -1,4 +1,5 @@
-import type { WobId } from './consts'
+import type { WobId } from './SharedWob'
+import { Blueprint, SharedWob, Rotation } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
 /*
@@ -50,38 +51,6 @@ const z = locations[3] // 8 bits
 console.log(id, r, x, z)
 */
 
-export class Blueprint {
-	constructor(
-		public blueprint_id :string,
-		public locid :number,
-		public name? :string,
-		public glb? :string,
-	){
-		if(!name) this.name = blueprint_id // Default name to bpid
-	}
-}
-
-export type Rotation = UintRange<0, 4>
-export class FastWob extends Blueprint {
-	constructor(
-		public idzone :number,
-		public x :number,
-		public z :number,
-		public r :Rotation,
-		bp :Blueprint,
-	){
-		super(bp.blueprint_id, bp.locid, bp.name, bp.glb)
-	}
-	id() :WobId {
-		return {
-			idzone: this.idzone,
-			x: this.x,
-			z: this.z,
-			blueprint_id: this.blueprint_id,
-		}
-	}
-}
-
 export class SharedZone {	
 	constructor(
 		public id :number,
@@ -99,7 +68,7 @@ export class SharedZone {
 	locidToBlueprint :Record<number, Blueprint> = []
 	bpidToLocid :Record<string, number> = {}
 
-	getWob(x :number, z :number) :FastWob|null {
+	getWob(x :number, z :number) :SharedWob|null {
 		const idAndRot = this.wobIdRotGrid[x +(z *250)]
 		const locid = idAndRot >>> 4
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
@@ -115,7 +84,7 @@ export class SharedZone {
 			console.warn('No blueprint found @1! For:', locid)
 			return null
 		}
-		return new FastWob(this.id, x, z, r, blueprint)
+		return new SharedWob(this.id, x, z, r, blueprint)
 	}
 	setWob(x :number, z :number, blueprint_id :string|0, rotation :Rotation = undefined) {
 		const isLocidBeingRemoved = !blueprint_id
@@ -143,7 +112,7 @@ export class SharedZone {
 		}
 		else { // Unset spot && we are setting
 		}
-		wob = new FastWob(this.id, x, z, 0, blueprint)
+		wob = new SharedWob(this.id, x, z, 0, blueprint)
 
 		wob.blueprint_id = blueprint_id
 		wob.locid = this.bpidToLocid[blueprint_id]
@@ -172,7 +141,7 @@ export class SharedZone {
 		// To be overridden
 	}
 
-	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false) :Array<FastWob> {
+	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false) :Array<SharedWob> {
 		if(!locations || !locations.length) {
 			// console.log('applyLocations: no locations!')
 			return [] // locations are not set for this zone (empty zone)
@@ -187,7 +156,7 @@ export class SharedZone {
 			const x = locations[i+2]
 			const z = locations[i+3]
 			const locid = locidrot >>> 4
-			// ^ Note, also used in 'getFastwobsBasedOnLocations'
+			// ^ Note, also used in 'getSharedwobsBasedOnLocations'
 
 			const oldIdAndRot = this.wobIdRotGrid[x +(z *250)]
 			const oldLocid = oldIdAndRot >>> 4
@@ -214,23 +183,23 @@ export class SharedZone {
 				}
 				this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
-					// Note, also used in 'getFastwobsBasedOnLocations':
+					// Note, also used in 'getSharedwobsBasedOnLocations':
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
 						console.warn('No blueprint found @5!', locid)
 						continue
 					}
-					wobs.push(new FastWob(this.id, x, z, r, bp))
+					wobs.push(new SharedWob(this.id, x, z, r, bp))
 				}
 			}
 
 		}
 		return wobs
 	}
-	getFastwobsBasedOnLocations() {
+	getSharedwobsBasedOnLocations() {
 		const locations = this.getLocationsFromGrid()
-		let fwobs :FastWob[] = []
+		let fwobs :SharedWob[] = []
 		for(let i=0; i<locations.length; i+=4){
 			const left = (locations[i+0] << 8)
 			const right = locations[i+1]
@@ -246,7 +215,7 @@ export class SharedZone {
 				console.warn('No blueprint found @5!', locid)
 				continue
 			}
-			fwobs.push(new FastWob(this.id, x, z, r, bp))
+			fwobs.push(new SharedWob(this.id, x, z, r, bp))
 		}
 		return fwobs
 	}

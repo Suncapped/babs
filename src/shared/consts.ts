@@ -1,4 +1,5 @@
 import * as Utils from '../Utils'
+import { WobId } from './SharedWob'
 
 export const NLCD = {
 	// Water
@@ -176,19 +177,6 @@ export interface Ui {
 }
 
 // Socket sendables
-
-export type WobId = {
-	idzone :number,
-	x :number,
-	z :number,
-	blueprint_id :string,
-}
-export function isWobId(item :any): item is WobId {
-	return (item as WobId).idzone !== undefined
-	&& (item as WobId).x !== undefined
-	&& (item as WobId).z !== undefined
-	&& (item as WobId).blueprint_id !== undefined
-}
 
 export type BlueprintList = Array<number|string>
 

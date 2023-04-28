@@ -13,7 +13,7 @@ import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, FastWob, type Rotation } from '@/shared/SharedZone'
+import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 
 type IconData = {image :string, pixels :Uint8Array}
@@ -50,7 +50,7 @@ export class FeInstancedMesh extends InstancedMesh {
 	}
 }
 
-export class Wob extends FastWob {
+export class Wob extends SharedWob {
 	constructor(
 		public babs :Babs,
 		public idzone :number,
@@ -198,7 +198,7 @@ export class Wob extends FastWob {
 
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
-	static async LoadInstancedGraphics(arrivalWobs :Array<FastWob>, babs :Babs, shownames :boolean) {
+	static async LoadInstancedGraphics(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
 		log.info('arrivalWobs', arrivalWobs.length)
 		// Load unique gltfs
@@ -440,7 +440,7 @@ export class Wob extends FastWob {
 
 				const instanced = Wob.InstancedMeshes.get(wob.name)
 				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
-				const wobFromData = zone.getFastWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
+				const wobFromData = zone.getSharedWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
 				const instancedFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
 				// console.log('wobFromData', wobFromData.name, instancedFromData.name, instanced.name, wob.name)
 

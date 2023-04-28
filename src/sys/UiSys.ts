@@ -263,7 +263,9 @@ export class UiSys {
 				'action': {
 					verb: 'craft',
 					noun: wob.id(),
-					data: opt,
+					data: {
+						craftName: opt,
+					},
 				}
 			})
 		}

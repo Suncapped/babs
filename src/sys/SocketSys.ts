@@ -16,8 +16,9 @@ import Crafting from '../ui/Crafting.svelte'
 import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { FastWob } from '@/shared/SharedZone'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendCreatures } from '@/shared/consts'
+import { SharedWob } from '@/shared/SharedWob'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget } from '@/shared/consts'
+import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
 
@@ -354,13 +355,13 @@ export class SocketSys {
 				// Create player entity
 				await Player.Arrive(load.self, true, context.babs)
 				
-				let fastWobs :Array<FastWob> = []
+				let sharedWobs :Array<SharedWob> = []
 				for(const zone of zones) {
 					zone.applyBlueprints(load.blueprints)
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					fastWobs.push(...fWobs)
+					sharedWobs.push(...fWobs)
 				}
-				await Wob.LoadInstancedGraphics(fastWobs, context.babs, false)
+				await Wob.LoadInstancedGraphics(sharedWobs, context.babs, false)
 				// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs.
 
 				context.send({
@@ -441,10 +442,10 @@ export class SocketSys {
 				// 1. Change exited zone to far tree wobs
 				// 2. Change entered zone to detailed wobs
 				
-				const farBigTreesToAdd :FastWob[] = []
+				const farBigTreesToAdd :SharedWob[] = []
 				if(playerIsSelf) {
 					for(const removedZone of removedZones) {
-						const removedFwobs = removedZone.getFastwobsBasedOnLocations()
+						const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
 						log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
 						for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
 							removedZone.removeWobGraphic(zoneFwob)
@@ -479,12 +480,12 @@ export class SocketSys {
 
 				player.controller.zoneIn(player, enterZone)
 
-				let detailedWobsToAdd :FastWob[] = []
+				let detailedWobsToAdd :SharedWob[] = []
 				if(playerIsSelf) {
 					for(let addedZone of addedZones) {
 						log.info('entered zone: far trees to remove.  id:', addedZone.id)
 						
-						const zoneFwobs = addedZone.getFastwobsBasedOnLocations()
+						const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
 						detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
 
 						// Now remove only fartrees; things that are far and big
@@ -538,16 +539,16 @@ export class SocketSys {
 				Currently we are:
 					setting zone stuff like applyLocationsToGrid
 					...then also...
-					generating a bunch of FastWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
+					generating a bunch of SharedWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
 				Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
 				So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
 				*/
 				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
 				// if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
 				log('wobsupdate locationdata ', wobsupdate.locationData.length)
-				const fastWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
+				const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 
-				await Wob.LoadInstancedGraphics(fastWobs, context.babs, wobsupdate.shownames)
+				await Wob.LoadInstancedGraphics(sharedWobs, context.babs, wobsupdate.shownames)
 				break
 			}
 			case 'contains': {
