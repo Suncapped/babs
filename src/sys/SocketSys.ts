@@ -661,6 +661,8 @@ export class SocketSys {
 				const zone = context.babs.ents.get(idzone) as Zone
 				const wob = zone.getWob(x, z)
 
+				// Must find diff between server creatures and client creatures
+
 				Flame.Create(wob, context.babs, 6, 4)
 				
 

@@ -328,13 +328,9 @@ export type SendFeTime = {
 	}
 }
 
-export type SendCreatures = {
-	creatures :any[],
-}
-
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
-	|SendFeTime|SendCreatures
+	|SendFeTime
 
 
 
