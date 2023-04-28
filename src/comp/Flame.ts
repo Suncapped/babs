@@ -14,6 +14,8 @@ import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Wob } from '@/ent/Wob'
+import type { FastWob } from '@/shared/SharedZone'
+import type { WobId } from '@/shared/consts'
 
 
 let FireShader = {
@@ -352,6 +354,40 @@ export class Flame extends Comp {
 		// babs.group.add( com.line )
 
 		return com
+	}
+
+
+	static async Delete(deletingWob :FastWob, babs :Babs) {
+		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
+		// log('flameComps', flameComps, this.babs.compcats)
+		const flame = flameComps?.find(fc => {
+			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
+				&& (fc.idEnt as WobId).x === deletingWob.id().x
+				&& (fc.idEnt as WobId).z === deletingWob.id().z
+				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
+		})
+		if(flame) {
+			const oldlen = Flame.wantsLight.length
+			// log('flame to remove', flame, Flame.wantsLight.length)
+			Flame.wantsLight = Flame.wantsLight.filter(f => {
+				// console.log('fl', f.uuid, flame.fire.uuid)
+				return f.uuid !== flame.fire.uuid
+			})
+			babs.group.remove(flame.fire)
+
+			flame.fire.geometry.dispose()
+			flame.fire.visible = false
+			if(Array.isArray(flame.fire.material)) {
+				flame.fire.material[0].dispose()
+				flame.fire.material[0].visible = false
+			}
+			else {
+				flame.fire.material.dispose()
+				flame.fire.material.visible = false
+			}
+			
+			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
+		}
 	}
 
 	update(dt) {

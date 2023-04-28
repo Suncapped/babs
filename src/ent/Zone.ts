@@ -43,7 +43,7 @@ export class Zone extends SharedZone {
 		return new Wob(this.babs, this.id, fwob.x, fwob.z, fwob.r, new Blueprint(fwob.blueprint_id, fwob.locid, fwob.name, fwob.glb))
 	}
 
-	getFastWob(x :number, z :number) :FastWob|null { // Should refactor this since super.gotWob returns a fastwob and that naming is confusing.
+	getFastWob(x :number, z :number) :FastWob|null { // Should refactor this since super.getWob returns a fastwob and that naming is confusing.
 		return super.getWob(x, z)
 	}
 
@@ -72,38 +72,7 @@ export class Zone extends SharedZone {
 		const deletingWobZone = this.babs.ents.get(deletingWob.idzone) as Zone
 
 		// Remove attachments
-		const flameComps = this.babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-		// log('flameComps', flameComps, this.babs.compcats)
-		const flame = flameComps?.find(fc => {
-			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
-				&& (fc.idEnt as WobId).x === deletingWob.id().x
-				&& (fc.idEnt as WobId).z === deletingWob.id().z
-				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
-		})
-		if(flame) {
-			const oldlen = Flame.wantsLight.length
-			// log('flame to remove', flame, Flame.wantsLight.length)
-			Flame.wantsLight = Flame.wantsLight.filter(f => {
-				// console.log('fl', f.uuid, flame.fire.uuid)
-				return f.uuid !== flame.fire.uuid
-			})
-			this.babs.group.remove(flame.fire)
-
-			flame.fire.geometry.dispose()
-			flame.fire.visible = false
-			if(Array.isArray(flame.fire.material)) {
-				flame.fire.material[0].dispose()
-				flame.fire.material[0].visible = false
-			}
-			else {
-				flame.fire.material.dispose()
-				flame.fire.material.visible = false
-			}
-			
-			this.babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
-		}
-
-
+		Flame.Delete(deletingWob, this.babs)
 		
 		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.
 		// Source is the last item in the instance index.

@@ -2,37 +2,6 @@ import type { WobId } from './consts'
 import { type UintRange } from './TypeUtils'
 
 /*
-// Request zones individually
-zonewobs(0,0): {
-	updated_at: 12341234
-	blueprints: [
-		...
-		4000: {	
-			bpid: tree
-			...
-		}
-		4001: {	
-			bpid: rock
-			name: gray rocks
-			glb: rock-pile.glb
-			...
-		}
-	]
-	locations: [
-		Byte[
-			4000+0, 222, 222,
-			4001+3, 232, 128, 
-			4001+2, 121, 176,
-		] // height 0
-		//Byte[250, 222, 222, 251, 232, 128] // height 1
-		//Byte[] // height 2
-	]
-}
-bbid = zoneid_height_bpid ?maybe
-*/
-
-
-/*
 
 We're going to jam wob bpid and rotation into 2 bytes together.
 bpid will be able to go up to 4096, and rotation up to 16 (actually leaving us 2 extra bits to play with).

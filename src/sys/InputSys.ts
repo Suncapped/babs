@@ -581,7 +581,7 @@ export class InputSys {
 								this.babs.socketSys.send({
 									action: {
 										verb: 'used',
-										noun: this.askTargetSourceWob.id(),
+										noun: this.askTargetSourceWob?.id(),
 										data: {
 											target: wob.id(),
 										},
@@ -1439,11 +1439,11 @@ export class InputSys {
 
 	isAskingTarget = false
 	askTargetSourceWob :FastWob
-	askTarget(fwob :FastWob) {
+	askTarget(fwob :FastWob = null) {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${fwob.name} on?`, {journal: false, color: '#cccccc', italics: true})
+		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${fwob?.name} on?`, {journal: false, color: '#cccccc', italics: true})
 	}
 
 

@@ -665,10 +665,11 @@ export class WorldSys {
 		// })
 		this.groundMaterial = this.groundMaterial || new MeshLambertMaterial( {
 			side: FrontSide,
-			// side: Side,
 			shadowSide: FrontSide,
-			// emissive: new Color().setHSL(0/360, 0/100, 10/100)
+			// emissive: new Color().setHSL(0/360, 0/100, 10/100),
 			// depthFunc: NeverDepth,
+			dithering: true,
+			// toneMapped: false, // oohhh lets me avoid renderer's tonemapping settings!
 		} )
 		// const material = new MeshStandardMaterial({vertexColors: true})
 		// this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )

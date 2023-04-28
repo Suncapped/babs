@@ -421,20 +421,6 @@ export class Wob extends FastWob {
 		let count = 0
 		// console.log('fwobs to load:', arrivalWobs.length)
 		for(const fwob of arrivalWobs) {
-			let isTargetWob =false//count === 10
-			// if(fwob.idzone == 1495567058 && fwob.name === 'campfire') { // 0,0
-			// 	count++
-			// 	if(count === 1) {
-			// 		isTargetWob = true
-			// 	}
-			// 	else {
-			// 		isTargetWob = false
-			// 	}
-			// }
-			// else {
-			// 	isTargetWob = false
-			// }
-
 			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {blueprint_id: fwob.blueprint_id, locid: fwob.locid})
 			
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)

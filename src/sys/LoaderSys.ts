@@ -40,7 +40,7 @@ export class LoaderSys {
 				// shininess: 0.2,
 				// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 				side: DoubleSide,
-				shadowSide: FrontSide, // Might have to use separate materials if I want more granularity.
+				shadowSide: DoubleSide, // Might have to use separate materials if I want more granularity.
 				// color: null,
 				// emissive: null,
 				// color: new Color(0,0,0).convertSRGBToLinear(),

@@ -17,8 +17,9 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { FastWob } from '@/shared/SharedZone'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo, SendPlayersArrive, SendZoneIn } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, WobId, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendCreatures } from '@/shared/consts'
 import { DateTime } from 'luxon'
+import { Flame } from '@/comp/Flame'
 
 export class SocketSys {
 
@@ -618,13 +619,21 @@ export class SocketSys {
 			}
 			case 'asktarget': {
 				log('asktarget', data, document.body.style.cursor)
+				const asktarget = data as SendAskTarget['asktarget']
 
-				const wobId = data.sourceWobId as WobId
+				const wobId = asktarget.sourceWobId as WobId
 
-				const coord = YardCoord.Create({...wobId, babs: context.babs})
-				const fwob = coord.zone.getWob(coord.x, coord.z)
+				if(wobId) {
+					const coord = YardCoord.Create({...wobId, babs: context.babs})
+					const fwob = coord.zone.getWob(coord.x, coord.z)
+					context.babs.inputSys.askTarget(fwob)
+				}
+				else {
 
-				context.babs.inputSys.askTarget(fwob)
+					context.babs.inputSys.askTarget()
+				}
+
+
 
 				break
 			}
@@ -636,8 +645,23 @@ export class SocketSys {
 				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
 				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
 				// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
-				context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
-				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *30) // Flip daytime&nighttime
+				// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *25) // dawn
+				// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
+				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *47) // Flip daytime&nighttime
+				
+
+				break
+			}
+			case 'creatures': {
+				log.info('creatures', data)
+
+				const creatures = data as SendCreatures['creatures']
+				const {idzone, type, x, z, created_at} = creatures[0]
+
+				const zone = context.babs.ents.get(idzone) as Zone
+				const wob = zone.getWob(x, z)
+
+				Flame.Create(wob, context.babs, 6, 4)
 				
 
 				break

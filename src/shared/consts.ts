@@ -305,7 +305,7 @@ export type SendCraftable = {
 }
 export type SendAskTarget = {
 	asktarget :{
-		sourceWobId :WobId,
+		sourceWobId? :WobId,
 	},
 }
 // export type SendWobsRemove = {
@@ -322,15 +322,19 @@ export type SendServerRestart = {
 }
 
 export type SendFeTime = {
-	fetime: {
+	fetime :{
 		secondsSinceHour :number,
 		hoursSinceBeginning :number,
 	}
 }
 
+export type SendCreatures = {
+	creatures :any[],
+}
+
 export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
-	|SendFeTime
+	|SendFeTime|SendCreatures
 
 
 
