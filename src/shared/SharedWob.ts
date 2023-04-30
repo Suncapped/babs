@@ -1,4 +1,5 @@
-import { UintRange } from "./TypeUtils"
+import { type UintRange } from "./TypeUtils"
+import { SharedCompGenerated, type SharedCompPlatform } from "./SharedComps"
 
 export class Blueprint {
 	constructor(
@@ -9,6 +10,24 @@ export class Blueprint {
 	){
 		if(!name) this.name = blueprint_id // Default name to bpid
 	}
+}
+
+export type blueprint_id = string
+
+class SharedCompClasses {
+	// edible? :SharedCompPlatform
+	// firestarter? :SharedCompPlatform
+	generated? :SharedCompGenerated
+	// healing? :SharedCompPlatform
+	platform? :SharedCompPlatform
+	// scented? :SharedCompPlatform
+	// symbiote? :SharedCompPlatform
+	// touched? :SharedCompPlatform
+}
+export type SharedBlueprintComps = {
+	blueprint_id :string
+	locid :number
+	comps :SharedCompClasses
 }
 
 export type WobId = {

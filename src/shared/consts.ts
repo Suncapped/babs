@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { WobId } from './SharedWob'
+import { SharedBlueprintComps, blueprint_id, type WobId } from './SharedWob'
 
 export const NLCD = {
 	// Water
@@ -60,99 +60,6 @@ export const FE_LANDCOVERS = {
 }
 
 export const StringifyLandcover = Utils.objectFlipKeyValue(FE_LANDCOVERS)
-
-export const LandcoverSpawns = {
-	'SnowIceTundra': [
-		{ 'dirt': 100 },
-	],
-	'BarrenRockSandClay': [
-		{ 'dirt': 100 },
-	],
-
-	'ForestDeciduous': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-	'ForestEvergreen': [
-		{ 'carnation flowers': 5 },
-		{ 'ember': 15 },
-		{ 'grass': 80 },
-	],
-	'ForestMixed': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-
-	'ShrubAndScrub': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-	'Grassland': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-
-	'WetlandWoody': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-	'WetlandHerbacious': [
-		{ 'carnation flowers': 5 },
-		{ 'weed': 15 },
-		{ 'grass': 80 },
-	],
-
-	'Lake': [
-		{ 'reeds': 10 },
-		{ 'mud clay': 20 },
-		{ 'fish': 70 },
-	],
-	'Lakeshore': [
-		{ 'lotus flower': 5 },
-		{ 'reeds': 45 },
-		{ 'mud clay': 50 },
-	],
-	'River': [
-		{ 'mud clay': 40 },
-		{ 'fish': 60 },
-	],
-	'RiverShore': [
-		{ 'lotus flower': 5 },
-		{ 'fish': 10 },
-		{ 'mud clay': 85 },
-	],
-	'StreamSmall': [
-		{ 'lotus flower': 5 },
-		{ 'reeds': 20 },
-		{ 'mud clay': 75 },
-	],
-	'StreamMedium': [
-		{ 'reeds': 10 },
-		{ 'fish': 30 },
-		{ 'mud clay': 60 },
-	],
-	'StreamLarge': [
-		{ 'reeds': 10 },
-		{ 'mud clay': 20 },
-		{ 'fish': 70 },
-	],
-	'StreamShore': [
-		{ 'lotus flower': 5 },
-		{ 'reeds': 10 },
-		{ 'mud clay': 85 },
-	],
-
-	'Cliff': [
-		{ 'ember': 1 },
-		{ 'small rock': 24 },
-		{ 'dirt': 75 },
-	],
-}
 
 export enum UiTypes {
 	journal='journal',
@@ -225,7 +132,7 @@ export type SendLoad = {
 			},
 		},
 		zones :Array<Zoneinfo>,
-		blueprints :BlueprintList,
+		blueprints :{blueprint_id :string, locid :number, comps :any},
 		uis :Ui[],
 	},
 }
@@ -296,11 +203,6 @@ export type SendAskTarget = {
 		sourceWobId? :WobId,
 	},
 }
-// export type SendWobsRemove = {
-// 	wobsremove: {
-// 		wobs: [wob],
-// 	}
-// }
 
 export type SendAlreadyIn = {
 	alreadyin :true,

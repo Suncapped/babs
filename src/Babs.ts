@@ -201,24 +201,11 @@ export class Babs {
 			this.uiSys['fps']?.begin()
 			this.uiSys['mem']?.begin()
 		}
-
-		// Always update these every frame
-		// (prevents other players rubberbanding from movement initiated by network input)
-		// this.uiSys.update()
-		// this.inputSys?.update(dt, this.scene)
-		// for(let [name, coms] of this.compcats) {
-		// 	if(coms) {
-		// 		for(let com of coms) {
-		// 			com.update(dt)
-		// 		}
-		// 	}
-		// }
 		
-
 		// Only update these if window has focus
 		this.dtSinceLastFocus += dt
 		if(this.renderSys.documentHasFocus 
-			|| this.dtSinceLastFocus > 0.15) { // Allow a frame a few times per second; just about right for not breaking movement.
+			|| this.dtSinceLastFocus > 0.15) { // Allow a frame a few times per second; just about right for not breaking movement (ie rubberbanding).
 			// todo just fix Controller.ts:update() to not break so badly on longer dt?
 
 			this.uiSys.update()

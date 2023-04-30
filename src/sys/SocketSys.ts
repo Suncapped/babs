@@ -355,9 +355,10 @@ export class SocketSys {
 				// Create player entity
 				await Player.Arrive(load.self, true, context.babs)
 				
+				log('loadbps', load.blueprints)
 				let sharedWobs :Array<SharedWob> = []
 				for(const zone of zones) {
-					zone.applyBlueprints(load.blueprints)
+					zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
 					sharedWobs.push(...fWobs)
 				}
@@ -544,7 +545,6 @@ export class SocketSys {
 				So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
 				*/
 				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
-				// if(wobsupdate.blueprints) zone.applyBlueprints(wobsupdate.blueprints)
 				log('wobsupdate locationdata ', wobsupdate.locationData.length)
 				const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
 

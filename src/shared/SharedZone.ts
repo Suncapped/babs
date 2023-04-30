@@ -1,4 +1,4 @@
-import type { WobId } from './SharedWob'
+import type { SharedBlueprintComps, WobId, blueprint_id } from './SharedWob'
 import { Blueprint, SharedWob, Rotation } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
@@ -212,7 +212,7 @@ export class SharedZone {
 			const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 			const bp = this.locidToBlueprint[locid]
 			if(!bp) {
-				console.warn('No blueprint found @5!', locid)
+				console.warn('No blueprint found @6!', locid)
 				continue
 			}
 			fwobs.push(new SharedWob(this.id, x, z, r, bp))
@@ -220,15 +220,17 @@ export class SharedZone {
 		return fwobs
 	}
 
-	applyBlueprints(blueprints :Array<string|number>) { // [bpid, locid, ..., ...]
-		for(let i=0; i<blueprints.length; i+=2) {
-			const bpid = blueprints[i+0] as string
-			const locid = blueprints[i+1] as number
+	applyBlueprints(blueprints :Map<blueprint_id, SharedBlueprintComps>) {
+		for(const blueprintsWithComps of blueprints.values()) {
+			const bpid = blueprintsWithComps.blueprint_id
+			const locid = blueprintsWithComps.locid
 
 			const blueprint = new Blueprint(bpid, locid)
 			this.locidToBlueprint[blueprint.locid] = blueprint
 			this.bpidToLocid[blueprint.blueprint_id] = blueprint.locid
 		}
+
+
 	}
 
 	
