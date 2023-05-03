@@ -144,7 +144,7 @@ export class SocketSys {
 	}
 
 	async send(json) {
-		if(!json.ping && !json.move) log('Send:', json)
+		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
 		}
@@ -490,7 +490,7 @@ export class SocketSys {
 			So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
 			*/
 			const zone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
-			log('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
+			log.info('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
 			const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), true)
 
 			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, payload.wobsupdate.shownames)

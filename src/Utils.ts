@@ -155,7 +155,6 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 }
 
 
-
 // // export async function terrainGenerate(terrainData:Uint8Array, ground:Mesh) {
 //     // const terrainDataFloat = Array.from(terrainData).map((ele:number) => ele /ZONE.TR_MULT)
 //     // log.info(terrainDataFloat)
@@ -176,16 +175,6 @@ export function indexToCoord(i, sideLength) { // Don't currently have a need to 
 //     // return ground
 // // }
 
-export function WobAtPosition(ents, gx, gz) {
-	// todo make this use an abstracted grid (like server) instead of linear search
-	for(let [key, ent] of ents) {
-		if(ent.x === gx && ent.z === gz) {
-			return ent
-		}
-	}
-	return null
-
-}
 
 export function storageSet(key, value, ms) {
 	const now = new Date()

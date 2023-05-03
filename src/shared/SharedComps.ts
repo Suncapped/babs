@@ -17,6 +17,14 @@ abstract class SharedComp {
 	}
 }
 
+
+export class SharedCompEdible extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+}
+
 export class SharedCompGenerated extends SharedComp {
 	constructor(values = {}) {
 		super(values)
@@ -30,9 +38,9 @@ export class SharedCompPlatform extends SharedComp {
 		Object.assign(this, values)
 	}
 
-	heightAdjustEngineX :number
-	heightAdjustEngineY :number
-	heightAdjustEngineZ :number
+	xOffsetFeet :number
+	yOffsetFeet :number
+	zOffsetFeet :number
 }
 
 // edible: SharedCompPlatform,

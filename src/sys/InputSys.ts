@@ -661,7 +661,7 @@ export class InputSys {
 
 						} else {//} if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 
-							log('wobclick', this.mouse, this.pickedObject)
+							log.info('wobclick', this.mouse, this.pickedObject)
 
 							if(this.pickedObject) {
 								const coord = this.pickedObject?.yardCoord

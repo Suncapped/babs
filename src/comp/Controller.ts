@@ -3,7 +3,6 @@ import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matri
 import { Comp } from '@/comp/Comp'
 import { WorldSys } from '@/sys/WorldSys'
 import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
-import { WobAtPosition } from '@/Utils'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
@@ -390,26 +389,25 @@ export class Controller extends Comp {
 		}
 		
 		this.hover = 0
+		const wobAtDest = this.target.zone.getWob(this.gDestination.x, this.gDestination.z)
+		const platform = wobAtDest?.comps?.platform
+		if(platform) {
+			this.hover = platform.yOffsetFeet
+		}
+
 		const isNoVelocity = Math.round(this.velocity.z) == 0 && Math.round(this.velocity.x) == 0
 		if(isNoVelocity) {
 			if(this._stateMachine._currentState != 'idle') {
 				this._stateMachine.setState('idle')
-
-				const wobAtDest = WobAtPosition(this.babs.ents, this.gDestination.x, this.gDestination.z)
-				if(wobAtDest?.name == 'hot spring') {
-					this.hover = -3
-				}
-				if(wobAtDest?.name == 'flat rock') {
-					this.hover = 0.8
-				}
-				if(wobAtDest?.name == 'ladder') {
-					this.hover = 7
-				}
 			}
 		}
 
+		// if(platform) {  // Buggy; starts to accellerate next frame I think, so shivers, especially on afk
+		// 	this.velocity.z = 0
+		// 	this.target.position.setZ(eDest.z +platform.zOffsetFeet)
+		// }
 
-		if(this.groundDistance == 0) {
+		if(this.groundDistance == 0 || Math.round(this.groundDistance -this.hover) == 0) {
 			this.velocity.y = 0
 		} 
 		else {
@@ -435,11 +433,6 @@ export class Controller extends Comp {
 		// This modifies the target position, adding in the velocity momentum.
 		this.target.position.add(forward)
 		// this.target.position.add(sideways)
-
-		// this.target.position.clamp(
-		// 	WorldSys.ZoneTerrainMin,
-		// 	WorldSys.ZoneTerrainMax,
-		// )
 
 		if (this._mixer) {
 			this._mixer.update(dt)
