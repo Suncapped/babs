@@ -317,6 +317,7 @@ export class InputSys {
 
 		const touchHandler = (event) => {
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
+
 			if (event.target.id !== 'canvas') return
 			event.preventDefault()
 
@@ -1401,16 +1402,16 @@ export class InputSys {
 
 
 	setMouseDevice(newDevice) {
-		if (newDevice === 'fingers') { // Exception hax, show more screen on mobile devices
-			if (window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
-				document.getElementById('Journal').style.display = 'none'
-				document.getElementById('topleft').style.display = 'none'
-				document.getElementById('topright').style.paddingBottom = '12px'
-				dividerOffset.set(5)
-			}
-		}
 
 		if (this.mouse.device === newDevice) return // Only detect new device if device is changing
+
+		// Hax, show more screen on mobile devices when they first load
+		if (window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
+			document.getElementById('Journal').style.display = 'none'
+			document.getElementById('topleft').style.display = 'none'
+			document.getElementById('topright').style.paddingBottom = '12px'
+			dividerOffset.set(5)
+		}
 
 		log('Device detected: ', newDevice)
 		// Device has changed.

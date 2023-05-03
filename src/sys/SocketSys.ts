@@ -12,15 +12,15 @@ import { CameraSys } from './CameraSys'
 import { Raycaster } from 'three'
 import { InputSys } from './InputSys'
 import { Wob } from '@/ent/Wob'
-import Crafting from '../ui/Crafting.svelte'
 import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
+import { get as svelteGet } from 'svelte/store'
 
 export class SocketSys {
 
@@ -521,14 +521,18 @@ export class SocketSys {
 			}
 			case 'nicklist': {
 				log.info('nicklist', data)
-				const nicklist = data
+				const nicklist = data as SendNickList['nicklist']
 				for(let pair of nicklist) {
-					const player = context.babs.ents.get(pair.idtarget)
+					const player = context.babs.ents.get(pair.idtarget) as Player
 					log.info('nicklist player', player)
-					if(player) {
-						player.setNick(pair.nick)
-					}
+					player?.setNick(pair.nick)
 					context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+					if(player.id === context.babs.idSelf) {
+						menuSelfData.set({
+							...svelteGet(menuSelfData),
+							nick: pair.nick,
+						})
+					}
 				}
 				break
 			}

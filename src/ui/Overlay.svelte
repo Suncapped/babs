@@ -51,7 +51,7 @@
 		dividerOffset.subscribe(offsetOrObj => {
 			log.info('subscribed offsetOrObj is', offsetOrObj)
 			if(offsetOrObj === undefined) { // First time or too big
-				dividerOffset.set(window.innerWidth /4) // default
+				dividerOffset.set(100)// (window.innerWidth /4) // default
 			}
 			else if(offsetOrObj.save) { // Actually resized by player, or received
 				socketSend.set({
@@ -88,7 +88,7 @@
 			{/if}
 		</div>
 		<div id="topleft">
-			<span>Character Save:</span>
+			<span>Join:</span>
 			<form method="post">
 				<input
 					id="email"

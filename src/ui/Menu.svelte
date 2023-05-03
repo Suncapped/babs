@@ -118,7 +118,7 @@
 			log.info('menuSelfData change', val)
 			joinDate = new Date(Date.parse($menuSelfData.created_at))
 			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
-			joinYear = joinDate.toLocaleString('default', { year: 'numeric' })
+			joinYear = joinDate.toLocaleString('default', { year: '2-digit' })
 
 			// If we got color from socket, or from update and it's different
 			if($menuSelfData?.color && colorPicker.color.hexString != $menuSelfData.color) {
@@ -214,26 +214,22 @@
 		<div on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
 		<div class="content card-body">
 			<div id="picker"></div>
-			<ul>			
-			<li>Welcome to First Earth!</li>
-			<li>
+			<ul style="text-align:left;">			
+			<li style="text-align:center;">Welcome to First Earth{#if $menuSelfData.nick}, {$menuSelfData.nick}{/if}!</li>
+			<li style="text-align:center;">
+				{$menuSelfData.email} (<span title="{joinDate}">{joinMonth} '{joinYear}</span>) <a id="logout" href on:click|preventDefault={logout}>Logout</a>
+			</li><li>&nbsp;</li>
+			<li>&bull; Laptop: Slide two fingers across touchpad</li>
+			<li>&bull; Mouse: Right button looks, both buttons walk</li>
+			<li>&bull; Chat: Type, or hold Alt/Option and speak</li>
+			<li>&bull; Naming: Double click players</li>
+			<li>&bull; Items: Click, drag, or double click</li>
+			<li>&bull; FE works best on Chrome on Mac/PC</li>
+			<li>&nbsp;</li>
+			<li style="text-align:right;">
 					Speech color: <span id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
 			</li>
-			{#if $menuSelfData.nick}
-				<li>Known as: {$menuSelfData.nick}</li>
-			{/if}
-			<li>
-				<fieldset class="form-group">
-					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
-						<span class="paper-switch-slider round"></span>
-					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
-						Debug Mode
-					</label>
-				</fieldset>
-			</li>
-			<li>
+			<li style="text-align:right;">
 				<fieldset class="form-group">
 					<label for="paperSwitch6" class="paper-switch-label">
 						Touchpad
@@ -247,34 +243,30 @@
 					</label>
 				</fieldset>
 			</li>
-			<li>
-				<br/>
-				<!-- <a href on:click|preventDefault={()=> { movementTips = !movementTips; updateDimensions()} }>Keys:</a> -->
-				<div hidden="{!movementTips}">
-					<li>Touchpad: Slide two fingers, click both to move.</li>
-					<li>Mouse: Hold right button to look, both to move.</li>
-					<li>Hold Option/Alt for voice-to-text!</li>
-					<li>Keyboard is exclusively for chatting.</li>
-				</div>
+			<li style="text-align:right;">
+				<fieldset class="form-group">
+					<label for="paperSwitch6" class="paper-switch-label">
+						Debug
+					</label>
+					<label class="paper-switch">
+						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch6" class="paper-switch-label">
+						Normal
+					</label>
+				</fieldset>
 			</li>
-			<!-- <li>
-				{#each $uiWindows as window}
-				{/each}
-			</li> -->
-
+			<li style="text-align:right;">
+				<a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>
+			</li>
 			<li>&nbsp;</li>
 
-			<li>{$menuSelfData.email}</li>
 			<!-- <li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> -->
-			<li>Free Account</li>
-			<li>Joined in <span title="{joinDate}">{joinMonth} {joinYear}</span></li>
-			<li><a id="logout" href on:click|preventDefault={logout}>Logout</a></li>
-			
-			<li>&nbsp;</li>
-			
-			<li><a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a></li>
-			<li>What are you most excited<br/>to do in First Earth?</li>
-			<li>
+			<li style="text-align:center;">
+				What are you most excited to do in First Earth?
+			</li>
+			<li style="text-align:center;">
 				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
 			</li>
 		</ul>
@@ -304,11 +296,10 @@
 	}
 
 	#Menu #inputreason {
-		width: 90%;
+		width: 96%;
 		height: 6em;
-		margin-top: 8px;
-		margin-right: 0;
-		margin-bottom: 0;
+		padding: 0px;
+		margin:auto;
 		padding: 8px;
 	}
 	#Menu #inputreason {

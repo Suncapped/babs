@@ -156,7 +156,7 @@ export class SharedZone {
 			const x = locations[i+2]
 			const z = locations[i+3]
 			const locid = locidrot >>> 4
-			// ^ Note, also used in 'getSharedwobsBasedOnLocations'
+			// ^ Note, also used in 'getSharedWobsBasedOnLocations'
 
 			const oldIdAndRot = this.wobIdRotGrid[x +(z *250)]
 			const oldLocid = oldIdAndRot >>> 4
@@ -183,7 +183,7 @@ export class SharedZone {
 				}
 				this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
-					// Note, also used in 'getSharedwobsBasedOnLocations':
+					// Note, also used in 'getSharedWobsBasedOnLocations':
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
@@ -197,7 +197,7 @@ export class SharedZone {
 		}
 		return wobs
 	}
-	getSharedwobsBasedOnLocations() {
+	getSharedWobsBasedOnLocations() {
 		const locations = this.getLocationsFromGrid()
 		let fwobs :SharedWob[] = []
 		for(let i=0; i<locations.length; i+=4){
