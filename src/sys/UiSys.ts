@@ -14,6 +14,7 @@ import { Zone } from '@/ent/Zone'
 import { Wob } from '@/ent/Wob'
 import { InputSys } from './InputSys'
 import { Babs } from '@/Babs'
+import type { SharedWob } from '@/shared/SharedWob'
 
 export class UiSys {
 	babs :Babs
@@ -189,10 +190,10 @@ export class UiSys {
 		// log('chatLabel targetPos', point, targetPos, targetZone)
 		this.babs.group.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
 	}
-	serverSaid(text, point) {
+	serverSaid(text :string) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
-	clientSaid(text, point) {
+	clientSaid(text :string) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
 
@@ -228,14 +229,14 @@ export class UiSys {
 		this.babs.group.add(chatLabel) // todo not ground // OMG this is why there's an offset
 	}
 
-	craftSaid(options :Array<string>, wob :Wob) {	
+	craftSaid(options :Array<string>, wob :SharedWob, wobZone :Zone) {	
 		const chatDiv = document.createElement('div')
 		chatDiv.id = 'Crafting'
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'craftSaid'
 
 		const yardCoord = YardCoord.Create(wob)
-		let point = wob.zone.rayHeightAt(yardCoord)
+		let point = wobZone.rayHeightAt(yardCoord)
 		point.setY(point.y +2) // Raise up
 		chatLabel.position.copy(point)
 

@@ -273,7 +273,7 @@ export class Flame extends Comp {
 
 	static wantsLight = []
 
-	constructor(wob :Wob, babs) {
+	constructor(wob :SharedWob, babs) {
 		super(wob.id(), Flame, babs)
 	}
 
@@ -293,7 +293,7 @@ export class Flame extends Comp {
 	}
 
 	static fireTex :Texture
-	static async Create(wob :Wob, babs :Babs, scale, yup) {
+	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
 		// log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Flame(wob, babs)
 
@@ -315,7 +315,6 @@ export class Flame extends Comp {
 
 		com.fire.scale.set(scale,scale*1.33,scale)
 
-		const zone = babs.ents.get(wob.idzone) as Zone
 		const yardCoord = YardCoord.Create(wob)
 
 		// const rayPos = zone.rayHeightAt(yardCoord)

@@ -21,59 +21,24 @@ import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
 import { get as svelteGet } from 'svelte/store'
+import type { Sendable } from '@/shared/consts'
 
 export class SocketSys {
-
-	ws
-	scene
-	babsReady = false
-	babs :Babs
-
 	static pingSeconds = 30
 
-	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
-		log.info('movePlayer', idzip, a, b)
-		// log('attemping to move player, attempt', attempts)
-		const idPlayer = this.babs.zips.get(idzip)
-		const player = this.babs.ents.get(idPlayer)	as Player
-		if(player) {
-			if(player.id !== this.babs.idSelf) { // Skip self movements
-				// log('finally actually moving player after attept', attempts, idzip)
-				const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
-				if(movestateName === 'run' || movestateName == 'walk') {
-					player.controller.setDestination(new Vector3(a, 0, b), movestateName)
-				}
-				else if(movestateName === 'jump') {
-					player.controller.jump(Controller.JUMP_HEIGHT)
-				}
-				else if(movestateName === 'rotate') {
-					const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
-					const quat = new Quaternion()
-					quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
-					player.controller.setRotation(quat)
-				}
-			}
-		}
-		else { // Player not yet defined; probably still loading // todo check for defuncts
-			let tryCount = 0
-			setTimeout(() => {
-				tryCount++
-				if(tryCount < 2) {
-					this.movePlayer(idzip, movestate, a, b, attempts +1)
-				}
-			}, 500)
-		}
-			
+	babsReady = false
+	session :string
+	ws :WebSocket
 
+	constructor(
+		private babs :Babs,
+	) {
 
-	}
-
-	constructor(babs) {
-		this.babs = babs
+		this.ws = new WebSocket(babs.urlSocket)
 
 		toprightText.set('Connecting...')
 		document.getElementById('topleft').style.visibility = 'hidden'
-		this.ws = new WebSocket(this.babs.urlSocket)
+		// this.ws = 
 		this.ws.binaryType = 'arraybuffer'
 
 		this.ws.onopen = (event) => {
@@ -104,9 +69,7 @@ export class SocketSys {
 		this.ws.onmessage = (event) => {
 			log.info('Socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
-
-
-				const payload = JSON.parse(event.data)
+				const payload = JSON.parse(event.data) as Sendable
 				const result = this.processEnqueue(payload)
 			}
 			else { // Movement
@@ -195,489 +158,479 @@ export class SocketSys {
 	item
 	update() {
 		const callTasks = async () => {
-			for (const [task, payload] of this.processQueue) {
-				await task(this, payload);
+			for (const payload of this.processQueue) {
+				await this.process(payload)
 			}
 		}
 		callTasks()
 		this.processQueue = []
 	}
-	processEnqueue(payload){
-		if(payload.load || payload.visitor || payload.session) { // First one happens immediately, to jumpstart babsReady
-			this.process(this, payload)
+	processEnqueue(payload :Sendable){
+		if('load' in payload || 'visitor' in payload || 'session' in payload) { 
+			// ^ First one happens immediately, to jumpstart babsReady
+			this.process(payload)
 		}
 		else {
-			this.processQueue.push([this.process, payload])
+			this.processQueue.push(payload)
 		}
 	}
-	async process(context :SocketSys, payload){
-		for(const [op, data] of Object.entries(payload)) {
-			switch(op) {
-			case 'auth': {
-				document.getElementById('charsave').disabled = false
-				// Handle failed login/register here
-				if(data === 'userpasswrong') {
-					document.getElementById('topleft').style.visibility = 'visible'
-					toprightText.set('Username/password does not match.')
-				}
-				else if(data === 'emailinvalid') {
-					document.getElementById('topleft').style.visibility = 'visible'
-					toprightText.set('Email is invalid.')
-				}
-				else if(data === 'accountfailed') {
-					document.getElementById('topleft').style.visibility = 'visible'
-					toprightText.set('Account creation error.')
-				}
-				else if(data === 'passtooshort') {
-					document.getElementById('topleft').style.visibility = 'visible'
-					toprightText.set('Password too short, must be 8.')
-				}
-				break
-			}
-			case 'visitor': {
-				context.session = data
-				log('setting cookie, visitor', context.babs.baseDomain, context.babs.isProd)
-				Cookies.set('session', context.session, { 
-					domain: context.babs.baseDomain,
-					secure: context.babs.isProd,
-					sameSite: 'strict',
-				}) // Non-set expires means it's a session cookie only, not saved across sessions
-				toprightText.set('Visiting...')
-				window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
-				break
-			}
-			case 'session': {
-				context.session = data
-				log('setting cookie, session', context.babs.baseDomain, context.babs.isProd)
-				const result = Cookies.set('session', context.session, { 
-					expires: 365,
-					domain: context.babs.baseDomain,
-					secure: context.babs.isProd,
-					sameSite: 'strict',
-				})
-				log.info('cookie set', result)
-				toprightText.set('Entering...')
-				window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
-				break
-			}
-			case 'alreadyin': {
-				// Just have them repeat the auth if this was their second login device
-					
-				context.babs.uiSys.offerReconnect('Closed other session.')
-					
-				break
-			}
-			case 'load': {
-				const load = data as (SendLoad['load'])
-				log.info('socket: load', data)
-				window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
-					context.send({ping:'ping'})
-				}, SocketSys.pingSeconds * 1000)
-
-				const zonedatas = load.zones
-				log.info('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
-				toprightText.set(context.babs.uiSys.toprightTextDefault)
+	async process(payload :Sendable){
+		if('auth' in payload) {
+			document.getElementById('charsave').disabled = false
+			// Handle failed login/register here
+			if(payload.auth === 'userpasswrong') {
 				document.getElementById('topleft').style.visibility = 'visible'
-
-				debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
-				dividerOffset.set(load.self.divider)
-
-				if(load.self.visitor !== true) {
-					document.getElementById('topleft').style.visibility = 'visible'
-					document.getElementById('topleft').textContent = 'Waking up...'
-
-					topmenuAvailable.set(true)
-
-					menuSelfData.set(load.self)
-				}
-
-				context.babsReady = true
-
-				let zones = new Array<Zone>()
-				for(let zi of zonedatas) {
-					zones.push(new Zone(context.babs, zi.id, zi.x, zi.z, zi.y, zi.yscale, new Uint8Array, new Uint8Array))
-				}
-
-				// Load some things ahead of time
-				const fetches = []
-				for(let zone of zones) {
-					zone.elevationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
-					zone.landcoverData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
-					zone.locationData = fetch(`${context.babs.urlFiles}/zone/${zone.id}/locations.bin`)
-
-					fetches.push(zone.elevationData, zone.landcoverData, zone.locationData)
-				}
-				await Promise.all(fetches)
-
-				for(let zone of zones) {
-					const fet = await zone.elevationData
-					const data = await fet.blob()
-					const buff = await data.arrayBuffer()
-					zone.elevationData = new Uint8Array(buff)
-
-					const fet2 = await zone.landcoverData
-					const data2 = await fet2.blob()
-					const buff2 = await data2.arrayBuffer()
-					zone.landcoverData = new Uint8Array(buff2)
-
-					const fet3 = await zone.locationData
-					const data3 = await fet3.blob()
-					if(data3.size == 2) {  // hax on size (for `{}`)
-						zone.locationData = new Uint8Array()
-					}
-					else {
-						const buff3 = await data3.arrayBuffer()
-						zone.locationData = new Uint8Array(buff3)
-					}
-				}
-
-				const pStatics = []
-				for(let zone of zones) {
-					const isLoadinZone = zone.id == load.self.idzone
-					pStatics.push(context.babs.worldSys.loadStatics(context.babs.urlFiles, zone, isLoadinZone))
-				}
-				// console.time('stitch')
-				await Promise.all(pStatics)
-				// console.timeEnd('stitch') // 182ms for 81 zones
-
-				Zone.loadedZones = zones
-
-				await context.babs.worldSys.stitchElevation(zones)
-
-				// Set up UIs
-				context.babs.uiSys.loadUis(load.uis)
-
-				// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
-				// I was trying to do this after LoadInstancedGraphics, but that was missing the ones in wobsupdate.
-				const startingZone = this.babs.ents.get(load.self.idzone) as Zone
-				context.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-
-				// Create player entity
-				await Player.Arrive(load.self, true, context.babs)
-				
-				log('loadbps', load.blueprints)
-				let sharedWobs :Array<SharedWob> = []
-				for(const zone of zones) {
-					zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
-					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					sharedWobs.push(...fWobs)
-				}
-				await Wob.LoadInstancedGraphics(sharedWobs, context.babs, false)
-				// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs.
-
-				context.send({
-					ready: load.self.id,
-				})
-
-				if(load.self.visitor !== true) {
-					document.getElementById('welcomebar').style.display = 'none' 
-				}
-
-
-				break
+				toprightText.set('Username/password does not match.')
 			}
-			case 'playersarrive': {
-				log.info('playersarrive', data)
-
-				const playersArrive =  data as SendPlayersArrive['playersarrive']
-
-				// EventSys.Dispatch('players-arrive', data)
-
-				for(let arrival of playersArrive) {
-					const existingPlayer = context.babs.ents.get(arrival.id) as Player
-					log.info('existing player', existingPlayer)
-					if(existingPlayer) {
-						// If we already have that player, such as self, be sure to update it.
-						// This is primarily for getting movestate and .idzip, which server delays to set during tick.
-						// Self data is set on 'load'
-						existingPlayer.movestate = arrival.movestate
-
-						// This is also where self gets added to zips?
-						existingPlayer.idzip = arrival.idzip
-						context.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
-
-					}
-					else {
-						const bSelf = false
-						const player = await Player.Arrive(arrival, bSelf, context.babs)
-						context.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
-					}
-
-				}
-				break
+			else if(payload.auth === 'emailinvalid') {
+				document.getElementById('topleft').style.visibility = 'visible'
+				toprightText.set('Email is invalid.')
 			}
-			case 'playerdepart': {
-				const departPlayer = context.babs.ents.get(data)
-				log.info('departPlayer', data, departPlayer, context.babs.scene)
-
-				if(departPlayer && departPlayer.id !== context.babs.idSelf) {
-					// Could be self departing from a previous session, or person already otherwise departed?
-					if(departPlayer.id !== context.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-						context.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
-						departPlayer.remove()
-
-					}
-
-				}
-				break
+			else if(payload.auth === 'accountfailed') {
+				document.getElementById('topleft').style.visibility = 'visible'
+				toprightText.set('Account creation error.')
 			}
-			case 'zonein': { // Handle self or others switching zones
-				const zoneIn = data as SendZoneIn['zonein']
-				const player = context.babs.ents.get(zoneIn.idplayer) as Player
-				const enterZone = context.babs.ents.get(zoneIn.idzone) as Zone
-				const exitZone = context.babs.ents.get(player.controller.target.zone.id) as Zone // player.controller.target.zone ?
-				const playerIsSelf = player.id === context.babs.idSelf
-
-				// Calculate the zones we're exiting and the zones we're entering
-				const oldZoneGroupIds = exitZone.getZonesAround().map(z=>z.id)
-				const newZoneGroupIds = enterZone.getZonesAround().map(z=>z.id)
-				const removedZones = oldZoneGroupIds
-					.filter(id => !newZoneGroupIds.includes(id))
-					.map(id=>context.babs.ents.get(id) as Zone)
-				const addedZones = newZoneGroupIds
-					.filter(id => !oldZoneGroupIds.includes(id))
-					.map(id=>context.babs.ents.get(id) as Zone)
-				
-				log.info('zonediff', removedZones, addedZones)
-
-				// 1. Change exited zone to far tree wobs
-				// 2. Change entered zone to detailed wobs
-				
-				const farBigTreesToAdd :SharedWob[] = []
-				if(playerIsSelf) {
-					for(const removedZone of removedZones) {
-						const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-						log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
-						for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
-							removedZone.removeWobGraphic(zoneFwob)
-
-							// Prepare replacement trees for farther below.
-							// Get only short height items?  I will need the graphic.  Can I get the related instance?
-							const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
-							const wobIsFar = true // By definition it's going to be far
-							const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
-							if(wobIsFar && !wobIsSmall) {
-								zoneFwob.blueprint_id = Wob.FarwobName
-								zoneFwob.name = Wob.FarwobName
-								farBigTreesToAdd.push(zoneFwob)
-							}
-							
-						}
-						removedZone.coordToInstanceIndex = {}
-						// exitFwobs.push(...newExitFwobs)
-						// log('exit wobs to add', exitZone.id, exitFwobs.length)
-						// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
-						/*
-							^ So um, having this here ruined everything.  Because why?
-							Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
-							Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
-							Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
-							Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
-							Is removal just messed up?
-							*Later*: Other things were messed up, so I'm not sure this still is.
-						*/
-					}
-				}
-
-				player.controller.zoneIn(player, enterZone)
-
-				let detailedWobsToAdd :SharedWob[] = []
-				if(playerIsSelf) {
-					for(let addedZone of addedZones) {
-						log.info('entered zone: far trees to remove.  id:', addedZone.id)
-						
-						const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
-						detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
-
-						// Now remove only fartrees; things that are far and big
-						for(const zoneFwob of zoneFwobs) { 
-							const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
-							const wobIsFar = true // By definition it was far
-							const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
-							if(wobIsFar && !wobIsSmall) {
-								addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName) // todo
-							}
-						}
-						addedZone.coordToInstanceIndex = {}
-					}
-					
-
-					log.info('exited zones: detailed wobs to add', farBigTreesToAdd.length)
-					await Wob.LoadInstancedGraphics(farBigTreesToAdd, context.babs, false) // Then add far tree ones
-
-					log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-					await Wob.LoadInstancedGraphics(detailedWobsToAdd, context.babs, false) // Then add real ones
-				}
-
-				break
-			}
-			case 'said': {
-				const chattyPlayer = context.babs.ents.get(data.id) as Player
-				log.info('said by chattyPlayer', chattyPlayer?.id, data.name, data.text)
-				// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
-				// In that case, data.name is set to their name.
-				context.babs.uiSys.playerSaid(chattyPlayer?.id, data.text, {color: data.color, show: data.show !== false, name: data.name})
-				break
-			}
-			case 'nicklist': {
-				log.info('nicklist', data)
-				const nicklist = data as SendNickList['nicklist']
-				for(let pair of nicklist) {
-					const player = context.babs.ents.get(pair.idtarget) as Player
-					log.info('nicklist player', player)
-					player?.setNick(pair.nick)
-					context.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
-					if(player.id === context.babs.idSelf) {
-						menuSelfData.set({
-							...svelteGet(menuSelfData),
-							nick: pair.nick,
-						})
-					}
-				}
-				break
-			}
-			case 'wobsupdate': {
-				const wobsupdate = data as SendWobsUpdate['wobsupdate']
-				log.info('wobsupdate', data)
-
-				/*
-				Currently we are:
-					setting zone stuff like applyLocationsToGrid
-					...then also...
-					generating a bunch of SharedWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
-				Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
-				So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
-				*/
-				const zone = context.babs.ents.get(wobsupdate.idzone) as Zone
-				log('wobsupdate locationdata ', wobsupdate.locationData.length)
-				const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(wobsupdate.locationData), true)
-
-				await Wob.LoadInstancedGraphics(sharedWobs, context.babs, wobsupdate.shownames)
-				break
-			}
-			case 'contains': {
-				log.info('contains', data)
-				// Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
-				// 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
-				for(let wobFresh of data.wobs) {
-					const wobExisting = context.babs.ents.get(wobFresh.id)
-					if(wobExisting && wobExisting.idzone) { // Wob in zone
-						const instanced = Wob.InstancedMeshes.get(wobExisting.name)
-						instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
-						instanced.instanceMatrix.needsUpdate = true
-					}
-				}
-					
-				if(data.id === context.babs.idSelf) { // Is your own inventory
-					await Wob.LoadInstancedGraphics(data.wobs, context.babs, false)
-				}
-				break
-			}
-			case 'journal': {
-				log.info('journal', data)
-				context.babs.uiSys.serverSaid(data.text)
-				break
-			}
-			case 'serverrestart': {
-				log('serverrestart', data)
-				if(context.babs.isProd) {
-					setTimeout(() => {
-						context.babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
-					}, 2000)
-				}
-				setTimeout(() => {
-					window.location.reload()
-				}, context.babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
-				break
-			}
-			case 'energy': {
-				log.info('energy', data)
-				break
-			}
-			case 'craftable': {
-				log('craftable', data)
-				
-				const craftable = data as SendCraftable['craftable']
-
-				const wobId = craftable.wobId
-				const options = craftable.options
-				const coord = YardCoord.Create({...wobId, babs: context.babs})
-				const wob = coord.zone.getWob(coord.x, coord.z)
-
-				// Display a list of icons above the wobId wob, list of options available:
-				// Create a .svelte file for icons
-				// When crafting thing is received, create icons for everything in it.
-				// position like: const chatLabel = new CSS2DObject(chatDiv)
-
-				context.babs.uiSys.craftSaid(options, wob)
-					
-				// new Crafting({
-				// 	target: document.body,
-				// 	props: {
-				// 		options,
-				// 		wobId
-				// 	},
-				// })
-
-
-				break
-			}
-			case 'asktarget': {
-				log('asktarget', data, document.body.style.cursor)
-				const asktarget = data as SendAskTarget['asktarget']
-
-				const wobId = asktarget.sourceWobId as WobId
-
-				if(wobId) {
-					const coord = YardCoord.Create({...wobId, babs: context.babs})
-					const fwob = coord.zone.getWob(coord.x, coord.z)
-					context.babs.inputSys.askTarget(fwob)
-				}
-				else {
-
-					context.babs.inputSys.askTarget()
-				}
-
-
-
-				break
-			}
-			case 'fetime': {
-				log.info('fetime', data)
-
-				const fetime = data as SendFeTime['fetime']
-
-				context.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
-				context.babs.worldSys.proximaSecondsSinceHour = fetime.secondsSinceHour
-				// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
-				// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *25) // dawn
-				// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
-				// context.babs.worldSys.proximaSecondsSinceHour += +(60 *47) // Flip daytime&nighttime
-				
-
-				break
-			}
-			case 'creatures': {
-				log.info('creatures', data)
-
-				const creatures = data as SendCreatures['creatures']
-				const {idzone, type, x, z, created_at} = creatures[0]
-
-				const zone = context.babs.ents.get(idzone) as Zone
-				const wob = zone.getWob(x, z)
-
-				// Must find diff between server creatures and client creatures
-
-				Flame.Create(wob, context.babs, 6, 4)
-				
-
-				break
-			}
-			default: {
-				log('unknown command: ', op, data)
-			}
+			else if(payload.auth === 'passtooshort') {
+				document.getElementById('topleft').style.visibility = 'visible'
+				toprightText.set('Password too short, must be 8.')
 			}
 		}
+		else if('visitor' in payload) {
+			this.session = payload.visitor
+			log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
+			Cookies.set('session', this.session, { 
+				domain: this.babs.baseDomain,
+				secure: this.babs.isProd,
+				sameSite: 'strict',
+			}) // Non-set expires means it's a session cookie only, not saved across sessions
+			toprightText.set('Visiting...')
+			window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+		}
+		else if('session' in payload) {
+			log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
+			this.session = payload.session
+			const result = Cookies.set('session', this.session, { 
+				expires: 365,
+				domain: this.babs.baseDomain,
+				secure: this.babs.isProd,
+				sameSite: 'strict',
+			})
+			log.info('cookie set', result)
+			toprightText.set('Entering...')
+			window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+		}
+		else if('alreadyin' in payload) {
+			// Just have them repeat the auth if this was their second login device
+			this.babs.uiSys.offerReconnect('Closed other session.')
+		}
+		else if('load' in payload) {
+			const load = payload.load
+			log.info('socket: load', payload.load)
+			window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
+				this.send({ping:'ping'})
+			}, SocketSys.pingSeconds * 1000)
+
+			const zonedatas = load.zones
+			log.info('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
+			toprightText.set(this.babs.uiSys.toprightTextDefault)
+			document.getElementById('topleft').style.visibility = 'visible'
+
+			debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
+			dividerOffset.set(load.self.divider)
+
+			if(load.self.visitor !== true) {
+				document.getElementById('topleft').style.visibility = 'visible'
+				document.getElementById('topleft').textContent = 'Waking up...'
+
+				topmenuAvailable.set(true)
+
+				menuSelfData.set(load.self)
+			}
+
+			this.babsReady = true
+
+			let zones = new Array<Zone>()
+			for(let zi of zonedatas) {
+				zones.push(new Zone(this.babs, zi.id, zi.x, zi.z, zi.y, zi.yscale, new Uint8Array, new Uint8Array))
+			}
+
+			// Load some things ahead of time
+			const fetches = []
+			for(let zone of zones) {
+				zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
+				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+				zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+
+				fetches.push(zone.elevationData, zone.landcoverData, zone.locationData)
+			}
+			await Promise.all(fetches)
+
+			for(let zone of zones) {
+				const fet = await zone.elevationData
+				const data = await fet.blob()
+				const buff = await data.arrayBuffer()
+				zone.elevationData = new Uint8Array(buff)
+
+				const fet2 = await zone.landcoverData
+				const data2 = await fet2.blob()
+				const buff2 = await data2.arrayBuffer()
+				zone.landcoverData = new Uint8Array(buff2)
+
+				const fet3 = await zone.locationData
+				const data3 = await fet3.blob()
+				if(data3.size == 2) {  // hax on size (for `{}`)
+					zone.locationData = new Uint8Array()
+				}
+				else {
+					const buff3 = await data3.arrayBuffer()
+					zone.locationData = new Uint8Array(buff3)
+				}
+			}
+
+			const pStatics = []
+			for(let zone of zones) {
+				const isLoadinZone = zone.id == load.self.idzone
+				pStatics.push(this.babs.worldSys.loadStatics(this.babs.urlFiles, zone, isLoadinZone))
+			}
+			// console.time('stitch')
+			await Promise.all(pStatics)
+			// console.timeEnd('stitch') // 182ms for 81 zones
+
+			Zone.loadedZones = zones
+
+			await this.babs.worldSys.stitchElevation(zones)
+
+			// Set up UIs
+			this.babs.uiSys.loadUis(load.uis)
+
+			// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
+			// I was trying to do this after LoadInstancedGraphics, but that was missing the ones in wobsupdate.
+			const startingZone = this.babs.ents.get(load.self.idzone) as Zone
+			this.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
+
+			// Create player entity
+			await Player.Arrive(load.self, true, this.babs)
+			
+			log('loadbps', load.blueprints)
+			let sharedWobs :Array<SharedWob> = []
+			for(const zone of zones) {
+				zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
+				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+				sharedWobs.push(...fWobs)
+			}
+			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, false)
+			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs.
+
+			this.send({
+				ready: load.self.id,
+			})
+
+			if(load.self.visitor !== true) {
+				document.getElementById('welcomebar').style.display = 'none' 
+			}
+		}
+		else if('playersarrive' in payload) {
+			log.info('playersarrive', payload.playersarrive)
+
+			for(let arrival of payload.playersarrive) {
+				const existingPlayer = this.babs.ents.get(arrival.id) as Player
+				log.info('existing player', existingPlayer)
+				if(existingPlayer) {
+					// If we already have that player, such as self, be sure to update it.
+					// This is primarily for getting .idzip, which server delays to set during tick.
+					// Self data is set on 'load'
+
+					// This is also where self gets added to zips?
+					existingPlayer.idzip = arrival.idzip
+					this.babs.zips.set(existingPlayer.idzip, existingPlayer.id)
+
+				}
+				else {
+					const bSelf = false
+					const player = await Player.Arrive(arrival, bSelf, this.babs)
+					this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
+				}
+
+			}
+		}
+		else if('playerdepart' in payload) {
+			const departPlayer = this.babs.ents.get(payload.playerdepart) as Player
+			log.info('departPlayer', payload.playerdepart, departPlayer, this.babs.scene)
+
+			if(departPlayer && departPlayer.id !== this.babs.idSelf) {
+				// Could be self departing from a previous session, or person already otherwise departed?
+				if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
+					this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
+					departPlayer.remove()
+
+				}
+			}
+		}
+		else if('zonein' in payload) { // Handle self or others switching zones
+			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
+			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
+			const exitZone = this.babs.ents.get(player.controller.target.zone.id) as Zone // player.controller.target.zone ?
+			const playerIsSelf = player.id === this.babs.idSelf
+
+			// Calculate the zones we're exiting and the zones we're entering
+			const oldZoneGroupIds = exitZone.getZonesAround().map(z=>z.id)
+			const newZoneGroupIds = enterZone.getZonesAround().map(z=>z.id)
+			const babs = this.babs
+			const removedZones = oldZoneGroupIds
+				.filter(id => !newZoneGroupIds.includes(id))
+				.map(id=>babs.ents.get(id) as Zone)
+			const addedZones = newZoneGroupIds
+				.filter(id => !oldZoneGroupIds.includes(id))
+				.map(id=>babs.ents.get(id) as Zone)
+			
+			log.info('zonediff', removedZones, addedZones)
+
+			// 1. Change exited zone to far tree wobs
+			// 2. Change entered zone to detailed wobs
+			
+			const farBigTreesToAdd :SharedWob[] = []
+			if(playerIsSelf) {
+				for(const removedZone of removedZones) {
+					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
+					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
+						removedZone.removeWobGraphic(zoneFwob)
+
+						// Prepare replacement trees for farther below.
+						// Get only short height items?  I will need the graphic.  Can I get the related instance?
+						const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+						const wobIsFar = true // By definition it's going to be far
+						const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
+						if(wobIsFar && !wobIsSmall) {
+							zoneFwob.blueprint_id = Wob.FarwobName
+							zoneFwob.name = Wob.FarwobName
+							farBigTreesToAdd.push(zoneFwob)
+						}
+						
+					}
+					removedZone.coordToInstanceIndex = {}
+					// exitFwobs.push(...newExitFwobs)
+					// log('exit wobs to add', exitZone.id, exitFwobs.length)
+					// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
+					/*
+						^ So um, having this here ruined everything.  Because why?
+						Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
+						Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
+						Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
+						Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
+						Is removal just messed up?
+						*Later*: Other things were messed up, so I'm not sure this still is.
+					*/
+				}
+			}
+
+			player.controller.zoneIn(player, enterZone)
+
+			let detailedWobsToAdd :SharedWob[] = []
+			if(playerIsSelf) {
+				for(let addedZone of addedZones) {
+					log.info('entered zone: far trees to remove.  id:', addedZone.id)
+					
+					const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
+					detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
+
+					// Now remove only fartrees; things that are far and big
+					for(const zoneFwob of zoneFwobs) { 
+						const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+						const wobIsFar = true // By definition it was far
+						const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
+						if(wobIsFar && !wobIsSmall) {
+							addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName) // todo
+						}
+					}
+					addedZone.coordToInstanceIndex = {}
+				}
+				
+
+				log.info('exited zones: detailed wobs to add', farBigTreesToAdd.length)
+				await Wob.LoadInstancedGraphics(farBigTreesToAdd, this.babs, false) // Then add far tree ones
+
+				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+				await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
+			}
+
+		}
+		else if('said' in payload) {
+			const said = payload.said
+			const chattyPlayer = this.babs.ents.get(said.id) as Player
+			log.info('said by chattyPlayer', chattyPlayer?.id, said.name, said.text)
+			// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
+			// In that case, data.name is set to their name.
+			this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
+		}
+		else if('nicklist' in payload) {
+			log.info('nicklist', payload.nicklist)
+			for(let pair of payload.nicklist) {
+				const player = this.babs.ents.get(pair.idtarget) as Player
+				log.info('nicklist player', player)
+				player?.setNick(pair.nick)
+				this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+				if(player?.id === this.babs.idSelf) {
+					menuSelfData.set({
+						...svelteGet(menuSelfData),
+						nick: pair.nick,
+					})
+				}
+			}
+		}
+		else if('wobsupdate' in payload) {
+			log.info('wobsupdate', payload.wobsupdate)
+
+			/*
+			Currently we are:
+				setting zone stuff like applyLocationsToGrid
+				...then also...
+				generating a bunch of SharedWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
+			Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
+			So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
+			*/
+			const zone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
+			log('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
+			const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), true)
+
+			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, payload.wobsupdate.shownames)
+		}
+		else if('contains' in payload) {
+			// log.info('contains', payload.contains)
+			// // Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
+			// // 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
+			// for(let wobFresh of payload.contains.wobs) {
+			// 	const wobExisting = this.babs.ents.get(wobFresh.id)
+			// 	if(wobExisting && wobExisting.idzone) { // Wob in zone
+			// 		const instanced = Wob.InstancedMeshes.get(wobExisting.name)
+			// 		instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
+			// 		instanced.instanceMatrix.needsUpdate = true
+			// 	}
+			// }
+				
+			// if(payload.contains.id === this.babs.idSelf) { // Is your own inventory
+			// 	await Wob.LoadInstancedGraphics(payload.contains.wobs, this.babs, false)
+			// }
+		}
+		else if('journal' in payload) {
+			log.info('journal', payload.journal)
+			this.babs.uiSys.serverSaid(payload.journal.text)
+		}
+		else if('serverrestart' in payload) {
+			log('serverrestart', payload.serverrestart)
+			const babs = this.babs
+			if(babs.isProd) {
+				setTimeout(() => {
+					babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
+				}, 2000)
+			}
+			setTimeout(() => {
+				window.location.reload()
+			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
+		}
+		else if('energy' in payload) {
+			log.info('energy', payload.energy)
+
+		}
+		else if('craftable' in payload) {
+			const wobId = payload.craftable.wobId
+			const options = payload.craftable.options
+			const coord = YardCoord.Create({...wobId, babs: this.babs})
+			const wob = coord.zone.getWob(coord.x, coord.z)
+
+			// Display a list of icons above the wobId wob, list of options available:
+			// Create a .svelte file for icons
+			// When crafting thing is received, create icons for everything in it.
+			// position like: const chatLabel = new CSS2DObject(chatDiv)
+
+			this.babs.uiSys.craftSaid(options, wob, coord.zone)
+				
+			// new Crafting({
+			// 	target: document.body,
+			// 	props: {
+			// 		options,
+			// 		wobId
+			// 	},
+			// })
+		}
+		else if('asktarget' in payload) {
+			log('asktarget', payload.asktarget, document.body.style.cursor)
+
+			const wobId = payload.asktarget.sourceWobId as WobId
+
+			if(wobId) {
+				const coord = YardCoord.Create({...wobId, babs: this.babs})
+				const fwob = coord.zone.getWob(coord.x, coord.z)
+				this.babs.inputSys.askTarget(fwob)
+			}
+			else {
+
+				this.babs.inputSys.askTarget()
+			}
+		}
+		else if('fetime' in payload) {
+			log.info('fetime', payload.fetime)
+
+			this.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
+			this.babs.worldSys.proximaSecondsSinceHour = payload.fetime.secondsSinceHour
+			// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
+			// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *25) // dawn
+			// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
+			// context.babs.worldSys.proximaSecondsSinceHour += +(60 *47) // Flip daytime&nighttime
+		}
+		else if('creatures' in payload) {
+			// log.info('creatures', payload.creatures)
+
+			// const creatures = data as SendCreatures['creatures']
+			// const {idzone, type, x, z, created_at} = creatures[0]
+
+			// const zone = this.babs.ents.get(idzone) as Zone
+			// const wob = zone.getWob(x, z)
+
+			// // Must find diff between server creatures and client creatures
+
+			// Flame.Create(wob, zone, this.babs, 6, 4)
+		}
+		else {
+			log('unknown command: ', payload)
+		}
+	}
+
+	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
+		log.info('movePlayer', idzip, a, b)
+		// log('attemping to move player, attempt', attempts)
+		const idPlayer = this.babs.zips.get(idzip)
+		const player = this.babs.ents.get(idPlayer)	as Player
+		if(player) {
+			if(player.id !== this.babs.idSelf) { // Skip self movements
+				// log('finally actually moving player after attept', attempts, idzip)
+				const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
+				if(movestateName === 'run' || movestateName == 'walk') {
+					player.controller.setDestination(new Vector3(a, 0, b), movestateName)
+				}
+				else if(movestateName === 'jump') {
+					player.controller.jump(Controller.JUMP_HEIGHT)
+				}
+				else if(movestateName === 'rotate') {
+					const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
+					const quat = new Quaternion()
+					quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
+					player.controller.setRotation(quat)
+				}
+			}
+		}
+		else { // Player not yet defined; probably still loading // todo check for defuncts
+			let tryCount = 0
+			setTimeout(() => {
+				tryCount++
+				if(tryCount < 2) {
+					this.movePlayer(idzip, movestate, a, b, attempts +1)
+				}
+			}, 500)
+		}
+			
+
+
 	}
 
 

@@ -1,5 +1,5 @@
-import type { SharedBlueprintComps, WobId, blueprint_id } from './SharedWob'
-import { Blueprint, SharedWob, Rotation } from './SharedWob'
+import type { SharedBlueprintWithComps, WobId, blueprint_id } from './SharedWob'
+import { Blueprint, SharedWob, type Rotation } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
 /*
@@ -220,17 +220,16 @@ export class SharedZone {
 		return fwobs
 	}
 
-	applyBlueprints(blueprints :Map<blueprint_id, SharedBlueprintComps>) {
+	applyBlueprints(blueprints :Map<blueprint_id, SharedBlueprintWithComps>) {
 		for(const blueprintsWithComps of blueprints.values()) {
-			const bpid = blueprintsWithComps.blueprint_id
-			const locid = blueprintsWithComps.locid
-
-			const blueprint = new Blueprint(bpid, locid)
+			const blueprint = new Blueprint(
+				blueprintsWithComps.blueprint_id,
+				blueprintsWithComps.locid, 
+				blueprintsWithComps.comps,
+			)
 			this.locidToBlueprint[blueprint.locid] = blueprint
 			this.bpidToLocid[blueprint.blueprint_id] = blueprint.locid
 		}
-
-
 	}
 
 	

@@ -1,10 +1,11 @@
-import { type UintRange } from "./TypeUtils"
-import { SharedCompGenerated, type SharedCompPlatform } from "./SharedComps"
+import { type UintRange } from './TypeUtils'
+import { SharedCompGenerated, type SharedCompPlatform } from './SharedComps'
 
 export class Blueprint {
 	constructor(
 		public blueprint_id :string,
 		public locid :number,
+		public comps :SharedCompClasses,
 		public name? :string,
 		public glb? :string,
 	){
@@ -24,7 +25,7 @@ class SharedCompClasses {
 	// symbiote? :SharedCompPlatform
 	// touched? :SharedCompPlatform
 }
-export type SharedBlueprintComps = {
+export type SharedBlueprintWithComps = {
 	blueprint_id :string
 	locid :number
 	comps :SharedCompClasses
@@ -53,7 +54,7 @@ export class SharedWob extends Blueprint {
 		public r :Rotation,
 		bp :Blueprint,
 	){
-		super(bp.blueprint_id, bp.locid, bp.name, bp.glb)
+		super(bp.blueprint_id, bp.locid, bp.comps, bp.name, bp.glb)
 	}
 	id() :WobId {
 		return {

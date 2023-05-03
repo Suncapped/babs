@@ -22,6 +22,8 @@ export class Player extends Ent {
 	self :boolean
 	idzip
 	char
+
+	nick :string
 	
 	model :Scene
 

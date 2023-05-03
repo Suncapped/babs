@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { SharedBlueprintComps, blueprint_id, type WobId } from './SharedWob'
+import { SharedBlueprintWithComps, blueprint_id, type WobId } from './SharedWob'
 
 export const NLCD = {
 	// Water
@@ -123,18 +123,30 @@ export type SendLoad = {
 			debugmode :boolean,
 			divider :number,
 			
+			// movestate: player.movestate, // Happens within tick loop
 			meta :{
 				mousedevice :string,
 				debugmode :boolean,
 			},
 			char :{
 				gender :string,
+				color :string,
 			},
 		},
 		zones :Array<Zoneinfo>,
 		blueprints :{blueprint_id :string, locid :number, comps :any},
 		uis :Ui[],
 	},
+}
+export type SendVisitor = {
+	visitor :string,
+}
+export type SendSession = {
+	session :string,
+}
+
+export type SendAuth = {
+	auth :'userpasswrong'|'passtooshort'|'accountfailed'|'emailinvalid',
 }
 
 export type SendPlayerDepart = {
@@ -143,14 +155,15 @@ export type SendPlayerDepart = {
 
 export type PlayerArrive = {
 	id :number,
-	idzip :number,
+	idzip? :number, // Optional because of load.self
 	idzone :number,
 	visitor :boolean
 	x :number,
 	z :number,
 	r :number,
-	movestate :number,
-	meta :{},
+
+	// movestate? :number, // Optional because of load.self // Deprecated
+	meta :object,
 	char :{
 		gender :string,
 		color :string,
@@ -218,7 +231,9 @@ export type SendFeTime = {
 	}
 }
 
-export type Sendable = SendLoad|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
+export type Sendable = SendLoad|SendVisitor|SendSession
+	|SendAuth
+	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 

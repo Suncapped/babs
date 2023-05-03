@@ -37,18 +37,8 @@ export class Zone extends SharedZone {
 	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
 
-	getWob(x :number, z :number) :Wob|null { // Mainly to include babs reference
-		const fwob = super.getWob(x, z)
-		if(!fwob) return null
-		return new Wob(this.babs, this.id, fwob.x, fwob.z, fwob.r, new Blueprint(fwob.blueprint_id, fwob.locid, fwob.name, fwob.glb))
-	}
-
-	getSharedWob(x :number, z :number) :SharedWob|null { // Should refactor this since super.getWob returns a sharedwob and that naming is confusing.
-		return super.getWob(x, z)
-	}
-
 	override removeWobGraphicAt(x :number, z :number) {
-		const existingWob = this.getSharedWob(x, z)
+		const existingWob = this.getWob(x, z)
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
 		return this.removeWobGraphic(existingWob)
 

@@ -77,10 +77,10 @@ export class Wob extends SharedWob {
 			// create your renderer
 			const renderer = new WebGLRenderer({ antialias: true, alpha: true, }) //  preserveDrawingBuffer: true, // why?
 			// renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( UiSys.ICON_SIZE, UiSys.ICON_SIZE );
+			renderer.setSize( UiSys.ICON_SIZE, UiSys.ICON_SIZE )
 
 			// apply the internal canvas of the renderer to the DOM
-			container.appendChild( renderer.domElement );
+			container.appendChild( renderer.domElement )
 
 
 			// Scene?
@@ -98,7 +98,7 @@ export class Wob extends SharedWob {
 			// camera.lookAt(1, 0, 1)
 			// camera.lookAt( new Vector3(20,20,20) ); // or the origin
 
-			camera.position.set( 20, 20, 20 );
+			camera.position.set( 20, 20, 20 )
 			// camera.rotation.order = 'YXZ';
 			// camera.rotation.y = - Math.PI / 4;
 			// camera.rotation.x = Math.atan( - 1 / Math.sqrt( 2 ) );
@@ -136,20 +136,20 @@ export class Wob extends SharedWob {
 		
 		for(let child of Wob.HiddenScene.scene.children){ 
 			if(child instanceof Mesh) {
-				Wob.HiddenScene.scene.remove(child); 
+				Wob.HiddenScene.scene.remove(child) 
 			}
 		}
 
 		// if(mesh.name) {
-			const localMesh = mesh.clone()
-			localMesh.geometry = mesh.geometry.clone()
-			Wob.HiddenScene.scene.add(localMesh)
-			// localMesh.position.set(1,1,1)
-			localMesh.position.set(0,-1.5,-0.5)
-			// localMesh.geometry.rotateX(-Math.PI /2)
+		const localMesh = mesh.clone()
+		localMesh.geometry = mesh.geometry.clone()
+		Wob.HiddenScene.scene.add(localMesh)
+		// localMesh.position.set(1,1,1)
+		localMesh.position.set(0,-1.5,-0.5)
+		// localMesh.geometry.rotateX(-Math.PI /2)
 
-			Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
-			// Wob.HiddenScene.renderer.domElement.toDataURL()
+		Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
+		// Wob.HiddenScene.renderer.domElement.toDataURL()
 		// }
 
 
@@ -168,13 +168,13 @@ export class Wob extends SharedWob {
 			let img = new Image()
 			img.src = dataurl
 			img.onload = () => {
-				let canvas = document.createElement('canvas');
+				let canvas = document.createElement('canvas')
 				canvas.width = UiSys.ICON_SIZE
 				canvas.height = UiSys.ICON_SIZE
-				let ctx = canvas.getContext('2d');
-				ctx.drawImage(img, 0, 0);
-				let imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE);
-				let pixels = new Uint8Array(imageData.data.buffer);
+				let ctx = canvas.getContext('2d')
+				ctx.drawImage(img, 0, 0)
+				let imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE)
+				let pixels = new Uint8Array(imageData.data.buffer)
 				canvas.remove()
 				img.remove()
 		
@@ -440,7 +440,7 @@ export class Wob extends SharedWob {
 
 				const instanced = Wob.InstancedMeshes.get(wob.name)
 				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
-				const wobFromData = zone.getSharedWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
+				const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
 				const instancedFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
 				// console.log('wobFromData', wobFromData.name, instancedFromData.name, instanced.name, wob.name)
 
@@ -503,7 +503,7 @@ export class Wob extends SharedWob {
 				}
 	
 				// Add new flame
-				const flame = Flame.Create(wob, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
+				const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
 			}
 
 		}
