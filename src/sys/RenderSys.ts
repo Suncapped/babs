@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, sRGBEncoding, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
@@ -30,12 +30,12 @@ export class RenderSys {
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
+			useLegacyLights: true,
 			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017 
 
 		})
 		this.renderer.xr.enabled = true
-		// this.renderer.outputEncoding = LinearEncoding
-		this.renderer.outputEncoding = sRGBEncoding
+		this.renderer.outputColorSpace = SRGBColorSpace
 		this.renderer.gammaFactor = 2.2 // SO says it's not really deprecated any time soon as of ~Feb2021
 
 

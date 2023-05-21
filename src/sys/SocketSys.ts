@@ -575,7 +575,7 @@ export class SocketSys {
 			this.babs.worldSys.proximaSecondsSinceHour = payload.fetime.secondsSinceHour
 			// context.babs.worldSys.proximaSecondsSinceHour = 2400 // night
 			// context.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *25) // dawn
-			this.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
+			// this.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
 			// this.babs.worldSys.proximaSecondsSinceHour += +(60 *47) // Flip daytime&nighttime
 		}
 		else if('creatures' in payload) {

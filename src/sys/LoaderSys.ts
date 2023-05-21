@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, sRGBEncoding, Texture } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, SRGBColorSpace, sRGBEncoding, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -23,7 +23,7 @@ export class LoaderSys {
 
 		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
-			// this.objectTexture.encoding = sRGBEncoding // Should already be default
+			texture.colorSpace = SRGBColorSpace
 			this.objectTexture.flipY = false 
 			// flipY false because objects are all gltf loaded per https://threejs.org/docs/#examples/en/loaders/GLTFLoader
 			// this.objectTexture.minFilter = 
@@ -97,7 +97,8 @@ export class LoaderSys {
 	async loadTexture(path) {
 		const texture = await new TextureLoader().loadAsync(`${this.urlFiles}${path}`)
 		texture.flipY = false // quirk for GLTFLoader separate texture loading!  (not for fbx!) // todo flipY if using with gltf
-		texture.encoding = sRGBEncoding // This too, though the default seems right
+		// texture.encoding = sRGBEncoding // Deprecated
+		texture.colorSpace = SRGBColorSpace // This too, though the default seems right
 		// Ah, because of this https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/5
 		// texture.anisotropy = 16
 		return texture 
