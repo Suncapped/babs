@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.3.0",
   "engines": {
-    "node": "v19"
+    "node": "v20"
   },
   "volta": {
-    "node": "19.1.0"
+    "node": "20.2.0"
   },
   "scripts": {
     "playerdev": "vite --mode playerdev",
