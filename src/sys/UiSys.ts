@@ -18,7 +18,7 @@ import type { SharedWob } from '@/shared/SharedWob'
 
 export class UiSys {
 	babs :Babs
-	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/suncapped">Discord</a>'
+	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 	ctext
 	labelElements = []
 	svJournal
@@ -42,7 +42,7 @@ export class UiSys {
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
-			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/suncapped">Discord</a>'
+			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 		}
 		toprightText.set(this.toprightTextDefault)
 	}
@@ -235,7 +235,10 @@ export class UiSys {
 		const chatLabel = new CSS2DObject(chatDiv)
 		chatLabel.name = 'craftSaid'
 
-		const yardCoord = YardCoord.Create(wob)
+		const yardCoord = YardCoord.Create({
+			...wob,
+			zone: wobZone,
+		})
 		let point = wobZone.rayHeightAt(yardCoord)
 		point.setY(point.y +2) // Raise up
 		chatLabel.position.copy(point)

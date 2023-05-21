@@ -54,6 +54,7 @@ module.exports = {
 		'no-empty': 'off',
 		'no-mixed-spaces-and-tabs': 'warn',
 		'no-constant-condition': 'warn',
+		'no-inner-declarations': 'off',
 		
 	},
 }

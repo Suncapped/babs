@@ -261,24 +261,46 @@ export class InputSys {
 					console.log('res', res)
 
 				}
-				if (this.keys.m === PRESS) {
-					// One scroll (there were reasons!)
-					// const wobScroll = {
-					// 	id: Utils.randIntInclusive(1_000_000, 1_000_000_000),
-					// 	idzone: 899279496,
-					// 	x: 4,
-					// 	z: 4,
-					// 	name: 'scroll',
-					// 	color: '0xff0000',
-					// }
-					// log('Created scroll at 4,4')
-					// await Wob.LoadInstancedGraphics([wobScroll], this.babs, false)
-					log('m', this.babs.ents, this.babs.ents.size)
+				if (this.keys.t === PRESS) {
 
-					// Show zones
-					for (const [key, value] of this.babs.ents.entries()) {
-						console.log(key, value)
+					function countTrianglesInGeometry(geometry) {
+						if (geometry.index) {
+							return geometry.index.count / 3;
+						} else {
+							return geometry.attributes.position.count / 3;
+						}
 					}
+
+					function findInstancedMeshesAndTriangleCounts(object) {
+						const instancedMeshes = [];
+
+						object.traverse((child) => {
+							if (child instanceof InstancedMesh) {
+								const triangleCount = countTrianglesInGeometry(child.geometry) * child.count;
+								instancedMeshes.push({
+									mesh: child,
+									triangleCount: triangleCount,
+									trisPer: countTrianglesInGeometry(child.geometry),
+									countOf: child.count,
+								});
+							}
+						});
+
+						return instancedMeshes;
+					}
+
+					function sortInstancedMeshesByTriangleCount(instancedMeshes) {
+						return instancedMeshes.sort((a, b) => b.triangleCount - a.triangleCount);
+					}
+
+					// Usage
+					const instancedMeshesAndTriangleCounts = findInstancedMeshesAndTriangleCounts(this.babs.scene);
+					const sortedInstancedMeshes = sortInstancedMeshesByTriangleCount(instancedMeshesAndTriangleCounts);
+
+					console.log('total tris, blueprint, (tris per * number of):')
+					const out = sortedInstancedMeshes.map(im => `${im.triangleCount}, ${im.mesh.name}, (${im.trisPer} * ${im.countOf})\n`)
+					console.log(out.join(''))
+
 				}
 			}
 

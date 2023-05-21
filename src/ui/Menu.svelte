@@ -258,7 +258,7 @@
 				</fieldset>
 			</li>
 			<li style="text-align:right;">
-				<a target="_new" href="https://discord.gg/suncapped">discord.gg/suncapped</a>
+				<a target="_new" href="https://discord.gg/r4pdPTWbm5">discord.gg/r4pdPTWbm5</a>
 			</li>
 			<li>&nbsp;</li>
 
