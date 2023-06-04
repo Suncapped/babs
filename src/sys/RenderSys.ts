@@ -1,18 +1,20 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, Matrix4, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton'
 import { Flame } from '@/comp/Flame'
+import type { Babs } from '@/Babs'
+import { Wob } from '@/ent/Wob'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
 
 export class RenderSys {
 
-	babs
+	babs :Babs
 	renderer :WebGLRenderer
 	labelRenderer
 	_camera :PerspectiveCamera
@@ -135,6 +137,11 @@ export class RenderSys {
 				}
 			}
 		}, 1000)
+
+
+		setInterval(() => {
+			this.babs.renderSys.calcShowOnlyNearbyWobs()
+		}, 1000)
 	}
 
 	firstTime = true
@@ -162,5 +169,80 @@ export class RenderSys {
 	update(dt) {
 		this.renderer.render(this._scene, this._camera)
 		this.labelRenderer.render(this._scene, this._camera)
+	}
+
+	calcShowOnlyNearbyWobs() {
+		for(let [key, instancedMesh] of Wob.InstancedMeshes) {
+			// Let's sort the Goblin Blanketflowers instancedmeshes by distance from player
+
+			if(instancedMesh.name == 'tree twotris') continue
+
+			// Also skip tall things like trees.
+			const wobIsSmall = instancedMesh.boundingSize.y < Wob.FarwobShownHeightMinimum
+			if(!wobIsSmall) continue
+
+			// For each index in instancedMesh, get the position relative to the player
+			const instanceMatrix = instancedMesh.instanceMatrix
+			// console.log('instancedMatrix', instanceMatrix)
+
+			let indexDistances :Array<{dist: number, originalIndex: number}> = []
+			for(let i=0; i<instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
+				const x = instanceMatrix.array[i +12] +this.babs.worldSys.shiftiness.x
+				const z = instanceMatrix.array[i +14] +this.babs.worldSys.shiftiness.z
+				const coord = instancedMesh.coordFromIndex(i/16)
+				// console.log(x, z, coord.x, coord.z)
+				if(x !== coord.x || z !== coord.z) {
+					console.warn('MISMATCH!')
+				}
+
+				// Get distance from playerpos in 2 dimensions
+				const playerpos = this.babs.inputSys.playerSelf.controller.target.position
+				const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
+
+				indexDistances[i/16] = {
+					dist: dist,
+					originalIndex: i/16,
+				}
+				if(i/16 == 486) {
+					// console.log('486', dist)
+				}
+			}
+
+			indexDistances.sort((a, b) => {
+				return a.dist -b.dist
+			})
+
+			// We can't just swap, because it's all rearranged.
+			// Instead, let's just copy in the top items that are below a certain distance!
+			// Rather than a cutoff at a number, cutoff based on dist.
+			const distCutoff = 100
+			
+			// const instanceMatrixCopy = instanceMatrix.clone()
+			const instancedMeshCopy = instancedMesh.clone()
+			let tempSwap = new Matrix4()
+			let itemCount = 0
+			while(itemCount < indexDistances.length && indexDistances[itemCount].dist < distCutoff){
+				instancedMeshCopy.getMatrixAt(indexDistances[itemCount].originalIndex, tempSwap)
+				instancedMesh.setMatrixAt(itemCount, tempSwap)
+				itemCount++
+			}
+			// Could maybe instead just overwrite this?  But it'd be way more than the top X number:
+			// 		instanceMatrix.copyArray(instanceMatrix.array)
+			
+			// console.log('itemCount', instancedMesh.name, itemCount)
+			instancedMesh.count = itemCount
+			instancedMesh.instanceMatrix.needsUpdate = true
+
+			// Thoughts for next:
+			// Also need to deal with zoning and count; store real count for use during zoning?
+			// 		And check on the coord thing above; is that important for shiftiness?
+			// How about when I zone, I set the count to normal, zone, then run the recalc?
+
+			// Ummm why is this making tris keep rising at each run??
+
+			// Later, I could also base this on tris rather than distance; make distance shorter when there's a lot of tris (like a forest)
+			
+
+		}
 	}
 }

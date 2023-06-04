@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -47,6 +47,127 @@ export class LoaderSys {
 			})
 			// material.color.copy(material.color.convertSRGBToLinear())
 			// material.emissive.copy(material.emissive.convertSRGBToLinear())
+
+			// let customMaterial = new ShaderMaterial({
+			// 	side: DoubleSide,
+			// 	name: 'megamaterial',
+			// 	visible: true,
+			// 	wireframe: true,
+			// 	transparent: false,
+				
+			// 	shadowSide: DoubleSide, // Might have to use separate materials if I want more granularity.
+			// 	uniforms: {
+			// 		// maxDistance: { value: 100.0 },
+			// 		// cameraPosition: { value: new Vector3() },
+
+			// 		// color: { value: new Color(0xff0000) },
+
+			// 		// time: { value: 1.0 },
+			// 		// resolution: { value: new Vector2() },
+
+			// 		colorB: {value: new Color(0xACB6E5)},
+			// 		colorA: {value: new Color(0x74ebd5)}
+
+			// 	},
+			// 	// defaultAttributeValues : { 
+			// 	// 	'color': [ 1, 1, 1 ], 
+			// 	// 	'uv': [ 0, 0 ],
+			// 	// 	'uv1': [ 0, 0 ] 
+			// 	// },
+
+			// 	vertexShader: 
+			// 	// `
+			// 	// 	uniform float maxDistance;
+			// 	// 	uniform vec3 cameraPosition;
+
+			// 	// 	void main() {
+			// 	// 		float distance = length(cameraPosition - position);
+			// 	// 		if (distance > maxDistance) {
+			// 	// 			gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+			// 	// 		} else {
+			// 	// 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			// 	// 		}
+			// 	// 	}
+			// 	// `
+			// 	// `
+			// 	// 	void main() {
+			// 	// 		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			// 	// 	}
+			// 	// `
+			// 	`
+			// 	varying vec3 vUv; 
+
+			// 	void main() {
+			// 	  vUv = position; 
+			
+			// 	  vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+			// 	  gl_Position = projectionMatrix * modelViewPosition; 
+			// 	}
+			// 	`
+			// 	, 
+			// 	fragmentShader: 
+			// 	// `
+			// 	// 	void main() {
+			// 	// 		gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+			// 	// 	}
+			// 	// `
+			// 	// `
+			// 	// 	uniform vec3 color;
+			// 	// 	void main() {
+			// 	// 		gl_FragColor = vec4(color, 1.0);
+			// 	// 	}
+			// 	// `
+			// 	`
+			// 	uniform vec3 colorA; 
+			// 	uniform vec3 colorB; 
+			// 	varying vec3 vUv;
+		  
+			// 	void main() {
+			// 	  gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
+			// 	}
+			// 	`
+			// 	,
+			// })
+
+			// // customMaterial.defaultAttributeValues = {
+			// // 	'color': [ 1, 1, 1 ],
+			// // 	'uv': [ 0, 0 ],
+			// // 	'uv1': [ 0, 0 ],
+			// // },
+			// // customMaterial.wireframe = true
+			// // customMaterial.visible = true
+			// // customMaterial.side = DoubleSide
+			// // customMaterial.lights = false
+			// customMaterial.name = 'megamaterial'
+
+			// // customMaterial.uniforms.map.value = this.objectTexture
+			// // customMaterial.defines.USE_MAP = ''
+
+			// // Ignoring the above, create a simple ShaderMaterial that displays things.
+			// // const coMaterial = new ShaderMaterial({
+			// // 	uniforms: {
+			// // 		maxDistance: { value: 100.0 },
+			// // 		cameraPosition: { value: new Vector3() },
+			// // 		color: { value: new Color(0x00ff00) },
+			// // 	},
+			// // 	vertexShader:
+			// // 	`
+			// // 		uniform float maxDistance;
+			// // 		uniform vec3 cameraPosition;
+					
+			// // 	`
+			// // 	,
+			// // 	fragmentShader:
+			// // 	`
+			// // 		uniform vec3 color;
+			// // 		void main() {
+			// // 			gl_FragColor = vec4(color, 1.0);
+			// // 		}
+			// // 	`
+			// // 	,
+			// // })
+			// this.megaMaterial = customMaterial
+
 
 			this.megaMaterial = material
 			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?

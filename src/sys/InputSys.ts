@@ -231,7 +231,7 @@ export class InputSys {
 				}
 
 				// Instant Forest
-				if (this.keys.b === PRESS) {
+				if (this.keys.o === PRESS) {
 					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
 					// const [treesPerAxis, spacing] = [5, 50] // Property (5 plots) posts
 					let count=0
@@ -304,6 +304,17 @@ export class InputSys {
 					console.log('total tris, blueprint, (tris per * number of):')
 					const out = sortedInstancedMeshes.map(im => `${im.triangleCount}, ${im.mesh.name}, (${im.trisPer} * ${im.countOf})\n`)
 					console.log(out.join(''))
+
+				}
+
+				if (this.keys.b === PRESS) {
+					this.babs.renderSys.calcShowOnlyNearbyWobs()
+
+
+				}
+
+				if (this.keys.d === PRESS) {
+
 
 				}
 			}
@@ -961,7 +972,12 @@ export class InputSys {
 			this.mouseRayTargets = []
 			// this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets) 
 			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
-			this.mouse.ray.intersectObjects(this.babs.group.children, false, this.mouseRayTargets) // Gets everything but player?
+
+			this.mouse.ray.intersectObjects(this.babs.group.children.filter(c=>c.name!='tree twotris'), false, this.mouseRayTargets) // Gets everything but player?
+			// Hmm I guess it's not actually too bad here, because instancedmeshes are just 1 per instancedmesh
+			// Unless getting instanceId is expensive...I don't know.
+			// Well, filtering out 'tree twotris' does help a lot with framerate.  So I do think it matters...the ray must subsearch the instancedmesh.
+
 			const mouseRayPlayers = []
 			const players = this.babs.group.children.filter(c=>c.name=='self'||c.name=='player')
 			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
@@ -969,12 +985,6 @@ export class InputSys {
 				this.mouse.ray.intersectObjects(playerBboxes, false, mouseRayPlayers)
 				this.mouseRayTargets = this.mouseRayTargets.concat(mouseRayPlayers)
 			}
-			
-
-
-			// if(this.mouseRayTargets.length > 1) {
-			// 	log(this.mouseRayTargets)
-			// }
 
 			// Ensure ground is last.  It was getting in the way of objects on the ground
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) {

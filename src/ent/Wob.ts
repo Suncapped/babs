@@ -33,12 +33,18 @@ export class FeInstancedMesh extends InstancedMesh {
 		// Returns world coord; instanced are zero-oriented since they have to be shared across zones, and their 'getMatrixAt()' positions are all local, not world.  So we change them to world using shiftiness.
 		const matrix = new Matrix4()
 		this.getMatrixAt(index, matrix)
-		const quat = new Quaternion()
 		const position = new Vector3()
-		quat.setFromRotationMatrix(matrix)
 		position.setFromMatrixPosition(matrix)
-		const engWorldCoord = position.clone().add(this.babs.worldSys.shiftiness)
+		// const quat = new Quaternion()
+		// quat.setFromRotationMatrix(matrix)
+		const engWorldCoord = position.add(this.babs.worldSys.shiftiness)
 		return engWorldCoord
+
+		// // Um that might all be overkill!  Works just as well.  Wait no - only works in-zone.
+		// for(let i=0; i<this.instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
+		// 	const x = instanceMatrix.array[i +12]
+		// 	const z = instanceMatrix.array[i +14]
+		// }
 	}
 }
 
@@ -188,6 +194,8 @@ export class Wob extends SharedWob {
 	static FarwobShownHeightMinimum = 12
 	static FarwobHiddenBuryDepth = 1000
 
+	static totalArrivedWobs = 0
+
 	static LoadedGltfs = new Map<string, any>()
 	static InstancedMeshes = new Map<string, FeInstancedMesh>()
 	static async LoadInstancedGraphics(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean) {
@@ -200,6 +208,8 @@ export class Wob extends SharedWob {
 		const nameCounts = new Map<string, number>()
 		// console.time('timing')
 		let gltfCounts = 0
+
+		Wob.totalArrivedWobs += arrivalWobs.length
 
 
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
@@ -302,15 +312,6 @@ export class Wob extends SharedWob {
 
 				instanced.castShadow = instanced.boundingSize.y >= 1
 				instanced.receiveShadow = true
-
-				// 			const mudColors = []
-				// 			const color = new Color(1,1,1) // Set to not modify color; used later for highlight by pickedObject in InputSys
-				// 			for(let i=0; i<instanced.count; i++) {
-				// 				mudColors.push(color.r, color.g, color.b)
-				// 			}
-				// 			const bufferAttr = new InstancedBufferAttribute(new Float32Array(mudColors), 3)
-				// 			bufferAttr.needsUpdate = true
-				// 			instanced.instanceColor = bufferAttr
 
 				// Set to not modify color; used later for highlight by pickedObject in InputSys
 				const fullColors = new Float32Array(instanced.countMax *3)

@@ -168,8 +168,8 @@ export type PlayerArrive = {
 
 	// movestate? :number, // Optional because of load.self // Deprecated
 	meta :{
-		mousedevice :string,
-		debugmode :boolean,
+		mousedevice? :string,
+		debugmode? :boolean,
 	},
 	char :{
 		gender :string,
