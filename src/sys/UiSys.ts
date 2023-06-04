@@ -15,6 +15,7 @@ import { Wob } from '@/ent/Wob'
 import { InputSys } from './InputSys'
 import { Babs } from '@/Babs'
 import type { SharedWob } from '@/shared/SharedWob'
+import type { Player } from '@/ent/Player'
 
 export class UiSys {
 	babs :Babs
@@ -63,7 +64,7 @@ export class UiSys {
 			text = `< ${text} >`
 		}
 
-		const player = this.babs.ents.get(idPlayer)
+		const player = this.babs.ents.get(idPlayer) as Player
 
 		// Set color based on our menu or the color send with chat for other player
 		// if(idPlayer === this.babs.idSelf) {
@@ -289,7 +290,7 @@ export class UiSys {
      * @param {'fps'|'mem'} which
      */
 	createStats(which) {
-		this[which] = Stats()
+		this[which] = new Stats()
 		this[which].showPanel(which=='fps'?0:1)
 		this[which].dom.id = which
 		this[which].dom.style = ''
@@ -345,13 +346,15 @@ export class UiSys {
 	logText = ''
 	update() {
 
+		let playerSelf :Player
 		if(this.babs?.idSelf) { // Player is loaded
-			const playerPos = this.babs.ents.get(this.babs.idSelf)?.controller?.target?.position
+			playerSelf = this.babs.ents.get(this.babs.idSelf) as Player
+			const playerPos = playerSelf?.controller?.target?.position
 			if(playerPos && !this.oldPos.equals(playerPos)) {
 				this.oldPos = playerPos.clone()
 			}
 		}
-		const newLogText = `zone: ${this.babs.ents.get(this.babs.idSelf)?.controller?.target.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length}`
+		const newLogText = `zone: ${playerSelf?.controller?.target.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length}`
 		if(this.logText !== newLogText) {
 			this.logText = newLogText
 			window.document.getElementById('log').innerText = this.logText

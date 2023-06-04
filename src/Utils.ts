@@ -134,8 +134,8 @@ export const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 //     }
 // }
 
-var RATIO_DEGREES = 180 / Math.PI
-var RATIO_RADIANS = Math.PI / 180
+const RATIO_DEGREES = 180 / Math.PI
+const RATIO_RADIANS = Math.PI / 180
 export function radians (degrees) {
 	return degrees * RATIO_RADIANS
 }
@@ -144,13 +144,13 @@ export function degrees(radians) {
 }
 
 
-export function coordToIndex(x, z, sideLength, dataLength = 1) {
+export function coordToIndex(x :number, z :number, sideLength :number, dataLength = 1) {
 	return x*dataLength +(z *sideLength *dataLength)
 }
-export function indexToCoord(i, sideLength) { // Don't currently have a need to remove dataLength
+export function indexToCoord(i :number, sideLength :number = 26) { // Don't currently have a need to remove dataLength
 	return {
-		x: i %26, 
-		z: Math.floor(i /26),
+		x: i %sideLength, 
+		z: Math.floor(i /sideLength),
 	}
 }
 

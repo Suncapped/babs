@@ -1,11 +1,14 @@
 import { log } from '@/Utils'
-import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4 } from 'three'
+import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4, Object3D } from 'three'
 import { Comp } from '@/comp/Comp'
 import { WorldSys } from '@/sys/WorldSys'
 import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
+import type { Babs } from '@/Babs'
+import type { PlayerArrive } from '@/shared/consts'
+import type { FeObject3D } from '@/ent/Wob'
 
 // Begun from MIT licensed https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -43,21 +46,21 @@ export class Controller extends Comp {
 	}
 	static sizeScaleDown = 0.80
 
-	constructor(arrival, babs) {
+	constructor(arrival :PlayerArrive, babs :Babs) {
 		super(arrival.id, Controller, babs)
 	}
 
-	static Create(arrival, babs, scene :Scene) {
-		return new Controller(arrival, babs).init(arrival, scene)
+	static Create(arrival :PlayerArrive, babs :Babs, object3d :FeObject3D) {
+		return new Controller(arrival, babs).init(arrival, object3d)
 	}
 
 	raycaster
 	gDestination :Vector3
 	hover = 0
-	groundDistance :number|boolean = 0
+	groundDistance = 0
 	isSelf :boolean = false
 
-	target :Scene & {zone? :Zone}
+	target :FeObject3D
 
 	arrival
 	vTerrainMin = new Vector3(0, 0, 0)
@@ -79,12 +82,12 @@ export class Controller extends Comp {
 	_stateMachine :CharacterFSM
 
 
-	async init(arrival, scene :Scene) {
+	async init(arrival :PlayerArrive, object3d :Object3D) {
 		log.info('Controller.init()', arrival)
 		this.arrival = arrival
 		this.isSelf = this.idEnt === this.babs.idSelf
 
-		this.target = scene
+		this.target = object3d
 		this.target.zone = this.babs.ents.get(this.arrival.idzone) as Zone
 
 		this._stateMachine = new CharacterFSM(
@@ -272,7 +275,7 @@ export class Controller extends Comp {
 
 	}
 
-	jump(height) {
+	jump(height :number) {
 		log('jump!', this.groundDistance, this.velocity.y)
 		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
 			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
@@ -456,7 +459,7 @@ export class Controller extends Comp {
 
 			if(worldGroundHeight?.y > this.target?.position?.y || this.hover) {
 				// Keep above ground
-				this.groundDistance = true
+				this.groundDistance = 1
 
 				this.target.position.setY(worldGroundHeight.y +this.hover)
 				// const playerLocalPos = this.target.position.clone()

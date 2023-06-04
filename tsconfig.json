@@ -23,7 +23,8 @@
 	"paths": {
 		"@/*": ["src/*"],
 	},
-	"verbatimModuleSyntax": true
+	"verbatimModuleSyntax": true,
+	"allowSyntheticDefaultImports": true
 	
   },
   "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],

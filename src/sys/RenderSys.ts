@@ -30,19 +30,15 @@ export class RenderSys {
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
-			useLegacyLights: true,
 			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017 
 
 		})
 		this.renderer.xr.enabled = true
 		this.renderer.outputColorSpace = SRGBColorSpace
-		this.renderer.gammaFactor = 2.2 // SO says it's not really deprecated any time soon as of ~Feb2021
-
 
 		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
 		// this.renderer.physicallyCorrectLights = false
 		this.renderer.useLegacyLights = true
-		ColorManagement.legacyMode = false
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10
 		this.renderer.toneMapping = ACESFilmicToneMapping

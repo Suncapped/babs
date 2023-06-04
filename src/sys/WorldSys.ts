@@ -20,7 +20,6 @@ import {
 	PerspectiveCamera,
 	WebGLRenderer,
 	PCFSoftShadowMap,
-	BoxBufferGeometry,
 	AxesHelper,
 	LineBasicMaterial,
 	TubeGeometry,
@@ -766,7 +765,7 @@ export class WorldSys {
 		zone.geometry = geometry
 
 		const nCoordsComponents = 3 // x,y,z
-		const verticesRef = geometry.getAttribute('position').array
+		const verticesRef = geometry.getAttribute('position').array as Float32Array
 
 		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
 			// j + 1 because it is the y component that we modify
@@ -837,7 +836,7 @@ export class WorldSys {
 		// Add color attribute to geometry, so that I can use vertex colors
 		const colorArr = new Float32Array(verticesRef.length) 
 		geometry.setAttribute('color', new Float32BufferAttribute(colorArr, nColorComponents))
-		const colorsRef = geometry.getAttribute('color').array
+		const colorsRef = geometry.getAttribute('color').array as Float32Array
 	
 
 		let waterNearbyIndex = new Array(26*26).fill(0)
@@ -983,7 +982,7 @@ export class WorldSys {
 					shiftingLog.push(child.name || child)
 				}
 				if(child.name == 'player') {
-					const player = this.babs.ents.get(child.idplayer) as Player
+					// const player = this.babs.ents.get(child.idplayer) as Player
 					// const shiftYards = shiftVector.clone().divideScalar(4).floor()
 					// player.controller.gDestination.add(shiftYards)
 				}
@@ -996,11 +995,12 @@ export class WorldSys {
 
 }
 
-export class PatchableReadableStream extends ReadableStream {
+// @ts-ignore
+export class PatchableReadableStream extends ReadableStream { 
 	constructor(reader) {
 		super({
 			async start(controller) {
-				while (true) {
+				while (true) { // eslint-disable-line
 					const { done, value } = await reader.read()
 					if (done) break
 					controller.enqueue(value)

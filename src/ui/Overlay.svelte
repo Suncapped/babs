@@ -53,11 +53,14 @@
 			if(offsetOrObj === undefined) { // First time or too big
 				dividerOffset.set(100)// (window.innerWidth /4) // default
 			}
-			else if(offsetOrObj.save) { // Actually resized by player, or received
-				socketSend.set({
-					'savedivider': offsetOrObj.save, // Sends to server on first set ugh
-				})
-				dividerOffset.set(offsetOrObj.save)
+			else {
+				const saveNumber = (typeof offsetOrObj === 'object' && 'save' in offsetOrObj && typeof offsetOrObj.save === 'number') ? offsetOrObj.save : null
+				if(saveNumber) { // Actually resized by player, or received
+					socketSend.set({
+						'savedivider': saveNumber, // Sends to server on first set ugh
+					})
+					dividerOffset.set(saveNumber)
+				}
 			}
 			// setTimeout(() => doResize(offsetOrObj), 1) // hax // no longer needed?
 			doResize(offsetOrObj)
@@ -82,7 +85,7 @@
 	<div class="topitem" id="welcomebar">
 		<div id="topright">
 			{#if $toprightReconnect}
-				<div>{$toprightReconnect} [<a href on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]</div>
+				<div>{$toprightReconnect} [<a href={'#'} on:click|preventDefault={(ev) => window.location.reload()}>Reconnect?</a>]</div>
 			{:else}
 				{@html $toprightText}
 			{/if}

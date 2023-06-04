@@ -1,5 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Box2, Camera, Color, InstancedMesh, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
+import { Box2, Camera, Color, InstancedMesh, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
 import { FeInstancedMesh, Wob } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
@@ -38,6 +38,8 @@ type PickedObject = {
 	instancedIndex? :number,
 	instancedPosition? :Vector3,
 	yardCoord? :YardCoord,
+	material? :Material,
+	type? :string,
 }
 
 export class InputSys {
@@ -125,6 +127,8 @@ export class InputSys {
 	mediaRecorder :MediaRecorder
 	recordedChunks :Blob[] = []
 	mediaHasListener = false
+
+	activityTimestamp :number
 
 	constructor(babs :Babs, player :Player, mousedevice) {
 
@@ -265,37 +269,37 @@ export class InputSys {
 
 					function countTrianglesInGeometry(geometry) {
 						if (geometry.index) {
-							return geometry.index.count / 3;
+							return geometry.index.count / 3
 						} else {
-							return geometry.attributes.position.count / 3;
+							return geometry.attributes.position.count / 3
 						}
 					}
 
 					function findInstancedMeshesAndTriangleCounts(object) {
-						const instancedMeshes = [];
+						const instancedMeshes = []
 
 						object.traverse((child) => {
 							if (child instanceof InstancedMesh) {
-								const triangleCount = countTrianglesInGeometry(child.geometry) * child.count;
+								const triangleCount = countTrianglesInGeometry(child.geometry) * child.count
 								instancedMeshes.push({
 									mesh: child,
 									triangleCount: triangleCount,
 									trisPer: countTrianglesInGeometry(child.geometry),
 									countOf: child.count,
-								});
+								})
 							}
-						});
+						})
 
-						return instancedMeshes;
+						return instancedMeshes
 					}
 
 					function sortInstancedMeshesByTriangleCount(instancedMeshes) {
-						return instancedMeshes.sort((a, b) => b.triangleCount - a.triangleCount);
+						return instancedMeshes.sort((a, b) => b.triangleCount - a.triangleCount)
 					}
 
 					// Usage
-					const instancedMeshesAndTriangleCounts = findInstancedMeshesAndTriangleCounts(this.babs.scene);
-					const sortedInstancedMeshes = sortInstancedMeshesByTriangleCount(instancedMeshesAndTriangleCounts);
+					const instancedMeshesAndTriangleCounts = findInstancedMeshesAndTriangleCounts(this.babs.scene)
+					const sortedInstancedMeshes = sortInstancedMeshesByTriangleCount(instancedMeshesAndTriangleCounts)
 
 					console.log('total tris, blueprint, (tris per * number of):')
 					const out = sortedInstancedMeshes.map(im => `${im.triangleCount}, ${im.mesh.name}, (${im.trisPer} * ${im.countOf})\n`)
@@ -1345,7 +1349,7 @@ export class InputSys {
 				// mimeType = 'audio/mp4;codecs=mp4a'
 				// if (!MediaRecorder.isTypeSupported(mimeType)) {
 				console.error('Unsupported MIME type')
-				return;
+				return
 				// }
 			}
 			this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })

@@ -1,14 +1,6 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage } from 'three'
-import { SocketSys } from '@/sys/SocketSys'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D } from 'three'
 import { UiSys } from '@/sys/UiSys'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
-import * as Utils from '@/Utils'
-import { Appearance } from '@/comp/Appearance'
-
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { Ent } from './Ent'
 import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
@@ -421,7 +413,11 @@ export class Wob extends SharedWob {
 		let count = 0
 		// console.log('fwobs to load:', arrivalWobs.length)
 		for(const fwob of arrivalWobs) {
-			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {blueprint_id: fwob.blueprint_id, locid: fwob.locid})
+			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
+				blueprint_id: fwob.blueprint_id, 
+				locid: fwob.locid,
+				comps: fwob.comps,
+			})
 			
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI
@@ -514,4 +510,11 @@ export class Wob extends SharedWob {
 
 	}
 	
+}
+
+
+
+export type FeObject3D = Object3D & {
+	idplayer? :number
+	zone? :Zone
 }

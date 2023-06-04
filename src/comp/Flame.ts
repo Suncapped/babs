@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -215,6 +215,8 @@ let FireShader = {
 }
 
 class ThreeFire extends Mesh {
+	declare material :ShaderMaterial
+
 	constructor( fireTex, color = new Color( 0xeeeeee )) {
 		const fireMaterial = new ShaderMaterial( {
 			defines         : FireShader.defines,
@@ -227,8 +229,14 @@ class ThreeFire extends Mesh {
 			depthTest       : true,
 		} )
 
+		
 		super(new BoxGeometry( 1.0, 1.0, 1.0 ), fireMaterial) //THREE.Mesh.call( this, geometry, material);
+		super.material
 
+		if(Array.isArray(this.material)) {
+			console.warn('Error: Array material')
+		}
+		
 		// initialize uniforms 
 		fireTex.magFilter = fireTex.minFilter = LinearFilter
 		// fireTex.wrapS = THREE.wrapT = THREE.ClampToEdgeWrapping; // TODO can't set THREE.wrapT

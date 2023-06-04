@@ -65,8 +65,8 @@ export class Babs {
 
 		console.log('Mode is:', import.meta.env.MODE)
 
-		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0;
-		const isWindows = navigator.platform.toUpperCase().indexOf('WIN')>=0;
+		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0
+		const isWindows = navigator.platform.toUpperCase().indexOf('WIN')>=0
 		if(isWindows) {
 			let stylesheet = document.styleSheets[0]
 			console.log(stylesheet)
@@ -161,7 +161,7 @@ export class Babs {
 			document.getElementById('charsave')['disabled'] = true
 			this.socketSys.enter(
 				document.getElementById('email')['value'], 
-				document.getElementById('password')['value']
+				document.getElementById('password')['value'],
 			)
 		})
 

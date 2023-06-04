@@ -17,7 +17,7 @@ type IsValid<N extends number> = IsPositive<N> extends true
 type PositiveUint<
   N extends number,
   T extends number[] = []
-> = T["length"] extends N ? T[number] : PositiveUint<N, [...T, T["length"]]>;
+> = T['length'] extends N ? T[number] : PositiveUint<N, [...T, T['length']]>;
 
 export type UintRange<N1 extends IsValid<N1>, N2 extends IsValid<N2>> = Exclude<PositiveUint<N2>, PositiveUint<N1>>;
 

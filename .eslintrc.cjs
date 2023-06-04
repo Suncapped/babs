@@ -46,7 +46,7 @@ module.exports = {
 		'@typescript-eslint/no-inferrable-types': 'off',
 		'@typescript-eslint/no-unused-vars': 'off',
 		'@typescript-eslint/no-explicit-any': 'off',
-		'@typescript-eslint/no-empty-function': 'off',
+		'@typescript-eslint/ban-ts-comment': 'off',
 
 		// Native disables
 		'prefer-const': 'off',
@@ -55,6 +55,9 @@ module.exports = {
 		'no-mixed-spaces-and-tabs': 'warn',
 		'no-constant-condition': 'warn',
 		'no-inner-declarations': 'off',
+		'prefer-rest-params': 'off',
+		'no-irregular-whitespace': 'warn',
+
 		
 	},
 }

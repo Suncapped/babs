@@ -8,6 +8,7 @@ import { EventSys } from '@/sys/EventSys'
 import { Object3D, Scene } from 'three'
 import { Babs } from '@/Babs'
 import type { PlayerArrive } from '@/shared/consts'
+import type { FeObject3D } from './Wob'
 
 // Player Character
 export class Player extends Ent {
@@ -47,20 +48,20 @@ export class Player extends Ent {
 
 		log.info('New Player:', plr)
 
-		const [gltfScene] = await Promise.all([ 
+		const [object3d] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
-		]) as [Object3D]
-		gltfScene.name = plr.self ? 'self' : 'player'
-		gltfScene.idplayer = arrival.id
-		gltfScene.visible = false
-		plr.babs.group.add(gltfScene)
+		]) as [FeObject3D]
+		object3d.name = plr.self ? 'self' : 'player'
+		object3d.idplayer = arrival.id
+		object3d.visible = false
+		plr.babs.group.add(object3d)
 
 		if(plr.self) {
 			plr.babs.idSelf = plr.id
 		}
 
-		plr.controller = await Controller.Create(arrival, plr.babs, gltfScene)
+		plr.controller = await Controller.Create(arrival, plr.babs, object3d)
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -99,7 +100,7 @@ export class Player extends Ent {
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting')
-				if(player.controller.target) {
+				if(this.controller.target) {
 					this.babs.group.remove(this.controller.target) 
 					clearInterval(waitForMesh)
 				}

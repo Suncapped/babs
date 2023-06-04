@@ -1,14 +1,16 @@
 import { log } from './../Utils'
+import type { WorldSys } from './WorldSys'
 
+type FeSubscriberClasses = WorldSys
 export class EventSys {
-	static subscribers = new Set
-	static Subscribe(subscriber) {
-		this.subscribers.add(subscriber)
+	static subscribers = new Set<FeSubscriberClasses>
+	static Subscribe(subscriber :FeSubscriberClasses) {
+		EventSys.subscribers.add(subscriber)
 	}
-	static Dispatch(type, data) {
+	static Dispatch(type :string, data :object) {
 		log.info('** Event:', type)
-		for (let sub of EventSys.subscribers){
-			sub.Event(type, data)
+		for (let subscriber of EventSys.subscribers){
+			subscriber.Event(type, data)
 		}
 	}
 }

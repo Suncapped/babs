@@ -1,11 +1,11 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, SRGBColorSpace, sRGBEncoding, Texture } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
 import { MeshPhongMaterial } from 'three'
 import { log } from './../Utils'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Controller } from '@/comp/Controller'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 
@@ -75,7 +75,7 @@ export class LoaderSys {
 					log.info('Loaded FBX:', path, group)
 
 					group.traverse(child => {
-						if (child.isMesh) {
+						if (child instanceof Mesh) {
 							// log('FBX COLOR is', child.material.color)
 							child.material.color = new Color(1,1,1) // Unset any weird import colors beyond texture painting
 						}
@@ -90,7 +90,7 @@ export class LoaderSys {
 					console.error( 'An error happened', err )
 				}
 			)
-		}); 
+		})
 	}
 
 
@@ -106,7 +106,7 @@ export class LoaderSys {
 	}
 
 	
-	loadGltf(path, name) :Promise<{scene, animations}|{name :string}> {
+	loadGltf(path :string, name :string = 'noname') :Promise<GLTF|{name :string}> {
 		return new Promise((resolve, reject) => {
 			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
 				(gltf) => { // onLoad callback
@@ -114,7 +114,7 @@ export class LoaderSys {
 					// log('Loaded GLTF:', gltf.scene.children[0])
 
 					gltf.scene.traverse(child => {
-						if (child.isMesh) {
+						if (child instanceof Mesh) {
 							child.material = this.megaMaterial
 						}
 					})
@@ -179,12 +179,12 @@ export class LoaderSys {
 		}
 		else {
 			log.info('download rig', path)
-			let group = await this.loadGltf(path)
+			let group = await this.loadGltf(path) as GLTF // It's not meant to error and return {name}
 			this.mapPathRigCache.set(path, group.scene)
 			groupScene = SkeletonUtils.clone(group.scene)
 		}
 		
-		const skinnedMesh = groupScene.children[0].children[0]//group.traverse(c => c instanceof SkinnedMesh)
+		const skinnedMesh = groupScene.children[0].children[0] as SkinnedMesh//group.traverse(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
 		skinnedMesh.castShadow = true
@@ -243,7 +243,7 @@ export class LoaderSys {
 		return groupScene
 	}
 
-	mapPathAnimCache = new Map()
+	mapPathAnimCache = new Map<string, GLTF>()
 	async loadAnim(gender, anim) {
 		const path = `/char/${gender}/female-anim-${anim}.glb`
 		const cached = this.mapPathAnimCache.get(path)
@@ -253,7 +253,7 @@ export class LoaderSys {
 		}
 		else {
 			log.info('download anim', path)
-			let group = await this.loadGltf(path)
+			let group = await this.loadGltf(path) as GLTF // It's not meant to error and return {name}
 			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
 			return group
 		}
