@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { SharedBlueprintWithComps, blueprint_id, type WobId } from './SharedWob'
+import { type WobId } from './SharedWob'
 
 export const NLCD = {
 	// Water
@@ -59,7 +59,11 @@ export const FE_LANDCOVERS = {
 	Cliff: 200,
 }
 
-export const StringifyLandcover = Utils.objectFlipKeyValue(FE_LANDCOVERS)
+export function objectFlipKeyValue(obj) {
+	return Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
+}
+
+export const StringifyLandcover = objectFlipKeyValue(FE_LANDCOVERS)
 
 export enum UiTypes {
 	journal='journal',
@@ -163,7 +167,10 @@ export type PlayerArrive = {
 	r :number,
 
 	// movestate? :number, // Optional because of load.self // Deprecated
-	meta :object,
+	meta :{
+		mousedevice :string,
+		debugmode :boolean,
+	},
 	char :{
 		gender :string,
 		color :string,
