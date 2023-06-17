@@ -185,62 +185,94 @@ export class RenderSys {
 			const instanceMatrix = instancedMesh.instanceMatrix
 			// console.log('instancedMatrix', instanceMatrix)
 
-			let indexDistances :Array<{dist: number, originalIndex: number}> = []
+			// Rather than a cutoff at a number, cutoff based on dist.
+			const distCutoff = 100
+
+			// let indexDistances :Array<{dist: number, originalIndex: number}> = []
+			let nearItems :Array<{dist: number, originalIndex: number}> = []
 			for(let i=0; i<instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
 				const x = instanceMatrix.array[i +12] +this.babs.worldSys.shiftiness.x
 				const z = instanceMatrix.array[i +14] +this.babs.worldSys.shiftiness.z
-				const coord = instancedMesh.coordFromIndex(i/16)
-				// console.log(x, z, coord.x, coord.z)
-				if(x !== coord.x || z !== coord.z) {
-					console.warn('MISMATCH!')
-				}
+				// const coord = instancedMesh.coordFromIndex(i/16)
+				// // console.log(x, z, coord.x, coord.z)
+				// if(x !== coord.x || z !== coord.z) {
+				// 	console.warn('MISMATCH!')
+				// }
 
 				// Get distance from playerpos in 2 dimensions
 				const playerpos = this.babs.inputSys.playerSelf.controller.target.position
 				const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 
-				indexDistances[i/16] = {
-					dist: dist,
-					originalIndex: i/16,
-				}
-				if(i/16 == 486) {
-					// console.log('486', dist)
+				// indexDistances[i/16] = {
+				// 	dist: dist,
+				// 	originalIndex: i/16,
+				// }
+
+				// We can't just swap, because it's all rearranged.
+				// Instead, let's just copy in the top items that are below a certain distance!
+				if(dist < distCutoff) {
+					nearItems.push({
+						dist: dist,
+						originalIndex: i/16,
+					})
 				}
 			}
 
-			indexDistances.sort((a, b) => {
-				return a.dist -b.dist
-			})
-
-			// We can't just swap, because it's all rearranged.
-			// Instead, let's just copy in the top items that are below a certain distance!
-			// Rather than a cutoff at a number, cutoff based on dist.
-			const distCutoff = 100
+			// indexDistances.sort((a, b) => {
+			// 	return a.dist -b.dist // Perf: I don't necessarily need to sort entire thing; I just need to get enough to fill distCutoff.
+			// 	// And those don't even necessarily neeed to be sorted.  
+			// 	// So I could just scan the array for any <that and move those below the threshold into the top of an/the array.
+			// })
 			
 			// const instanceMatrixCopy = instanceMatrix.clone()
 			const instancedMeshCopy = instancedMesh.clone()
-			let tempSwap = new Matrix4()
+			// let tempSwap = new Matrix4()
+			let swapToFront = new Matrix4()
+			let swapToBack = new Matrix4()
 			let itemCount = 0
-			while(itemCount < indexDistances.length && indexDistances[itemCount].dist < distCutoff){
-				instancedMeshCopy.getMatrixAt(indexDistances[itemCount].originalIndex, tempSwap)
-				instancedMesh.setMatrixAt(itemCount, tempSwap)
-				itemCount++
+			// while(itemCount < indexDistances.length && indexDistances[itemCount].dist < distCutoff){
+			// 	instancedMeshCopy.getMatrixAt(itemCount, swapToBack)
+			// 	instancedMeshCopy.getMatrixAt(indexDistances[itemCount].originalIndex, swapToFront)
+			// 	// swapToFront.fromArray(instanceMatrixCopy.array, indexDistances[itemCount].originalIndex *16)
+			// 	// swapToBack.fromArray(instanceMatrixCopy.array, itemCount *16)
+			// 	// ^ Is this more efficient?
+
+			// 	instancedMesh.setMatrixAt(itemCount, swapToFront)
+			// 	instancedMesh.setMatrixAt(indexDistances[itemCount].originalIndex, swapToBack)
+
+			// 	// Perf: Don't make it swap them if they're already in the top of the array.  
+
+			// 	if(instancedMesh.name == 'chicory'){
+			// 		console.log('swapping', indexDistances[itemCount].originalIndex, 'and', itemCount, 'dist', indexDistances[itemCount].dist)
+			// 	}
+			// 	itemCount++
+			// }
+			// // Could maybe instead just overwrite this?  But it'd be way more than the top X number:
+			// // 		instanceMatrix.copyArray(instanceMatrix.array)
+
+			nearItems.forEach((nearItem, i) => {
+				if(nearItem.originalIndex == i) return // Already in place
+				instancedMesh.getMatrixAt(i, swapToBack)
+				instancedMesh.getMatrixAt(nearItem.originalIndex, swapToFront)
+
+				instancedMesh.setMatrixAt(i, swapToFront)
+				instancedMesh.setMatrixAt(nearItem.originalIndex, swapToBack)
+				if(instancedMesh.name == 'chicory'){
+					console.log('nearItems swapping in dist', nearItem.dist, 'from', nearItem.originalIndex, 'to', i)
+				}
+			})
+			if(instancedMesh.name == 'chicory'){
+				console.log('nearItems', nearItems)
 			}
-			// Could maybe instead just overwrite this?  But it'd be way more than the top X number:
-			// 		instanceMatrix.copyArray(instanceMatrix.array)
 			
 			// console.log('itemCount', instancedMesh.name, itemCount)
-			instancedMesh.count = itemCount
+			// if(instancedMesh.name == 'chicory'){//} && indexDistances[itemCount]) {
+			// 	console.log(instancedMesh.name, instancedMesh.count, 'to', itemCount, 'dists', indexDistances.length, 'and', indexDistances[itemCount].dist, '<', distCutoff, 'so', itemCount, 'andyaknow', indexDistances)
+			// }
+			instancedMesh.count = nearItems.length
 			instancedMesh.instanceMatrix.needsUpdate = true
+			// instancedMesh.matrixWorldNeedsUpdate = true
 
-			// Thoughts for next:
-			// Also need to deal with zoning and count; store real count for use during zoning?
-			// 		And check on the coord thing above; is that important for shiftiness?
-			// How about when I zone, I set the count to normal, zone, then run the recalc?
-
-			// Ummm why is this making tris keep rising at each run??
-
-			// Later, I could also base this on tris rather than distance; make distance shorter when there's a lot of tris (like a forest)
 			
 
 		}

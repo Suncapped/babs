@@ -278,15 +278,20 @@ export class Wob extends SharedWob {
 					wobMesh = gltf.scene.children[0]
 				}
 				catch(e) {
-					log.info('error loading gltf', instancedMeshName)
+					console.warn('Error loading gltf:', instancedMeshName)
 				}
 
 				if(!wobMesh) {
 					wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
 				}
+				else if(!wobMesh.geometry?.boundingBox) {
+					console.warn('No boundingBox for:', instancedMeshName)
+					wobMesh = Wob.SphereMesh // Messed up object; display as a sphere
+				}
+				Wob.SphereMesh.geometry.computeBoundingBox()
 
 				let boundingSize :Vector3 = new Vector3
-				wobMesh.geometry.boundingBox?.getSize(boundingSize) // sets into vector // some don't have box, thus ?
+				wobMesh.geometry.boundingBox.getSize(boundingSize) // sets into vector // some don't have box, thus ?
 				// log('boundingSize.y', boundingSize.y.toFixed(3), wobName)
 
 				const isMeshForFarWob = instancedMeshName.indexOf(Wob.FarwobName) !== -1
