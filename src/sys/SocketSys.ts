@@ -398,10 +398,9 @@ export class SocketSys {
 
 						// Prepare replacement trees for farther below.
 						// Get only short height items?  I will need the graphic.  Can I get the related instance?
-						const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+						const feim = Wob.InstancedMeshes.get(zoneFwob.name)
 						const wobIsFar = true // By definition it's going to be far
-						const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
-						if(wobIsFar && !wobIsSmall) {
+						if(wobIsFar && feim.wobIsTall) {
 							zoneFwob.blueprint_id = Wob.FarwobName
 							zoneFwob.name = Wob.FarwobName
 							farBigTreesToAdd.push(zoneFwob)
@@ -436,10 +435,9 @@ export class SocketSys {
 
 					// Now remove only fartrees; things that are far and big
 					for(const zoneFwob of zoneFwobs) { 
-						const instanced = Wob.InstancedMeshes.get(zoneFwob.name)
+						const feim = Wob.InstancedMeshes.get(zoneFwob.name)
 						const wobIsFar = true // By definition it was far
-						const wobIsSmall = instanced.boundingSize.y < Wob.FarwobShownHeightMinimum
-						if(wobIsFar && !wobIsSmall) {
+						if(wobIsFar && feim.wobIsTall) {
 							addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName) // todo
 						}
 					}

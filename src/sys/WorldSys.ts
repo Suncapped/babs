@@ -96,7 +96,8 @@ export class WorldSys {
 	dirLight
 	dirLightHelper
 	// lightShift = new Vector3((- 1) *30, 0.25 *30, 1 *30) // for re-use
-	hemiLight
+	hemiLight :HemisphereLight
+	hemiLightHelper :HemisphereLightHelper
 
 	sky
 	sunPosition
@@ -270,9 +271,10 @@ export class WorldSys {
 
 		this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
 		this.hemiLight.name = 'hemilight'
-		const hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
-		hemiLightHelper.name = 'three-helper'
-		this.babs.group.add(hemiLightHelper)
+		this.hemiLightHelper = new HemisphereLightHelper(this.hemiLight, 10)
+		this.hemiLightHelper.name = 'three-helper'
+		this.babs.group.add(this.hemiLightHelper)
+		this.hemiLightHelper.visible = false
 		this.hemiLight.color.setHSL(45/360, 1, 0.5).convertSRGBToLinear() // light from above
 		this.hemiLight.groundColor.setHSL(245/360, 92/100, 0.5).convertSRGBToLinear() // from below
 		this.babs.group.add(this.hemiLight)
@@ -422,6 +424,7 @@ export class WorldSys {
 			debugMode.subscribe(on => {
 				this.cameraHelper.visible = on
 				this.dirLightHelper.visible = on
+				this.hemiLightHelper.visible = on
 			})
 
 

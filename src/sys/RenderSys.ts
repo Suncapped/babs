@@ -106,7 +106,7 @@ export class RenderSys {
 
 		this.documentHasFocus = 'forced' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
 		setInterval(() => {
-			if(this.babs.isVrSupported) {
+			if(this.babs.renderSys.isVrSupported) {
 				this.documentHasFocus = true
 				return // Don't do this for VR, since the browser itself can lose focus while user clicks elsewhere!
 			}
@@ -172,21 +172,19 @@ export class RenderSys {
 	}
 
 	calcShowOnlyNearbyWobs() {
-		for(let [key, instancedMesh] of Wob.InstancedMeshes) {
+
+		for(let [key, feim] of Wob.InstancedMeshes) {
 			// Let's sort the Goblin Blanketflowers instancedmeshes by distance from player
 
-			if(instancedMesh.name == 'tree twotris') continue
-
-			// Also skip tall things like trees.
-			const wobIsSmall = instancedMesh.boundingSize.y < Wob.FarwobShownHeightMinimum
-			if(!wobIsSmall) continue
+			// Skip tall things like trees.
+			if(feim.wobIsTall) continue
 
 			// For each index in instancedMesh, get the position relative to the player
-			const instanceMatrix = instancedMesh.instanceMatrix
+			const instanceMatrix = feim.instancedMesh.instanceMatrix
 			// console.log('instancedMatrix', instanceMatrix)
 
 			// Rather than a cutoff at a number, cutoff based on dist.
-			const distCutoff = 100
+			const distCutoff = 600
 
 			// let indexDistances :Array<{dist: number, originalIndex: number}> = []
 			let nearItems :Array<{dist: number, originalIndex: number}> = []
@@ -210,7 +208,8 @@ export class RenderSys {
 
 				// We can't just swap, because it's all rearranged.
 				// Instead, let's just copy in the top items that are below a certain distance!
-				if(dist < distCutoff) {
+				// Also, I need to not sort beyond loadedCount
+				if(dist < distCutoff && i/16 < feim.getLoadedCount()) {
 					nearItems.push({
 						dist: dist,
 						originalIndex: i/16,
@@ -225,7 +224,7 @@ export class RenderSys {
 			// })
 			
 			// const instanceMatrixCopy = instanceMatrix.clone()
-			const instancedMeshCopy = instancedMesh.clone()
+			// const instancedMeshCopy = feim.instancedMesh.clone()
 			// let tempSwap = new Matrix4()
 			let swapToFront = new Matrix4()
 			let swapToBack = new Matrix4()
@@ -252,25 +251,26 @@ export class RenderSys {
 
 			nearItems.forEach((nearItem, i) => {
 				if(nearItem.originalIndex == i) return // Already in place
-				instancedMesh.getMatrixAt(i, swapToBack)
-				instancedMesh.getMatrixAt(nearItem.originalIndex, swapToFront)
+				feim.instancedMesh.getMatrixAt(i, swapToBack)
+				feim.instancedMesh.getMatrixAt(nearItem.originalIndex, swapToFront)
 
-				instancedMesh.setMatrixAt(i, swapToFront)
-				instancedMesh.setMatrixAt(nearItem.originalIndex, swapToBack)
-				if(instancedMesh.name == 'chicory'){
-					console.log('nearItems swapping in dist', nearItem.dist, 'from', nearItem.originalIndex, 'to', i)
-				}
+				feim.instancedMesh.setMatrixAt(i, swapToFront)
+				feim.instancedMesh.setMatrixAt(nearItem.originalIndex, swapToBack)
+				// if(feim.blueprint_id == 'chicory'){
+				// 	console.log('nearItems swapping in dist', nearItem.dist, 'from', nearItem.originalIndex, 'to', i)
+				// }
 			})
-			if(instancedMesh.name == 'chicory'){
-				console.log('nearItems', nearItems)
-			}
+			// if(feim.blueprint_id == 'chicory'){
+			// 	console.log('nearItems', nearItems)
+			// }
 			
 			// console.log('itemCount', instancedMesh.name, itemCount)
 			// if(instancedMesh.name == 'chicory'){//} && indexDistances[itemCount]) {
 			// 	console.log(instancedMesh.name, instancedMesh.count, 'to', itemCount, 'dists', indexDistances.length, 'and', indexDistances[itemCount].dist, '<', distCutoff, 'so', itemCount, 'andyaknow', indexDistances)
 			// }
-			instancedMesh.count = nearItems.length
-			instancedMesh.instanceMatrix.needsUpdate = true
+			// instancedMesh.count = nearItems.length
+			feim.setOptimizedCount(nearItems.length)
+			feim.instancedMesh.instanceMatrix.needsUpdate = true
 			// instancedMesh.matrixWorldNeedsUpdate = true
 
 			

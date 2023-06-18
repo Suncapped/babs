@@ -7,46 +7,7 @@ import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
-
-type IconData = {image :string, pixels :Uint8Array}
-
-export class FeInstancedMesh extends InstancedMesh {
-	private constructor(...args: ConstructorParameters<typeof InstancedMesh>) { super(...args) }
-	static Create(babs :Babs, ...args: ConstructorParameters<typeof InstancedMesh>) {
-		return new FeInstancedMesh(...args).init(babs)
-	}
-
-	babs :Babs
-	renderedIcon :() => Promise<IconData>|IconData
-	countMax :number
-	boundingSize = new Vector3()
-	lift = 0
-	sink = 0
-	instanceIndexToWob = new Map<number, Wob>
-
-	init(babs :Babs) {
-		this.babs = babs
-		return this
-	}
-
-	coordFromIndex(index) { 
-		// Returns world coord; instanced are zero-oriented since they have to be shared across zones, and their 'getMatrixAt()' positions are all local, not world.  So we change them to world using shiftiness.
-		const matrix = new Matrix4()
-		this.getMatrixAt(index, matrix)
-		const position = new Vector3()
-		position.setFromMatrixPosition(matrix)
-		// const quat = new Quaternion()
-		// quat.setFromRotationMatrix(matrix)
-		const engWorldCoord = position.add(this.babs.worldSys.shiftiness)
-		return engWorldCoord
-
-		// // Um that might all be overkill!  Works just as well.  Wait no - only works in-zone.
-		// for(let i=0; i<this.instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
-		// 	const x = instanceMatrix.array[i +12]
-		// 	const z = instanceMatrix.array[i +14]
-		// }
-	}
-}
+import { FeInstancedMesh, type IconData } from './FeInstancedMesh'
 
 export class Wob extends SharedWob {
 	constructor(
@@ -263,13 +224,23 @@ export class Wob extends SharedWob {
 		// Create InstancedMeshes from loaded gltfs
 		// const countMax = 10 // How large the instancdedmesh starts out
 
-		const instancedExpansionAdd = 0 // How much larger the instancedmesh will get, eg +10 
+		// const instancedExpansionAdd = 0 // How much larger the instancedmesh will get, eg +10 
 		// ^ Is now set to zero (do nothing) because it's buggy thus: /clear zone, refresh, /gen 1, exit zone; items disappear.
 		// ^ But only when zonesAround() is narrowed to one.  :S  Anyway, simpler without it.
 
-		for(const [instancedMeshName, gltf] of Wob.LoadedGltfs) {
-			let instanced = Wob.InstancedMeshes.get(instancedMeshName)
-			let newWobsCount = nameCounts.get(instancedMeshName)
+		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
+			let instanced = Wob.InstancedMeshes.get(blueprint_id)
+			const newWobsCount = nameCounts.get(blueprint_id)
+
+			// Need to handle new instancedmesh, because we have privates that need to be preserved for the new one!  So it needs to self-replicate.  Is that even a thing?  Without putting it into a container?
+			// Maybe what I need IS to put it into a container.
+			// if(!instanced) {
+			// 	instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
+			// 	Wob.InstancedMeshes.get(instancedMeshName)
+			// 	Wob.InstancedMeshes.set(instancedMeshName, instanced)
+			// }
+
+			// instanced.allocateForWobs(wobMesh, 5)
 
 			// What this does is, either creates an instancedmesh, or expands its size with some margin for adding a few wobs without having to resize it again
 			if(!instanced) {
@@ -278,132 +249,18 @@ export class Wob extends SharedWob {
 					wobMesh = gltf.scene.children[0]
 				}
 				catch(e) {
-					console.warn('Error loading gltf:', instancedMeshName)
+					console.warn('Error loading gltf:', blueprint_id)
 				}
 
-				if(!wobMesh) {
-					wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
-				}
-				else if(!wobMesh.geometry?.boundingBox) {
-					console.warn('No boundingBox for:', instancedMeshName)
-					wobMesh = Wob.SphereMesh // Messed up object; display as a sphere
-				}
-				Wob.SphereMesh.geometry.computeBoundingBox()
-
-				let boundingSize :Vector3 = new Vector3
-				wobMesh.geometry.boundingBox.getSize(boundingSize) // sets into vector // some don't have box, thus ?
-				// log('boundingSize.y', boundingSize.y.toFixed(3), wobName)
-
-				const isMeshForFarWob = instancedMeshName.indexOf(Wob.FarwobName) !== -1
-				if(isMeshForFarWob) {
-					wobMesh.geometry.scale(4, 1, 4)
-				}
-
-				const countMax = newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
-				instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
-				instanced.frustumCulled = false
-				instanced.count = 0
-				instanced.countMax = countMax
-				instanced.name = instancedMeshName
-				// instanced.instanceMatrix.needsUpdate = true
-				instanced.instanceMatrix.setUsage(DynamicDrawUsage) 
-				// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
-
-				instanced.boundingSize = boundingSize 
-				instanced.sink = Math.min(instanced.boundingSize.y *0.05, 0.2) // +(boundingSize.y /(1/scaleFartrees))
-				// ^ Sink by a percent but with a max for things like trees.
-				instanced.lift = (instanced.boundingSize.y < 0.01 ? 0.066 : 0)
-				// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
-
-				instanced.castShadow = instanced.boundingSize.y >= 1
-				instanced.receiveShadow = true
-
-				// Set to not modify color; used later for highlight by pickedObject in InputSys
-				const fullColors = new Float32Array(instanced.countMax *3)
-				for(let i=0; i<instanced.countMax *3; i+=3) {
-					fullColors[i +0] = Wob.FullColor.r
-					fullColors[i +1] = Wob.FullColor.g
-					fullColors[i +2] = Wob.FullColor.b
-				}
-				const bufferAttr = new InstancedBufferAttribute(fullColors, 3)
-				instanced.instanceColor = bufferAttr
-				instanced.instanceColor.needsUpdate = true
-
-				instanced.renderedIcon = async () => {
-					const {image, pixels} = await Wob.HiddenSceneRender(wobMesh)
-					instanced.renderedIcon = () => { // Overwrite self?!  lol amazing
-						return {image, pixels}
-					}
-					return instanced.renderedIcon()
-				}
-
-				instanced.position.setX(babs.worldSys.shiftiness.x)
-				instanced.position.setZ(babs.worldSys.shiftiness.z)
-
-				instanced.geometry.center()
-				// ^ Fixes offset pivot point
-				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-
-				Wob.InstancedMeshes.set(instancedMeshName, instanced)
-				babs.group.add(instanced)
-
-				log.info('instanced created at', instanced.name, instanced.count, newWobsCount, instanced.countMax)
+				instanced = new FeInstancedMesh(babs, blueprint_id, newWobsCount, wobMesh)
 			}
-			else if(instanced.count +newWobsCount >= instanced.countMax -1) { // Needs more space (will do for backpack items too, but that's okay)
-				log.info('instanced growing with', instanced.name, instanced.count, newWobsCount, instanced.countMax)
-
-				const newMax = instanced.count +newWobsCount +instancedExpansionAdd // margin for adding a few wobs without a resize
-
-				const newInstance = FeInstancedMesh.Create(babs, instanced.geometry, instanced.material, newMax)
-				newInstance.frustumCulled = instanced.frustumCulled
-				newInstance.count = instanced.count
-				newInstance.countMax = newMax
-				newInstance.name = instancedMeshName
-				newInstance.instanceMatrix.setUsage(DynamicDrawUsage) // todo optimize?
-				let transferMatrix = new Matrix4()
-				for(let i=0; i<instanced.count; i++) {
-					instanced.getMatrixAt(i, transferMatrix)
-					newInstance.setMatrixAt(i, transferMatrix)
-				}
-	
-				// save rendered icons (they may have been added JIT)
-				newInstance.renderedIcon = instanced.renderedIcon
-	
-				newInstance.sink = instanced.sink
-				newInstance.lift = instanced.lift
-				newInstance.boundingSize = instanced.boundingSize
-
-				newInstance.castShadow = instanced.castShadow
-				newInstance.receiveShadow = instanced.receiveShadow
-
-				const fullColors = new Float32Array(newInstance.countMax *3)
-				for(let i=0; i<newInstance.countMax *3; i+=3) {
-					fullColors[i +0] = Wob.FullColor.r
-					fullColors[i +1] = Wob.FullColor.g
-					fullColors[i +2] = Wob.FullColor.b
-				}
-				newInstance.instanceColor = new InstancedBufferAttribute(fullColors, 3)
-				newInstance.instanceColor.needsUpdate = true
-	
-				newInstance.position.x = instanced.position.x
-				newInstance.position.z = instanced.position.z
-
-				newInstance.instanceIndexToWob = new Map(instanced.instanceIndexToWob)
-
-				babs.group.remove(instanced)
-				instanced.dispose()
-
-				newInstance.geometry.center() 
-				// ^ Fixes offset pivot point
-				// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-				
-				Wob.InstancedMeshes.set(instancedMeshName, newInstance)
-				babs.group.add(newInstance)
-			}
-			else {
-				// Instance exists, doesn't need expansion based on incoming item count
-				// instanced.count = instanced.count +count
-			}
+			// else if(instanced.count +newWobsCount >= instanced.maxCount -1) { // Needs more space (will do for backpack items too, but that's okay)
+			// 	instanced.resizeTo(124124) // This will happen naturally with *2 during wob add - shouldn't happen too often, since initial huge one will start off with a goodly count.
+			// }
+			// else {
+			// 	// Instance exists, doesn't need expansion based on incoming item count
+			// 	// instanced.count = instanced.count +count
+			// }
 
 			
 		}
@@ -440,16 +297,15 @@ export class Wob extends SharedWob {
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
 
-				const instanced = Wob.InstancedMeshes.get(wob.name)
+				const feim = Wob.InstancedMeshes.get(wob.name)
 				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
 				const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
-				const instancedFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
+				const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
 				// console.log('wobFromData', wobFromData.name, instancedFromData.name, instanced.name, wob.name)
 
 				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
 				const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
-				const wobIsSmall = instancedFromData.boundingSize.y < Wob.FarwobShownHeightMinimum
-				if(wobIsFar && wobIsSmall) {
+				if(wobIsFar && feimFromData.wobIsSmall) {
 					// Third idea...let it allocate the instance memory, whatever.  But skip loading them in afterward.
 					// instanced.count = instanced.count -1
 					// 	^ Nice!  Third idea doubled framerate
@@ -463,24 +319,27 @@ export class Wob extends SharedWob {
 					// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
 		
 					engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-					engPositionVector.setY(engPositionVector.y +(instanced.boundingSize.y /2) -instanced.sink +instanced.lift)
+					engPositionVector.setY(engPositionVector.y +(feim.boundingSize.y /2) -feim.sink +feim.lift)
 
 					let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
 					const indexDoesNotExist = existingIindex === null || existingIindex === undefined
 					if(indexDoesNotExist) {
-						existingIindex = instanced.count
-						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = instanced.count
-						// console.log('Wob.ts setting '+wob.blueprint_id+' coordToInstanceIndex['+wob.x +','+ wob.z+'] = '+instanced.count+'(+-) ', instanced.count +1, instanced.count -1)
-						instanced.count = instanced.count +1
+						// console.log('indexDoesNotExist', wob.name, feim.getLoadedCount())
+						// existingIindex = instanced.count
+						existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
+						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
+						// instanced.count = instanced.count +1
+						feim.increaseLoadedCount()
+						// console.log(instanced.name, 'went', existingIindex, 'to', instanced.getLoadedCount())
 					}
 
 					matrix.setPosition(engPositionVector)
-					instanced.setMatrixAt(existingIindex, matrix)
+					feim.instancedMesh.setMatrixAt(existingIindex, matrix)
 
 					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
-					instanced.instanceIndexToWob.set(existingIindex, wob)
+					feim.instanceIndexToWob.set(existingIindex, wob)
 		
-					instanced.instanceMatrix.needsUpdate = true
+					feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 					if(shownames) {
 						babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))

@@ -1,6 +1,6 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { Box2, Camera, Color, InstancedMesh, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
-import { FeInstancedMesh, Wob } from '@/ent/Wob'
+import { Wob } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
@@ -20,6 +20,7 @@ import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
+import type { FeInstancedMesh } from '@/ent/FeInstancedMesh'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -32,7 +33,7 @@ const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
 type PickedObject = {
-	instanced :FeInstancedMesh,
+	feim :FeInstancedMesh,
 	instancedBpid :string,
 	isIcon? :boolean,
 	instancedIndex? :number,
@@ -493,11 +494,11 @@ export class InputSys {
 						// 2. Check whether over transparency 
 						const wobId = parseInt(item.id.split('-')[2])
 						const wob = this.babs.ents.get(wobId)
-						let instanced = Wob.InstancedMeshes.get(wob.name)
+						const feim = Wob.InstancedMeshes.get(wob.name)
 						// log(wob,  Wob.InstancedMeshes, this.babs.ents)
 
 						// if(instanced) {
-						const pixels = (await instanced.renderedIcon()).pixels
+						const pixels = (await feim.renderedIcon()).pixels
 						const colorChannels = 4
 						const mouseImageX = ev.offsetX - itemBox.min.x
 						const mouseImageY = ev.offsetY - itemBox.min.y
@@ -510,7 +511,7 @@ export class InputSys {
 							item.style.filter = 'brightness(200%)'
 
 							// Instanced things like wobjects, water, trees, etc unless caught above
-							const instanced = Wob.InstancedMeshes.get(wob.name)
+							// const instanced = Wob.InstancedMeshes.get(wob.name)
 							// const index = this.mouseRayTargets[i].instanceId
 							// const position = Wob.GetPositionFromIndex(instanced, index)
 
@@ -519,7 +520,7 @@ export class InputSys {
 
 
 							this.pickedObject = {
-								instanced: instanced,
+								feim: feim,
 								instancedBpid: wob.name,
 								isIcon: true,
 							}
@@ -546,7 +547,7 @@ export class InputSys {
 					let isSameAsPrevious
 
 					if (this.mouse.left) { // Holding down, in canvas (mouse.left doesn't get activated otherwise)
-						isSameAsPrevious = this.lastMoveHoldPicked?.instanced?.uuid === this.pickedObject?.instanced?.uuid // Ensures it's comparable object
+						isSameAsPrevious = this.lastMoveHoldPicked?.feim?.instancedMesh.uuid === this.pickedObject?.feim?.instancedMesh.uuid // Ensures it's comparable object
 							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
 					}
 					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in mousemove), in UI
@@ -554,7 +555,7 @@ export class InputSys {
 						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
 					}
 
-					if (this.pickedObject?.instanced && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
+					if (this.pickedObject?.feim && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
 						// Over a wob in the world, and if already over a wob, it must be the same wob
 						this.lastMoveHoldPicked = this.pickedObject // Save that wob
 					}
@@ -636,7 +637,7 @@ export class InputSys {
 								const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
 								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
 							}
-							else if (this.pickedObject?.instanced) {
+							else if (this.pickedObject?.feim) {
 								let debugStuff = ''
 								// Single click instanced
 								// const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
@@ -943,9 +944,9 @@ export class InputSys {
 
 		if (this.pickedObject
 			&& !this.pickedObject.isIcon) { // Don't unpick when it's dragged from bag icon
-			if (this.pickedObject.instanced) { // InstancedMesh picks
-				this.pickedObject.instanced.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
-				this.pickedObject.instanced.instanceColor.needsUpdate = true
+			if (this.pickedObject.feim) { // InstancedMesh picks
+				this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
+				this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 			}
 			else if (this.pickedObjectSavedMaterial) { // For everything else using mega color material
 				this.pickedObject.material = this.pickedObjectSavedMaterial
@@ -1009,15 +1010,16 @@ export class InputSys {
 				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
-					const instanced = Wob.InstancedMeshes.get(name) as FeInstancedMesh
+					const feim = Wob.InstancedMeshes.get(name)
 					const index = this.mouseRayTargets[i].instanceId
-					const position = instanced.coordFromIndex(index)
+					const position = feim.coordFromIndex(index)
+					// console.log('im', this.mouseRayTargets[i], index, position)
 
 					const yard = YardCoord.Create({position: position, babs: this.babs})
 
 					// log('mouse name', this.mouseRayTargets[i].object, name, instanced, index, position, yard)
 					this.pickedObject = {
-						instanced: instanced,
+						feim: feim,
 						instancedBpid: name,
 						instancedIndex: index,
 						instancedPosition: position,
@@ -1091,15 +1093,15 @@ export class InputSys {
 					// console.log(scene.children)
 					// console.log(scene.children.find(c => c.children.length))
 
-					if (this.pickedObject.instanced) { // InstancedMesh 
+					if (this.pickedObject.feim) { // InstancedMesh 
 						let oldColor = new Color()
-						this.pickedObject.instanced.getColorAt(this.pickedObject.instancedIndex, oldColor)
+						this.pickedObject.feim.instancedMesh.getColorAt(this.pickedObject.instancedIndex, oldColor)
 						let hsl = new Color() // This indirection prevents accumulation across frames
 						oldColor.getHSL(hsl)
 						const highlight = hsl.multiplyScalar(3)
 
-						this.pickedObject.instanced.setColorAt(this.pickedObject.instancedIndex, highlight)
-						this.pickedObject.instanced.instanceColor.needsUpdate = true
+						this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, highlight)
+						this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 					}
 					else {
 						// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
@@ -1125,7 +1127,7 @@ export class InputSys {
 		if (this.carrying) {
 			log.info('update carrying')
 			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
-				const riImage = (await this.carrying.instanced.renderedIcon()).image
+				const riImage = (await this.carrying.feim.renderedIcon()).image
 				document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
 			}
 

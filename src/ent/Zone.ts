@@ -5,11 +5,12 @@ import { log } from '@/Utils'
 import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
-import { FeInstancedMesh, Wob } from './Wob'
+import { Wob } from './Wob'
 import { Flame } from '@/comp/Flame'
 import { SharedWob, Blueprint } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
+import type { FeInstancedMesh } from './FeInstancedMesh'
 
 
 export class Zone extends SharedZone {
@@ -55,8 +56,8 @@ export class Zone extends SharedZone {
 			console.warn('deletingWob does not have a blueprint_id:', deletingWob)
 		}
 
-		const instancedMesh = Wob.InstancedMeshes.get(deletingWob.blueprint_id)
-		if(!instancedMesh) {
+		const feim = Wob.InstancedMeshes.get(deletingWob.blueprint_id)
+		if(!feim) {
 			console.warn('no matching instanced to:', deletingWob.blueprint_id)
 		}
 		const deletingWobZone = this.babs.ents.get(deletingWob.idzone) as Zone
@@ -66,17 +67,19 @@ export class Zone extends SharedZone {
 		
 		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.
 		// Source is the last item in the instance index.
-		const sourceIndex = instancedMesh.count -1
+		// const sourceIndex = instancedMesh.count -1
+		const sourceIndex = feim.getLoadedCount() -1
 		// Target is the item being deleted.
 		const targetIndex = deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z]
 
 		// console.log('--------- deletingWobXZ, sourceIndex, targetIndex', deletingWob.name, 'at', deletingWobZone.id+':['+deletingWob.x+','+deletingWob.z+']', 'will', sourceIndex+' ==> '+ targetIndex, deletingWobZone.coordToInstanceIndex)
 
-		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, instancedMesh, 'delete')
-		instancedMesh.count = instancedMesh.count -1
-		instancedMesh.instanceMatrix.needsUpdate = true 
-		if(deletingWob.blueprint_id !== instancedMesh.name) {
-			console.warn('deletingWob.blueprint_id mismatch with instancedMesh.name', deletingWob.blueprint_id, instancedMesh.name)
+		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, feim, 'delete')
+		// instancedMesh.count = instancedMesh.count -1
+		feim.decreaseLoadedCount()
+		feim.instancedMesh.instanceMatrix.needsUpdate = true 
+		if(deletingWob.blueprint_id !== feim.blueprint_id) {
+			console.warn('deletingWob.blueprint_id mismatch with instancedMesh.name', deletingWob.blueprint_id, feim.blueprint_id)
 		}
 		// Wob.InstancedMeshes.set(deletingWob.blueprint_id, instancedMesh)
 
@@ -87,21 +90,21 @@ export class Zone extends SharedZone {
 		}
 	}
 
-	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, instancedMesh :FeInstancedMesh, doDeleteSource :'delete' = null) {
-		const sourceMatrix = new Matrix4(); instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
-		const targetMatrix = new Matrix4(); instancedMesh.getMatrixAt(targetIndex, targetMatrix)
+	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :FeInstancedMesh, doDeleteSource :'delete' = null) {
+		const sourceMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
+		const targetMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(targetIndex, targetMatrix)
 
 		const showSwapLogs = false
 
 		// Get source and target wobs from instanceIndexToWob
-		const sourceWobAnyZone = instancedMesh.instanceIndexToWob.get(sourceIndex)
-		const targetWobAnyZone = instancedMesh.instanceIndexToWob.get(targetIndex)
+		const sourceWobAnyZone = feim.instanceIndexToWob.get(sourceIndex)
+		const targetWobAnyZone = feim.instanceIndexToWob.get(targetIndex)
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${sourceIndex} result: ${sourceWobAnyZone.name}`)
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${targetIndex} result: ${targetWobAnyZone.name}`)
 
 		// Copy into target from source matrix, and vice versa
-		instancedMesh.setMatrixAt(sourceIndex, targetMatrix)
-		instancedMesh.setMatrixAt(targetIndex, sourceMatrix)
+		feim.instancedMesh.setMatrixAt(sourceIndex, targetMatrix)
+		feim.instancedMesh.setMatrixAt(targetIndex, sourceMatrix)
 
 		// Update coordToInstanceIndex for the source and target wobs
 		sourceWobAnyZone.zone.coordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
@@ -110,13 +113,13 @@ export class Zone extends SharedZone {
 		if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${targetWobAnyZone.zone.id}:[${targetWobAnyZone.x},${targetWobAnyZone.z}] = ${sourceIndex}`)
 
 		// Update instanceIndexToWob
-		instancedMesh.instanceIndexToWob.set(sourceIndex, targetWobAnyZone)
-		instancedMesh.instanceIndexToWob.set(targetIndex, sourceWobAnyZone)		
+		feim.instanceIndexToWob.set(sourceIndex, targetWobAnyZone)
+		feim.instanceIndexToWob.set(targetIndex, sourceWobAnyZone)		
 		if(showSwapLogs) console.log(`instancedMesh.instanceIndexToWob.set: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}'.set(${sourceIndex}, `, targetWobAnyZone, ')')
 		if(showSwapLogs) console.log(`instancedMesh.instanceIndexToWob.set: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}'.set(${targetIndex}, `, sourceWobAnyZone, ')')
 
 		if(doDeleteSource) {
-			instancedMesh.instanceIndexToWob.delete(sourceIndex)
+			feim.instanceIndexToWob.delete(sourceIndex)
 			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' delete ${sourceIndex} `)
 
 			// delete sourceWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z]
@@ -129,8 +132,8 @@ export class Zone extends SharedZone {
 			// instancedMesh.instanceMatrix.needsUpdate = true 
 		}
 
-		instancedMesh.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone)
-		instancedMesh.babs.ents.set(targetWobAnyZone.zone.id, targetWobAnyZone.zone)
+		feim.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone)
+		feim.babs.ents.set(targetWobAnyZone.zone.id, targetWobAnyZone.zone)
 
 	}
 
