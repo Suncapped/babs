@@ -309,7 +309,7 @@ export class InputSys {
 				}
 
 				if (this.keys.b === PRESS) {
-					this.babs.renderSys.calcShowOnlyNearbyWobs()
+					console.log('Wob.CountInitInstances', Wob.CountInitInstances)
 
 
 				}

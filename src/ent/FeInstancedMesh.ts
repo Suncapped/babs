@@ -66,11 +66,11 @@ export class FeInstancedMesh {
 
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)
-		for(let i=0; i<this.maxCount *3; i+=3) {
-			fullColors[i +0] = Wob.FullColor.r
-			fullColors[i +1] = Wob.FullColor.g
-			fullColors[i +2] = Wob.FullColor.b
-		}
+		// for(let i=0; i<this.maxCount *3; i+=3) {
+		// 	fullColors[i +0] = Wob.FullColor.r
+		// 	fullColors[i +1] = Wob.FullColor.g
+		// 	fullColors[i +2] = Wob.FullColor.b
+		// }
 		const bufferAttr = new InstancedBufferAttribute(fullColors, 3)
 		this.instancedMesh.instanceColor = bufferAttr
 		this.instancedMesh.instanceColor.needsUpdate = true
@@ -112,6 +112,12 @@ export class FeInstancedMesh {
 			this.reallocateLargerBuffer()
 		}
 
+		// // Speed up when this shows, in case it's nearby
+		// // One has been added, but count doesn't necessarily increase.
+		// // It's been added to tne end of loaded.  
+		// // Increasing count by one here won't necessarily help display it.
+		// this.instancedMesh.count = this.instancedMesh.count +1
+
 		this.recalculateRealCount()
 	}
 	decreaseLoadedCount() {
@@ -124,13 +130,15 @@ export class FeInstancedMesh {
 
 	setOptimizedCount(count :number) {
 		this.optimizedCount = count
-		this.recalculateRealCount()
+		// this.recalculateRealCount()
 	}
 
 	private recalculateRealCount() {
 		// This is the number of instances that are actually rendered
 		const isBeingOptimized = this.optimizedCount !== undefined
 		this.instancedMesh.count = isBeingOptimized ? Math.min(this.loadedCount, this.optimizedCount) : this.loadedCount
+		// this.babs.renderSys.calcShowOnlyNearbyWobs(true) // recalc so it shows immediately // No, it's recursive :p  // Also slow
+		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
 	}
 
 	reallocateLargerBuffer() {

@@ -21,6 +21,7 @@ export class RenderSys {
 	_scene :Scene
 	public isVrSupported = false
 	public documentHasFocus :boolean|'forced' = true
+	public calcRecalcImmediately = false
 
 	constructor(babs) {
 		this.babs = babs
@@ -138,9 +139,8 @@ export class RenderSys {
 			}
 		}, 1000)
 
-
 		setInterval(() => {
-			this.babs.renderSys.calcShowOnlyNearbyWobs()
+			this.calcShowOnlyNearbyWobs()
 		}, 1000)
 	}
 
@@ -167,6 +167,11 @@ export class RenderSys {
 	}
 
 	update(dt) {
+		if(this.calcRecalcImmediately) {
+			this.calcRecalcImmediately = false
+			this.calcShowOnlyNearbyWobs()
+		}
+
 		this.renderer.render(this._scene, this._camera)
 		this.labelRenderer.render(this._scene, this._camera)
 	}
@@ -269,6 +274,7 @@ export class RenderSys {
 			// 	console.log(instancedMesh.name, instancedMesh.count, 'to', itemCount, 'dists', indexDistances.length, 'and', indexDistances[itemCount].dist, '<', distCutoff, 'so', itemCount, 'andyaknow', indexDistances)
 			// }
 			// instancedMesh.count = nearItems.length
+
 			feim.setOptimizedCount(nearItems.length)
 			feim.instancedMesh.instanceMatrix.needsUpdate = true
 			// instancedMesh.matrixWorldNeedsUpdate = true

@@ -154,6 +154,7 @@ export class Wob extends SharedWob {
 	static FarwobName = 'tree twotris'
 	static FarwobShownHeightMinimum = 12
 	static FarwobHiddenBuryDepth = 1000
+	static CountInitInstances = 0
 
 	static totalArrivedWobs = 0
 
@@ -230,7 +231,7 @@ export class Wob extends SharedWob {
 
 		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
 			let instanced = Wob.InstancedMeshes.get(blueprint_id)
-			const newWobsCount = nameCounts.get(blueprint_id)
+			let newWobsCount = nameCounts.get(blueprint_id)
 
 			// Need to handle new instancedmesh, because we have privates that need to be preserved for the new one!  So it needs to self-replicate.  Is that even a thing?  Without putting it into a container?
 			// Maybe what I need IS to put it into a container.
@@ -252,7 +253,10 @@ export class Wob extends SharedWob {
 					console.warn('Error loading gltf:', blueprint_id)
 				}
 
+				// newWobsCount = 100000
 				instanced = new FeInstancedMesh(babs, blueprint_id, newWobsCount, wobMesh)
+				Wob.CountInitInstances += newWobsCount
+				// instanced = new FeInstancedMesh(babs, blueprint_id, 1000000, wobMesh)
 			}
 			// else if(instanced.count +newWobsCount >= instanced.maxCount -1) { // Needs more space (will do for backpack items too, but that's okay)
 			// 	instanced.resizeTo(124124) // This will happen naturally with *2 during wob add - shouldn't happen too often, since initial huge one will start off with a goodly count.
