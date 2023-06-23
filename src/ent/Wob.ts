@@ -153,7 +153,6 @@ export class Wob extends SharedWob {
 	static FullColor = new Color(1,1,1)
 	static FarwobName = 'tree twotris'
 	static FarwobShownHeightMinimum = 12
-	static FarwobHiddenBuryDepth = 1000
 	static CountInitInstances = 0
 
 	static totalArrivedWobs = 0
@@ -173,14 +172,29 @@ export class Wob extends SharedWob {
 
 		Wob.totalArrivedWobs += arrivalWobs.length
 
-
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
 		const playerZone = playerSelf.controller.target.zone
 		const zoneIdsAroundPlayerZone = playerZone.getZonesAround().map(z=>z.id)
 
+
+		// Preload the arrivalWobs with farwobs
+		// for(const wob of arrivalWobs) {
+		// 	const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
+		// 	if(wobIsFar) {
+		// 		wob.name = Wob.FarwobName
+		// 		wob.blueprint_id = Wob.FarwobName
+		// 		arrivalWobs.push(new SharedWob(
+		// 			wob.idzone, wob.x, wob.z, wob.r, 
+		// 			new Blueprint(Wob.FarwobName, wob.locid, wob.comps, Wob.FarwobName, wob.glb) 
+		// 			// ^ Locid is wrong but doesn't matter; there's no locid for tree twotris anyway
+		// 		))
+		// 	}
+		// }
+
 		for(const wob of arrivalWobs) {
 			// log('nameCount of', wob.name, nameCount)
 
+			/* Instead: Create an actual far tree separately.  See above
 			// Generate far trees for far zones
 			const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
 			if(wobIsFar) { // Useful during initial loading
@@ -202,6 +216,7 @@ export class Wob extends SharedWob {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
 			}
+			*/
 
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 			if(!Wob.LoadedGltfs.get(wob.name)){
@@ -224,10 +239,6 @@ export class Wob extends SharedWob {
 		// console.timeLog('timing')
 		// Create InstancedMeshes from loaded gltfs
 		// const countMax = 10 // How large the instancdedmesh starts out
-
-		// const instancedExpansionAdd = 0 // How much larger the instancedmesh will get, eg +10 
-		// ^ Is now set to zero (do nothing) because it's buggy thus: /clear zone, refresh, /gen 1, exit zone; items disappear.
-		// ^ But only when zonesAround() is narrowed to one.  :S  Anyway, simpler without it.
 
 		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
 			let instanced = Wob.InstancedMeshes.get(blueprint_id)

@@ -56,7 +56,7 @@ export class FeInstancedMesh {
 		this.instancedMesh.instanceMatrix.setUsage(DynamicDrawUsage) 
 		// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 
-		this.sink = Math.min(this.boundingSize.y *0.05, 0.2) // +(boundingSize.y /(1/scaleFartrees))
+		this.sink = Math.min(this.boundingSize.y *0.05, 0.2)
 		// ^ Sink by a percent but with a max for things like trees.
 		this.lift = (this.boundingSize.y < 0.01 ? 0.066 : 0)
 		// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
@@ -66,11 +66,11 @@ export class FeInstancedMesh {
 
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)
-		// for(let i=0; i<this.maxCount *3; i+=3) {
-		// 	fullColors[i +0] = Wob.FullColor.r
-		// 	fullColors[i +1] = Wob.FullColor.g
-		// 	fullColors[i +2] = Wob.FullColor.b
-		// }
+		for(let i=0; i<this.maxCount *3; i+=3) {
+			fullColors[i +0] = Wob.FullColor.r
+			fullColors[i +1] = Wob.FullColor.g
+			fullColors[i +2] = Wob.FullColor.b
+		}
 		const bufferAttr = new InstancedBufferAttribute(fullColors, 3)
 		this.instancedMesh.instanceColor = bufferAttr
 		this.instancedMesh.instanceColor.needsUpdate = true

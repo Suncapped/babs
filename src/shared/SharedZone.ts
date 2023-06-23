@@ -187,7 +187,7 @@ export class SharedZone {
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
-						console.warn('No blueprint found @5!', locid)
+						// console.warn('No blueprint found @5!', locid) // todo improve so this still warns?  Was spamming on asset/bp mismatch or something.
 						continue
 					}
 					wobs.push(new SharedWob(this.id, x, z, r, bp))

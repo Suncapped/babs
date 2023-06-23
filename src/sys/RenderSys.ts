@@ -162,8 +162,6 @@ export class RenderSys {
 		this.labelRenderer.setSize(width, height)
 		this._camera.aspect = width / height
 		this._camera.updateProjectionMatrix()
-
-		this.babs.worldSys?.csm?.updateFrustums()
 	}
 
 	update(dt) {
@@ -177,6 +175,7 @@ export class RenderSys {
 	}
 
 	calcShowOnlyNearbyWobs() {
+		return
 
 		for(let [key, feim] of Wob.InstancedMeshes) {
 			// Let's sort the Goblin Blanketflowers instancedmeshes by distance from player

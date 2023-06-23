@@ -62,7 +62,7 @@ export class Controller extends Comp {
 
 	target :FeObject3D
 
-	arrival
+	arrival :PlayerArrive
 	vTerrainMin = new Vector3(0, 0, 0)
 	vTerrainMax = new Vector3(1000,10_000,1000)
 	_decceleration = new Vector3(-5.0, 0, -5.0) // friction, basically

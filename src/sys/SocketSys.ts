@@ -4,7 +4,7 @@ import { UiSys } from '@/sys/UiSys'
 import { EventSys } from './EventSys'
 import { WorldSys } from './WorldSys'
 import { LoaderSys } from './LoaderSys'
-import { log, randIntInclusive } from './../Utils'
+import { log, randIntInclusive, sleep } from './../Utils'
 import { AnimationMixer, Int8BufferAttribute, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Controller } from '@/comp/Controller'
 import { Player } from '@/ent/Player'
@@ -70,7 +70,7 @@ export class SocketSys {
 			log.info('Socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
 				const payload = JSON.parse(event.data) as Sendable
-				const result = this.processEnqueue(payload)
+				this.processEnqueue(payload)
 			}
 			else { // Movement
 				// todo make this per-zone
@@ -159,16 +159,18 @@ export class SocketSys {
 	update() {
 		const callTasks = async () => {
 			for (const payload of this.processQueue) {
-				await this.process(payload)
+				await this.process(payload) // do them one at a time, in order
 			}
 		}
 		callTasks()
-		this.processQueue = []
+		this.processQueue = [] // todo could this potentially have a problem where update() gets called twice and parts of the queue get double processed?
 	}
-	processEnqueue(payload :Sendable){
+	async processEnqueue(payload :Sendable){
+		const command = Object.keys(payload)[0]
+
 		if('load' in payload || 'visitor' in payload || 'session' in payload) { 
-			// ^ First one happens immediately, to jumpstart babsReady
-			this.process(payload)
+			// babsReady isn't true until after load, so babs isn't calling update() on this sys yet.  So run manually for these.
+			await this.process(payload)
 		}
 		else {
 			this.processQueue.push(payload)
@@ -247,8 +249,6 @@ export class SocketSys {
 				menuSelfData.set(load.self)
 			}
 
-			this.babsReady = true
-
 			let zones = new Array<Zone>()
 			for(let zi of zonedatas) {
 				zones.push(new Zone(this.babs, zi.id, zi.x, zi.z, zi.y, zi.yscale, new Uint8Array, new Uint8Array))
@@ -315,19 +315,19 @@ export class SocketSys {
 			let sharedWobs :Array<SharedWob> = []
 			for(const zone of zones) {
 				zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
+				// Moving the rest to zonein
 				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
 				sharedWobs.push(...fWobs)
 			}
 			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, false)
-			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs.
-
-			this.send({
-				ready: load.self.id,
-			})
+			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. // Moved to zonein
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
 			}
+			
+
+			this.babsReady = true // Starts update()s
 		}
 		else if('playersarrive' in payload) {
 			log.info('playersarrive', payload.playersarrive)
