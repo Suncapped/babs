@@ -276,23 +276,7 @@ export class Zone extends SharedZone {
 	}
 
 
-	getZonesAround(includeThisZone :'includeThisZone' = 'includeThisZone') {
-		const zonesAround = Zone.loadedZones.filter(zone => {
-			return (includeThisZone && zone.x==this.x && zone.z==this.z)
-			// Clockwise starting at 12 (ie forward ie positivex):
-			|| zone.x==this.x +1 && zone.z==this.z +0
-			|| zone.x==this.x +1 && zone.z==this.z +1
-			|| zone.x==this.x +0 && zone.z==this.z +1
-			|| zone.x==this.x -1 && zone.z==this.z +1
-			|| zone.x==this.x -1 && zone.z==this.z +0
-			|| zone.x==this.x -1 && zone.z==this.z -1
-			|| zone.x==this.x -0 && zone.z==this.z -1
-			|| zone.x==this.x +1 && zone.z==this.z -1
 
-		})
-		// log('zonesAround', Zone.loadedZones.length, this.x, ',', this.z, ': ', zonesAround.map(z=>`${z.x},${z.z}`))
-		return zonesAround
-	}
 
 
 

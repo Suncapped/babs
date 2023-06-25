@@ -232,7 +232,6 @@ export class SocketSys {
 				this.send({ping:'ping'})
 			}, SocketSys.pingSeconds * 1000)
 
-			const zonedatas = load.zones
 			log.info('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
 			toprightText.set(this.babs.uiSys.toprightTextDefault)
 			document.getElementById('topleft').style.visibility = 'visible'
@@ -249,23 +248,24 @@ export class SocketSys {
 				menuSelfData.set(load.self)
 			}
 
-			let zones = new Array<Zone>()
-			for(let zi of zonedatas) {
-				zones.push(new Zone(this.babs, zi.id, zi.x, zi.z, zi.y, zi.yscale, new Uint8Array, new Uint8Array))
-			}
+			let farZones = load.farZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
+			// let nearZones = load.nearZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
+			const nearZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
 
-			// Load some things ahead of time
 			const fetches = []
-			for(let zone of zones) {
+			for(let zone of farZones) {
 				zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
-				zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+				fetches.push(zone.elevationData, zone.landcoverData)
 
-				fetches.push(zone.elevationData, zone.landcoverData, zone.locationData)
+				if(nearZoneIds.has(zone.id)) {
+					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+					fetches.push(zone.locationData)
+				}
 			}
 			await Promise.all(fetches)
 
-			for(let zone of zones) {
+			for(const zone of farZones) {
 				const fet = await zone.elevationData
 				const data = await fet.blob()
 				const buff = await data.arrayBuffer()
@@ -276,29 +276,37 @@ export class SocketSys {
 				const buff2 = await data2.arrayBuffer()
 				zone.landcoverData = new Uint8Array(buff2)
 
-				const fet3 = await zone.locationData
-				const data3 = await fet3.blob()
-				if(data3.size == 2) {  // hax on size (for `{}`)
-					zone.locationData = new Uint8Array()
+				if(nearZoneIds.has(zone.id)) {
+					const fet3 = await zone.locationData
+					const data3 = await fet3.blob()
+					if(data3.size == 2) {  // hax on size (for `{}`)
+						zone.locationData = new Uint8Array()
+					}
+					else {
+						const buff3 = await data3.arrayBuffer()
+						zone.locationData = new Uint8Array(buff3)
+					}
 				}
 				else {
-					const buff3 = await data3.arrayBuffer()
-					zone.locationData = new Uint8Array(buff3)
+					zone.locationData = new Uint8Array()
 				}
 			}
 
 			const pStatics = []
-			for(let zone of zones) {
+			for(const zone of farZones) {
 				const isLoadinZone = zone.id == load.self.idzone
 				pStatics.push(this.babs.worldSys.loadStatics(this.babs.urlFiles, zone, isLoadinZone))
 			}
+			// player.controller.zoneIn()
 			// console.time('stitch')
 			await Promise.all(pStatics)
+
+			console.log('statics loaded', farZones.length)
 			// console.timeEnd('stitch') // 182ms for 81 zones
 
-			Zone.loadedZones = zones
+			Zone.loadedZones = farZones
 
-			await this.babs.worldSys.stitchElevation(zones)
+			await this.babs.worldSys.stitchElevation(farZones)
 
 			// Set up UIs
 			this.babs.uiSys.loadUis(load.uis)
@@ -313,20 +321,22 @@ export class SocketSys {
 			
 			log('loadbps', load.blueprints)
 			let sharedWobs :Array<SharedWob> = []
-			for(const zone of zones) {
+			for(const zone of farZones) {
 				zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
-				// Moving the rest to zonein
-				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-				sharedWobs.push(...fWobs)
+				if(nearZoneIds.has(zone.id)) {
+					log('loading in', zone.id)
+					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+					sharedWobs.push(...fWobs)
+				}
 			}
 			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, false)
-			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. // Moved to zonein
+			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. 
+			// ^ Moving to zonein
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
 			}
 			
-
 			this.babsReady = true // Starts update()s
 		}
 		else if('playersarrive' in payload) {
@@ -373,8 +383,8 @@ export class SocketSys {
 			const playerIsSelf = player.id === this.babs.idSelf
 
 			// Calculate the zones we're exiting and the zones we're entering
-			const oldZoneGroupIds = exitZone.getZonesAround().map(z=>z.id)
-			const newZoneGroupIds = enterZone.getZonesAround().map(z=>z.id)
+			const oldZoneGroupIds = exitZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
+			const newZoneGroupIds = enterZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 			const babs = this.babs
 			const removedZones = oldZoneGroupIds
 				.filter(id => !newZoneGroupIds.includes(id))
@@ -385,6 +395,11 @@ export class SocketSys {
 			
 			log.info('zonediff', removedZones, addedZones)
 
+
+			// player.controller.zoneIn(player, enterZone)
+
+
+			/* Above will switch to not swap between far and detailed; instead just load detailed (far gets loaded separately).  
 			// 1. Change exited zone to far tree wobs
 			// 2. Change entered zone to detailed wobs
 			
@@ -411,15 +426,13 @@ export class SocketSys {
 					// exitFwobs.push(...newExitFwobs)
 					// log('exit wobs to add', exitZone.id, exitFwobs.length)
 					// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
-					/*
-						^ So um, having this here ruined everything.  Because why?
-						Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
-						Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
-						Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
-						Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
-						Is removal just messed up?
-						*Later*: Other things were messed up, so I'm not sure this still is.
-					*/
+						// ^ So um, having this here ruined everything.  Because why?
+						// Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
+						// Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
+						// Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
+						// Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
+						// Is removal just messed up?
+						// *Later*: Other things were messed up, so I'm not sure this still is.
 				}
 			}
 
@@ -451,6 +464,8 @@ export class SocketSys {
 				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
 				await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
 			}
+
+			*/
 
 		}
 		else if('said' in payload) {

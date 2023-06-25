@@ -254,6 +254,24 @@ export class SharedZone {
 		return (this.elevations[index] *this.yscale) +this.y
 	}
 
+	getZonesAround(zones :Array<SharedZone>, includeThisZone :'includeThisZone' = 'includeThisZone') {
+		const zonesAround = zones.filter(zone => {
+			return (includeThisZone && zone.x==this.x && zone.z==this.z)
+			// Clockwise starting at 12 (ie forward ie positivex):
+			|| zone.x==this.x +1 && zone.z==this.z +0
+			|| zone.x==this.x +1 && zone.z==this.z +1
+			|| zone.x==this.x +0 && zone.z==this.z +1
+			|| zone.x==this.x -1 && zone.z==this.z +1
+			|| zone.x==this.x -1 && zone.z==this.z +0
+			|| zone.x==this.x -1 && zone.z==this.z -1
+			|| zone.x==this.x -0 && zone.z==this.z -1
+			|| zone.x==this.x +1 && zone.z==this.z -1
+
+		})
+		// log('zonesAround', Zone.loadedZones.length, this.x, ',', this.z, ': ', zonesAround.map(z=>`${z.x},${z.z}`))
+		return zonesAround
+	}
+
 
 }
 

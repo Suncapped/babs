@@ -130,7 +130,7 @@ export class FeInstancedMesh {
 
 	setOptimizedCount(count :number) {
 		this.optimizedCount = count
-		// this.recalculateRealCount()
+		this.recalculateRealCount()
 	}
 
 	private recalculateRealCount() {

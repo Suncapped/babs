@@ -90,6 +90,8 @@ export class Controller extends Comp {
 		this.target = object3d
 		this.target.zone = this.babs.ents.get(this.arrival.idzone) as Zone
 
+		console.log('controller got', this.arrival.idzone, this.target.zone)
+
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
 		)
@@ -197,7 +199,7 @@ export class Controller extends Comp {
 			}
 
 			this.babs.socketSys.send({
-				move: {
+				move: { // This counts as a 'zonein' on the server when enterzone_id is included
 					movestate: movestateSend,
 					a: this.gDestination.x,
 					b: this.gDestination.z,

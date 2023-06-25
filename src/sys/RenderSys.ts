@@ -175,20 +175,22 @@ export class RenderSys {
 	}
 
 	calcShowOnlyNearbyWobs() {
-		return
+		// return
+
+		log('calc nearby')
 
 		for(let [key, feim] of Wob.InstancedMeshes) {
 			// Let's sort the Goblin Blanketflowers instancedmeshes by distance from player
 
 			// Skip tall things like trees.
-			if(feim.wobIsTall) continue
+			// if(feim.wobIsTall) continue
 
 			// For each index in instancedMesh, get the position relative to the player
 			const instanceMatrix = feim.instancedMesh.instanceMatrix
 			// console.log('instancedMatrix', instanceMatrix)
 
 			// Rather than a cutoff at a number, cutoff based on dist.
-			const distCutoff = 600
+			const distCutoff = feim.wobIsTall ? 800 : 400
 
 			// let indexDistances :Array<{dist: number, originalIndex: number}> = []
 			let nearItems :Array<{dist: number, originalIndex: number}> = []

@@ -174,7 +174,7 @@ export class Wob extends SharedWob {
 
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
 		const playerZone = playerSelf.controller.target.zone
-		const zoneIdsAroundPlayerZone = playerZone.getZonesAround().map(z=>z.id)
+		const zoneIdsAroundPlayerZone = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 
 		// Preload the arrivalWobs with farwobs
