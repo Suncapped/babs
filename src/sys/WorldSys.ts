@@ -742,7 +742,7 @@ export class WorldSys {
 		return wobs
 	}
 
-	async loadWobLocations(urlFiles, zone) {
+	async loadWobLocations(urlFiles, zone) { // todo this is no longer used
 		const fet = await fetch(`${urlFiles}/zone/${zone.id}/locations.bin`)
 		if(fet.status == 404) {// No such zone or zone with no objects cached yet
 			return new Uint8Array()

@@ -20,7 +20,7 @@ import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
-import type { FeInstancedMesh } from '@/ent/FeInstancedMesh'
+import type { InstancedWobs } from '@/ent/InstancedWobs'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -33,7 +33,7 @@ const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
 type PickedObject = {
-	feim :FeInstancedMesh,
+	feim :InstancedWobs,
 	instancedBpid :string,
 	isIcon? :boolean,
 	instancedIndex? :number,
@@ -308,11 +308,7 @@ export class InputSys {
 
 				}
 
-				if (this.keys.b === PRESS) {
-					console.log('Wob.CountInitInstances', Wob.CountInitInstances)
 
-
-				}
 
 				if (this.keys.d === PRESS) {
 

@@ -250,7 +250,7 @@ export class SocketSys {
 
 			let farZones = load.farZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
 			// let nearZones = load.nearZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
-			const nearZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
+			const nearbyZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
 
 			const fetches = []
 			for(let zone of farZones) {
@@ -258,7 +258,13 @@ export class SocketSys {
 				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
 				fetches.push(zone.elevationData, zone.landcoverData)
 
-				if(nearZoneIds.has(zone.id)) {
+				// It will always have far data
+				zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
+				fetches.push(zone.farLocationData)
+
+				// And sometimes near data
+				const zoneIsNearby = nearbyZoneIds.has(zone.id)
+				if(zoneIsNearby) {
 					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
 					fetches.push(zone.locationData)
 				}
@@ -276,19 +282,27 @@ export class SocketSys {
 				const buff2 = await data2.arrayBuffer()
 				zone.landcoverData = new Uint8Array(buff2)
 
-				if(nearZoneIds.has(zone.id)) {
-					const fet3 = await zone.locationData
-					const data3 = await fet3.blob()
-					if(data3.size == 2) {  // hax on size (for `{}`)
+				const fet3 = await zone.farLocationData
+				const data3 = await fet3.blob()
+				if(data3.size == 2) {  // hax on size (for `{}`)
+					zone.farLocationData = new Uint8Array()
+				}
+				else {
+					const buff3 = await data3.arrayBuffer()
+					zone.farLocationData = new Uint8Array(buff3)
+				}
+
+				const zoneIsNearby = nearbyZoneIds.has(zone.id)
+				if(zoneIsNearby) {
+					const fet4 = await zone.locationData
+					const data4 = await fet4.blob()
+					if(data4.size == 2) {  // hax on size (for `{}`)
 						zone.locationData = new Uint8Array()
 					}
 					else {
-						const buff3 = await data3.arrayBuffer()
-						zone.locationData = new Uint8Array(buff3)
+						const buff4 = await data4.arrayBuffer()
+						zone.locationData = new Uint8Array(buff4)
 					}
-				}
-				else {
-					zone.locationData = new Uint8Array()
 				}
 			}
 
@@ -319,19 +333,40 @@ export class SocketSys {
 			// Create player entity
 			await Player.Arrive(load.self, true, this.babs)
 			
-			log('loadbps', load.blueprints)
-			let sharedWobs :Array<SharedWob> = []
+			let wobs :Array<SharedWob> = []
 			for(const zone of farZones) {
-				zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
-				if(nearZoneIds.has(zone.id)) {
-					log('loading in', zone.id)
-					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					sharedWobs.push(...fWobs)
+				const zoneIsNearby = nearbyZoneIds.has(zone.id)
+				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get farwob visible comp info
+				if(zoneIsNearby) {
+					const allWobsData = new Uint8Array((zone.locationData?.length || 0))// + zone.farLocationData.length)
+					if(zone.locationData) allWobsData.set(zone.locationData)
+					// allWobsData.set(zone.farLocationData, (zone.locationData?.length || 0))
+
+					console.log('About to set allWobsData')
+					const fWobs = zone.applyLocationsToGrid(allWobsData, true)
+					console.log('allWobsData', allWobsData.length, fWobs.length)
+					wobs.push(...fWobs)
 				}
 			}
-			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, false)
+			console.log('wobs', wobs.length)
+			await Wob.LoadInstancedGraphics(wobs, this.babs, false)
 			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. 
 			// ^ Moving to zonein
+
+			// // I think that farwobs need to be an entirely separate thing.
+			// // They may work similarly, but are fundamentally different.  Mainly: They are display-only, not wobs.
+			// // Hmm but also there are many similarities.  So it might be best to use InstancedMesh to start?
+			// let farZoneLocations = []
+			// for(const zone of farZones) {
+			// 	const zoneIsNearby = nearbyZoneIds.has(zone.id)
+			// 	if(!zoneIsNearby) {
+			// 		// zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
+			// 		// const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+			// 		// farWobs.push(...fWobs)
+			// 		farZoneLocations.push({zone, locations: zone.farLocationData})
+			// 	}
+			// }
+			// await Wob.LoadFarwobGraphics(farZoneLocations, this.babs)
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
@@ -466,6 +501,33 @@ export class SocketSys {
 			}
 
 			*/
+
+
+			if(playerIsSelf) {
+				for(const removedZone of removedZones) {
+					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
+					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
+						removedZone.removeWobGraphic(zoneFwob)
+					}
+					removedZone.coordToInstanceIndex = {}
+				}
+			}
+
+			player.controller.zoneIn(player, enterZone)
+
+			let detailedWobsToAdd :SharedWob[] = []
+			if(playerIsSelf) {
+				for(let addedZone of addedZones) {
+					log.info('entered zone: detailed wobs to add.  id:', addedZone.id)
+					
+					const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
+					detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
+				}
+				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+				await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
+			}
+
 
 		}
 		else if('said' in payload) {

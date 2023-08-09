@@ -5,8 +5,8 @@ import { log } from '@/Utils'
 
 export type IconData = {image :string, pixels :Uint8Array}
 
-// FeInstancedMesh will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
-export class FeInstancedMesh {
+// InstancedWobs will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
+export class InstancedWobs {
 	instancedMesh :InstancedMesh
 	boundingSize = new Vector3()
 	public lift :number
@@ -14,6 +14,7 @@ export class FeInstancedMesh {
 	public instanceIndexToWob = new Map<number, Wob>
 	public wobIsSmall :boolean
 	public wobIsTall :boolean
+	public wobIsFar :boolean
 	renderedIcon :() => Promise<IconData>|IconData
 
 	private optimizedCount :number // Number that are rendered, after which they're temporarily hidden (optimized out)
@@ -27,6 +28,7 @@ export class FeInstancedMesh {
 	) {
 		// - Set up wobMesh into InstancedMesh
 		if(!this.wobMesh) {
+			console.warn('No wobMesh for:', this.blueprint_id)
 			this.wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
 		}
 		else if(!this.wobMesh.geometry?.boundingBox) {
@@ -46,8 +48,9 @@ export class FeInstancedMesh {
 		// - Calculate things
 		this.wobMesh.geometry.boundingBox.getSize(this.boundingSize) // sets into vector
 
-		this.wobIsSmall = this.boundingSize.y < Wob.FarwobShownHeightMinimum
-		this.wobIsTall = this.boundingSize.y >= Wob.FarwobShownHeightMinimum
+		this.wobIsSmall = this.boundingSize.y < Wob.WobIsTallnessMinimum
+		this.wobIsTall = this.boundingSize.y >= Wob.WobIsTallnessMinimum
+		this.wobIsFar = this.boundingSize.y >= Wob.WobIsTallnessMinimum
 
 		this.instancedMesh.frustumCulled = false
 		this.instancedMesh.count = 0 // Actual rendered count; will be increased when wobs are added
@@ -103,20 +106,10 @@ export class FeInstancedMesh {
 	increaseLoadedCount() {
 		// We will always be expanding the inactiveindex
 		this.loadedCount++
-		// // Sometimes that will put it above count; in that case, we need to increase count
-		// if(this.loadedCount > this.maxCount) {
-		// 	this.instancedMesh.count++
-		// }
 		// Sometimes, upping count will put it above maxcount; in that case, we need to reallocate
 		if(this.loadedCount > this.maxCount) {
 			this.reallocateLargerBuffer()
 		}
-
-		// // Speed up when this shows, in case it's nearby
-		// // One has been added, but count doesn't necessarily increase.
-		// // It's been added to tne end of loaded.  
-		// // Increasing count by one here won't necessarily help display it.
-		// this.instancedMesh.count = this.instancedMesh.count +1
 
 		this.recalculateRealCount()
 	}

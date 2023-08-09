@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry } from 'three'
 import { UiSys } from '@/sys/UiSys'
 import { log } from '@/Utils'
 import { Flame } from '@/comp/Flame'
@@ -7,7 +7,7 @@ import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
-import { FeInstancedMesh, type IconData } from './FeInstancedMesh'
+import { InstancedWobs, type IconData } from './InstancedWobs'
 
 export class Wob extends SharedWob {
 	constructor(
@@ -152,134 +152,54 @@ export class Wob extends SharedWob {
 	static SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
 	static FullColor = new Color(1,1,1)
 	static FarwobName = 'tree twotris'
-	static FarwobShownHeightMinimum = 12
-	static CountInitInstances = 0
+	static WobIsTallnessMinimum = 12
 
 	static totalArrivedWobs = 0
 
-	static LoadedGltfs = new Map<string, any>()
-	static InstancedMeshes = new Map<string, FeInstancedMesh>()
+	static LoadedGltfs = new Map<string, Mesh|true>()
+	static InstancedMeshes = new Map<string, InstancedWobs>()
 	static async LoadInstancedGraphics(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
 		log.info('arrivalWobs', arrivalWobs.length)
 		// Load unique gltfs
 		// Also load far tree visuals for taller wobs
-		let loads = []
-		let load
-		const nameCounts = new Map<string, number>()
 		// console.time('timing')
-		let gltfCounts = 0
+		const nameCounts = new Map<string, number>()
 
 		Wob.totalArrivedWobs += arrivalWobs.length
 
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
 		const playerZone = playerSelf.controller.target.zone
-		const zoneIdsAroundPlayerZone = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
-
-
-		// Preload the arrivalWobs with farwobs
-		// for(const wob of arrivalWobs) {
-		// 	const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
-		// 	if(wobIsFar) {
-		// 		wob.name = Wob.FarwobName
-		// 		wob.blueprint_id = Wob.FarwobName
-		// 		arrivalWobs.push(new SharedWob(
-		// 			wob.idzone, wob.x, wob.z, wob.r, 
-		// 			new Blueprint(Wob.FarwobName, wob.locid, wob.comps, Wob.FarwobName, wob.glb) 
-		// 			// ^ Locid is wrong but doesn't matter; there's no locid for tree twotris anyway
-		// 		))
-		// 	}
-		// }
+		const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 		for(const wob of arrivalWobs) {
-			// log('nameCount of', wob.name, nameCount)
+			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 
-			/* Instead: Create an actual far tree separately.  See above
-			// Generate far trees for far zones
-			const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
-			if(wobIsFar) { // Useful during initial loading
-				// Make it always load the instanced at least, so later we can check boundingSize.y for hiding short things as far trees
-				// Optimization note, this forces loading of every gltf in objects sent :/
-
-				if(nameCounts.get(wob.name) === undefined) {
-					// log('Manual loading:', wob.name)
-					nameCounts.set(wob.name, 0)
-
-					gltfCounts++
-					load = babs.loaderSys.loadGltf(`/environment/gltf/${wob.name}.glb`, wob.name)
-					Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
-					loads.push(load)
-				}
-
-				// Now set up for treating as far tree
-				// log(wob.name, '->', Wob.FarwobName)
+			const wobIsFar = !zonesNearbyIds.includes(wob.idzone)
+			if(wobIsFar) {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
 			}
-			*/
-
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
-			if(!Wob.LoadedGltfs.get(wob.name)){
-				gltfCounts++
-				load = babs.loaderSys.loadGltf(`/environment/gltf/${wob.name}.glb`, wob.name)
-				Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
-				loads.push(load)
-			}
 		}
-		// log('gltfCounts', gltfCounts)
-		// console.timeLog('timing')
-		const finishedLoads = await Promise.all(loads)
-		// console.timeLog('timing')
-		// Use name passed in to loadGltf to set so we don't have to await later
-		for(const load of finishedLoads) {
-			Wob.LoadedGltfs.set(load.name, load)
-		}
-		// log('Wob.loadedGltfs', Wob.LoadedGltfs)
 
-		// console.timeLog('timing')
+		// const meshesToLoad = arrivalWobs.filter(w=>w.name === Wob.FarwobName).map(w=>w.name) // Filtering for farwobs?
+		const meshesToLoad = arrivalWobs.map(w=>w.name)
+		console.log('meshesToLoad', nameCounts)
+		await Wob.ensureGltfsLoaded(meshesToLoad, babs) // Loads them into LoadedGltfs
+
+		console.log('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
-		// const countMax = 10 // How large the instancdedmesh starts out
-
-		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
-			let instanced = Wob.InstancedMeshes.get(blueprint_id)
+		for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
 			let newWobsCount = nameCounts.get(blueprint_id)
-
-			// Need to handle new instancedmesh, because we have privates that need to be preserved for the new one!  So it needs to self-replicate.  Is that even a thing?  Without putting it into a container?
-			// Maybe what I need IS to put it into a container.
-			// if(!instanced) {
-			// 	instanced = FeInstancedMesh.Create(babs, wobMesh.geometry, wobMesh.material, countMax)
-			// 	Wob.InstancedMeshes.get(instancedMeshName)
-			// 	Wob.InstancedMeshes.set(instancedMeshName, instanced)
-			// }
-
-			// instanced.allocateForWobs(wobMesh, 5)
-
-			// What this does is, either creates an instancedmesh, or expands its size with some margin for adding a few wobs without having to resize it again
+			let instanced = Wob.InstancedMeshes.get(blueprint_id)
+			console.log('Checking for instanced for blueprint_id', blueprint_id)
 			if(!instanced) {
-				let wobMesh :Mesh
-				try {
-					wobMesh = gltf.scene.children[0]
-				}
-				catch(e) {
-					console.warn('Error loading gltf:', blueprint_id)
-				}
-
-				// newWobsCount = 100000
-				instanced = new FeInstancedMesh(babs, blueprint_id, newWobsCount, wobMesh)
-				Wob.CountInitInstances += newWobsCount
-				// instanced = new FeInstancedMesh(babs, blueprint_id, 1000000, wobMesh)
+				console.log('About to create instanced for blueprint_id', blueprint_id)
+				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, wobMesh as Mesh) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
+				console.log('Created instanced for blueprint_id', blueprint_id)
 			}
-			// else if(instanced.count +newWobsCount >= instanced.maxCount -1) { // Needs more space (will do for backpack items too, but that's okay)
-			// 	instanced.resizeTo(124124) // This will happen naturally with *2 during wob add - shouldn't happen too often, since initial huge one will start off with a goodly count.
-			// }
-			// else {
-			// 	// Instance exists, doesn't need expansion based on incoming item count
-			// 	// instanced.count = instanced.count +count
-			// }
-
-			
 		}
-		// console.timeLog('timing')
 
 		// Now a properly sized instance exists.  So create wobs!
 		let zone :Zone
@@ -313,52 +233,54 @@ export class Wob extends SharedWob {
 				zone = babs.ents.get(wob.idzone) as Zone
 
 				const feim = Wob.InstancedMeshes.get(wob.name)
-				// Visibility for far objects?  todo better not to upload them?  Or maybe not.
-				const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
-				const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
-				// console.log('wobFromData', wobFromData.name, instancedFromData.name, instanced.name, wob.name)
+				// console.log('feim for', wob.name, feim)
+				// const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
+				// const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
 
 				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
-				const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
-				if(wobIsFar && feimFromData.wobIsSmall) {
-					// Third idea...let it allocate the instance memory, whatever.  But skip loading them in afterward.
-					// instanced.count = instanced.count -1
-					// 	^ Nice!  Third idea doubled framerate
+
+				yardCoord = YardCoord.Create(wob)
+				const engCoordCentered = yardCoord.toEngineCoordCentered()
+				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+
+				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
+	
+				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+				engPositionVector.setY(engPositionVector.y +(feim.boundingSize.y /2) -feim.sink +feim.lift)
+
+				let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
+				const indexDoesNotExist = existingIindex === null || existingIindex === undefined
+				if(indexDoesNotExist) {
+					existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
+					wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
+					feim.increaseLoadedCount()
 				}
-				else 
-				{ // Keep it
-					yardCoord = YardCoord.Create(wob)
-					const engCoordCentered = yardCoord.toEngineCoordCentered()
-					engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
 
-					// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-		
-					engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-					engPositionVector.setY(engPositionVector.y +(feim.boundingSize.y /2) -feim.sink +feim.lift)
+				matrix.setPosition(engPositionVector)
+				feim.instancedMesh.setMatrixAt(existingIindex, matrix)
 
-					let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
-					const indexDoesNotExist = existingIindex === null || existingIindex === undefined
-					if(indexDoesNotExist) {
-						// console.log('indexDoesNotExist', wob.name, feim.getLoadedCount())
-						// existingIindex = instanced.count
-						existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
-						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
-						// instanced.count = instanced.count +1
-						feim.increaseLoadedCount()
-						// console.log(instanced.name, 'went', existingIindex, 'to', instanced.getLoadedCount())
+				// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
+				feim.instanceIndexToWob.set(existingIindex, wob)
+	
+				feim.instancedMesh.instanceMatrix.needsUpdate = true
+
+				if(shownames) {
+					babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
+				}
+
+				if(wob.name === 'campfire' || wob.name === 'torch') {
+					let scale, yup
+					if(wob.name === 'campfire') {
+						scale = 3
+						yup = 2
 					}
-
-					matrix.setPosition(engPositionVector)
-					feim.instancedMesh.setMatrixAt(existingIindex, matrix)
-
-					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
-					feim.instanceIndexToWob.set(existingIindex, wob)
-		
-					feim.instancedMesh.instanceMatrix.needsUpdate = true
-
-					if(shownames) {
-						babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
+					else if(wob.name === 'torch') {
+						scale = 1.1
+						yup = 3.5
 					}
+		
+					// Add new flame
+					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
 				}
 
 			}
@@ -366,27 +288,200 @@ export class Wob extends SharedWob {
 				const instanced = Wob.InstancedMeshes.get(wob.name)
 				babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
 			}
-	
-			if(wob.name === 'campfire' || wob.name === 'torch') {
-				let scale, yup
-				if(wob.name === 'campfire') {
-					scale = 3
-					yup = 2
-				}
-				else if(wob.name === 'torch') {
-					scale = 1.1
-					yup = 3.5
-				}
-	
-				// Add new flame
-				const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
-			}
 
 		}
 
+	}
 
-		// console.timeEnd('timing')
+	static async LoadFarwobGraphics(farZoneLocations :Array<{zone :Zone, locations :Uint8Array}>, babs :Babs) {
+		const playerSelf = babs.ents.get(babs.idSelf) as Player
+		const playerZone = playerSelf.controller.target.zone
+		const zoneIdsAroundPlayerZone = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
+
+		const arrivalLocations = []
+		for(const {zone, locations} of farZoneLocations) {
+			log('LoadFarwobGraphics', zone.locidToBlueprint)
+			for(let i = 0; i < locations.length; i += 4) {
+				const left = (locations[i+0] << 8)
+				const right = locations[i+1]
+				const locidrot = left + right
+				const x = locations[i+2]
+				const z = locations[i+3]
+				const locid = locidrot >>> 4
+	
+				// Get the blueprint_id based on the locid
+				const blueprint_id = zone.locidToBlueprint[locid]
+	
+				arrivalLocations.push({
+					blueprint_id,
+					locid,
+					x,
+					z,
+				})
+			}
+		}
+
+
+
+		await Wob.ensureGltfsLoaded(arrivalLocations.map(loc=>loc.blueprint_id), babs) // Loads them into LoadedGltfs
+
+
+		// // Create InstancedMeshes from loaded gltfs
+		// for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
+		// 	let instanced = Wob.InstancedMeshes.get(blueprint_id)
+		// 	if(!instanced) {
+		// 		instanced = new InstancedWobs(babs, blueprint_id, arrivalWobs.length, wobMesh as Mesh) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
+		// 	}
+		// }
+
+
+		// // // For each attribute in the base geometry...
+		// // for (let attr in baseGeometry.attributes) {
+		// // 	// Create a new InstancedBufferAttribute that is a copy of the base attribute.
+		// // 	let baseAttribute = baseGeometry.attributes[attr];
+		// // 	let instancedAttribute = new THREE.InstancedBufferAttribute(new Float32Array(baseAttribute.array), baseAttribute.itemSize);
+
+		// // 	// Add the instanced attribute to the instanced geometry.
+		// // 	instancedGeometry.setAttribute(attr, instancedAttribute);
+
+		// // }
+
+
+
+
+
+		// // -- feim code was:
+
+		// // Now a properly sized instance exists.  So create wobs!
+		// let yardCoord :YardCoord
+		// let engPositionVector :Vector3
+		// let matrix = new Matrix4()
+		// // This is for SETting instance items.  UNSET happens in Zone.removeWobGraphic.
+		// // Why separately?  Because this happens en-masse
+		// for(const fwob of arrivalWobs) {
+		// 	let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
+		// 		blueprint_id: fwob.blueprint_id, 
+		// 		locid: fwob.locid,
+		// 		comps: fwob.comps,
+		// 	})
+			
+
+		// 	const feim = Wob.InstancedMeshes.get(wob.name)
+		// 	// const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
+		// 	// const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
+
+		// 	// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
+
+		// 	yardCoord = YardCoord.Create(wob)
+		// 	const engCoordCentered = yardCoord.toEngineCoordCentered()
+		// 	engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+
+		// 	// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
+
+		// 	engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+		// 	engPositionVector.setY(engPositionVector.y +(feim.boundingSize.y /2) -feim.sink +feim.lift)
+
+		// 	let existingIindex = wob.zone.coordToInstanceIndex[wob.x +','+ wob.z]
+		// 	const indexDoesNotExist = existingIindex === null || existingIindex === undefined
+		// 	if(indexDoesNotExist) {
+		// 		existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
+		// 		wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
+		// 		feim.increaseLoadedCount()
+		// 	}
+
+		// 	matrix.setPosition(engPositionVector)
+		// 	feim.instancedMesh.setMatrixAt(existingIindex, matrix)
+
+		// 	// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
+		// 	feim.instanceIndexToWob.set(existingIindex, wob)
+
+		// 	feim.instancedMesh.instanceMatrix.needsUpdate = true
+
+
+		// }
+
+
+		// // const instancedGeometry = new InstancedBufferGeometry()
+
+
+
+
+
+
+	}
+
+	/**
+	 * Ensures that the specified GLTF meshes are loaded exactly once.
+	 * Subsequent calls with the same names will not trigger additional loads.
+	 * I think that means it's idempotent?
+	 * Mutates the Wob.LoadedGltfs in place.
+	 */
+	static async ensureGltfsLoaded(arrivalWobsNames :Array<string>, babs :Babs) {
+		let loads = []
+		// const nameCounts = new Map<string, number>()
+
+		// Preload the arrivalWobs with farwobs
+		// for(const wob of arrivalWobs) {
+		// 	const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
+		// 	if(wobIsFar) {
+		// 		wob.name = Wob.FarwobName
+		// 		wob.blueprint_id = Wob.FarwobName
+		// 		arrivalWobs.push(new SharedWob(
+		// 			wob.idzone, wob.x, wob.z, wob.r, 
+		// 			new Blueprint(Wob.FarwobName, wob.locid, wob.comps, Wob.FarwobName, wob.glb) 
+		// 			// ^ Locid is wrong but doesn't matter; there's no locid for tree twotris anyway
+		// 		))
+		// 	}
+		// }
+
+		for(const wobName of arrivalWobsNames) {
+			// log('nameCount of', wob.name, nameCount)
+
+			/* Instead: Create an actual far tree separately.  See above
+			// Generate far trees for far zones
+			const wobIsFar = !zoneIdsAroundPlayerZone.includes(wob.idzone)
+			if(wobIsFar) { // Useful during initial loading
+				// Make it always load the instanced at least, so later we can check boundingSize.y for hiding short things as far trees
+				// Optimization note, this forces loading of every gltf in objects sent :/
+
+				if(nameCounts.get(wob.name) === undefined) {
+					// log('Manual loading:', wob.name)
+					nameCounts.set(wob.name, 0)
+
+					load = babs.loaderSys.loadGltf(`/environment/gltf/${wob.name}.glb`, wob.name)
+					Wob.LoadedGltfs.set(wob.name, true) // true for now, gets set right after this
+					loads.push(load)
+				}
+
+				// Now set up for treating as far tree
+				// log(wob.name, '->', Wob.FarwobName)
+				wob.name = Wob.FarwobName
+				wob.blueprint_id = Wob.FarwobName
+			}
+			*/
+
+			// nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
+			if(!Wob.LoadedGltfs.get(wobName)){
+				console.log('Loading gltf:', wobName)
+				const load = babs.loaderSys.loadGltf(`/environment/gltf/${wobName}.glb`, wobName)
+				Wob.LoadedGltfs.set(wobName, true) // Gets set right after this
+				loads.push(load)
+			}
+		}
+		const finishedLoads = await Promise.all(loads)
+		// Use name passed in to loadGltf to set so we don't have to await later
+		for(const gltf of finishedLoads) {
+			let wobMesh :Mesh
+			try {
+				wobMesh = gltf.scene.children[0]
+			}
+			catch(e) {
+				console.warn('Error loading gltf:', gltf.name)
+			}
+			
+			Wob.LoadedGltfs.set(gltf.name, wobMesh)
+		}
 
 	}
 	

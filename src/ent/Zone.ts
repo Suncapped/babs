@@ -10,7 +10,7 @@ import { Flame } from '@/comp/Flame'
 import { SharedWob, Blueprint } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
-import type { FeInstancedMesh } from './FeInstancedMesh'
+import type { InstancedWobs } from './InstancedWobs'
 
 
 export class Zone extends SharedZone {
@@ -34,6 +34,7 @@ export class Zone extends SharedZone {
 	elevationData // Injected by SocketSys
 	landcoverData // Injected by SocketSys
 	locationData // Injected by SocketSys
+	farLocationData // Injected by SocketSys
 
 	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
@@ -90,7 +91,7 @@ export class Zone extends SharedZone {
 		}
 	}
 
-	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :FeInstancedMesh, doDeleteSource :'delete' = null) {
+	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :InstancedWobs, doDeleteSource :'delete' = null) {
 		const sourceMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
 		const targetMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(targetIndex, targetMatrix)
 
@@ -153,7 +154,7 @@ export class Zone extends SharedZone {
 	// 	// console.log('yardHeightAtWob', index, zone.elevationData.length, unscaledElev, scaledElev)
 	// 	return scaledElev
 	// }
-	engineHeightAt(coord :YardCoord, doCenter = true) { // fasttodo // Height of (corner or center) in engine
+	engineHeightAt(coord :YardCoord, doCenter = true) { // Height of (corner or center) in engine
 		// Fetch from actual ground mesh vertices!
 
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array

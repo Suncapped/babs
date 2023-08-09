@@ -157,6 +157,7 @@ export class SharedZone {
 			const z = locations[i+3]
 			const locid = locidrot >>> 4
 			// ^ Note, also used in 'getSharedWobsBasedOnLocations'
+			// Also used in Expressa!
 
 			const oldIdAndRot = this.wobIdRotGrid[x +(z *250)]
 			const oldLocid = oldIdAndRot >>> 4
