@@ -8,7 +8,8 @@ import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
 import type { Babs } from '@/Babs'
 import type { PlayerArrive } from '@/shared/consts'
-import type { FeObject3D } from '@/ent/Wob'
+import { Wob, type FeObject3D } from '@/ent/Wob'
+import type { SharedWob } from '@/shared/SharedWob'
 
 // Begun from MIT licensed https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -90,7 +91,7 @@ export class Controller extends Comp {
 		this.target = object3d
 		this.target.zone = this.babs.ents.get(this.arrival.idzone) as Zone
 
-		console.log('controller got', this.arrival.idzone, this.target.zone)
+		// log.info('controller got', this.arrival.idzone, this.target.zone)
 
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
@@ -459,7 +460,7 @@ export class Controller extends Comp {
 			const groundIntersect = this.raycaster.intersectObject(ground, false)
 			const worldGroundHeight = groundIntersect?.[0]?.point
 
-			if(worldGroundHeight?.y > this.target?.position?.y || this.hover) {
+			if(worldGroundHeight && (worldGroundHeight.y > this.target?.position?.y || this.hover)) {
 				// Keep above ground
 				this.groundDistance = 1
 
@@ -501,18 +502,89 @@ export class Controller extends Comp {
 		
 	}
 
-	zoneIn(player :Player, zone :Zone) {
-		log.info('zonein player zone', player.id, zone.id, )
+	async zoneIn(player :Player, enterZone :Zone, exitZone :Zone|null) {
+		log.info('zonein player zone', player.id, enterZone.id, )
 		log.info('this.gDestination', this.gDestination)
 
-		const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: zone})
+		// Calculate the zones we're exiting and the zones we're entering
+		const oldZoneGroupIds = exitZone?.getZonesAround(Zone.loadedZones).map(z=>z.id) || []
+		const newZoneGroupIds = enterZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
+		const removedZones = oldZoneGroupIds
+			.filter(id => !newZoneGroupIds.includes(id))
+			.map(id=>this.babs.ents.get(id) as Zone)
+		const addedZones = newZoneGroupIds
+			.filter(id => !oldZoneGroupIds.includes(id))
+			.map(id=>this.babs.ents.get(id) as Zone)
+		
+		log.info('zonediff', removedZones, addedZones)
+
+		// const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: enterZone})
 
 		this.target.position.setY(0) // works since it will pop up back up to the ground
-		this.target.zone = zone
+		this.target.zone = enterZone
 
-		if(this.isSelf) { // Self
-			this.babs.worldSys.currentGround = zone.ground
+		if(this.isSelf) {
+			this.babs.worldSys.currentGround = enterZone.ground
 
+
+
+			for(const removedZone of removedZones) {
+				const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
+				log('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+				for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
+					removedZone.removeWobGraphic(zoneFwob)
+				}
+				removedZone.coordToInstanceIndex = {}
+			}
+			
+			// Pull detailed wobs for entered zones, so we can load them.  
+			// This could later be moved to preload on approaching zone border, rathern than during zonein.
+
+			let detailedWobsToAdd :SharedWob[] = []
+
+			const pullWobsData = async () => {
+
+				const fetches = []
+				for(let zone of addedZones) {
+					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+					fetches.push(zone.locationData)
+
+				}
+				await Promise.all(fetches)
+
+				for(let zone of addedZones) {
+					const fet4 = await zone.locationData
+					const data4 = await fet4.blob()
+					if (data4.size == 2) {  // hax on size (for `{}`)
+						zone.locationData = new Uint8Array()
+					}
+					else {
+						const buff4 = await data4.arrayBuffer()
+						zone.locationData = new Uint8Array(buff4)
+					}
+				}
+
+
+				let wobs: Array<SharedWob> = []
+				for(let zone of addedZones) {
+					// const allWobsData = new Uint8Array((zone.locationData?.length || 0))
+					log.info('About to set allWobsData', zone.locationData.length)
+					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+					wobs.push(...fWobs)
+				}
+				await Wob.LoadInstancedGraphics(wobs, this.babs, false)
+
+			}
+			await pullWobsData()
+
+			// for(let addedZone of addedZones) {
+			// 	log.info('entered zone: detailed wobs to add.  id:', addedZone.id)
+			// 	const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
+			// 	detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
+			// }
+			// log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+			// await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
+			
 
 			// Everything was already shifted around us locally, when we gDestination across the line!
 			this.selfZoningWait = false

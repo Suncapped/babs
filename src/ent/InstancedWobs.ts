@@ -122,15 +122,17 @@ export class InstancedWobs {
 	}
 
 	setOptimizedCount(count :number) {
-		this.optimizedCount = count
-		this.recalculateRealCount()
+		if(this.optimizedCount !== count) {
+			// log(this.instancedMesh.name + ' setOptimizedCount updated')
+			this.optimizedCount = count
+			this.recalculateRealCount()
+		}
 	}
 
 	private recalculateRealCount() {
 		// This is the number of instances that are actually rendered
 		const isBeingOptimized = this.optimizedCount !== undefined
 		this.instancedMesh.count = isBeingOptimized ? Math.min(this.loadedCount, this.optimizedCount) : this.loadedCount
-		// this.babs.renderSys.calcShowOnlyNearbyWobs(true) // recalc so it shows immediately // No, it's recursive :p  // Also slow
 		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
 	}
 
@@ -151,6 +153,8 @@ export class InstancedWobs {
 			this.instancedMesh.getMatrixAt(i, transferMatrix)
 			newInstancedMesh.setMatrixAt(i, transferMatrix)
 		}
+		// this.instanceIndexToWob.set( // No need to set, because index will be the same and only InstancedMesh is being remade here, not InstancedWobs.
+		// zone.coordToInstanceIndex[ // Same thing
 
 		newInstancedMesh.castShadow = this.instancedMesh.castShadow
 		newInstancedMesh.receiveShadow = this.instancedMesh.receiveShadow

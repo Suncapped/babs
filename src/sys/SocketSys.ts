@@ -256,18 +256,8 @@ export class SocketSys {
 			for(let zone of farZones) {
 				zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
-				fetches.push(zone.elevationData, zone.landcoverData)
-
-				// It will always have far data
 				zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
-				fetches.push(zone.farLocationData)
-
-				// And sometimes near data
-				const zoneIsNearby = nearbyZoneIds.has(zone.id)
-				if(zoneIsNearby) {
-					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
-					fetches.push(zone.locationData)
-				}
+				fetches.push(zone.elevationData, zone.landcoverData, zone.farLocationData)
 			}
 			await Promise.all(fetches)
 
@@ -291,19 +281,6 @@ export class SocketSys {
 					const buff3 = await data3.arrayBuffer()
 					zone.farLocationData = new Uint8Array(buff3)
 				}
-
-				const zoneIsNearby = nearbyZoneIds.has(zone.id)
-				if(zoneIsNearby) {
-					const fet4 = await zone.locationData
-					const data4 = await fet4.blob()
-					if(data4.size == 2) {  // hax on size (for `{}`)
-						zone.locationData = new Uint8Array()
-					}
-					else {
-						const buff4 = await data4.arrayBuffer()
-						zone.locationData = new Uint8Array(buff4)
-					}
-				}
 			}
 
 			const pStatics = []
@@ -315,7 +292,7 @@ export class SocketSys {
 			// console.time('stitch')
 			await Promise.all(pStatics)
 
-			console.log('statics loaded', farZones.length)
+			log.info('Statics loaded:', farZones.length)
 			// console.timeEnd('stitch') // 182ms for 81 zones
 
 			Zone.loadedZones = farZones
@@ -333,23 +310,12 @@ export class SocketSys {
 			// Create player entity
 			await Player.Arrive(load.self, true, this.babs)
 			
-			let wobs :Array<SharedWob> = []
 			for(const zone of farZones) {
 				const zoneIsNearby = nearbyZoneIds.has(zone.id)
 				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get farwob visible comp info
-				if(zoneIsNearby) {
-					const allWobsData = new Uint8Array((zone.locationData?.length || 0))// + zone.farLocationData.length)
-					if(zone.locationData) allWobsData.set(zone.locationData)
-					// allWobsData.set(zone.farLocationData, (zone.locationData?.length || 0))
 
-					console.log('About to set allWobsData')
-					const fWobs = zone.applyLocationsToGrid(allWobsData, true)
-					console.log('allWobsData', allWobsData.length, fWobs.length)
-					wobs.push(...fWobs)
-				}
 			}
-			console.log('wobs', wobs.length)
-			await Wob.LoadInstancedGraphics(wobs, this.babs, false)
+			// await Wob.LoadInstancedGraphics(wobs, this.babs, false)
 			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. 
 			// ^ Moving to zonein
 
@@ -367,6 +333,12 @@ export class SocketSys {
 			// 	}
 			// }
 			// await Wob.LoadFarwobGraphics(farZoneLocations, this.babs)
+
+			const player = this.babs.ents.get(load.self.id) as Player
+			const enterZone = this.babs.ents.get(load.self.idzone) as Zone
+			const exitZone = null//this.babs.ents.get(player.controller.target.zone.id) as Zone
+
+			player.controller.zoneIn(player, enterZone, exitZone)
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
@@ -417,118 +389,7 @@ export class SocketSys {
 			const exitZone = this.babs.ents.get(player.controller.target.zone.id) as Zone // player.controller.target.zone ?
 			const playerIsSelf = player.id === this.babs.idSelf
 
-			// Calculate the zones we're exiting and the zones we're entering
-			const oldZoneGroupIds = exitZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
-			const newZoneGroupIds = enterZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
-			const babs = this.babs
-			const removedZones = oldZoneGroupIds
-				.filter(id => !newZoneGroupIds.includes(id))
-				.map(id=>babs.ents.get(id) as Zone)
-			const addedZones = newZoneGroupIds
-				.filter(id => !oldZoneGroupIds.includes(id))
-				.map(id=>babs.ents.get(id) as Zone)
-			
-			log.info('zonediff', removedZones, addedZones)
-
-
-			// player.controller.zoneIn(player, enterZone)
-
-
-			/* Above will switch to not swap between far and detailed; instead just load detailed (far gets loaded separately).  
-			// 1. Change exited zone to far tree wobs
-			// 2. Change entered zone to detailed wobs
-			
-			const farBigTreesToAdd :SharedWob[] = []
-			if(playerIsSelf) {
-				for(const removedZone of removedZones) {
-					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
-					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
-						removedZone.removeWobGraphic(zoneFwob)
-
-						// Prepare replacement trees for farther below.
-						// Get only short height items?  I will need the graphic.  Can I get the related instance?
-						const feim = Wob.InstancedMeshes.get(zoneFwob.name)
-						const wobIsFar = true // By definition it's going to be far
-						if(wobIsFar && feim.wobIsTall) {
-							zoneFwob.blueprint_id = Wob.FarwobName
-							zoneFwob.name = Wob.FarwobName
-							farBigTreesToAdd.push(zoneFwob)
-						}
-						
-					}
-					removedZone.coordToInstanceIndex = {}
-					// exitFwobs.push(...newExitFwobs)
-					// log('exit wobs to add', exitZone.id, exitFwobs.length)
-					// await Wob.LoadInstancedGraphics(exitFwobs, context.babs, false) // Then add far tree ones
-						// ^ So um, having this here ruined everything.  Because why?
-						// Well removing this "optimizes" by not adding a bunch of far trees before removing existing far trees.
-						// Aka originally this first added a bunch of far trees to the exist zone, then removed them from the enter zone.
-						// Instead, removing this first removes them from the enter zone, then adds them to the exit zone.
-						// Eg: Add 600 trees to exit, then below remove 900 trees.  Then on reentry, add 900 trees, remove 600 trees.
-						// Is removal just messed up?
-						// *Later*: Other things were messed up, so I'm not sure this still is.
-				}
-			}
-
-			player.controller.zoneIn(player, enterZone)
-
-			let detailedWobsToAdd :SharedWob[] = []
-			if(playerIsSelf) {
-				for(let addedZone of addedZones) {
-					log.info('entered zone: far trees to remove.  id:', addedZone.id)
-					
-					const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
-					detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
-
-					// Now remove only fartrees; things that are far and big
-					for(const zoneFwob of zoneFwobs) { 
-						const feim = Wob.InstancedMeshes.get(zoneFwob.name)
-						const wobIsFar = true // By definition it was far
-						if(wobIsFar && feim.wobIsTall) {
-							addedZone.removeWobGraphic(zoneFwob, Wob.FarwobName) // todo
-						}
-					}
-					addedZone.coordToInstanceIndex = {}
-				}
-				
-
-				log.info('exited zones: detailed wobs to add', farBigTreesToAdd.length)
-				await Wob.LoadInstancedGraphics(farBigTreesToAdd, this.babs, false) // Then add far tree ones
-
-				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-				await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
-			}
-
-			*/
-
-
-			if(playerIsSelf) {
-				for(const removedZone of removedZones) {
-					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
-					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
-						removedZone.removeWobGraphic(zoneFwob)
-					}
-					removedZone.coordToInstanceIndex = {}
-				}
-			}
-
-			player.controller.zoneIn(player, enterZone)
-
-			let detailedWobsToAdd :SharedWob[] = []
-			if(playerIsSelf) {
-				for(let addedZone of addedZones) {
-					log.info('entered zone: detailed wobs to add.  id:', addedZone.id)
-					
-					const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
-					detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
-				}
-				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-				await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
-			}
-
-
+			await player.controller.zoneIn(player, enterZone, exitZone)
 		}
 		else if('said' in payload) {
 			const said = payload.said

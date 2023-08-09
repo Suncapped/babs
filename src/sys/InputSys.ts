@@ -440,9 +440,9 @@ export class InputSys {
 		this.carrying = null
 		document.addEventListener('mousemove', async ev => { // :MouseEvent
 			// Close top menu if it's open
-			if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
-				topmenuUnfurled.set(false)
-			}
+			// if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
+			// 	topmenuUnfurled.set(false)
+			// }
 
 			this.babs.renderSys.documentHasFocus = 'forced'
 
@@ -574,7 +574,7 @@ export class InputSys {
 		})
 
 		document.addEventListener('mousedown', async ev => {
-			log.info('mouseOnDown', ev.button, ev.target.id)
+			log('mouseOnDown', ev.button, ev.target.id)
 
 			// Close top menu if it's open
 			if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
@@ -759,7 +759,7 @@ export class InputSys {
 				}
 
 				// Middle mouse toggles autorun
-				if (ev.button == 1) {
+				if (ev.button == 1 || ev.button == 4) {
 					// PS it's a mouse
 					this.setMouseDevice('mouse')
 					this.mouse.middle = PRESS

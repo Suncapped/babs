@@ -185,19 +185,19 @@ export class Wob extends SharedWob {
 
 		// const meshesToLoad = arrivalWobs.filter(w=>w.name === Wob.FarwobName).map(w=>w.name) // Filtering for farwobs?
 		const meshesToLoad = arrivalWobs.map(w=>w.name)
-		console.log('meshesToLoad', nameCounts)
+		log.info('meshesToLoad', nameCounts)
 		await Wob.ensureGltfsLoaded(meshesToLoad, babs) // Loads them into LoadedGltfs
 
-		console.log('LoadedGltfs', Wob.LoadedGltfs)
+		log.info('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
 			let newWobsCount = nameCounts.get(blueprint_id)
 			let instanced = Wob.InstancedMeshes.get(blueprint_id)
-			console.log('Checking for instanced for blueprint_id', blueprint_id)
+			// log.info('Checking for instanced for blueprint_id', blueprint_id)
 			if(!instanced) {
-				console.log('About to create instanced for blueprint_id', blueprint_id)
+				log.info('About to create instanced for blueprint_id', blueprint_id)
 				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, wobMesh as Mesh) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
-				console.log('Created instanced for blueprint_id', blueprint_id)
+				log.info('Created instanced for blueprint_id', blueprint_id)
 			}
 		}
 
@@ -209,7 +209,7 @@ export class Wob extends SharedWob {
 		// This is for SETting instance items.  UNSET happens in Zone.removeWobGraphic.
 		// Why separately?  Because this happens en-masse
 		let count = 0
-		// console.log('fwobs to load:', arrivalWobs.length)
+		// log.info('fwobs to load:', arrivalWobs.length)
 		for(const fwob of arrivalWobs) {
 			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
 				blueprint_id: fwob.blueprint_id, 
@@ -463,7 +463,7 @@ export class Wob extends SharedWob {
 
 			// nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 			if(!Wob.LoadedGltfs.get(wobName)){
-				console.log('Loading gltf:', wobName)
+				log.info('Loading gltf:', wobName)
 				const load = babs.loaderSys.loadGltf(`/environment/gltf/${wobName}.glb`, wobName)
 				Wob.LoadedGltfs.set(wobName, true) // Gets set right after this
 				loads.push(load)
