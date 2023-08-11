@@ -176,19 +176,22 @@ export class RenderSys {
 	}
 
 	calcShowOnlyNearbyWobs() {
+		// for(let [key, feim] of Wob.InstancedMeshes) {
+		// 	if(key == Wob.FarwobName) {
+		// 		console.log(key, feim)
+		// 	}
+		// }
 		// return
 		// log('calcShowOnlyNearbyWobs')
+
+		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
 		for(let [key, feim] of Wob.InstancedMeshes) {
-			// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
-			
 			// For each index in instancedMesh, get the position relative to the player
 			const instanceMatrix = feim.instancedMesh.instanceMatrix
-			// console.log('instancedMatrix', instanceMatrix)
 			
 			// Rather than a cutoff at a number, cutoff based on dist.
 			const distCutoff = (feim.wobIsTall ? 1000 : 500)
-			
-			// let indexDistances :Array<{dist: number, originalIndex: number}> = []
+
 			let nearItems :Array<{dist: number, originalIndex: number}> = []
 			const loadedCount = feim.getLoadedCount()
 			for(let i=0; i<instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
@@ -202,7 +205,9 @@ export class RenderSys {
 				// We can't just swap, because it's all rearranged.
 				// Instead, let's just copy in the top items that are below a certain distance!
 				// Also, I need to not sort beyond loadedCount
-				if(dist < distCutoff && i/16 < loadedCount) {
+				// And farwobs are in reverse
+				const distanceCondition = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
+				if(distanceCondition && i/16 < loadedCount) {
 					nearItems.push({
 						dist: dist,
 						originalIndex: i/16,

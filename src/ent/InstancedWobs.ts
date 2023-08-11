@@ -12,6 +12,7 @@ export class InstancedWobs {
 	public lift :number
 	public sink :number
 	public instanceIndexToWob = new Map<number, Wob>
+	public farInstanceIndexToWob = new Map<number, Wob>
 	public wobIsSmall :boolean
 	public wobIsTall :boolean
 	public wobIsFar :boolean
@@ -25,6 +26,7 @@ export class InstancedWobs {
 		public blueprint_id :string,
 		private maxCount :number, // Number above which a larger buffer (new InstancedMesh) is needed
 		private wobMesh :Mesh,
+		public asFarWobs :'asFarWobs' = null,
 	) {
 		// - Set up wobMesh into InstancedMesh
 		if(!this.wobMesh) {
@@ -37,9 +39,8 @@ export class InstancedWobs {
 		}
 		Wob.SphereMesh.geometry.computeBoundingBox()
 
-		const isMeshForFarWob = this.blueprint_id.indexOf(Wob.FarwobName) !== -1
-		if(isMeshForFarWob) {
-			this.wobMesh.geometry.scale(4, 1, 4)
+		if(asFarWobs) {
+			wobMesh.geometry.scale(4, 1, 4)
 		}
 
 		this.maxCount += Math.floor(this.maxCount *0.10) // Add 10% to maxCount for preallocation margin; prevents needing immediate reallocation

@@ -506,53 +506,57 @@ export class Controller extends Comp {
 		log.info('zonein player zone', player.id, enterZone.id, )
 		log.info('this.gDestination', this.gDestination)
 
-		// Calculate the zones we're exiting and the zones we're entering
-		const oldZoneGroupIds = exitZone?.getZonesAround(Zone.loadedZones).map(z=>z.id) || []
-		const newZoneGroupIds = enterZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
-		const removedZones = oldZoneGroupIds
-			.filter(id => !newZoneGroupIds.includes(id))
-			.map(id=>this.babs.ents.get(id) as Zone)
-		const addedZones = newZoneGroupIds
-			.filter(id => !oldZoneGroupIds.includes(id))
-			.map(id=>this.babs.ents.get(id) as Zone)
-		
-		log.info('zonediff', removedZones, addedZones)
-
-		// const yardCoord = YardCoord.Create({x: this.gDestination.x, z: this.gDestination.z, zone: enterZone})
-
 		this.target.position.setY(0) // works since it will pop up back up to the ground
 		this.target.zone = enterZone
+
+		// Calculate the zones we're exiting and the zones we're entering
+		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
+		const newZonesNear = enterZone.getZonesAround(Zone.loadedZones, 1)
+		const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
+		const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
+
+		const oldZonesFar = exitZone?.getZonesAround(Zone.loadedZones, 22) || []
+		const newZonesFar = enterZone.getZonesAround(Zone.loadedZones, 22)
+		const removedZonesFar = oldZonesFar.filter(zone => !newZonesFar.includes(zone))
+		const addedZonesFar = newZonesFar.filter(zone => !oldZonesFar.includes(zone))
+
+		// console.log('addedZonesFar', Zone.loadedZones, addedZonesFar.map(z => z.id).sort((a,b) => a-b), addedZonesNearby.map(z => z.id).sort((a,b) => a-b))
+
+		log.info('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
 
 		if(this.isSelf) {
 			this.babs.worldSys.currentGround = enterZone.ground
 
 
 
-			for(const removedZone of removedZones) {
+			for(const removedZone of removedZonesNearby) {
 				const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-				log('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+				log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
 				for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
 					removedZone.removeWobGraphic(zoneFwob)
 				}
-				removedZone.coordToInstanceIndex = {}
+				removedZone.coordToInstanceIndex = {} // In future, need similar for farCoordToInstanceIndex?
 			}
 			
 			// Pull detailed wobs for entered zones, so we can load them.  
 			// This could later be moved to preload on approaching zone border, rathern than during zonein.
 
-			let detailedWobsToAdd :SharedWob[] = []
-
 			const pullWobsData = async () => {
+				let detailedWobsToAdd :SharedWob[] = []
+				let farWobsToAdd :SharedWob[] = []
 
 				const fetches = []
-				for(let zone of addedZones) {
+				for(let zone of addedZonesNearby) {
 					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
 					fetches.push(zone.locationData)
-
+				}
+				for(let zone of addedZonesFar) {
+					zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
+					fetches.push(zone.farLocationData)
 				}
 				await Promise.all(fetches)
 
-				for(let zone of addedZones) {
+				for(let zone of addedZonesNearby) {
 					const fet4 = await zone.locationData
 					const data4 = await fet4.blob()
 					if (data4.size == 2) {  // hax on size (for `{}`)
@@ -562,30 +566,43 @@ export class Controller extends Comp {
 						const buff4 = await data4.arrayBuffer()
 						zone.locationData = new Uint8Array(buff4)
 					}
+					
+				}
+				for(let zone of addedZonesFar) {
+					const fet5 = await zone.farLocationData
+					const data5 = await fet5.blob()
+					if (data5.size == 2) {  // hax on size (for `{}`)
+						zone.farLocationData = new Uint8Array()
+					}
+					else {
+						const buff5 = await data5.arrayBuffer()
+						zone.farLocationData = new Uint8Array(buff5)
+					}
 				}
 
 
-				let wobs: Array<SharedWob> = []
-				for(let zone of addedZones) {
-					// const allWobsData = new Uint8Array((zone.locationData?.length || 0))
-					log.info('About to set allWobsData', zone.locationData.length)
+				for(let zone of addedZonesNearby) {
+					// log('About to set addedZonesNearby', zone.locationData)
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					wobs.push(...fWobs)
+					detailedWobsToAdd.push(...fWobs)
 				}
-				await Wob.LoadInstancedGraphics(wobs, this.babs, false)
+				for(let zone of addedZonesFar) {
+					// log('About to set addedZonesFar', zone.farLocationData)
+					const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
+					farWobsToAdd.push(...fWobs)
+				}
+
+				return [detailedWobsToAdd, farWobsToAdd]
 
 			}
-			await pullWobsData()
+			const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
 
-			// for(let addedZone of addedZones) {
-			// 	log.info('entered zone: detailed wobs to add.  id:', addedZone.id)
-			// 	const zoneFwobs = addedZone.getSharedWobsBasedOnLocations()
-			// 	detailedWobsToAdd.push(...zoneFwobs) // Prepare detailed wobs for adding later
-			// }
-			// log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-			// await Wob.LoadInstancedGraphics(detailedWobsToAdd, this.babs, false) // Then add real ones
+			// const zoneFwobs = addedZone.getSharedWobsBasedOnLocations() // This is how to get wobs if doing separately from load above.
+			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
+			log.info('farwobs to add', farWobsToAdd.length)
+			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
 			
-
 			// Everything was already shifted around us locally, when we gDestination across the line!
 			this.selfZoningWait = false
 

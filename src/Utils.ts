@@ -59,8 +59,7 @@ export const log = (function() {
 	// Can't figure out how to get line numbers for sub-objects
 	log.info = (...params) => { 
 		if(showInfoLogs) {
-			params[0] = '{info} '+params[0]
-			console.log(...params)
+			console.info(...params)
 		}
 	}
 	return log

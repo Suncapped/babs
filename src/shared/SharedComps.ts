@@ -43,6 +43,15 @@ export class SharedCompPlatform extends SharedComp {
 	zOffsetFeet :number
 }
 
+export class SharedCompVisible extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+
+	farMesh :string
+}
+
 // edible: SharedCompPlatform,
 // firestarter: SharedCompPlatform,
 // generated: SharedCompPlatform,

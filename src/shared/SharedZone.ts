@@ -141,13 +141,15 @@ export class SharedZone {
 		// To be overridden
 	}
 
-	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false) :Array<SharedWob> {
+	applyLocationsToGrid(locations :Uint8Array, returnWobs :boolean = false, doNotApplyActually :'doNotApplyActually' = null) :Array<SharedWob> {
 		if(!locations || !locations.length) {
 			// console.log('applyLocations: no locations!')
 			return [] // locations are not set for this zone (empty zone)
 		}
 
 		let wobs = []
+
+		let locidsOfBlueprintsNotFound = {}
 
 		for(let i=0; i<locations.length; i+=4){
 			const left = (locations[i+0] << 8)
@@ -164,7 +166,7 @@ export class SharedZone {
 
 			const isLocidBeingRemoved = locid === 0
 			const isLocidbeingUpdated = oldLocid !== 0 && oldLocid !== locid
-			if(isLocidBeingRemoved) {
+			if(isLocidBeingRemoved && !doNotApplyActually) {
 				const oldbp = this.locidToBlueprint[oldLocid]
 				if(!oldbp) {
 					console.warn('No blueprint found @2!', locid)
@@ -174,7 +176,7 @@ export class SharedZone {
 				this.wobIdRotGrid[x +(z *250)] = 0
 			}
 			else {
-				if(isLocidbeingUpdated) {
+				if(isLocidbeingUpdated && !doNotApplyActually) {
 					const oldbp = this.locidToBlueprint[oldLocid]
 					if(!oldbp) {
 						console.warn('No blueprint found @4!', locid)
@@ -182,13 +184,14 @@ export class SharedZone {
 					}
 					this.removeWobGraphicAt(x, z)
 				}
-				this.wobIdRotGrid[x +(z *250)] = locidrot
+				if(!doNotApplyActually) this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
 					// Note, also used in 'getSharedWobsBasedOnLocations':
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
-						// console.warn('No blueprint found @5!', locid) // todo improve so this still warns?  Was spamming on asset/bp mismatch or something.
+						// console.warn('No blueprint found @5!', locid, this.locidToBlueprint)Was spamming on asset/bp mismatch or something.  Like 108 missing, which was lodgepole medium maybe?  So moved to outside of loop.
+						locidsOfBlueprintsNotFound[locid] = locid
 						continue
 					}
 					wobs.push(new SharedWob(this.id, x, z, r, bp))
@@ -196,9 +199,15 @@ export class SharedZone {
 			}
 
 		}
+
+		const keys = Object.keys(locidsOfBlueprintsNotFound)
+		if(keys.length) console.warn('No blueprint found @5!', keys.join(','))
+
 		return wobs
 	}
 	getSharedWobsBasedOnLocations() {
+		let locidsOfBlueprintsNotFound = {}
+
 		const locations = this.getLocationsFromGrid()
 		let fwobs :SharedWob[] = []
 		for(let i=0; i<locations.length; i+=4){
@@ -213,15 +222,21 @@ export class SharedZone {
 			const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 			const bp = this.locidToBlueprint[locid]
 			if(!bp) {
-				console.warn('No blueprint found @6!', locid)
+				// console.warn('No blueprint found @6!', locid)
+				locidsOfBlueprintsNotFound[locid] = locid
 				continue
 			}
 			fwobs.push(new SharedWob(this.id, x, z, r, bp))
 		}
+
+		const keys = Object.keys(locidsOfBlueprintsNotFound)
+		if(keys.length) console.warn('No blueprint found @6!', keys.join(','))
+
 		return fwobs
 	}
 
 	applyBlueprints(blueprints :Map<blueprint_id, SharedBlueprintWithComps>) {
+		// console.log('applyBlueprints', blueprints)
 		for(const blueprintsWithComps of blueprints.values()) {
 			const blueprint = new Blueprint(
 				blueprintsWithComps.blueprint_id,
@@ -255,24 +270,27 @@ export class SharedZone {
 		return (this.elevations[index] *this.yscale) +this.y
 	}
 
-	getZonesAround(zones :Array<SharedZone>, includeThisZone :'includeThisZone' = 'includeThisZone') {
-		const zonesAround = zones.filter(zone => {
-			return (includeThisZone && zone.x==this.x && zone.z==this.z)
-			// Clockwise starting at 12 (ie forward ie positivex):
-			|| zone.x==this.x +1 && zone.z==this.z +0
-			|| zone.x==this.x +1 && zone.z==this.z +1
-			|| zone.x==this.x +0 && zone.z==this.z +1
-			|| zone.x==this.x -1 && zone.z==this.z +1
-			|| zone.x==this.x -1 && zone.z==this.z +0
-			|| zone.x==this.x -1 && zone.z==this.z -1
-			|| zone.x==this.x -0 && zone.z==this.z -1
-			|| zone.x==this.x +1 && zone.z==this.z -1
+	getZonesAround<T extends SharedZone>(fromZonePool :Array<T>, outFromThis :number = 1, includeThisZone :'includeThisZone' = 'includeThisZone') :Array<T> {
+		const zonesAround: Array<T> = []
 
-		})
-		// log('zonesAround', Zone.loadedZones.length, this.x, ',', this.z, ': ', zonesAround.map(z=>`${z.x},${z.z}`))
+		outer: for (const zone of fromZonePool) {
+			if (includeThisZone && zone.x === this.x && zone.z === this.z) {
+				zonesAround.push(zone)
+				continue
+			}
+
+			for (let dx = -outFromThis; dx <= outFromThis; dx++) {
+				for (let dz = -outFromThis; dz <= outFromThis; dz++) {
+					if (Math.abs(zone.x - this.x) <= outFromThis && Math.abs(zone.z - this.z) <= outFromThis) {
+						zonesAround.push(zone)
+						continue outer
+					}
+				}
+			}
+		}
+
 		return zonesAround
 	}
-
 
 }
 

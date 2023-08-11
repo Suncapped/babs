@@ -71,7 +71,8 @@ export class Zone extends SharedZone {
 		// const sourceIndex = instancedMesh.count -1
 		const sourceIndex = feim.getLoadedCount() -1
 		// Target is the item being deleted.
-		const targetIndex = deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z]
+		const targetIndex = deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z] 
+		// May also need for farCoordToInstanceIndex?  Once we allow removal via zoning/updates
 
 		// console.log('--------- deletingWobXZ, sourceIndex, targetIndex', deletingWob.name, 'at', deletingWobZone.id+':['+deletingWob.x+','+deletingWob.z+']', 'will', sourceIndex+' ==> '+ targetIndex, deletingWobZone.coordToInstanceIndex)
 
@@ -108,10 +109,18 @@ export class Zone extends SharedZone {
 		feim.instancedMesh.setMatrixAt(targetIndex, sourceMatrix)
 
 		// Update coordToInstanceIndex for the source and target wobs
-		sourceWobAnyZone.zone.coordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
-		targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = sourceIndex
-		if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${sourceWobAnyZone.zone.id}:[${sourceWobAnyZone.x},${sourceWobAnyZone.z}] = ${targetIndex}`)
-		if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${targetWobAnyZone.zone.id}:[${targetWobAnyZone.x},${targetWobAnyZone.z}] = ${sourceIndex}`)
+		if(!feim.asFarWobs) {
+			sourceWobAnyZone.zone.coordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
+			targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = sourceIndex
+			if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${sourceWobAnyZone.zone.id}:[${sourceWobAnyZone.x},${sourceWobAnyZone.z}] = ${targetIndex}`)
+			if(showSwapLogs) console.log(`anyzone.coordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${targetWobAnyZone.zone.id}:[${targetWobAnyZone.x},${targetWobAnyZone.z}] = ${sourceIndex}`)
+		}
+		else {
+			sourceWobAnyZone.zone.farCoordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
+			targetWobAnyZone.zone.farCoordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = sourceIndex
+			if(showSwapLogs) console.log(`anyzone.farCoordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${sourceWobAnyZone.zone.id}:[${sourceWobAnyZone.x},${sourceWobAnyZone.z}] = ${targetIndex}`)
+			if(showSwapLogs) console.log(`anyzone.farCoordToInstanceIndex: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' set ${targetWobAnyZone.zone.id}:[${targetWobAnyZone.x},${targetWobAnyZone.z}] = ${sourceIndex}`)
+		}
 
 		// Update instanceIndexToWob
 		feim.instanceIndexToWob.set(sourceIndex, targetWobAnyZone)
@@ -124,8 +133,14 @@ export class Zone extends SharedZone {
 			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' delete ${sourceIndex} `)
 
 			// delete sourceWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z]
-			targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = null
-			if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' for ${targetWobAnyZone.name} set coordToInstanceIndex[${targetWobAnyZone.x},${targetWobAnyZone.z}] = null`)
+			if(!feim.asFarWobs) {
+				targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = null
+				if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' for ${targetWobAnyZone.name} set coordToInstanceIndex[${targetWobAnyZone.x},${targetWobAnyZone.z}] = null`)
+			}
+			else {
+				targetWobAnyZone.zone.farCoordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = null
+				if(showSwapLogs) console.log(`doDeleteSource: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' for ${targetWobAnyZone.name} set farCoordToInstanceIndex[${targetWobAnyZone.x},${targetWobAnyZone.z}] = null`)
+			}
 
 			// // "Remove" source matrix by reducing instanced count
 			// // Now done outside of the swap function
@@ -139,12 +154,7 @@ export class Zone extends SharedZone {
 	}
 
 	coordToInstanceIndex :Record<string, number> = {}
-	// setInstanceIndex(x :number, z :number) {
-	// 	_coordToInstanceIndex
-	// }
-	// getInstanceIndex(x :number, z :number) {
-		
-	// }
+	farCoordToInstanceIndex :Record<string, number> = {}
 
 	// yardHeightAt(x :number, z :number, zone :Zone) { // Height from original data
 	// 	// This isn't great for replacing raycast yet, because it would need similar features to engineHeightAt below.

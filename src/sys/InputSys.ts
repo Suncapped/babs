@@ -257,11 +257,11 @@ export class InputSys {
 
 
 					// console.time('first')
-					// await Promise.all(Wob.LoadInstancedGraphics([wobTrees[0]], this.babs, false))
+					// await Promise.all(Wob.LoadInstancedWobs([wobTrees[0]], this.babs, false))
 					// console.timeEnd('first')
 
 					console.time('all')
-					const res = await Wob.LoadInstancedGraphics(wobTrees, this.babs, false)
+					const res = await Wob.LoadInstancedWobs(wobTrees, this.babs, false)
 					console.timeEnd('all')
 					console.log('res', res)
 
@@ -574,7 +574,7 @@ export class InputSys {
 		})
 
 		document.addEventListener('mousedown', async ev => {
-			log('mouseOnDown', ev.button, ev.target.id)
+			log.info('mouseOnDown', ev.button, ev.target.id)
 
 			// Close top menu if it's open
 			if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {

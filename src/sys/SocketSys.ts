@@ -256,8 +256,7 @@ export class SocketSys {
 			for(let zone of farZones) {
 				zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
-				zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
-				fetches.push(zone.elevationData, zone.landcoverData, zone.farLocationData)
+				fetches.push(zone.elevationData, zone.landcoverData)
 			}
 			await Promise.all(fetches)
 
@@ -272,15 +271,6 @@ export class SocketSys {
 				const buff2 = await data2.arrayBuffer()
 				zone.landcoverData = new Uint8Array(buff2)
 
-				const fet3 = await zone.farLocationData
-				const data3 = await fet3.blob()
-				if(data3.size == 2) {  // hax on size (for `{}`)
-					zone.farLocationData = new Uint8Array()
-				}
-				else {
-					const buff3 = await data3.arrayBuffer()
-					zone.farLocationData = new Uint8Array(buff3)
-				}
 			}
 
 			const pStatics = []
@@ -303,7 +293,7 @@ export class SocketSys {
 			this.babs.uiSys.loadUis(load.uis)
 
 			// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
-			// I was trying to do this after LoadInstancedGraphics, but that was missing the ones in wobsupdate.
+			// I was trying to do this after LoadInstancedWobs, but that was missing the ones in wobsupdate.
 			const startingZone = this.babs.ents.get(load.self.idzone) as Zone
 			this.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
 
@@ -311,28 +301,8 @@ export class SocketSys {
 			await Player.Arrive(load.self, true, this.babs)
 			
 			for(const zone of farZones) {
-				const zoneIsNearby = nearbyZoneIds.has(zone.id)
-				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get farwob visible comp info
-
+				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible comp info
 			}
-			// await Wob.LoadInstancedGraphics(wobs, this.babs, false)
-			// ^ Needs to happen after awaited Player.Arrive because that sets the idzone the player's in, which is needed to decide where to show far wobs. 
-			// ^ Moving to zonein
-
-			// // I think that farwobs need to be an entirely separate thing.
-			// // They may work similarly, but are fundamentally different.  Mainly: They are display-only, not wobs.
-			// // Hmm but also there are many similarities.  So it might be best to use InstancedMesh to start?
-			// let farZoneLocations = []
-			// for(const zone of farZones) {
-			// 	const zoneIsNearby = nearbyZoneIds.has(zone.id)
-			// 	if(!zoneIsNearby) {
-			// 		// zone.applyBlueprints(new Map(Object.entries(load.blueprints)))
-			// 		// const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-			// 		// farWobs.push(...fWobs)
-			// 		farZoneLocations.push({zone, locations: zone.farLocationData})
-			// 	}
-			// }
-			// await Wob.LoadFarwobGraphics(farZoneLocations, this.babs)
 
 			const player = this.babs.ents.get(load.self.id) as Player
 			const enterZone = this.babs.ents.get(load.self.idzone) as Zone
@@ -421,15 +391,15 @@ export class SocketSys {
 			Currently we are:
 				setting zone stuff like applyLocationsToGrid
 				...then also...
-				generating a bunch of SharedWob{} and sending them to LoadInstancedGraphics(), where graphics get created.
+				generating a bunch of SharedWob{} and sending them to LoadInstancedWobs(), where graphics get created.
 			Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
-			So the purpose of LoadInstancedGraphics is to load the graphics, pretty much.
+			So the purpose of LoadInstancedWobs is to load the graphics, pretty much.
 			*/
 			const zone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
 			log.info('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
 			const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), true)
 
-			await Wob.LoadInstancedGraphics(sharedWobs, this.babs, payload.wobsupdate.shownames)
+			await Wob.LoadInstancedWobs(sharedWobs, this.babs, payload.wobsupdate.shownames)
 		}
 		else if('contains' in payload) {
 			// log.info('contains', payload.contains)
@@ -445,7 +415,7 @@ export class SocketSys {
 			// }
 				
 			// if(payload.contains.id === this.babs.idSelf) { // Is your own inventory
-			// 	await Wob.LoadInstancedGraphics(payload.contains.wobs, this.babs, false)
+			// 	await Wob.LoadInstancedWobs(payload.contains.wobs, this.babs, false)
 			// }
 		}
 		else if('journal' in payload) {
