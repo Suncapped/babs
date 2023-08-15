@@ -47,7 +47,6 @@
   "dependencies": {
     "@jaames/iro": "^5.5.2",
     "@neodrag/svelte": "^2.0.3",
-    "@stardazed/streams-polyfill": "^2.4.0",
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.1",
     "jszip": "^3.10.1",

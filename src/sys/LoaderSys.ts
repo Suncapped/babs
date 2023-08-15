@@ -187,14 +187,14 @@ export class LoaderSys {
 
 		// Fetch and process cached GLB files
 		Wob.CachedGlbFiles = (async () => {
-			const response = await fetch('https://pail.suncapped.com/gltf.zip.gz')
+			const response = await fetch('https://pail.suncapped.com/glb.zip.gz')
 			
 			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
-			const blob = await new Response(decompressedStream).blob()
-			
+			// const blob = await new Response(decompressedStream).blob()
+			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
+
 			const jszip = new JSZip()
-			const zipContents = await jszip.loadAsync(blob)
-		
+			const zipContents = await jszip.loadAsync(arrayBuffer)
 			return zipContents.files
 		})()
 

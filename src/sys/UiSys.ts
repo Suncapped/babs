@@ -145,7 +145,7 @@ export class UiSys {
 		}
 		else {
 			let waitForMesh = setInterval(() => {
-				log('waiting')
+				log('waiting for said')
 				if(player?.controller?.target) {
 					player.controller.target.add(chatLabel)
 					clearInterval(waitForMesh)

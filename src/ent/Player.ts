@@ -99,7 +99,7 @@ export class Player extends Ent {
 		}
 		else {
 			let waitForMesh = setInterval(() => {
-				log('waiting')
+				log('waiting for remove')
 				if(this.controller.target) {
 					this.babs.group.remove(this.controller.target) 
 					clearInterval(waitForMesh)
