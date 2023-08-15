@@ -8,6 +8,8 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils'
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Controller } from '@/comp/Controller'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import JSZip, { type files } from 'jszip'
+import { Wob } from '@/ent/Wob'
 
 export class LoaderSys {
 
@@ -121,7 +123,6 @@ export class LoaderSys {
 			// 	uniform vec3 colorA; 
 			// 	uniform vec3 colorB; 
 			// 	varying vec3 vUv;
-		  
 			// 	void main() {
 			// 	  gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
 			// 	}
@@ -183,6 +184,20 @@ export class LoaderSys {
 		// this.dracoLoader.setDecoderConfig({ type: 'wasm' })
 		this.dracoLoader.preload()
 		this.loader.setDRACOLoader(this.dracoLoader)
+
+		// Fetch and process cached GLB files
+		Wob.CachedGlbFiles = (async () => {
+			const response = await fetch('https://pail.suncapped.com/gltf.zip.gz')
+			
+			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
+			const blob = await new Response(decompressedStream).blob()
+			
+			const jszip = new JSZip()
+			const zipContents = await jszip.loadAsync(blob)
+		
+			return zipContents.files
+		})()
+
 	}
 
 	async loadFbx(path) {
@@ -227,46 +242,75 @@ export class LoaderSys {
 	}
 
 	
-	loadGltf(path :string, name :string = 'noname') :Promise<GLTF|{name :string}> {
+	async loadGltf(path :string, name :string = 'noname', archivedGlbs :typeof files = null) :Promise<GLTF|{name :string}> {
+
+		let loadFromArchive :ArrayBuffer = null
+		if(archivedGlbs) {
+			// In `name`, get only the string after the last `/`
+			const nameInArchive = name.split('/').pop()
+			// Find the item in `checkArchive` that matches the `name`.
+			const file = archivedGlbs[nameInArchive + '.glb']
+			if(file) {
+				const filedata = await file.async('arraybuffer')  // or 'text' for text files
+				if(filedata) {
+					loadFromArchive = filedata
+				}
+			}
+			else {
+				log.info('File not in archive:', nameInArchive, file)
+			}
+		}
+					
 		return new Promise((resolve, reject) => {
-			this.loader.load(`${this.urlFiles}${path}`,// function ( gltf ) {
-				(gltf) => { // onLoad callback
-					log.info('Loaded GLTF:', gltf)
-					// log('Loaded GLTF:', gltf.scene.children[0])
+			let url = `${this.urlFiles}${path}`
+			// if(usepail) {
+			// 	url = `https://pail.suncapped.com${path}`
+			// }
 
-					gltf.scene.traverse(child => {
-						if (child instanceof Mesh) {
-							child.material = this.megaMaterial
-						}
-					})
-
-					if(gltf.scene) {
-						if(gltf.scene.children.length == 0) {
-							console.warn('Arrival wob has no children in scene: ', name)
-						}
-						else {
-							if(gltf.scene.children.length > 1) {
-								console.warn(`Loaded object with more than one child.`, name)
-							}
-						}
+			const success = (gltf) => {
+				log.info('Loaded GLTF:', gltf)
+				// log('Loaded GLTF:', gltf.scene.children[0])
+	
+				gltf.scene.traverse(child => {
+					if (child instanceof Mesh) {
+						child.material = this.megaMaterial
+					}
+				})
+	
+				if(gltf.scene) {
+					if(gltf.scene.children.length == 0) {
+						console.warn('Arrival wob has no children in scene: ', name)
 					}
 					else {
-						console.warn('Arrival wob has no scene: ', name)
+						if(gltf.scene.children.length > 1) {
+							console.warn(`Loaded object with more than one child.`, name)
+						}
 					}
-
-					gltf.name = name
-
-					resolve(gltf)
-				},
-				(xhr) => { // onProgress callback
-					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
-				},
-				(err) => { // onError callback
-					log.info('loadGltf error:', err.message) // info because can just be missing model
-					resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
 				}
-			)
+				else {
+					console.warn('Arrival wob has no scene: ', name)
+				}
+	
+				gltf.name = name
+
+				resolve(gltf)
+			}
+			const progress = (xhr) => { // onProgress callback
+				log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
+			}
+			const error = (err) => { // onError callback
+				console.error('loadGltf error:', err.message) // info because can just be missing model
+				resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
+			}
 		
+
+			if(loadFromArchive) {
+				this.loader.parse(loadFromArchive, '', success, error)
+			}
+			else {
+				this.loader.load(url, success, progress, error)
+			}
+
 
 		})
 

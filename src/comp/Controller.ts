@@ -600,6 +600,7 @@ export class Controller extends Comp {
 			// const zoneFwobs = addedZone.getSharedWobsBasedOnLocations() // This is how to get wobs if doing separately from load above.
 			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
 			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
+			
 			log.info('farwobs to add', farWobsToAdd.length)
 			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
 			

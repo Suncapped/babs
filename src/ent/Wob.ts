@@ -8,6 +8,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs, type IconData } from './InstancedWobs'
+import JSZip from 'jszip'
 
 export class Wob extends SharedWob {
 	constructor(
@@ -302,6 +303,8 @@ export class Wob extends SharedWob {
 	}
 
 
+	static CachedGlbFiles :Promise<typeof JSZip.files>
+
 	/**
 	 * Ensures that the specified GLTF meshes are loaded exactly once.
 	 * Subsequent calls with the same names will not trigger additional loads.
@@ -314,7 +317,7 @@ export class Wob extends SharedWob {
 		for(const wobName of arrivalWobsNames) {
 			if(!Wob.LoadedGltfs.get(wobName)){
 				log.info('Loading gltf:', wobName)
-				const load = babs.loaderSys.loadGltf(`/environment/gltf/${wobName}.glb`, wobName)
+				const load = babs.loaderSys.loadGltf(`/environment/gltf/${wobName}.glb`, wobName, await Wob.CachedGlbFiles)
 				Wob.LoadedGltfs.set(wobName, true) // Gets set right after this
 				loads.push(load)
 			}

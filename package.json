@@ -50,6 +50,7 @@
     "@stardazed/streams-polyfill": "^2.4.0",
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.1",
+    "jszip": "^3.10.1",
     "luxon": "^3.3.0",
     "papercss": "^1.9.1",
     "suncalc": "^1.9.0",
