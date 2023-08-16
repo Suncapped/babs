@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils } from 'three'
 import { UiSys } from '@/sys/UiSys'
 import { log } from '@/Utils'
 import { Flame } from '@/comp/Flame'
@@ -268,6 +268,10 @@ export class Wob extends SharedWob {
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
+				if(!asFarWobs) {
+					// console.log(wob.r)
+					matrix.makeRotationY(MathUtils.degToRad(wob.r *90))
+				}
 				matrix.setPosition(engPositionVector)
 				feim.instancedMesh.setMatrixAt(existingIindex, matrix)
 	

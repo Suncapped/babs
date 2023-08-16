@@ -223,7 +223,7 @@ export class SocketSys {
 		}
 		else if('alreadyin' in payload) {
 			// Just have them repeat the auth if this was their second login device
-			this.babs.uiSys.offerReconnect('Closed other session.')
+			this.babs.uiSys.offerReconnect('Disconnected from other tab.')
 		}
 		else if('load' in payload) {
 			const load = payload.load

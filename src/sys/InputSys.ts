@@ -69,7 +69,6 @@ export class InputSys {
 		zoom: 0,
 
 		// Finger handling
-		isfingers: false, // certain; whether it's a finger touch device such as a phone or tablet
 		fingerlastx: 0,
 		fingerlasty: 0,
 		finger2downstart: 0,
@@ -387,7 +386,7 @@ export class InputSys {
 			})
 
 			// Two finger touch to look
-			if (event.touches.length === 2) {
+			if (event.touches.length === 1) {
 				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
 				// Probably like touchpad.
 				if (event.type === 'touchstart' || event.type === 'touchend') {
@@ -410,14 +409,14 @@ export class InputSys {
 			}
 
 			// Handle double finger double tap
-			if (event.type === 'touchstart' && event.touches.length === 2) {
-				if (Date.now() - this.mouse.finger2downstart < this.doubleClickMs) { // Quick down them up, autorun
+			if (event.type === 'touchstart' && event.touches.length === 1) {
+				if (Date.now() - this.mouse.finger1downstart < this.doubleClickMs) { // Quick down them up, autorun
 					// log('finger2 runmode')
 					this.movelock = !this.movelock
-					this.mouse.finger2downstart = Date.now() - this.doubleClickMs * 3 // Make made change impossible for a second
+					this.mouse.finger1downstart = Date.now() - this.doubleClickMs * 3 // Make made change impossible for a second
 				}
 				else {
-					this.mouse.finger2downstart = Date.now()
+					this.mouse.finger1downstart = Date.now()
 				}
 			}
 			if (event.type === 'touchend' && event.touches.length === 1) { // Second finger removed, first finger remains
