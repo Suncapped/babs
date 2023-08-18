@@ -32,6 +32,7 @@ export class Babs {
 	baseDomain :string
 	urlFiles :string
 	urlSocket :string
+	usePail :boolean
 
 	browser
 
@@ -94,10 +95,12 @@ export class Babs {
 		if (this.isProd || import.meta.env.MODE == 'playerdev') {
 			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
 			this.urlFiles = `https://earth.suncapped.com/files` /* Expressa */
+			this.usePail = true
 		}
 		else {
 			this.urlSocket = `ws://${this.baseDomain}:2567` /* Proxima */
 			this.urlFiles = `http://${this.baseDomain}:3000/files` /* Expressa */
+			this.usePail = false
 		}
 		log.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
 
@@ -114,7 +117,7 @@ export class Babs {
 			}
 		})()
 
-		this.loaderSys = new LoaderSys(this.urlFiles)
+		this.loaderSys = new LoaderSys(this)
 
 		this.browser = (function (agent) {
 			switch (true) {

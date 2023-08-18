@@ -1,5 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Box2, Camera, Color, InstancedMesh, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
+import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
 import { Wob } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
@@ -73,7 +73,7 @@ export class InputSys {
 		fingerlasty: 0,
 		finger2downstart: 0,
 
-		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre * 2),
+		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre * 4),
 		xy: new Vector2(0, 0),
 
 		movetarget: undefined,
@@ -224,9 +224,48 @@ export class InputSys {
 			if (this.keys.cleft) {
 
 
-				// Spawn test character
-				if (this.keys.n === PRESS) {
-					
+				if (this.keys.f === PRESS) {
+					Wob.InstancedWobs.forEach((feim, bpid) => {
+						if(bpid == 'sneezeweed') {
+							if(!window.savedmatrix) {
+								window.savedmatrix = feim.instancedMesh.instanceMatrix
+							}
+							else {
+								// Diff window.savedmatrix array with feim.instancedMesh.instanceMatrix
+								function diffArrays(arr1, arr2) {
+									const set1 = new Set(arr1);
+									const set2 = new Set(arr2);
+								
+									const onlyInArr1 = [...set1].filter(item => !set2.has(item));
+									const onlyInArr2 = [...set2].filter(item => !set1.has(item));
+								
+									return {
+										onlyInArr1, // items only in arr1
+										onlyInArr2  // items only in arr2
+									};
+								}
+								
+								const arr1 = window.savedmatrix;
+								const arr2 = feim.instancedMesh.instanceMatrix; // Woaahh this is WAY lower now!
+								
+								// console.log(diffArrays(arr1.array, arr2.array)); // { onlyInArr1: [ 1, 2, 3 ], onlyInArr2: [ 6, 7, 8 ] }
+								console.log(arr1, arr2); // { onlyInArr1: [ 1, 2, 3 ], onlyInArr2: [ 6, 7, 8 ] }
+								
+							}
+						}
+
+					})
+
+				}
+
+				if (this.keys.l === PRESS) {
+
+
+					Wob.InstancedWobs.forEach((feim, bpid) => {
+						if(bpid == 'sneezeweed') {
+							console.log('sneezeweed feim.getLoadedCount() (reallocateLargerBuffer COUNTS)', feim.getLoadedCount())
+						}
+					})
 
 				}
 
@@ -250,14 +289,6 @@ export class InputSys {
 						}
 					}
 					log('Created '+count+' client side items')
-
-					// const uniqueGltfs = new Set(wobTrees.map(tree => tree.name))
-					// console.log('uniqueGltfs', uniqueGltfs)
-
-
-					// console.time('first')
-					// await Promise.all(Wob.LoadInstancedWobs([wobTrees[0]], this.babs, false))
-					// console.timeEnd('first')
 
 					console.time('all')
 					const res = await Wob.LoadInstancedWobs(wobTrees, this.babs, false)
@@ -489,7 +520,7 @@ export class InputSys {
 						// 2. Check whether over transparency 
 						const wobId = parseInt(item.id.split('-')[2])
 						const wob = this.babs.ents.get(wobId)
-						const feim = Wob.InstancedMeshes.get(wob.name)
+						const feim = Wob.InstancedWobs.get(wob.name)
 						// log(wob,  Wob.InstancedMeshes, this.babs.ents)
 
 						// if(instanced) {
@@ -642,7 +673,7 @@ export class InputSys {
 								if(this.babs.debugMode) {
 									const pos = this.pickedObject?.instancedPosition
 									log('this.pickedObject', this.pickedObject, pos)
-									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex
+									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +14] +this.babs.worldSys.shiftiness.z)
 									// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 								}
 
@@ -965,11 +996,23 @@ export class InputSys {
 			&& !this.mouse.right // And not when mouselooking
 		) {
 			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
-			this.mouseRayTargets = []
+
+			// const length = 100; // Length for visualization
+			// const startPoint = this.mouse.ray.ray.origin;
+			// const endPoint = startPoint.clone().add(this.mouse.ray.ray.direction.clone().multiplyScalar(length));
+			// const geometry = new BufferGeometry().setFromPoints([startPoint, endPoint]);
+			// const material = new LineBasicMaterial({ color: 0xff0000 }); // Red color for the line
+			// const line = new Line(geometry, material);
+			// line.name = 'wtfline'
+			// this.babs.scene.add(line);
+
+
+			this.mouseRayTargets.length = 0
 			// this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets) 
 			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
 
-			this.mouse.ray.intersectObjects(this.babs.group.children.filter(c=>c.name!='tree twotris'), false, this.mouseRayTargets) // Gets everything but player?
+			const filteredChildren = this.babs.group.children.filter(c=>c.name!=Wob.FarwobName && c.name!='groundgrid')
+			this.mouse.ray.intersectObjects(filteredChildren, false, this.mouseRayTargets) // Gets everything but player?
 			// Hmm I guess it's not actually too bad here, because instancedmeshes are just 1 per instancedmesh
 			// Unless getting instanceId is expensive...I don't know.
 			// Well, filtering out 'tree twotris' does help a lot with framerate.  So I do think it matters...the ray must subsearch the instancedmesh.
@@ -983,6 +1026,7 @@ export class InputSys {
 			}
 
 			// Ensure ground is last.  It was getting in the way of objects on the ground
+			// Todo is this still true, and does this type of swap even work?
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) {
 				if (this.mouseRayTargets[i].object?.name === 'ground') {
 					const temp = this.mouseRayTargets[this.mouseRayTargets.length - 1]
@@ -1005,7 +1049,7 @@ export class InputSys {
 				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = this.mouseRayTargets[i].object.name
-					const feim = Wob.InstancedMeshes.get(name)
+					const feim = Wob.InstancedWobs.get(name)
 					const index = this.mouseRayTargets[i].instanceId
 					const position = feim.coordFromIndex(index)
 					// console.log('im', this.mouseRayTargets[i], index, position)
@@ -1075,7 +1119,7 @@ export class InputSys {
 						// log('ray to flame')
 					}
 					else { // All other meshes
-						log('Uncaught mosueRayTarget', this.mouseRayTargets[i])
+						log('Uncaught mouseRayTarget', this.mouseRayTargets[i])
 						this.pickedObject = this.mouseRayTargets[i].object
 					}
 				}
@@ -1117,6 +1161,9 @@ export class InputSys {
 
 				break // Only run loop once (except for continues)
 			}
+		}
+		else {
+			// console.log('canvas')
 		}
 
 		if (this.carrying) {

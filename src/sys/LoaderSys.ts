@@ -10,6 +10,7 @@ import { Controller } from '@/comp/Controller'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import JSZip, { type files } from 'jszip'
 import { Wob } from '@/ent/Wob'
+import type { Babs } from '@/Babs'
 
 export class LoaderSys {
 
@@ -19,9 +20,9 @@ export class LoaderSys {
 	urlFiles
 	objectTexture :Texture
 
-	constructor(urlFiles) {
+	constructor(babs :Babs) {
 		// log('LoaderSys', urlFiles)
-		this.urlFiles = urlFiles
+		this.urlFiles = babs.urlFiles
 
 		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
@@ -186,7 +187,7 @@ export class LoaderSys {
 		this.loader.setDRACOLoader(this.dracoLoader)
 
 		// Fetch and process cached GLB files
-		Wob.CachedGlbFiles = (async () => {
+		Wob.CachedGlbFiles = babs.usePail && (async () => {
 			const response = await fetch('https://pail.suncapped.com/glb.zip.gz')
 			
 			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
@@ -263,9 +264,6 @@ export class LoaderSys {
 					
 		return new Promise((resolve, reject) => {
 			let url = `${this.urlFiles}${path}`
-			// if(usepail) {
-			// 	url = `https://pail.suncapped.com${path}`
-			// }
 
 			const success = (gltf) => {
 				log.info('Loaded GLTF:', gltf)
@@ -308,7 +306,7 @@ export class LoaderSys {
 				this.loader.parse(loadFromArchive, '', success, error)
 			}
 			else {
-				this.loader.load(url, success, progress, error)
+				this.loader.load(url, success, progress, error) // Should handle cache situations?  Maybe not for updated.
 			}
 
 

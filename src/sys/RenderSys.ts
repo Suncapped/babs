@@ -34,7 +34,7 @@ export class RenderSys {
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
-			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017 
+			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017
 
 		})
 		this.renderer.xr.enabled = true
@@ -168,7 +168,7 @@ export class RenderSys {
 	update(dt) {
 		if(this.calcRecalcImmediately) {
 			this.calcRecalcImmediately = false
-			this.calcShowOnlyNearbyWobs()
+			// this.calcShowOnlyNearbyWobs()
 		}
 
 		this.renderer.render(this._scene, this._camera)
@@ -176,54 +176,105 @@ export class RenderSys {
 	}
 
 	calcShowOnlyNearbyWobs() {
-		// for(let [key, feim] of Wob.InstancedMeshes) {
-		// 	if(key == Wob.FarwobName) {
-		// 		console.log(key, feim)
-		// 	}
-		// }
 		// return
 		// log('calcShowOnlyNearbyWobs')
 
+		this.babs.scene.updateWorldMatrix(true, true)
+
+		this._camera.updateMatrixWorld(true)
+		this._camera.parent.updateMatrixWorld(true)
+		this.babs.inputSys.playerSelf.controller.target.updateMatrixWorld(true)
+		this.babs.group.updateMatrixWorld(true)
+		// Update the world matrix of every single babs child recursively
+		this.babs.scene.traverse((child) => {
+			// console.log('updating', child.name)
+			child.matrixWorldNeedsUpdate = true
+			child.updateMatrixWorld(true)
+		})
+
+		const playerpos = this.babs.inputSys.playerSelf.controller.target.position
+
 		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
-		for(let [key, feim] of Wob.InstancedMeshes) {
+		for(let [key, feim] of Wob.InstancedWobs) {
+
+			// feim.instancedMesh.computeBoundingBox()
+			feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
+
+			// feim.instancedMesh.instanceMatrix.needsUpdate = true 
+			// feim.instancedMesh.updateMatrixWorld(true)
+			// setTimeout(() => {
+			// 	feim.instancedMesh.updateMatrixWorld(true)
+			// }, 40)
+
 			// For each index in instancedMesh, get the position relative to the player
 			const instanceMatrix = feim.instancedMesh.instanceMatrix
 			
 			// Rather than a cutoff at a number, cutoff based on dist.
-			const distCutoff = (feim.wobIsTall ? 1000 : 500)
+			const distCutoff = 1000// (feim.asFarWobs ? 1000 : 500)
 
-			let nearItems :Array<{dist: number, originalIndex: number}> = []
-			const loadedCount = feim.getLoadedCount()
-			for(let i=0; i<instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
-				const x = instanceMatrix.array[i +12] +this.babs.worldSys.shiftiness.x
-				const z = instanceMatrix.array[i +14] +this.babs.worldSys.shiftiness.z
+			// let nearItems :Array<{dist: number, originalIndex: number}> = []
+			const imLoadedCount = feim.getLoadedCount()
+
+			let iNearby = 0
+			for(let i=0; i<imLoadedCount; i++) { // Each instance is a 4x4 matrix; 16 floats
+				// if(i/16 >= loadedCount) break
+				
+				// Each instance is a 4x4 matrix; 16 floats
+				const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
+				const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
+
+				if(!(x && z)) {
+					if(feim.blueprint_id == 'sneezeweed') {
+
+						// console.log('nox', x) // There's your problem.  It's all null.
+					}
+					continue
+				}
 
 				// Get distance from playerpos in 2 dimensions
-				const playerpos = this.babs.inputSys.playerSelf.controller.target.position
 				const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 
-				// We can't just swap, because it's all rearranged.
-				// Instead, let's just copy in the top items that are below a certain distance!
-				// Also, I need to not sort beyond loadedCount
-				// And farwobs are in reverse
+				/* Something like:
+				Search for() oldArray
+				When you find oldArray[i] where dist < 500:
+					if i===iNearby, iNearby++ and continue (already in right place)
+					Look at dist of oldArray[iNearby].  
+					If that dist itself is < 500: 
+						iNearby++ and while() until not < 500
+						Then, swap oldArray[i] into oldArray[iNearby]
+						Then iNearby++
+				*/
+
+				let tries = 10000
 				const distanceCondition = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
-				if(distanceCondition && i/16 < loadedCount) {
-					nearItems.push({
-						dist: dist,
-						originalIndex: i/16,
-					})
+				if(distanceCondition) {
+					if(i === iNearby) {
+						iNearby++
+						continue // Already in the right place; skip self
+					}
+					do {
+						// Find next nearby that's far
+						const xOld = instanceMatrix.array[iNearby*16 +12] +this.babs.worldSys.shiftiness.x
+						const zOld = instanceMatrix.array[iNearby*16 +14] +this.babs.worldSys.shiftiness.z
+						const distOld = Math.sqrt(Math.pow(playerpos.x -xOld, 2) +Math.pow(playerpos.z -zOld, 2))
+
+						const distanceCondition2 = feim.asFarWobs ? distOld >= distCutoff : distOld < distCutoff
+						if(distanceCondition2) {
+							iNearby++
+							continue
+						}
+					} while(tries < 10000) // Just in case
+
+					// Swap far iNearby with this near i
+					Zone.swapWobsAtIndexes(iNearby, i, feim)
+					iNearby++
 				}
 			}
 
-			nearItems.forEach((nearItem, i) => {
-				if(nearItem.originalIndex == i) return // Already in place
-				Zone.swapWobsAtIndexes(i, nearItem.originalIndex, feim)
-
-			})
-
-			feim.setOptimizedCount(nearItems.length)
 			feim.instancedMesh.instanceMatrix.needsUpdate = true
-			// instancedMesh.matrixWorldNeedsUpdate = true
+
+			// feim.setOptimizedCount(nearItems.length) 
+			feim.setOptimizedCount(iNearby) 
 		}
 	}
 }

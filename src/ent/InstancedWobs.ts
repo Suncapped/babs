@@ -24,7 +24,7 @@ export class InstancedWobs {
 	constructor(
 		public babs :Babs,
 		public blueprint_id :string,
-		private maxCount :number, // Number above which a larger buffer (new InstancedMesh) is needed
+		public maxCount :number, // Number above which a larger buffer (new InstancedMesh) is needed
 		private wobMesh :Mesh,
 		public asFarWobs :'asFarWobs' = null,
 	) {
@@ -94,7 +94,7 @@ export class InstancedWobs {
 		// ^ Fixes offset pivot point
 		// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 
-		Wob.InstancedMeshes.set(this.blueprint_id, this)
+		Wob.InstancedWobs.set(this.blueprint_id, this)
 		this.babs.group.add(this.instancedMesh)
 
 		log.info('InstancedMesh created:', this.blueprint_id, this.maxCount)
@@ -109,7 +109,7 @@ export class InstancedWobs {
 		this.loadedCount++
 		// Sometimes, upping count will put it above maxcount; in that case, we need to reallocate
 		if(this.loadedCount > this.maxCount) {
-			this.reallocateLargerBuffer()
+			// this.reallocateLargerBuffer() // No; moved to `Wob.LoadInstancedWobs`
 		}
 
 		this.recalculateRealCount()
@@ -132,25 +132,29 @@ export class InstancedWobs {
 
 	private recalculateRealCount() {
 		// This is the number of instances that are actually rendered
-		const isBeingOptimized = this.optimizedCount !== undefined
-		this.instancedMesh.count = isBeingOptimized ? Math.min(this.loadedCount, this.optimizedCount) : this.loadedCount
+		// const isBeingOptimized = this.optimizedCount !== undefined
+		// this.instancedMesh.count = isBeingOptimized ? Math.min(this.loadedCount, this.optimizedCount) : this.loadedCount
+		this.instancedMesh.count = this.optimizedCount
+
 		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
 	}
 
-	reallocateLargerBuffer() {
+	reallocateLargerBuffer(maxCount :number) {
 		// Expand InstancedMesh to a larger buffer
-		log.info('reallocateLargerBuffer for', this.blueprint_id, 'from', this.maxCount, 'to', this.maxCount *2)
-		this.maxCount *= 2
+		// log(`${this.asFarWobs ? '(asFarWobs) ' : ''}inside reallocateLargerBuffer() for`, this.blueprint_id, 'from', this.maxCount, 'to', maxCount +Math.floor(this.maxCount *0.10))
+		this.maxCount = maxCount 
+		this.maxCount += Math.floor(this.maxCount *0.10) // Add 10%
 
-		const newInstancedMesh = new InstancedMesh(this.wobMesh.geometry, this.wobMesh.material, this.maxCount)
-		// Here we only need to copy over InstancedMesh properties, not feim
+		const newInstancedMesh = new InstancedMesh(this.wobMesh.geometry, this.wobMesh.material, this.maxCount) // this.MAXcount ...ow.  Because, we want this one new to be even bigger, of course.  That's the point of reallocate...so yes.  
 
+		// Here we only need to copy over InstancedMesh properties, not feim (which remains the same one).
 		newInstancedMesh.frustumCulled = this.instancedMesh.frustumCulled
-		newInstancedMesh.count = this.instancedMesh.count
+		newInstancedMesh.count = this.instancedMesh.count // Preserve old count (will be recalced later)
 		newInstancedMesh.name = this.blueprint_id
 		newInstancedMesh.instanceMatrix.setUsage(DynamicDrawUsage) // todo optimize?
 		let transferMatrix = new Matrix4()
-		for(let i=0; i<this.instancedMesh.count; i++) { // Optimization possible by copying whole matrix? // Maybe not, since this one is now larger
+
+		for(let i=0; i<this.loadedCount; i++) { // Optimization possible by copying whole matrix? // Maybe not, since this one is now larger
 			this.instancedMesh.getMatrixAt(i, transferMatrix)
 			newInstancedMesh.setMatrixAt(i, transferMatrix)
 		}
@@ -171,14 +175,11 @@ export class InstancedWobs {
 
 		newInstancedMesh.position.x = this.instancedMesh.position.x
 		newInstancedMesh.position.z = this.instancedMesh.position.z
+		// newInstancedMesh.geometry.center() // Not needed a second time, since the geometry doesn't change or get disposed.
 
 		this.babs.group.remove(this.instancedMesh)
 		this.instancedMesh.dispose()
 
-		newInstancedMesh.geometry.center() 
-		// ^ Fixes offset pivot point
-		// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
-		
 		this.instancedMesh = newInstancedMesh
 		this.babs.group.add(this.instancedMesh)
 	}

@@ -971,6 +971,7 @@ export class WorldSys {
 			'camerahelper', 
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
+			'cameraGroup',
 
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(excludeSelf) excludeFromShift.push('self')

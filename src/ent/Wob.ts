@@ -158,7 +158,7 @@ export class Wob extends SharedWob {
 	static totalArrivedWobs = 0
 
 	static LoadedGltfs = new Map<string, Mesh|true>()
-	static InstancedMeshes = new Map<string, InstancedWobs>()
+	static InstancedWobs = new Map<string, InstancedWobs>()
 	static async LoadInstancedWobs(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean, asFarWobs :'asFarWobs' = null) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
 		log.info('arrivalWobs', arrivalWobs.length)
@@ -187,12 +187,19 @@ export class Wob extends SharedWob {
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
 			const newWobsCount = nameCounts.get(blueprint_id)
-			let instanced = Wob.InstancedMeshes.get(blueprint_id)
+			let instanced = Wob.InstancedWobs.get(blueprint_id)
 			// log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
 			if(!instanced) {
 				// log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
 				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, wobMesh as Mesh, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
 				log.info('Created instanced for blueprint_id', blueprint_id)
+			}
+			else {
+				if(instanced.getLoadedCount() +newWobsCount > instanced.maxCount) {
+					instanced.reallocateLargerBuffer(instanced.getLoadedCount() +newWobsCount)
+					// One reason it's better to do it like this rather than *2, is to prevent two simultaneous reallocations (in case of a rapidly larger number of an item)
+					// However, todo?: Are we reallocating before or after removing old zone wobs with removeWobGraphic?
+				}
 			}
 		}
 
@@ -226,7 +233,7 @@ export class Wob extends SharedWob {
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
 
-				const feim = Wob.InstancedMeshes.get(wob.name)
+				const feim = Wob.InstancedWobs.get(wob.name)
 				// console.log('feim for', wob.name, feim)
 				// const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
 				// const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
@@ -298,7 +305,7 @@ export class Wob extends SharedWob {
 
 			}
 			else {	// Send to bag
-				const instanced = Wob.InstancedMeshes.get(wob.name)
+				const instanced = Wob.InstancedWobs.get(wob.name)
 				babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
 			}
 

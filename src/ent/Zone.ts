@@ -57,7 +57,7 @@ export class Zone extends SharedZone {
 			console.warn('deletingWob does not have a blueprint_id:', deletingWob)
 		}
 
-		const feim = Wob.InstancedMeshes.get(deletingWob.blueprint_id)
+		const feim = Wob.InstancedWobs.get(deletingWob.blueprint_id)
 		if(!feim) {
 			console.warn('no matching instanced to:', deletingWob.blueprint_id)
 		}
@@ -156,14 +156,6 @@ export class Zone extends SharedZone {
 	coordToInstanceIndex :Record<string, number> = {}
 	farCoordToInstanceIndex :Record<string, number> = {}
 
-	// yardHeightAt(x :number, z :number, zone :Zone) { // Height from original data
-	// 	// This isn't great for replacing raycast yet, because it would need similar features to engineHeightAt below.
-	// 	const index = Utils.coordToIndex((x /10)>>0, (z /10)>>0, 26, 1) // >>0 is integer division instead of Math.floor()
-	// 	const unscaledElev = zone.elevationData[index]
-	// 	const scaledElev = unscaledElev * zone.yscale +zone.y
-	// 	// console.log('yardHeightAtWob', index, zone.elevationData.length, unscaledElev, scaledElev)
-	// 	return scaledElev
-	// }
 	engineHeightAt(coord :YardCoord, doCenter = true) { // Height of (corner or center) in engine
 		// Fetch from actual ground mesh vertices!
 

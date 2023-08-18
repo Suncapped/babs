@@ -122,9 +122,9 @@ export class CameraSys {
 		this.camera.lookAt(idealLookat)
 		// this.cameraGroup.lookAt(idealLookat) // Not needed; let VR handle its own rotation
 		
-		// this.cameraGroup.matrixWorldNeedsUpdate = true
 		// this.camera.matrixWorldNeedsUpdate = true
-		this.cameraGroup.updateMatrixWorld()
+		this.camera.updateMatrixWorld(true)
+		// this.cameraGroup.updateMatrixWorld(true)
 
 		if(this.babs.renderSys.isVrSupported) {
 
