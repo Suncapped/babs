@@ -315,6 +315,7 @@ export class Wob extends SharedWob {
 
 
 	static CachedGlbFiles :Promise<typeof JSZip.files>
+	static CachedDekazoneFiles :Promise<typeof JSZip.files>
 
 	/**
 	 * Ensures that the specified GLTF meshes are loaded exactly once.

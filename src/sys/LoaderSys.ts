@@ -199,6 +199,19 @@ export class LoaderSys {
 			return zipContents.files
 		})()
 
+
+		// Fetch and process cached dekazone files
+		Wob.CachedDekazoneFiles = babs.usePail && (async () => {
+			const response = await fetch('https://pail.suncapped.com/dekazone.zip.gz')
+			
+			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
+			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
+
+			const jszip = new JSZip()
+			const zipContents = await jszip.loadAsync(arrayBuffer)
+			return zipContents.files
+		})()
+
 	}
 
 	async loadFbx(path) {

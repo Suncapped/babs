@@ -252,27 +252,34 @@ export class SocketSys {
 			// let nearZones = load.nearZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
 			const nearbyZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
 
+			// Fetch from cache in pail
+			const dekazone = await Wob.CachedDekazoneFiles
+
 			const fetches = []
 			for(let zone of farZones) {
-				zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
-				zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+				if(dekazone) { // Only true when babs.usePail
+					zone.elevationData = dekazone[`elevations/${zone.id}.bin`].async('arraybuffer')
+					zone.landcoverData = dekazone[`landcovers/${zone.id}.bin`].async('arraybuffer')
+				} 
+				else {
+					zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
+					zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+				}
 				fetches.push(zone.elevationData, zone.landcoverData)
 			}
 			await Promise.all(fetches)
 
 			for(const zone of farZones) {
-				const fet = await zone.elevationData
-				const data = await fet.blob()
-				const buff = await data.arrayBuffer()
-				zone.elevationData = new Uint8Array(buff)
-
-				const fet2 = await zone.landcoverData
-				const data2 = await fet2.blob()
-				const buff2 = await data2.arrayBuffer()
-				zone.landcoverData = new Uint8Array(buff2)
-
+				if(dekazone) {
+					zone.elevationData = new Uint8Array(zone.elevationData)
+					zone.elevationData = new Uint8Array(zone.landcoverData)
+				}
+				else {
+					zone.elevationData = new Uint8Array(await (await (await zone.elevationData).blob()).arrayBuffer())
+					zone.landcoverData = new Uint8Array(await (await (await zone.landcoverData).blob()).arrayBuffer())
+				}
 			}
-
+			
 			const pStatics = []
 			for(const zone of farZones) {
 				const isLoadinZone = zone.id == load.self.idzone

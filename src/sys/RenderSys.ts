@@ -181,16 +181,16 @@ export class RenderSys {
 
 		this.babs.scene.updateWorldMatrix(true, true)
 
-		this._camera.updateMatrixWorld(true)
-		this._camera.parent.updateMatrixWorld(true)
-		this.babs.inputSys.playerSelf.controller.target.updateMatrixWorld(true)
-		this.babs.group.updateMatrixWorld(true)
-		// Update the world matrix of every single babs child recursively
-		this.babs.scene.traverse((child) => {
-			// console.log('updating', child.name)
-			child.matrixWorldNeedsUpdate = true
-			child.updateMatrixWorld(true)
-		})
+		// this._camera.updateMatrixWorld(true)
+		// this._camera.parent.updateMatrixWorld(true)
+		// this.babs.inputSys.playerSelf.controller.target.updateMatrixWorld(true)
+		// this.babs.group.updateMatrixWorld(true)
+		// // Update the world matrix of every single babs child recursively
+		// this.babs.scene.traverse((child) => {
+		// 	// console.log('updating', child.name)
+		// 	child.matrixWorldNeedsUpdate = true
+		// 	child.updateMatrixWorld(true)
+		// })
 
 		const playerpos = this.babs.inputSys.playerSelf.controller.target.position
 

@@ -842,6 +842,7 @@ export class WorldSys {
 	
 
 		let waterNearbyIndex = new Array(26*26).fill(0)
+		let colorNotFound = ''
 
 		for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
@@ -853,7 +854,7 @@ export class WorldSys {
 				for(let x=0; x<=1; x++) {
 					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
-						console.warn('Color not found!', zone.landcoverData[index], lcString)
+						colorNotFound = zone.landcoverData[index] + lcString
 						color = this.colorFromLc.Grassland // todo add colors?
 					}
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
@@ -879,6 +880,8 @@ export class WorldSys {
 				}
 			}
 		}
+
+		if(colorNotFound) console.warn('Color not found!', colorNotFound)
 
 		// Water?  Delayed?
 		setTimeout(() => {
