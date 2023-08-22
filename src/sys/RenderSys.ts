@@ -168,7 +168,7 @@ export class RenderSys {
 	update(dt) {
 		if(this.calcRecalcImmediately) {
 			this.calcRecalcImmediately = false
-			// this.calcShowOnlyNearbyWobs()
+			this.calcShowOnlyNearbyWobs()
 		}
 
 		this.renderer.render(this._scene, this._camera)

@@ -218,6 +218,12 @@ export class Wob extends SharedWob {
 				locid: fwob.locid,
 				comps: fwob.comps,
 			})
+
+
+			// Helps with finding naughty blueprints
+			// if(wob.blueprint_id === 'butterfly') {
+			// 	console.log('butterfly', wob.x, wob.z, wob.zone.x, wob.zone.z)
+			// }
 			
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI
