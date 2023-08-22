@@ -179,8 +179,7 @@ export class RenderSys {
 		// return
 		// log('calcShowOnlyNearbyWobs')
 
-		this.babs.scene.updateWorldMatrix(true, true)
-
+		// this.babs.scene.updateWorldMatrix(true, true)
 		// this._camera.updateMatrixWorld(true)
 		// this._camera.parent.updateMatrixWorld(true)
 		// this.babs.inputSys.playerSelf.controller.target.updateMatrixWorld(true)
@@ -192,7 +191,8 @@ export class RenderSys {
 		// 	child.updateMatrixWorld(true)
 		// })
 
-		const playerpos = this.babs.inputSys.playerSelf.controller.target.position
+		const playerpos = this.babs.inputSys?.playerSelf?.controller?.target?.position
+		if(!playerpos) return
 
 		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
 		for(let [key, feim] of Wob.InstancedWobs) {

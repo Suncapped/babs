@@ -258,9 +258,10 @@ export class SocketSys {
 			const fetches = []
 			for(let zone of farZones) {
 				if(dekazone) { // Only true when babs.usePail
-					zone.elevationData = dekazone[`elevations/${zone.id}.bin`].async('arraybuffer')
-					zone.landcoverData = dekazone[`landcovers/${zone.id}.bin`].async('arraybuffer')
-				} 
+					// console.log(`deka elevations/${zone.key()}.bin`, dekazone[`elevations/${zone.key()}.bin`], dekazone)
+					zone.elevationData = await (dekazone[`elevations/${zone.key()}.bin`]).async('arraybuffer')
+					zone.landcoverData = await (dekazone[`landcovers/${zone.key()}.bin`]).async('arraybuffer')
+				}
 				else {
 					zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 					zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
@@ -271,8 +272,8 @@ export class SocketSys {
 
 			for(const zone of farZones) {
 				if(dekazone) {
-					zone.elevationData = new Uint8Array(zone.elevationData)
-					zone.elevationData = new Uint8Array(zone.landcoverData)
+					zone.elevationData = new Uint8Array(await zone.elevationData)
+					zone.landcoverData = new Uint8Array(await zone.landcoverData)
 				}
 				else {
 					zone.elevationData = new Uint8Array(await (await (await zone.elevationData).blob()).arrayBuffer())

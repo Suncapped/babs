@@ -39,6 +39,10 @@ export class Zone extends SharedZone {
 	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
 
+	key() {
+		return `${this.x},${this.z}`
+	}
+
 	override removeWobGraphicAt(x :number, z :number) {
 		const existingWob = this.getWob(x, z)
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
