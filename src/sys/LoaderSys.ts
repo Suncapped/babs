@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -14,6 +14,16 @@ import type { Babs } from '@/Babs'
 
 export class LoaderSys {
 
+	static CachedGlbFiles :Promise<typeof JSZip.files>
+	static CachedDekazoneFiles :Promise<typeof JSZip.files>
+	static CachedFiretex :Promise<Texture>
+	static MegaColorAtlas :Promise<Texture>
+	static ColorAtlasNew2 :Promise<Texture>
+	static CachedKidRig :Promise<GLTF>
+	static KidAnimList = ['idle', 'run', 'walk']
+	static KidAnimPaths = {}
+	static CachedKidAnims = {}
+
 	megaMaterial
 	loader :GLTFLoader
 	dracoLoader
@@ -24,7 +34,47 @@ export class LoaderSys {
 		// log('LoaderSys', urlFiles)
 		this.urlFiles = babs.urlFiles
 
-		this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
+		this.loader = new GLTFLoader()
+		this.dracoLoader = new DRACOLoader()
+		// this.dracoLoader.setDecoderPath('../../node_modules/three/examples/jsm/libs/draco/gltf/')
+		// this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/draco/')
+		this.dracoLoader.setDecoderPath('/draco/')
+		// this.dracoLoader.setDecoderPath('three/examples/js/libs/draco')
+		// this.dracoLoader.setDecoderConfig({ type: 'wasm' })
+		this.dracoLoader.preload()
+		this.loader.setDRACOLoader(this.dracoLoader)
+
+
+		// Prefetch and process cached GLB files
+		LoaderSys.CachedGlbFiles = babs.usePail && (async () => {
+			const response = await fetch('https://pail.suncapped.com/glb.zip.gz')
+			
+			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
+			// const blob = await new Response(decompressedStream).blob()
+			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
+
+			const jszip = new JSZip()
+			const zipContents = await jszip.loadAsync(arrayBuffer)
+			return zipContents.files
+		})()
+
+		// Prefetch and process cached dekazone files
+		LoaderSys.CachedDekazoneFiles = babs.usePail && (async () => {
+			const response = await fetch('https://pail.suncapped.com/dekazone.zip.gz')
+			
+			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
+			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
+
+			const jszip = new JSZip()
+			const zipContents = await jszip.loadAsync(arrayBuffer)
+			return zipContents.files
+		})()
+
+		// Prefetch Firetex
+		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
+
+		// Prefetch Color Textures
+		LoaderSys.MegaColorAtlas = this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
 			texture.colorSpace = SRGBColorSpace
 			this.objectTexture.flipY = false 
@@ -51,166 +101,23 @@ export class LoaderSys {
 			// material.color.copy(material.color.convertSRGBToLinear())
 			// material.emissive.copy(material.emissive.convertSRGBToLinear())
 
-			// let customMaterial = new ShaderMaterial({
-			// 	side: DoubleSide,
-			// 	name: 'megamaterial',
-			// 	visible: true,
-			// 	wireframe: true,
-			// 	transparent: false,
-				
-			// 	shadowSide: DoubleSide, // Might have to use separate materials if I want more granularity.
-			// 	uniforms: {
-			// 		// maxDistance: { value: 100.0 },
-			// 		// cameraPosition: { value: new Vector3() },
-
-			// 		// color: { value: new Color(0xff0000) },
-
-			// 		// time: { value: 1.0 },
-			// 		// resolution: { value: new Vector2() },
-
-			// 		colorB: {value: new Color(0xACB6E5)},
-			// 		colorA: {value: new Color(0x74ebd5)}
-
-			// 	},
-			// 	// defaultAttributeValues : { 
-			// 	// 	'color': [ 1, 1, 1 ], 
-			// 	// 	'uv': [ 0, 0 ],
-			// 	// 	'uv1': [ 0, 0 ] 
-			// 	// },
-
-			// 	vertexShader: 
-			// 	// `
-			// 	// 	uniform float maxDistance;
-			// 	// 	uniform vec3 cameraPosition;
-
-			// 	// 	void main() {
-			// 	// 		float distance = length(cameraPosition - position);
-			// 	// 		if (distance > maxDistance) {
-			// 	// 			gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
-			// 	// 		} else {
-			// 	// 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-			// 	// 		}
-			// 	// 	}
-			// 	// `
-			// 	// `
-			// 	// 	void main() {
-			// 	// 		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-			// 	// 	}
-			// 	// `
-			// 	`
-			// 	varying vec3 vUv; 
-
-			// 	void main() {
-			// 	  vUv = position; 
-			
-			// 	  vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
-			// 	  gl_Position = projectionMatrix * modelViewPosition; 
-			// 	}
-			// 	`
-			// 	, 
-			// 	fragmentShader: 
-			// 	// `
-			// 	// 	void main() {
-			// 	// 		gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-			// 	// 	}
-			// 	// `
-			// 	// `
-			// 	// 	uniform vec3 color;
-			// 	// 	void main() {
-			// 	// 		gl_FragColor = vec4(color, 1.0);
-			// 	// 	}
-			// 	// `
-			// 	`
-			// 	uniform vec3 colorA; 
-			// 	uniform vec3 colorB; 
-			// 	varying vec3 vUv;
-			// 	void main() {
-			// 	  gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
-			// 	}
-			// 	`
-			// 	,
-			// })
-
-			// // customMaterial.defaultAttributeValues = {
-			// // 	'color': [ 1, 1, 1 ],
-			// // 	'uv': [ 0, 0 ],
-			// // 	'uv1': [ 0, 0 ],
-			// // },
-			// // customMaterial.wireframe = true
-			// // customMaterial.visible = true
-			// // customMaterial.side = DoubleSide
-			// // customMaterial.lights = false
-			// customMaterial.name = 'megamaterial'
-
-			// // customMaterial.uniforms.map.value = this.objectTexture
-			// // customMaterial.defines.USE_MAP = ''
-
-			// // Ignoring the above, create a simple ShaderMaterial that displays things.
-			// // const coMaterial = new ShaderMaterial({
-			// // 	uniforms: {
-			// // 		maxDistance: { value: 100.0 },
-			// // 		cameraPosition: { value: new Vector3() },
-			// // 		color: { value: new Color(0x00ff00) },
-			// // 	},
-			// // 	vertexShader:
-			// // 	`
-			// // 		uniform float maxDistance;
-			// // 		uniform vec3 cameraPosition;
-					
-			// // 	`
-			// // 	,
-			// // 	fragmentShader:
-			// // 	`
-			// // 		uniform vec3 color;
-			// // 		void main() {
-			// // 			gl_FragColor = vec4(color, 1.0);
-			// // 		}
-			// // 	`
-			// // 	,
-			// // })
-			// this.megaMaterial = customMaterial
-
 
 			this.megaMaterial = material
 			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?
 			
 		})
+		LoaderSys.ColorAtlasNew2 = this.loadTexture(`/texture/color-atlas-new2.png`)
 
-		this.loader = new GLTFLoader()
-		this.dracoLoader = new DRACOLoader()
-		// this.dracoLoader.setDecoderPath('../../node_modules/three/examples/jsm/libs/draco/gltf/')
-		// this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/draco/')
-		this.dracoLoader.setDecoderPath('/draco/')
-		// this.dracoLoader.setDecoderPath('three/examples/js/libs/draco')
-		// this.dracoLoader.setDecoderConfig({ type: 'wasm' })
-		this.dracoLoader.preload()
-		this.loader.setDRACOLoader(this.dracoLoader)
-
-		// Fetch and process cached GLB files
-		Wob.CachedGlbFiles = babs.usePail && (async () => {
-			const response = await fetch('https://pail.suncapped.com/glb.zip.gz')
-			
-			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
-			// const blob = await new Response(decompressedStream).blob()
-			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
-
-			const jszip = new JSZip()
-			const zipContents = await jszip.loadAsync(arrayBuffer)
-			return zipContents.files
-		})()
-
-
-		// Fetch and process cached dekazone files
-		Wob.CachedDekazoneFiles = babs.usePail && (async () => {
-			const response = await fetch('https://pail.suncapped.com/dekazone.zip.gz')
-			
-			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
-			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
-
-			const jszip = new JSZip()
-			const zipContents = await jszip.loadAsync(arrayBuffer)
-			return zipContents.files
-		})()
+		// Prefetch Kid Rig
+		LoaderSys.CachedKidRig = this.loadGltf(`/char/female/female-rig.glb`) as unknown as Promise<GLTF> // It's not meant to error and return {name}
+		
+		// Prefetch Kid Anims
+		LoaderSys.KidAnimList.forEach(anim => {
+			LoaderSys.KidAnimPaths[anim] = `/char/female/female-anim-${anim}.glb`
+		})
+		Object.entries(LoaderSys.KidAnimPaths).forEach(([anim, path] :[string, string]) => {
+			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path) as unknown as Promise<GLTF> // It's not meant to error and return {name}
+		})
 
 	}
 
@@ -330,7 +237,7 @@ export class LoaderSys {
 	mapPathRigCache = new Map()
 	async loadRig(gender) {
 		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
-		const texture = await this.loadTexture(`/texture/color-atlas-new2.png`)
+		const texture = await LoaderSys.ColorAtlasNew2
 		texture.flipY = false // gltf flipped boolean
 		const material = new MeshPhongMaterial({
 			map: texture,
@@ -346,7 +253,7 @@ export class LoaderSys {
 		})
 		
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
-		const path = `/char/${gender}/female-rig.glb`
+		const path = `/char/female/female-rig.glb`
 		const cached = this.mapPathRigCache.get(path)
 		let groupScene :Object3D
 		if(cached) {
@@ -355,7 +262,7 @@ export class LoaderSys {
 		}
 		else {
 			log.info('download rig', path)
-			let group = await this.loadGltf(path) as GLTF // It's not meant to error and return {name}
+			let group = await LoaderSys.CachedKidRig
 			this.mapPathRigCache.set(path, group.scene)
 			groupScene = SkeletonUtils.clone(group.scene)
 		}
@@ -421,7 +328,8 @@ export class LoaderSys {
 
 	mapPathAnimCache = new Map<string, GLTF>()
 	async loadAnim(gender, anim) {
-		const path = `/char/${gender}/female-anim-${anim}.glb`
+		const path = LoaderSys.KidAnimPaths[anim]
+		
 		const cached = this.mapPathAnimCache.get(path)
 		if(cached) {
 			log.info('cached anim', path)
@@ -429,7 +337,7 @@ export class LoaderSys {
 		}
 		else {
 			log.info('download anim', path)
-			let group = await this.loadGltf(path) as GLTF // It's not meant to error and return {name}
+			let group = LoaderSys.CachedKidAnims[anim]
 			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
 			return group
 		}

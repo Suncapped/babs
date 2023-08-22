@@ -314,7 +314,7 @@ export class Flame extends Comp {
 		}
 		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
 
-		Flame.fireTex = Flame.fireTex || await new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
+		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
 		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
 
 		com.fire = new ThreeFire(Flame.fireTex)

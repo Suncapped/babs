@@ -10,6 +10,7 @@ import type { Babs } from '@/Babs'
 import type { PlayerArrive } from '@/shared/consts'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { SharedWob } from '@/shared/SharedWob'
+import { LoaderSys } from '@/sys/LoaderSys'
 
 // Begun from MIT licensed https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -100,7 +101,7 @@ export class Controller extends Comp {
 		this.idealTargetQuaternion = this.target.quaternion.clone()
 
 		this._mixer = new AnimationMixer(this.target)
-		const animList = ['idle', 'run', 'walk']
+		const animList = LoaderSys.KidAnimList
 		await Promise.all(animList.map(async animName => {
 			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
 			const clip = anim.animations[0]
@@ -542,6 +543,7 @@ export class Controller extends Comp {
 			// This could later be moved to preload on approaching zone border, rathern than during zonein.
 
 			const pullWobsData = async () => {
+				// console.time('pullWobsData')
 				let detailedWobsToAdd :SharedWob[] = []
 				let farWobsToAdd :SharedWob[] = []
 
@@ -556,6 +558,8 @@ export class Controller extends Comp {
 				}
 				await Promise.all(fetches)
 
+				// console.timeLog('pullWobsData')
+
 				for(let zone of addedZonesNearby) {
 					const fet4 = await zone.locationData
 					const data4 = await fet4.blob()
@@ -568,6 +572,7 @@ export class Controller extends Comp {
 					}
 					
 				}
+				// console.timeLog('pullWobsData')
 				for(let zone of addedZonesFar) {
 					const fet5 = await zone.farLocationData
 					const data5 = await fet5.blob()
@@ -581,6 +586,7 @@ export class Controller extends Comp {
 				}
 
 
+				// console.timeLog('pullWobsData')
 				for(let zone of addedZonesNearby) {
 					// log('About to set addedZonesNearby', zone.locationData)
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
@@ -592,17 +598,26 @@ export class Controller extends Comp {
 					farWobsToAdd.push(...fWobs)
 				}
 
+				// console.timeLog('pullWobsData')
 				return [detailedWobsToAdd, farWobsToAdd]
 
 			}
+			// console.time('LoadingTiming')
 			const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
+			// console.timeLog('LoadingTiming')
 
 			// const zoneFwobs = addedZone.getSharedWobsBasedOnLocations() // This is how to get wobs if doing separately from load above.
 			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
 			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
+
+
+			// console.timeLog('LoadingTiming')
 			
 			log.info('farwobs to add', farWobsToAdd.length)
 			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
+
+
+			// console.timeEnd('LoadingTiming')
 			
 			// Everything was already shifted around us locally, when we gDestination across the line!
 			this.selfZoningWait = false

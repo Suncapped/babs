@@ -253,7 +253,7 @@ export class SocketSys {
 			const nearbyZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
 
 			// Fetch from cache in pail
-			const dekazone = await Wob.CachedDekazoneFiles
+			const dekazone = await LoaderSys.CachedDekazoneFiles
 
 			const fetches = []
 			for(let zone of farZones) {
