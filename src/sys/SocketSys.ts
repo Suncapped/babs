@@ -250,34 +250,54 @@ export class SocketSys {
 
 			let farZones = load.farZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
 			// let nearZones = load.nearZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
-			const nearbyZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
+			// const nearbyZoneIds = new Set(load.nearZones.map(zoneinfo => zoneinfo.id))
 
 			// Fetch from cache in pail
-			const dekazone = await LoaderSys.CachedDekazoneFiles
+			const dekaTerrain = await LoaderSys.CachedDekazoneFiles
+			const dekaFarwobs = await LoaderSys.CachedDekafarwobsFiles
 
 			const fetches = []
 			for(let zone of farZones) {
-				if(dekazone) { // Only true when babs.usePail
+				if(dekaTerrain) { // Only true when babs.usePail is set on terrain
 					// console.log(`deka elevations/${zone.key()}.bin`, dekazone[`elevations/${zone.key()}.bin`], dekazone)
-					zone.elevationData = await (dekazone[`elevations/${zone.key()}.bin`]).async('arraybuffer')
-					zone.landcoverData = await (dekazone[`landcovers/${zone.key()}.bin`]).async('arraybuffer')
+					zone.elevationData = await (dekaTerrain[`elevations/${zone.key()}.bin`]).async('arraybuffer')
+					zone.landcoverData = await (dekaTerrain[`landcovers/${zone.key()}.bin`]).async('arraybuffer')
 				}
 				else {
 					zone.elevationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/elevations.bin`)
 					zone.landcoverData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/landcovers.bin`)
+				}
+				if(dekaFarwobs) {
+					zone.farLocationData = await (dekaFarwobs[zone.key()]).async('arraybuffer')
+				}
+				else {
+					zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
 				}
 				fetches.push(zone.elevationData, zone.landcoverData)
 			}
 			await Promise.all(fetches)
 
 			for(const zone of farZones) {
-				if(dekazone) {
+				if(dekaTerrain) {
 					zone.elevationData = new Uint8Array(await zone.elevationData)
 					zone.landcoverData = new Uint8Array(await zone.landcoverData)
 				}
 				else {
 					zone.elevationData = new Uint8Array(await (await (await zone.elevationData).blob()).arrayBuffer())
 					zone.landcoverData = new Uint8Array(await (await (await zone.landcoverData).blob()).arrayBuffer())
+				}
+
+				if(dekaFarwobs) {
+					zone.farLocationData = new Uint8Array(await zone.farLocationData)
+				}
+				else {
+					const farBlob = await (await zone.farLocationData).blob()
+					if(farBlob.size == 2) {  // hax on size (for `{}`) // todo simplify, have it return something that's ==0?
+						zone.farLocationData = new Uint8Array()
+					}
+					else {
+						zone.farLocationData = new Uint8Array(await farBlob.arrayBuffer())
+					}
 				}
 			}
 			

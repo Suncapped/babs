@@ -543,22 +543,18 @@ export class Controller extends Comp {
 			// This could later be moved to preload on approaching zone border, rathern than during zonein.
 
 			const pullWobsData = async () => {
-				// console.time('pullWobsData')
 				let detailedWobsToAdd :SharedWob[] = []
 				let farWobsToAdd :SharedWob[] = []
+
+				// Here we actually fetch() the near wobs, but the far wobs have been prefetched (dekazones etc)
 
 				const fetches = []
 				for(let zone of addedZonesNearby) {
 					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
 					fetches.push(zone.locationData)
 				}
-				for(let zone of addedZonesFar) {
-					zone.farLocationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/farlocations.bin`)
-					fetches.push(zone.farLocationData)
-				}
-				await Promise.all(fetches)
 
-				// console.timeLog('pullWobsData')
+				await Promise.all(fetches)
 
 				for(let zone of addedZonesNearby) {
 					const fet4 = await zone.locationData
@@ -570,35 +566,21 @@ export class Controller extends Comp {
 						const buff4 = await data4.arrayBuffer()
 						zone.locationData = new Uint8Array(buff4)
 					}
-					
-				}
-				// console.timeLog('pullWobsData')
-				for(let zone of addedZonesFar) {
-					const fet5 = await zone.farLocationData
-					const data5 = await fet5.blob()
-					if (data5.size == 2) {  // hax on size (for `{}`)
-						zone.farLocationData = new Uint8Array()
-					}
-					else {
-						const buff5 = await data5.arrayBuffer()
-						zone.farLocationData = new Uint8Array(buff5)
-					}
 				}
 
-
-				// console.timeLog('pullWobsData')
 				for(let zone of addedZonesNearby) {
-					// log('About to set addedZonesNearby', zone.locationData)
 					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
 					detailedWobsToAdd.push(...fWobs)
 				}
+
+				// Far wobs, using prefetched data
+				await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
 				for(let zone of addedZonesFar) {
-					// log('About to set addedZonesFar', zone.farLocationData)
+					// Data was prefetched, so just access it in zone.farLocationData
 					const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
 					farWobsToAdd.push(...fWobs)
 				}
 
-				// console.timeLog('pullWobsData')
 				return [detailedWobsToAdd, farWobsToAdd]
 
 			}

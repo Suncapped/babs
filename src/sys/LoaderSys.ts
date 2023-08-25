@@ -16,6 +16,7 @@ export class LoaderSys {
 
 	static CachedGlbFiles :Promise<typeof JSZip.files>
 	static CachedDekazoneFiles :Promise<typeof JSZip.files>
+	static CachedDekafarwobsFiles :Promise<typeof JSZip.files>
 	static CachedFiretex :Promise<Texture>
 	static MegaColorAtlas :Promise<Texture>
 	static ColorAtlasNew2 :Promise<Texture>
@@ -58,7 +59,7 @@ export class LoaderSys {
 			return zipContents.files
 		})()
 
-		// Prefetch and process cached dekazone files
+		// Prefetch and process cached dekazone terrain files
 		LoaderSys.CachedDekazoneFiles = babs.usePail && (async () => {
 			const response = await fetch('https://pail.suncapped.com/dekazone.zip.gz')
 			
@@ -69,6 +70,20 @@ export class LoaderSys {
 			const zipContents = await jszip.loadAsync(arrayBuffer)
 			return zipContents.files
 		})()
+
+		// Prefetch and process cached dekazone farwobs files
+		LoaderSys.CachedDekafarwobsFiles =  (async () => {
+			const response = await fetch('https://pail.suncapped.com/dekafarwobs.zip.gz')
+			
+			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
+			const arrayBuffer = await new Response(decompressedStream).arrayBuffer()
+
+			const jszip = new JSZip()
+			const zipContents = await jszip.loadAsync(arrayBuffer)
+			return zipContents.files
+		})()
+
+
 
 		// Prefetch Firetex
 		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)

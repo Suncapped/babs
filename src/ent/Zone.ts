@@ -31,10 +31,10 @@ export class Zone extends SharedZone {
 		this.babs.ents.set(id, this)
 	}
 
-	elevationData // Injected by SocketSys
-	landcoverData // Injected by SocketSys
-	locationData // Injected by SocketSys
-	farLocationData // Injected by SocketSys
+	elevationData // Injected later
+	landcoverData // Injected later
+	locationData // Injected later
+	farLocationData // Injected later
 
 	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
