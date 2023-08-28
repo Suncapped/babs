@@ -9,7 +9,7 @@
     "node": "20.2.0"
   },
   "scripts": {
-    "playerdev": "vite --mode playerdev",
+    "playerdev": "FE_ENV=playerdev vite --mode playerdev",
     "predev": "ln -f ./../proxima/src/shared/* ./src/shared",
     "dev": "vite --host",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
@@ -51,7 +51,6 @@
     "js-cookie": "^3.0.1",
     "jszip": "^3.10.1",
     "luxon": "^3.3.0",
-    "papercss": "^1.9.1",
     "suncalc": "^1.9.0",
     "three": "^0.152.2"
   }

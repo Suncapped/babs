@@ -28,11 +28,11 @@ import { type Ent } from './ent/Ent'
 
 export class Babs {
 
-	isProd = window.location.href.startsWith('https://earth.suncapped.com')
-	baseDomain :string
-	urlFiles :string
-	urlSocket :string
-	usePail :boolean
+	isProd = window.FeIsProd
+	baseDomain :string = window.FeBaseDomain
+	urlFiles :string = window.FeUrlFiles
+	urlSocket :string = window.FeUrlSocket
+	usePail :boolean = window.FeUsePail
 
 	browser
 
@@ -60,10 +60,7 @@ export class Babs {
 
 	debugMode :boolean
 
-
-
-	constructor(loaderSys) {
-
+	constructor() {
 		console.log('Mode is:', import.meta.env.MODE)
 
 		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0
@@ -75,49 +72,18 @@ export class Babs {
 			// Hax, see also Ctext.svelte at same tab ^
 		}
 
-
-		let preservedConsoleLog = console.warn
-		console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
-			if(
-				// !arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
-				// && !arguments[0]?.includes('.length has been deprecated. Use .count instead') // threejs gltf loader issues?
-				/* && */!arguments[0]?.includes('.gammaFactor has been removed')
-			) {
-				preservedConsoleLog.apply(console, arguments)
-			}
-		}
+		// let preservedConsoleLog = console.warn
+		// console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
+		// 	if(
+		// 		// !arguments[0]?.startsWith('THREE.FBXLoader') // fbx loader spam
+		// 		// && !arguments[0]?.includes('.length has been deprecated. Use .count instead') // threejs gltf loader issues?
+		// 		/* && */!arguments[0]?.includes('.gammaFactor has been removed')
+		// 	) {
+		// 		preservedConsoleLog.apply(console, arguments)
+		// 	}
+		// }
 
 		Cache.enabled = true // Caches eg FBX anims
-
-		const { hostname } = new URL(window.location.href) // eg 'localhost' or '192.168.0.120'
-		this.baseDomain = this.isProd ? 'suncapped.com' : `${hostname}` 
-
-		if (this.isProd || import.meta.env.MODE == 'playerdev') {
-			this.urlSocket = `wss://proxima.suncapped.com` /* Proxima */
-			this.urlFiles = `https://earth.suncapped.com/files` /* Expressa */
-			this.usePail = true
-		}
-		else {
-			this.urlSocket = `ws://${this.baseDomain}:2567` /* Proxima */
-			this.urlFiles = `http://${this.baseDomain}:3000/files` /* Expressa */
-			this.usePail = false
-		}
-		log.info('Domains:', window.location.href, this.baseDomain, this.urlSocket, this.urlFiles)
-
-		// Cookies are required
-		const cookiesEnabled = (() => {
-			try {
-				document.cookie = 'cookietest=1'
-				const ret = document.cookie.indexOf('cookietest=') !== -1
-				document.cookie = 'cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT'
-				return ret
-			}
-			catch (e) {
-				return false
-			}
-		})()
-
-		this.loaderSys = new LoaderSys(this)
 
 		this.browser = (function (agent) {
 			switch (true) {
@@ -133,16 +99,13 @@ export class Babs {
 		})(window.navigator.userAgent.toLowerCase())
 		log.info('Browser is', this.browser)
 
+		this.socketSys = new SocketSys(this)
+
 		this.uiSys = new UiSys(this)
+		document.getElementById('topleft').style.visibility = 'hidden'
+
 		this.uiSys.createStats('fps')
 		this.uiSys.createStats('mem')
-
-		log.info('Cookies?', cookiesEnabled)
-		if(!cookiesEnabled) {
-			this.uiSys.offerReconnect('Session cookies needed!')
-			return
-		}
-
 
 		this.renderSys = new RenderSys(this)
 		this.scene = this.renderSys._scene
@@ -153,11 +116,7 @@ export class Babs {
 		this.scene.add(this.group)
 		// this.group.scale.set(1.001,1.001,1.001)
 
-
-		/** @type {WorldSys} */
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
-		
-		this.socketSys = new SocketSys(this)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -241,8 +200,7 @@ export class Babs {
 }
 
 
-// console.info('LoaderSys', LoaderSys) // Force it to compile/import before continuing with Babs?  lol
-const babs = new Babs(LoaderSys) // Or this way?
+const babs = new Babs()
 
 // Send to Svelte
 baseDomain.set(babs.baseDomain)

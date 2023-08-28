@@ -32,6 +32,6 @@ volta install node@20
 git clone https://github.com/Suncapped/babs.git
 cd babs
 npm ci # Installs locked dependencies
-npm run playerdev # Runs the dev server, connecting to prod
+npm run playerdev # Runs the game client for local dev, with connections going to prod
 ```
-Then your browser can open `http://localhost:3001`; and you're playing on the central https://earth.suncapped.com server.  Welcome to First Earth!
+Then your browser can open `http://localhost:3001/?fe_env=playerdev`; and you're playing on the central https://earth.suncapped.com server.  Welcome to First Earth!

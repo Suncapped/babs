@@ -45,7 +45,6 @@ export class UiSys {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
 			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 		}
-		toprightText.set(this.toprightTextDefault)
 	}
 
 	playerSaid(idPlayer, text, options?) {

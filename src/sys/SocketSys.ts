@@ -5,7 +5,7 @@ import { EventSys } from './EventSys'
 import { WorldSys } from './WorldSys'
 import { LoaderSys } from './LoaderSys'
 import { log, randIntInclusive, sleep } from './../Utils'
-import { AnimationMixer, Int8BufferAttribute, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
+import { AnimationMixer, Int8BufferAttribute, Loader, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Controller } from '@/comp/Controller'
 import { Player } from '@/ent/Player'
 import { CameraSys } from './CameraSys'
@@ -34,38 +34,46 @@ export class SocketSys {
 		private babs :Babs,
 	) {
 
-		this.ws = new WebSocket(babs.urlSocket)
+		const lookForFeExistingSession = () => {
+			setTimeout(() => {
+				if(!window.FeExistingSession) {
+					// console.log('Looking for window.FeExistingSession...')
+					lookForFeExistingSession() // Keep trying
+				}
+				else {
+					// console.log('Found window.FeExistingSession', window.FeExistingSession, window.FeWs)
+					if(window.FeWs) {
+						this.ws = window.FeWs
+						this.finishSocketSetup(window.FeExistingSession)
+					}
+					else {
+						this.ws = new WebSocket(babs.urlSocket)
+						// console.log('inner socket launched with', babs.urlSocket)
+						this.ws.onopen = (event) => {
+							this.finishSocketSetup(window.FeExistingSession)
+						}
+					}
+				}
+			}, 100)
+		}
+		lookForFeExistingSession()
+	}
 
+	finishSocketSetup(existingSession :string) {
 		toprightText.set('Connecting...')
-		document.getElementById('topleft').style.visibility = 'hidden'
-		// this.ws = 
 		this.ws.binaryType = 'arraybuffer'
 
-		this.ws.onopen = (event) => {
-			// Fix people having earth subdomain cookies from previous versions; todo remove later perhaps
-			if(this.babs.isProd) {
-				// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
-			// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
-				// Cookies.remove('session', { domain: 'earth.suncapped.com' }) 
-				// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
-			// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
-				// Cookies.remove('session', { path: '', domain: 'earth.suncapped.com' }) 
-				// Cookies.remove('session', { path: '/', domain: 'earth.suncapped.com' })
-				Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
-				// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
-			}
+		// this.ws.onopen = (event) => {
+		// 	// Fix people having earth subdomain cookies from previous versions; todo remove later perhaps
+		// 	if(this.babs.isProd) {
+		// 		// Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
+		// 		// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
+		// 	}
 			
-			// Now this should get root domain instead of earth subdomain
-			// https://github.com/js-cookie/js-cookie
-			const existingSession = Cookies.get('session')
-			log.info('existingSession', existingSession)
-			if(existingSession){
-				this.auth(existingSession)
-			}
-			else { // No cookie, so indicate visitor
-				this.visitor()
-			}
-		}
+		this.send({
+			auth: existingSession
+		})
+
 		this.ws.onmessage = (event) => {
 			log.info('Socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
@@ -109,11 +117,11 @@ export class SocketSys {
 		}
 		this.ws.onerror = (event) => {
 			log.info('Socket error', event)
-			babs.uiSys.offerReconnect('Connection error.')
+			this.babs.uiSys.offerReconnect('Connection error.')
 		}
 		this.ws.onclose = (event) => {
 			log.info('Socket closed', event)
-			babs.uiSys.offerReconnect('Server connection closed.')
+			this.babs.uiSys.offerReconnect('Server connection closed.')
 		}
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
@@ -123,16 +131,6 @@ export class SocketSys {
 		})
 	}
 
-	visitor() {
-		this.send({
-			auth: 'visitor'
-		})
-	}
-	auth(session) {
-		this.send({
-			auth: session
-		})
-	}
 	enter(email, pass) {
 		this.send({
 			enter: {
@@ -198,15 +196,16 @@ export class SocketSys {
 			}
 		}
 		else if('visitor' in payload) {
-			this.session = payload.visitor
-			log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
-			Cookies.set('session', this.session, { 
-				domain: this.babs.baseDomain,
-				secure: this.babs.isProd,
-				sameSite: 'strict',
-			}) // Non-set expires means it's a session cookie only, not saved across sessions
+			console.warn('Somehow skipped initial html (slow) visitor', payload)
+			// this.session = payload.visitor
+			// log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
+			// Cookies.set('session', this.session, { 
+			// 	domain: this.babs.baseDomain,
+			// 	secure: this.babs.isProd,
+			// 	sameSite: 'strict',
+			// }) // Non-set expires means it's a session cookie only, not saved across sessions
 			toprightText.set('Visiting...')
-			window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+			// window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
 		}
 		else if('session' in payload) {
 			log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
@@ -226,6 +225,9 @@ export class SocketSys {
 			this.babs.uiSys.offerReconnect('Disconnected from other tab.')
 		}
 		else if('load' in payload) {
+
+			this.babs.loaderSys = new LoaderSys(this.babs)
+
 			const load = payload.load
 			log.info('socket: load', payload.load)
 			window.setInterval(() => { // Keep alive through Cloudflare's socket timeout

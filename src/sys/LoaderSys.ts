@@ -18,7 +18,7 @@ export class LoaderSys {
 	static CachedDekazoneFiles :Promise<typeof JSZip.files>
 	static CachedDekafarwobsFiles :Promise<typeof JSZip.files>
 	static CachedFiretex :Promise<Texture>
-	static MegaColorAtlas :Promise<Texture>
+	static MegaColorAtlas :Promise<void>
 	static ColorAtlasNew2 :Promise<Texture>
 	static CachedKidRig :Promise<GLTF>
 	static KidAnimList = ['idle', 'run', 'walk']
@@ -72,7 +72,7 @@ export class LoaderSys {
 		})()
 
 		// Prefetch and process cached dekazone farwobs files
-		LoaderSys.CachedDekafarwobsFiles =  (async () => {
+		LoaderSys.CachedDekafarwobsFiles = babs.usePail && (async () => {
 			const response = await fetch('https://pail.suncapped.com/dekafarwobs.zip.gz')
 			
 			const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'))
@@ -116,10 +116,8 @@ export class LoaderSys {
 			// material.color.copy(material.color.convertSRGBToLinear())
 			// material.emissive.copy(material.emissive.convertSRGBToLinear())
 
-
 			this.megaMaterial = material
-			// Would disposing of the old material be bad because it would have to keep re-creating it on each import?
-			
+			// return texture // Currently this is not used anywhere.  this.megaMaterial gets set above.
 		})
 		LoaderSys.ColorAtlasNew2 = this.loadTexture(`/texture/color-atlas-new2.png`)
 
