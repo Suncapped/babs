@@ -55,8 +55,7 @@
 
 			document.head.insertAdjacentHTML('beforeend', `<link rel="dns-prefetch" href="https://proxima.suncapped.com">`)
 		}
-		document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${window.FeUrlFiles}/css/paper.min.css">`)
-		document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="/index.css">`) // Here in order to override above
+		document.head.insertAdjacentHTML('afterbegin', `<link rel="stylesheet" href="${window.FeUrlFiles}/css/paper.min.css">`) // Place at top, so custom CSS at bottom of head still overrides this.
 
 		// console.info('Domains:', window.location.href, window.FeBaseDomain, window.FeUrlSocket, window.FeUrlFiles, window.FeUsePail)
 
@@ -140,6 +139,8 @@
 			
 		}
 	</script>
+
+	<link rel="stylesheet" href="/index.css">
 
 </head>
 
