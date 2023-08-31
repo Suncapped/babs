@@ -398,10 +398,10 @@ export class Flame extends Comp {
 
 	update(dt) {
 
-		// if(this.babs?.inputSys?.playerSelf?.controller?.target && this.line) {
+		// if(this.babs?.inputSys?.playerSelf?.controller?.playerRig && this.line) {
 			
 		// 	const positions = this.line.geometry.attributes.position.array
-		// 	const temppos = this.babs.inputSys.playerSelf.controller.target.position//new Vector3(35.78, 8361.13 +10, 77.47)
+		// 	const temppos = this.babs.inputSys.playerSelf.controller.playerRig.position//new Vector3(35.78, 8361.13 +10, 77.47)
 		// 	const temppos2 = this.fire.position//new Vector3(55.78, 8361.13 +40, 67.47)
 		// 	positions[0 +0] = temppos.x
 		// 	positions[0 +1] = temppos.y

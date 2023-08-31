@@ -264,7 +264,7 @@ export class Zone extends SharedZone {
 		const raycaster = new Raycaster(
 			new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner
 			new Vector3( 0, -1, 0 ), 
-			0, WorldSys.ZoneTerrainMax.y
+			0, WorldSys.ZoneTerrainMax.y *2
 		)
 
 		let [intersect] = raycaster.intersectObject(this.ground, true)

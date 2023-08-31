@@ -6,8 +6,6 @@
 	<meta name="viewport" content="width=device-width, user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
 	<title>First Earth</title>
 
-	<link rel="stylesheet" href="/index.css">
-
 	<!-- ****** faviconit.com favicons ****** -->
 	<link rel="shortcut icon" href="favicons/favicon.ico">
 	<link rel="icon" sizes="16x16 32x32 64x64" href="favicons/favicon.ico">
@@ -57,7 +55,8 @@
 
 			document.head.insertAdjacentHTML('beforeend', `<link rel="dns-prefetch" href="https://proxima.suncapped.com">`)
 		}
-		document.head.insertAdjacentHTML('beforeend', `<link id="papercsslink" rel="stylesheet" href="${window.FeUrlFiles}/css/paper.min.css">`)
+		document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${window.FeUrlFiles}/css/paper.min.css">`)
+		document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="/index.css">`) // Here in order to override above
 
 		// console.info('Domains:', window.location.href, window.FeBaseDomain, window.FeUrlSocket, window.FeUrlFiles, window.FeUsePail)
 

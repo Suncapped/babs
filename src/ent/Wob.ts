@@ -8,7 +8,6 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs, type IconData } from './InstancedWobs'
-import JSZip from 'jszip'
 import { LoaderSys } from '@/sys/LoaderSys'
 
 export class Wob extends SharedWob {
@@ -165,10 +164,8 @@ export class Wob extends SharedWob {
 		log.info('arrivalWobs', arrivalWobs.length)
 		const nameCounts = new Map<string, number>()
 
-		Wob.totalArrivedWobs += arrivalWobs.length
-
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
-		const playerZone = playerSelf.controller.target.zone
+		const playerZone = playerSelf.controller.playerRig.zone
 		const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 		for(const wob of arrivalWobs) {

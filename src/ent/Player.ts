@@ -48,20 +48,20 @@ export class Player extends Ent {
 
 		log.info('New Player:', plr)
 
-		const [object3d] = await Promise.all([ 
+		const [playerRig] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		]) as [FeObject3D]
-		object3d.name = plr.self ? 'self' : 'player'
-		object3d.idplayer = arrival.id
-		object3d.visible = false
-		plr.babs.group.add(object3d)
+		playerRig.name = plr.self ? 'self' : 'player'
+		playerRig.idplayer = arrival.id
+		playerRig.visible = false
+		plr.babs.group.add(playerRig)
 
 		if(plr.self) {
 			plr.babs.idSelf = plr.id
 		}
 
-		plr.controller = await Controller.Create(arrival, plr.babs, object3d)
+		plr.controller = await Controller.Create(arrival, plr.babs, playerRig)
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -93,15 +93,15 @@ export class Player extends Ent {
 		this.babs.ents.delete(this.id)
 		this.babs.zips.delete(this.idzip)
 
-		if(this.controller?.target) {
-			this.babs.group.remove(this.controller.target) 
+		if(this.controller?.playerRig) {
+			this.babs.group.remove(this.controller.playerRig) 
 			// Needed to avoid latency of interval below
 		}
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting for remove')
-				if(this.controller.target) {
-					this.babs.group.remove(this.controller.target) 
+				if(this.controller.playerRig) {
+					this.babs.group.remove(this.controller.playerRig) 
 					clearInterval(waitForMesh)
 				}
 			}, 200)

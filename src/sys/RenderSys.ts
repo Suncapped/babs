@@ -42,7 +42,7 @@ export class RenderSys {
 
 		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
 		// this.renderer.physicallyCorrectLights = false
-		this.renderer.useLegacyLights = true
+		this.renderer.useLegacyLights = true // todo lights https://github.com/mrdoob/three.js/releases/tag/r154
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10
 		this.renderer.toneMapping = ACESFilmicToneMapping
@@ -124,8 +124,8 @@ export class RenderSys {
 		}, 500)
 
 		setInterval(() => {
-			if(Flame.player?.controller?.target) {
-				const playerpos = Flame.player.controller.target.position
+			if(Flame.player?.controller?.playerRig) {
+				const playerpos = Flame.player.controller.playerRig.position
 
 				const nearestWants = Flame.wantsLight.sort((a, b) => {
 					return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
@@ -182,7 +182,7 @@ export class RenderSys {
 		// this.babs.scene.updateWorldMatrix(true, true)
 		// this._camera.updateMatrixWorld(true)
 		// this._camera.parent.updateMatrixWorld(true)
-		// this.babs.inputSys.playerSelf.controller.target.updateMatrixWorld(true)
+		// this.babs.inputSys.playerSelf.controller.playerRig.updateMatrixWorld(true)
 		// this.babs.group.updateMatrixWorld(true)
 		// // Update the world matrix of every single babs child recursively
 		// this.babs.scene.traverse((child) => {
@@ -191,7 +191,7 @@ export class RenderSys {
 		// 	child.updateMatrixWorld(true)
 		// })
 
-		const playerpos = this.babs.inputSys?.playerSelf?.controller?.target?.position
+		const playerpos = this.babs.inputSys?.playerSelf?.controller?.playerRig?.position
 		if(!playerpos) return
 
 		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
@@ -199,6 +199,10 @@ export class RenderSys {
 
 			// feim.instancedMesh.computeBoundingBox()
 			feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
+			// TODO only do on rescale?  (And note there is: .copy()) https://github.com/mrdoob/three.js/blob/master/src/objects/InstancedMesh.js
+			// Note that sphere is used for depth sorting: https://github.com/mrdoob/three.js/pull/25974/files
+			// Also for frustum culling https://discourse.threejs.org/t/boundingsphere-and-boundingbox/17868
+			// "The bounding sphere is also computed automatically when doing raycasting. The bounding box is optional. If you define it, the raycasting logic will test it too"
 
 			// feim.instancedMesh.instanceMatrix.needsUpdate = true 
 			// feim.instancedMesh.updateMatrixWorld(true)

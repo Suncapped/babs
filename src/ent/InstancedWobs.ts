@@ -112,6 +112,7 @@ export class InstancedWobs {
 			// this.reallocateLargerBuffer() // No; moved to `Wob.LoadInstancedWobs`
 		}
 
+		Wob.totalArrivedWobs++ // For debug display
 		this.recalculateRealCount()
 	}
 	decreaseLoadedCount() {
@@ -119,6 +120,8 @@ export class InstancedWobs {
 		if(this.loadedCount < 0) { 
 			console.warn('decreaseLoadedCount went below 0')
 		}
+
+		Wob.totalArrivedWobs-- // For debug display
 		this.recalculateRealCount()
 	}
 

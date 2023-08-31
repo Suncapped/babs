@@ -85,7 +85,7 @@ export class WorldSys {
 	static ZoneSegments = 25
 
 	static ZoneTerrainMin = new Vector3(0,0,0)
-	static ZoneTerrainMax = new Vector3(1000,10_000,1000)
+	static ZoneTerrainMax = new Vector3(1000,5_000,1000)
 
 	static FogDefaultDensity = 0.0000012
 
@@ -378,7 +378,7 @@ export class WorldSys {
 			if(!data.isSelf) return // Only add lights for self
 
 			// Directional light
-			this.playerTarget = data.controller.target
+			this.playerTarget = data.controller.playerRig
 
 			// todo have this track not-the-player lol.  Perhaps an origin that doesn't move?  Used to be cube
 			this.dirLight = new DirectionalLight(0xffffff, 0)
@@ -645,7 +645,7 @@ export class WorldSys {
 		geometry.rotateX( -Math.PI / 2 ) // Make the plane horizontal
 		geometry.translate( // Uncenter it, align at corner
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.x, 
-			0,//zone.y -8000,
+			zone.y,//zone.y -8000,
 			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.z,
 		)
 			
@@ -769,13 +769,15 @@ export class WorldSys {
 		const nCoordsComponents = 3 // x,y,z
 		const verticesRef = geometry.getAttribute('position').array as Float32Array
 
+		// let lowestElevation = 1_000_000
 		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
 			// j + 1 because it is the y component that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
-
 			// Set vertex height from elevations data
-			verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
+			verticesRef[j +1] = zone.elevationData[i] * zone.yscale// +zone.y
+			// lowestElevation = Math.min(lowestElevation, verticesRef[j +1])
 		}
+		// console.log('lowestElevation', lowestElevation)
 	}
 
 	zones = []
@@ -798,7 +800,7 @@ export class WorldSys {
 				// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
 	
 				// Set vertex height from elevations data
-				verticesRef[j +1] = zone.elevationData[i] * zone.yscale +zone.y
+				// verticesRef[j +1] = zone.elevationData[i] * zone.yscale// +zone.y
 
 				const {x: thisx, z: thisz} = Utils.indexToCoord(i)
 
@@ -966,7 +968,8 @@ export class WorldSys {
 	}
 
 	shiftiness = new Vector3()
-	shiftEverything(xShift, zShift, excludeSelf = false) {
+	shiftEverything(xShift :number, zShift :number, initialLoadExcludeSelf = false) {
+		// console.log('shiftEverything', xShift, zShift, initialLoadExcludeSelf)
 		const shiftVector = new Vector3(xShift, 0, zShift)
 
 		const excludeFromShift = [
@@ -977,7 +980,7 @@ export class WorldSys {
 			'cameraGroup',
 
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
-		if(excludeSelf) excludeFromShift.push('self')
+		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
 		let shiftingLog = []
 		this.babs.group.children.forEach(child => {

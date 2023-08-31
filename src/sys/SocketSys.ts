@@ -26,7 +26,7 @@ import type { Sendable } from '@/shared/consts'
 export class SocketSys {
 	static pingSeconds = 30
 
-	babsReady = false
+	babsRunUpdate = false
 	session :string
 	ws :WebSocket
 
@@ -167,7 +167,7 @@ export class SocketSys {
 		const command = Object.keys(payload)[0]
 
 		if('load' in payload || 'visitor' in payload || 'session' in payload) { 
-			// babsReady isn't true until after load, so babs isn't calling update() on this sys yet.  So run manually for these.
+			// babsRunUpdate isn't true until after load, so babs isn't calling update() on this sys yet.  So run manually for these.
 			await this.process(payload)
 		}
 		else {
@@ -303,12 +303,19 @@ export class SocketSys {
 				}
 			}
 			
+			let enterZone = this.babs.ents.get(load.self.idzone) as Zone
+
 			const pStatics = []
 			for(const zone of farZones) {
-				const isLoadinZone = zone.id == load.self.idzone
+				const isLoadinZone = zone.id == enterZone.id
 				pStatics.push(this.babs.worldSys.loadStatics(this.babs.urlFiles, zone, isLoadinZone))
 			}
-			// player.controller.zoneIn()
+
+			// Shouldn't their Y be *relative* to 0,0's Y?  Or starting zone's?
+			for(const zone of farZones) {
+				zone.geometry.translate(0, zone.y -enterZone.y, 0)
+			}
+
 			// console.time('stitch')
 			await Promise.all(pStatics)
 
@@ -322,29 +329,22 @@ export class SocketSys {
 			// Set up UIs
 			this.babs.uiSys.loadUis(load.uis)
 
-			// Note: Set up shiftiness now, but this won't affect instanced things loaded here NOR in wobsupdate.
-			// I was trying to do this after LoadInstancedWobs, but that was missing the ones in wobsupdate.
-			const startingZone = this.babs.ents.get(load.self.idzone) as Zone
-			this.babs.worldSys.shiftEverything(-startingZone.x *1000, -startingZone.z *1000, true)
-
-			// Create player entity
-			await Player.Arrive(load.self, true, this.babs)
-			
 			for(const zone of farZones) {
 				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible comp info
 			}
 
-			const player = this.babs.ents.get(load.self.id) as Player
-			const enterZone = this.babs.ents.get(load.self.idzone) as Zone
-			const exitZone = null//this.babs.ents.get(player.controller.target.zone.id) as Zone
+			// Shift before zoning; on load exclude self
+			this.babs.worldSys.shiftEverything(-enterZone.x *1000, -enterZone.z *1000, true) 
 
-			player.controller.zoneIn(player, enterZone, exitZone)
+			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
+
+			player.controller.zoneIn(player, enterZone, null)
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
 			}
 			
-			this.babsReady = true // Starts update()s
+			this.babsRunUpdate = true // Starts update()s
 		}
 		else if('playersarrive' in payload) {
 			log.info('playersarrive', payload.playersarrive)
@@ -386,7 +386,7 @@ export class SocketSys {
 		else if('zonein' in payload) { // Handle self or others switching zones
 			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
 			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
-			const exitZone = this.babs.ents.get(player.controller.target.zone.id) as Zone // player.controller.target.zone ?
+			const exitZone = this.babs.ents.get(player.controller.playerRig.zone.id) as Zone // player.controller.playerRig.zone ?
 			const playerIsSelf = player.id === this.babs.idSelf
 
 			await player.controller.zoneIn(player, enterZone, exitZone)

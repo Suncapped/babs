@@ -964,8 +964,8 @@ export class InputSys {
 			this.isAfk = true
 		}
 		// if(this.isAfk) { // todo let's send it to server, then have server notify zone
-		// 	this.player.controller.target.children[0].material.transparent = true
-		// 	this.player.controller.target.children[0].material.opacity = 0.2
+		// 	this.player.controller.playerRig.children[0].material.transparent = true
+		// 	this.player.controller.playerRig.children[0].material.opacity = 0.2
 		// }
 
 		if (this.pickedObject
@@ -1223,10 +1223,10 @@ export class InputSys {
 
 			// Delta accumulation for angle rotation snap
 			if (Math.abs(this.mouse.accumx) > this.mouseAccumThreshold) {
-				const gCurrentPosition = this.playerSelf.controller.target.position.clone().multiplyScalar(1 / 4).floor()
+				const gCurrentPosition = this.playerSelf.controller.playerRig.position.clone().multiplyScalar(1 / 4).floor()
 				const eCurrentPositionCentered = gCurrentPosition.clone().multiplyScalar(4).addScalar(2)
 
-				// const eDiff = eCurrentPositionCentered.clone().sub(this.player.controller.target.position) // Distance from CENTER
+				// const eDiff = eCurrentPositionCentered.clone().sub(this.player.controller.playerRig.position) // Distance from CENTER
 				// const characterNearMiddle = Math.abs(eDiff.x) < 1 && Math.abs(eDiff.z) < 1
 				// log.info('characterNearMiddle', characterNearMiddle, eDiff)
 				// There's some interaction with turning fast and `if(characterNearMiddle)`.  Might be related to head rotation setting; putting it first changed things.  But might be something else.
@@ -1333,7 +1333,7 @@ export class InputSys {
 			// log.info('vector!', tempMatrix, vector)
 
 			if (this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
-				vector.crossVectors(this.playerSelf.controller.target.up, vector) // camera.up
+				vector.crossVectors(this.playerSelf.controller.playerRig.up, vector) // camera.up
 			}
 
 			// Get direction
@@ -1343,7 +1343,7 @@ export class InputSys {
 			}
 
 			// Okay, that was direction.  Now get distance
-			let gCurrentPos = this.playerSelf.controller.target.position.clone()
+			let gCurrentPos = this.playerSelf.controller.playerRig.position.clone()
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
 			// log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
@@ -1370,7 +1370,7 @@ export class InputSys {
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
 				const easyRaiseAbove = 0.1
-				this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.target.position.y - 2 + easyRaiseAbove, 0))
+				this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.playerRig.position.y - 2 + easyRaiseAbove, 0))
 			}
 			else {
 				this.displayDestinationMesh?.position.setY(-1000)

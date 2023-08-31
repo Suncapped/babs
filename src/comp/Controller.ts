@@ -52,21 +52,21 @@ export class Controller extends Comp {
 		super(arrival.id, Controller, babs)
 	}
 
-	static Create(arrival :PlayerArrive, babs :Babs, object3d :FeObject3D) {
-		return new Controller(arrival, babs).init(arrival, object3d)
+	static Create(arrival :PlayerArrive, babs :Babs, playerRig :FeObject3D) {
+		return new Controller(arrival, babs).init(arrival, playerRig)
 	}
 
-	raycaster
+	raycaster :Raycaster
 	gDestination :Vector3
 	hover = 0
 	groundDistance = 0
 	isSelf :boolean = false
 
-	target :FeObject3D
+	playerRig :FeObject3D
 
 	arrival :PlayerArrive
-	vTerrainMin = new Vector3(0, 0, 0)
-	vTerrainMax = new Vector3(1000,10_000,1000)
+	// vTerrainMin = new Vector3(0, 0, 0)
+	// vTerrainMax = new Vector3(1000,10_000,1000)
 	_decceleration = new Vector3(-5.0, 0, -5.0) // friction, basically
 	acceleration = new Vector3(100 *Controller.sizeScaleDown, 0, 100 *Controller.sizeScaleDown)
 	velocity = new Vector3(0, 0, 0)
@@ -84,23 +84,23 @@ export class Controller extends Comp {
 	_stateMachine :CharacterFSM
 
 
-	async init(arrival :PlayerArrive, object3d :Object3D) {
+	async init(arrival :PlayerArrive, playerRig :Object3D) {
 		log.info('Controller.init()', arrival)
 		this.arrival = arrival
 		this.isSelf = this.idEnt === this.babs.idSelf
 
-		this.target = object3d
-		this.target.zone = this.babs.ents.get(this.arrival.idzone) as Zone
+		this.playerRig = playerRig
+		this.playerRig.zone = this.babs.ents.get(this.arrival.idzone) as Zone
 
-		// log.info('controller got', this.arrival.idzone, this.target.zone)
+		// log.info('controller got', this.arrival.idzone, this.playerRig.zone)
 
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
 		)
 
-		this.idealTargetQuaternion = this.target.quaternion.clone()
+		this.idealTargetQuaternion = this.playerRig.quaternion.clone()
 
-		this._mixer = new AnimationMixer(this.target)
+		this._mixer = new AnimationMixer(this.playerRig)
 		const animList = LoaderSys.KidAnimList
 		await Promise.all(animList.map(async animName => {
 			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
@@ -116,16 +116,16 @@ export class Controller extends Comp {
 		this._stateMachine.setState('idle')
 
 		// Finally show the character
-		this.target.visible = true
+		this.playerRig.visible = true
 
 		// Raycast for ground snapping
-		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y )
+		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y *2 )
 
 		// Set position warped
-		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.target)
+		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.playerRig)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
-		this.target.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
-		this.target.position.add(this.target.zone.ground.position)
+		this.playerRig.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
+		this.playerRig.position.add(this.playerRig.zone.ground.position)
 
 		// Set rotation
 		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why -45?  Who knows! :p
@@ -137,12 +137,12 @@ export class Controller extends Comp {
 	}
 
 	get Position() {
-		return this.target?.position || new Vector3()
+		return this.playerRig?.position || new Vector3()
 	}
 
 	get Rotation() {
-		if (!this.target) return new Quaternion() 
-		return this.target.quaternion
+		if (!this.playerRig) return new Quaternion() 
+		return this.playerRig.quaternion
 	}
 
 	modelHead
@@ -197,7 +197,25 @@ export class Controller extends Comp {
 				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
 
-				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z*1000)
+				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
+
+				// this.playerRig.updateMatrixWorld(true)
+				// this.playerRig.updateMatrix()
+
+				// zonetarget.geometry.computeBoundingSphere()
+				// zonetarget.ground.updateMatrixWorld(true)
+				// zonetarget.ground.updateMatrix()
+				
+				// Seems this is all that's necessary for zoning:
+				zonecurrent.geometry.computeBoundingSphere()
+				zonecurrent.ground.updateMatrixWorld(true)
+				zonecurrent.ground.updateMatrix()
+				
+				// const worldGroundHeight = this.raycastPlayerGroundCalcs()
+				// if(worldGroundHeight) {
+				// 	// this.playerRig.position.setY(worldGroundHeight.y +this.hover)
+				// 	// this.update(0)
+				// }
 			}
 
 			this.babs.socketSys.send({
@@ -216,21 +234,21 @@ export class Controller extends Comp {
 	setRotation(_R) {
 		this.idealTargetQuaternion = _R
 
-		// Need to immediately update this because Input will call setRotation and then immediately check this.target.matrix for choosing direction vector!
-		this.target.quaternion.copy(this.idealTargetQuaternion)
+		// Need to immediately update this because Input will call setRotation and then immediately check this.playerRig.matrix for choosing direction vector!
+		this.playerRig.quaternion.copy(this.idealTargetQuaternion)
 
 		// What if when I turn, I have it snap me to grid center?
 		// That would avoid being off-center when turning during movement
-		const gCurrentPosition = this.target.position.clone().multiplyScalar(1/4).floor()
+		const gCurrentPosition = this.playerRig.position.clone().multiplyScalar(1/4).floor()
 		const eCurrentPosition = gCurrentPosition.clone().multiplyScalar(4).addScalar(2)
-		eCurrentPosition.setY(this.target.position.y)
-		this.target.position.copy(eCurrentPosition)
+		eCurrentPosition.setY(this.playerRig.position.y)
+		this.playerRig.position.copy(eCurrentPosition)
 		
 		// Now, let's translate velocity instead of zeroing it out, so they continue moving the same speed, but in the new direction.
 		let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.idealTargetQuaternion)
 		let vector = new Vector3().setFromMatrixColumn( tempMatrix, 0 )  // get X column of matrix
 		vector.negate()
-		vector.crossVectors( this.target.up, vector )
+		vector.crossVectors( this.playerRig.up, vector )
 		vector.round()
 
 		const topVelocity = Math.max(Math.abs(this.velocity.x), Math.abs(this.velocity.z))
@@ -241,7 +259,7 @@ export class Controller extends Comp {
 		if(this.isSelf) {
 			// Send turn amount to other players
 
-			// const euler = new Euler().setFromQuaternion(this.target.quaternion)
+			// const euler = new Euler().setFromQuaternion(this.playerRig.quaternion)
 			// const vector = euler.toVector3()
 			// function radiansToDegrees(radians){
 			// 	return radians * 180 / Math.PI
@@ -251,7 +269,7 @@ export class Controller extends Comp {
 			// const radians = rotation.y > 0 ? rotation.y : (2 * Math.PI) + rotation.y
 			// const degrees = MathUtils.radToDeg(radians)
 
-			// var dir = new Vector3(-this.target.position.x, 0, -this.target.position.z).normalize()
+			// var dir = new Vector3(-this.playerRig.position.x, 0, -this.playerRig.position.z).normalize()
 			
 			// let matrixtest = new Matrix4().makeRotationFromQuaternion(this.idealTargetQuaternion)
 			// let vectortest = new Vector3().setFromMatrixColumn( matrixtest, 1 )  // get X column of matrix
@@ -315,8 +333,8 @@ export class Controller extends Comp {
 		// this._currentLookat.lerp(idealLookat, t)
 		// this._camera.position.copy(this._currentPosition)
 		// this._camera.lookAt(this._currentLookat)
-		// this.target.quaternion.slerp(this.idealTargetQuaternion, dt)
-		this.target.quaternion.copy(this.idealTargetQuaternion)
+		// this.playerRig.quaternion.slerp(this.idealTargetQuaternion, dt)
+		this.playerRig.quaternion.copy(this.idealTargetQuaternion)
 
 		// Now movement physics
 		// Women runners do about 10 ft/s over 4 mi, so should be made to do 1ft/100ms, 4ft/400ms
@@ -341,11 +359,11 @@ export class Controller extends Comp {
 		// This just gets a destination in engine coords (but assumes gdest is in-zone!):
 		let eDest = this.gDestination.clone().multiplyScalar(4).addScalar(4/2)
 		if(!this.isSelf) {
-			eDest.add(this.target.zone.ground.position)
+			eDest.add(this.playerRig.zone.ground.position)
 		}
 
 		// This gets the difference between the edest and the player's current position:
-		const eDistance = eDest.clone().sub(this.target.position) // Distance from CENTER
+		const eDistance = eDest.clone().sub(this.playerRig.position) // Distance from CENTER
 
 		// Destination is far away from current location, due to eg frame drops (tab-in/out etc)
 		const zDeltaFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
@@ -356,11 +374,11 @@ export class Controller extends Comp {
 		if(isFar) {
 			if(zDeltaFar) {
 				this.velocity.z = 0
-				this.target.position.setZ(eDest.z)
+				this.playerRig.position.setZ(eDest.z)
 			}
 			if(xDeltaFar) {
 				this.velocity.x = 0
-				this.target.position.setX(eDest.x)
+				this.playerRig.position.setX(eDest.x)
 			}
 		}
 		else { // Not far
@@ -370,7 +388,7 @@ export class Controller extends Comp {
 			if (zNearCenter) {
 				// But if there is little distance, just move player to center of square and set velocity 0.
 				this.velocity.z = 0
-				this.target.position.setZ(eDest.z)
+				this.playerRig.position.setZ(eDest.z)
 			}
 			else if (zPositiveDistance) {
 				this.velocity.z += acc.z * dt
@@ -385,7 +403,7 @@ export class Controller extends Comp {
 			if (xNearCenter) {
 				// But if there is little distance, just move player to center of square and set velocity 0.
 				this.velocity.x = 0
-				this.target.position.setX(eDest.x)
+				this.playerRig.position.setX(eDest.x)
 			}
 			else if (xPositiveDistance) {
 				this.velocity.x += acc.x * dt
@@ -396,7 +414,7 @@ export class Controller extends Comp {
 		}
 		
 		this.hover = 0
-		const wobAtDest = this.target.zone.getWob(this.gDestination.x, this.gDestination.z)
+		const wobAtDest = this.playerRig.zone.getWob(this.gDestination.x, this.gDestination.z)
 		const platform = wobAtDest?.comps?.platform
 		if(platform) {
 			this.hover = platform.yOffsetFeet
@@ -411,7 +429,7 @@ export class Controller extends Comp {
 
 		// if(platform) {  // Buggy; starts to accellerate next frame I think, so shivers, especially on afk
 		// 	this.velocity.z = 0
-		// 	this.target.position.setZ(eDest.z +platform.zOffsetFeet)
+		// 	this.playerRig.position.setZ(eDest.z +platform.zOffsetFeet)
 		// }
 
 		if(this.groundDistance == 0 || Math.round(this.groundDistance -this.hover) == 0) {
@@ -437,41 +455,60 @@ export class Controller extends Comp {
 		// This just creates a velocity vector (forward left in for sideways movement)
 		forward.multiply(this.velocity.clone().multiplyScalar(dt))
 
-		// This modifies the target position, adding in the velocity momentum.
-		this.target.position.add(forward)
-		// this.target.position.add(sideways)
+		// This modifies the playerRig position, adding in the velocity momentum.
+		this.playerRig.position.add(forward)
+		// this.playerRig.position.add(sideways)
 
 		if (this._mixer) {
 			this._mixer.update(dt)
 		}
 
+		this.raycastPlayerGroundCalcs()
+		
+		if(this.headRotationX) {
+			// this.modelHead ||= this.playerRig.getObjectByName( 'Head_M' )
+			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
+			this.modelNeck ||= this.playerRig.getObjectByName( 'Neck_M' )
+			this.modelNeck.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX*0.75)
+		}
+
+
+		if(!this.gPrevDestination?.equals(this.gDestination)) {
+			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
+		}
+
+		
+	}
+
+	raycastPlayerGroundCalcs() {
+
 		// Ground stickiness/gravity
 		// Setup
-		// const zone = this.target.zone
-		// log('this.target', this.target)
-		const ground = this.isSelf ? this.babs.worldSys.currentGround : this.target.zone.ground // zonetodo this null!
+		// const zone = this.playerRig.zone
+		// log('this.playerRig', this.playerRig)
+		const ground = this.isSelf ? this.babs.worldSys.currentGround : this.playerRig.zone.ground // zonetodo this null!
 
 		// Note that raycaster uses global coords
 
-		// const playerWorldPos = ground.localToWorld(this.target.position)
-		this.raycaster.ray.origin.copy(this.target.position)
+		// const playerWorldPos = ground.localToWorld(this.playerRig.position)
+		this.raycaster.ray.origin.copy(this.playerRig.position)
 		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
 		
 		if(ground && this.raycaster) {
 			const groundIntersect = this.raycaster.intersectObject(ground, false)
 			const worldGroundHeight = groundIntersect?.[0]?.point
 
-			if(worldGroundHeight && (worldGroundHeight.y > this.target?.position?.y || this.hover)) {
+			if(worldGroundHeight && (worldGroundHeight.y > this.playerRig?.position?.y || this.hover)) {
 				// Keep above ground
 				this.groundDistance = 1
 
-				this.target.position.setY(worldGroundHeight.y +this.hover)
-				// const playerLocalPos = this.target.position.clone()
+				this.playerRig.position.setY(worldGroundHeight.y +this.hover)
+				// const playerLocalPos = this.playerRig.position.clone()
 				// const playerGlobalPos = ground.localToWorld(playerLocalPos)
 				// const oldy = playerWorldPos.y
 				// playerWorldPos.setY(worldGroundHeight.y +this.hover)
 				// const updatedPlayerLocal = ground.worldToLocal(playerWorldPos)
-				// this.target.position.copy(updatedPlayerLocal)
+				// this.playerRig.position.copy(updatedPlayerLocal)
 
 				// Wait...the local and the world Y are the same, LOL!  Only x/z are not.
 
@@ -484,31 +521,24 @@ export class Controller extends Comp {
 				this.velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
 			}
 			else {
-				this.groundDistance = this.target.position.y - worldGroundHeight.y // Used for jump
+				this.groundDistance = this.playerRig.position.y - worldGroundHeight.y // Used for jump
 			}
-		}
-		
-		if(this.headRotationX) {
-			// this.modelHead ||= this.target.getObjectByName( 'Head_M' )
-			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
-			this.modelNeck ||= this.target.getObjectByName( 'Neck_M' )
-			this.modelNeck.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX*0.75)
-		}
 
-
-		if(!this.gPrevDestination?.equals(this.gDestination)) {
-			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
+			return worldGroundHeight
 		}
-
-		
+		return null
 	}
 
 	async zoneIn(player :Player, enterZone :Zone, exitZone :Zone|null) {
+		// console.log('zonein()')
 		log.info('zonein player zone', player.id, enterZone.id, )
 		log.info('this.gDestination', this.gDestination)
 
-		this.target.position.setY(0) // works since it will pop up back up to the ground
-		this.target.zone = enterZone
+
+		// this.playerRig.position.setY(-1000) // works since it will pop up back up to the ground
+
+
+		this.playerRig.zone = enterZone
 
 		// Calculate the zones we're exiting and the zones we're entering
 		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
@@ -527,8 +557,6 @@ export class Controller extends Comp {
 
 		if(this.isSelf) {
 			this.babs.worldSys.currentGround = enterZone.ground
-
-
 
 			for(const removedZone of removedZonesNearby) {
 				const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
@@ -608,8 +636,8 @@ export class Controller extends Comp {
 		else { // Others
 			// Translate other players to a new zone
 
-			// player.controller.target
-			// this.target.position.add(new Vector3(1000, 0, 0))
+			// player.controller.playerRig
+			// this.playerRig.position.add(new Vector3(1000, 0, 0))
 
 			
 		}

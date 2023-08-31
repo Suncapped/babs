@@ -50,15 +50,15 @@ export class CameraSys {
 		if (this.offsetHeight < 30) {
 			offsetDist = -40 + (30 - this.offsetHeight)
 		}
-		// let mat = this._target.target.children[0]?.children[1]?.material
+		// let mat = this._target.playerRig.children[0]?.children[1]?.material
 		if (this.offsetHeight < 4) {
 			// if(mat) mat.opacity = 0.2
-			this._target.target.visible = false
-			this._target.target.children.find(c => c.name == 'player_bbox').clickable = false
+			this._target.playerRig.visible = false
+			this._target.playerRig.children.find(c => c.name == 'player_bbox').clickable = false
 		}
 		else {
-			this._target.target.visible = true
-			this._target.target.children.find(c => c.name == 'player_bbox').clickable = true
+			this._target.playerRig.visible = true
+			this._target.playerRig.children.find(c => c.name == 'player_bbox').clickable = true
 		}
 		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera

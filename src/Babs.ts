@@ -66,10 +66,11 @@ export class Babs {
 		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0
 		const isWindows = navigator.platform.toUpperCase().indexOf('WIN')>=0
 		if(isWindows) {
-			let stylesheet = document.styleSheets[0]
-			console.log(stylesheet)
-			stylesheet.insertRule('#Ctext>#labelRenderer>.label>span { padding-top:2px !important; padding-bottom: 2px !important; }', stylesheet.cssRules.length)
-			// Hax, see also Ctext.svelte at same tab ^
+			setTimeout(() => {
+				console.log('Windows special CSS')
+				document.head.insertAdjacentHTML('beforeend', `<style>#Ctext>#labelRenderer>.label>span { padding-top:2px !important; padding-bottom: 2px !important; }</style>`) // Here in order to override above
+				// Hax, see also Ctext.svelte at same tab ^
+			}, 1000)
 		}
 
 		// let preservedConsoleLog = console.warn
@@ -115,6 +116,7 @@ export class Babs {
 		this.group.name = 'fegroup'
 		this.scene.add(this.group)
 		// this.group.scale.set(1.001,1.001,1.001)
+		// this.group.scale.set(2,2,2)
 
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 
@@ -138,7 +140,7 @@ export class Babs {
 		
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
-			if(this.socketSys.babsReady) {
+			if(this.socketSys.babsRunUpdate) {
 				this.renderSys.renderer.setAnimationLoop( (p) => { // todo shorten?
 					this.update(p)
 				})

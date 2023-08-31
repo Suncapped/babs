@@ -138,15 +138,15 @@ export class UiSys {
 		}
 		moveUpCheck()
 
-		if(player?.controller?.target) { 
+		if(player?.controller?.playerRig) { 
 			// Needed to avoid latency of interval below
-			player.controller.target.add(chatLabel)
+			player.controller.playerRig.add(chatLabel)
 		}
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting for said')
-				if(player?.controller?.target) {
-					player.controller.target.add(chatLabel)
+				if(player?.controller?.playerRig) {
+					player.controller.playerRig.add(chatLabel)
 					clearInterval(waitForMesh)
 				}
 			}, 200)
@@ -348,12 +348,12 @@ export class UiSys {
 		let playerSelf :Player
 		if(this.babs?.idSelf) { // Player is loaded
 			playerSelf = this.babs.ents.get(this.babs.idSelf) as Player
-			const playerPos = playerSelf?.controller?.target?.position
+			const playerPos = playerSelf?.controller?.playerRig?.position
 			if(playerPos && !this.oldPos.equals(playerPos)) {
 				this.oldPos = playerPos.clone()
 			}
 		}
-		const newLogText = `zone: ${playerSelf?.controller?.target.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()}`
+		const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()}`
 		if(this.logText !== newLogText) {
 			this.logText = newLogText
 			window.document.getElementById('log').innerText = this.logText
