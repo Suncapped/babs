@@ -158,13 +158,14 @@ export class Controller extends Comp {
 	}
 
 	selfZoningWait = false // Only applies to self!
-	setDestination(gVector3, movestate) {
+	setDestination(gDestVector3, movestate) {
 		// This takes a grid destination, which we'll be moved toward in update()
-		if(gVector3.equals(this.gDestination)) return // Do not process if unchanged
-		if(this.selfZoningWait) return // Do not process during zoning
+		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
+		// if(this.selfZoningWait) return // Do not process during zoning
 
-		this.gDestination = gVector3.clone()
-		log.info('setDestination changed', this.gDestination, movestate, this.isSelf)
+		const gDestOld = this.gDestination.clone()
+		this.gDestination = gDestVector3.clone()
+		log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
 		
@@ -173,21 +174,26 @@ export class Controller extends Comp {
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
 			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
-			
-			// New destination!
-			// As soon as dest is next square (for the first time), send ENTERZONE
-
-			const targetYardCoord = YardCoord.Create({
-				...this.gDestination, 
-				zone: this.babs.worldSys.currentGround.zone,
-			})
 
 			let enterzone_id :number = undefined
-			const isOutsideOfZone = this.gDestination.x < 0 || this.gDestination.z < 0 ||
-									this.gDestination.x > 249 || this.gDestination.z > 249
+			const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 ||
+									gDestVector3.x > 249 || gDestVector3.z > 249
 			if(isOutsideOfZone){
-				log.info('isOutsideOfZone', isOutsideOfZone)
+
+				if(this.selfZoningWait) {
+					// Do not initiate shift/zoning while already zoning.
+					// Do not even update this.gDestination; reset it to to old.
+					this.gDestination = gDestOld
+					return 
+				}
+
+				const targetYardCoord = YardCoord.Create({
+					...this.gDestination, 
+					zone: this.babs.worldSys.currentGround.zone,
+				})
+
 				enterzone_id = targetYardCoord.zone.id
+
 				this.selfZoningWait = true
 
 				this.gDestination.x = targetYardCoord.x
@@ -196,6 +202,8 @@ export class Controller extends Comp {
 				const zonetarget = targetYardCoord.zone
 				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
+
+				log('Initiating Zoning', zonecurrent.id, '->', zonetarget.id)
 
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
 
@@ -368,9 +376,10 @@ export class Controller extends Comp {
 		// Destination is far away from current location, due to eg frame drops (tab-in/out etc)
 		const zDeltaFar = Math.abs(this.gPrevDestination?.z -this.gDestination.z) > 2
 		const xDeltaFar = Math.abs(this.gPrevDestination?.x -this.gDestination.x) > 2
+		// console.log('FARRRRR', zDeltaFar, xDeltaFar)
 
 		// Move velocity toward the distance delta.  
-		const isFar = (zDeltaFar || xDeltaFar)
+		const isFar = (zDeltaFar || xDeltaFar) && !this.selfZoningWait
 		if(isFar) {
 			if(zDeltaFar) {
 				this.velocity.z = 0

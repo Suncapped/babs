@@ -66,7 +66,7 @@ export class Babs {
 		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0
 		const isWindows = navigator.platform.toUpperCase().indexOf('WIN')>=0
 		if(isWindows) {
-			let stylesheet = document.styleSheets[0]
+			let stylesheet = document.styleSheets[document.styleSheets.length-1]
 			console.log(stylesheet)
 			stylesheet.insertRule('#Ctext>#labelRenderer>.label>span { padding-top:2px !important; padding-bottom: 2px !important; }', stylesheet.cssRules.length)
 			// Hax, see also Ctext.svelte at same tab ^

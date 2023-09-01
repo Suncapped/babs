@@ -1080,7 +1080,7 @@ export class InputSys {
 						this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
 					}
 					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
-						if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
+						// if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
 						
 						const ground = this.mouseRayTargets[i].object
 						const zone = ground.zone
@@ -1323,7 +1323,7 @@ export class InputSys {
 
 				)
 			)
-			&& !this.playerSelf.controller.selfZoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
+			// && !this.playerSelf.controller.selfZoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
 		)) {
 			
 			// log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
