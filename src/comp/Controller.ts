@@ -165,7 +165,7 @@ export class Controller extends Comp {
 
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
-		log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
+		// log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
 		

@@ -18,7 +18,6 @@ export class InstancedWobs {
 	public wobIsFar :boolean
 	renderedIcon :() => Promise<IconData>|IconData
 
-	private optimizedCount :number // Number that are rendered, after which they're temporarily hidden (optimized out)
 	private loadedCount :number = 0 // Number that are considered loaded, after which they are deleted or unallocated
 
 	constructor(
@@ -113,7 +112,8 @@ export class InstancedWobs {
 		}
 
 		Wob.totalArrivedWobs++ // For debug display
-		this.recalculateRealCount()
+
+		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
 	}
 	decreaseLoadedCount() {
 		this.loadedCount--
@@ -122,22 +122,6 @@ export class InstancedWobs {
 		}
 
 		Wob.totalArrivedWobs-- // For debug display
-		this.recalculateRealCount()
-	}
-
-	setOptimizedCount(count :number) {
-		if(this.optimizedCount !== count) {
-			// log(this.instancedMesh.name + ' setOptimizedCount updated')
-			this.optimizedCount = count
-			this.recalculateRealCount()
-		}
-	}
-
-	private recalculateRealCount() {
-		// This is the number of instances that are actually rendered
-		// const isBeingOptimized = this.optimizedCount !== undefined
-		// this.instancedMesh.count = isBeingOptimized ? Math.min(this.loadedCount, this.optimizedCount) : this.loadedCount
-		this.instancedMesh.count = this.optimizedCount
 
 		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
 	}

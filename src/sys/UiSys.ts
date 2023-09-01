@@ -353,10 +353,13 @@ export class UiSys {
 				this.oldPos = playerPos.clone()
 			}
 		}
-		const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xyz: ${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.y)}, ${Math.floor(this.oldPos.z/4)} \n drawcalls: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} textures: ${this.babs.renderSys.renderer.info.memory.textures} programs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()}`
-		if(this.logText !== newLogText) {
-			this.logText = newLogText
-			window.document.getElementById('log').innerText = this.logText
+
+		if(this.babs.debugMode) {
+			const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xz: (${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.z/4)}), y: ${Math.floor(this.oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()}`
+			if(this.logText !== newLogText) {
+				this.logText = newLogText
+				window.document.getElementById('log').innerText = this.logText
+			}
 		}
 
 		this.labelElements.forEach(chat => {

@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
+import { BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { TextureLoader } from 'three'
@@ -252,6 +252,7 @@ export class LoaderSys {
 		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
 		const texture = await LoaderSys.ColorAtlasNew2
 		texture.flipY = false // gltf flipped boolean
+		// const material = new MeshToonMaterial({ // todo hmm
 		const material = new MeshPhongMaterial({
 			map: texture,
 			// bumpMap: texture,

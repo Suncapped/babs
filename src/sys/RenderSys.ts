@@ -177,7 +177,7 @@ export class RenderSys {
 
 	calcShowOnlyNearbyWobs() {
 		// return
-		// log('calcShowOnlyNearbyWobs')
+		// console.log('calcShowOnlyNearbyWobs')
 
 		// this.babs.scene.updateWorldMatrix(true, true)
 		// this._camera.updateMatrixWorld(true)
@@ -277,8 +277,7 @@ export class RenderSys {
 
 			feim.instancedMesh.instanceMatrix.needsUpdate = true
 
-			// feim.setOptimizedCount(nearItems.length) 
-			feim.setOptimizedCount(iNearby) 
+			feim.instancedMesh.count = iNearby 
 		}
 	}
 }

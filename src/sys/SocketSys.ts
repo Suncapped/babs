@@ -75,7 +75,7 @@ export class SocketSys {
 		})
 
 		this.ws.onmessage = (event) => {
-			log.info('Socket rec:', event.data)
+			// log.info('Socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
 				const payload = JSON.parse(event.data) as Sendable
 				this.processEnqueue(payload)
@@ -533,7 +533,7 @@ export class SocketSys {
 	}
 
 	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
-		log.info('movePlayer', idzip, a, b)
+		// log.info('movePlayer', idzip, a, b)
 		// log('attemping to move player, attempt', attempts)
 		const idPlayer = this.babs.zips.get(idzip)
 		const player = this.babs.ents.get(idPlayer)	as Player
