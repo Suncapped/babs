@@ -1167,7 +1167,7 @@ export class InputSys {
 		}
 
 		if (this.carrying) {
-			log.info('update carrying')
+			// log.info('update carrying')
 			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
 				const riImage = (await this.carrying.feim.renderedIcon()).image
 				document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
