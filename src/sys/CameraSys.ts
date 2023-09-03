@@ -1,12 +1,8 @@
-import { log } from './../Utils'
-import * as THREE from 'three'
-import { Group, MathUtils, Object3D, PerspectiveCamera, Vector3 } from 'three'
-import { Quaternion } from 'three'
+import { Group, PerspectiveCamera, Vector3 } from 'three'
 import { Babs } from '@/Babs'
 
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import { Controller } from '@/comp/Controller'
-
 
 // Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -68,22 +64,7 @@ export class CameraSys {
 		this.idealOffset.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.Rotation)
 		this.idealOffset.add(this._target.Position)
-		// this.idealOffset.add(new Vector3(40, 0, 40))
 
-		// this.gh = this.babs.worldSys.vRayGroundHeight(
-		// 	Math.round(this.idealOffset.x / 4),
-		// 	Math.round(this.idealOffset.z / 4),
-		// 	this.babs.worldSys.currentGround.zone.id,
-		// )
-		// this.idealOffset.setY(Math.max(this.idealOffset.y, this.gh.y +4)) // todo smooth this
-		// if(this.idealOffset.y < this.gh.y +4) {
-		// log('less')
-		// this.idealOffset.y += 2
-		// this.offsetHeight += 2
-		// todo do this to prevent clipping, but smooth it?
-		// }
-
-		// return idealOffset
 	}
 
 	_CalculateIdealLookat() {
@@ -101,19 +82,16 @@ export class CameraSys {
 	xrCam
 	update(dt) {
 
-		// this.camera.updateMatrix()
-		// this.camera.updateMatrixWorld(true)
-		// this.cameraGroup.updateMatrix()
-		// this.cameraGroup.updateMatrixWorld(true)
+		// Camera position needs to be taken as world coords, because otherwise it's going to be parent(cameraGroup)-relative.
+		// Note this may affect VR too!
+		// const cameraWorldPosition = new Vector3()
+		// cameraWorldPosition.setFromMatrixPosition(this.camera.matrixWorld)
+		// const cameraGroupDistanceToPlayer = this.cameraGroup.position.distanceTo(this._target.Position)
+		// const cameraDistanceToPlayer = cameraWorldPosition.distanceTo(this._target.Position)
+		// console.log('group, camera', cameraGroupDistanceToPlayer, cameraDistanceToPlayer) // The same!  Yay!
+		// this.camera.near = cameraGroupDistanceToPlayer +20
+		// this.camera.updateProjectionMatrix()
 
-		// this.camera.position.copy(this.cameraGroup.position)
-		// const cameraDistanceToPlayer = this.babs.renderSys._camera.position.distanceTo(this._target.Position)
-		// const cameraDistanceToPlayer = this.cameraGroup.position.distanceTo(this._target.Position)
-		// console.log(cameraDistanceToPlayer)
-		// console.log('near', this.babs.renderSys._camera.near)
-		// this.babs.renderSys._camera.near = 10//cameraDistanceToPlayer // Clip anything between camera and player
-		// - CameraGroup is messed up; probably part of why XR is having trouble, and more likely why nearclip isn't working.
-		// Yep pretty much!  It's clipping based on the actual/visible camera location (when camera copies its position in from group).
 
 		// const idealOffset = this._CalculateIdealOffset()
 		this._CalculateIdealOffset()
