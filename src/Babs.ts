@@ -141,6 +141,17 @@ export class Babs {
 		const waitForReady = () => {
 			if(this.socketSys.babsRunUpdate) {
 				this.renderSys.renderer.setAnimationLoop( (p) => { // todo shorten?
+					// Custom FPS counter
+					const msBetweenReadings = 500
+					this.renderSys.frames++
+					const time = performance.now()
+					if ( time >= this.renderSys.prevTime + msBetweenReadings ) {
+						const fps = Math.round( ( this.renderSys.frames * 1000 ) / ( time - this.renderSys.prevTime ) )
+						this.renderSys.frames = 0
+						this.renderSys.prevTime = time
+						this.renderSys.fpsDetected = fps
+					}
+
 					this.update(p)
 				})
 			} 

@@ -1,5 +1,5 @@
 import Stats from 'three/examples/jsm/libs/stats.module'
-import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
@@ -7,7 +7,7 @@ import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from '../stores'
 import { log, v3out } from './../Utils'
-import { MathUtils, Vector3 } from 'three'
+import { Color, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
@@ -16,12 +16,14 @@ import { InputSys } from './InputSys'
 import { Babs } from '@/Babs'
 import type { SharedWob } from '@/shared/SharedWob'
 import type { Player } from '@/ent/Player'
+import { Text as TroikaText } from 'troika-three-text'
 
 export class UiSys {
 	babs :Babs
 	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 	ctext
 	labelElements = []
+	textElements = Array<any>()
 	svJournal
 	svMenu
 	svContainers = []
@@ -155,9 +157,6 @@ export class UiSys {
 
 
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
-		const chatDiv = document.createElement('div')
-		chatDiv.classList.add('label')
-
 		// Calculate position
 		const zone = this.babs.ents.get(landtarget.idzone) as Zone
 		const yardCoord = YardCoord.Create({
@@ -175,20 +174,34 @@ export class UiSys {
 
 		log.info('landSaid', landtarget.text)
 		
-		const chatSpan = document.createElement('span')
-		chatSpan.innerText = landtarget.text
-		chatDiv.appendChild(chatSpan)
-		
-		chatDiv.style.color = '#aaaaaa'
-		const expiresInSeconds = this.babs.debugMode ? 10 : 3
-		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
-		this.labelElements.push(chatDiv)
+		const ttext = new TroikaText()
+		ttext.material = new MeshBasicMaterial
+		// ttext.material = new MeshStandardMaterial
+		ttext.material.color = new Color().setHSL(0.5, 1, 1)
 
-		const chatLabel = new CSS2DObject(chatDiv)
-		chatLabel.name = 'landSaid'
-		chatLabel.position.copy(point)
-		// log('chatLabel targetPos', point, targetPos, targetZone)
-		this.babs.group.add(chatLabel) // Adding it to zone.ground doesn't actually changed its position; thus above .add
+
+		// ttext.material = new MeshPhongMaterial
+		this.babs.group.add(ttext)
+		ttext.name = 'landSaid'
+		ttext.text = landtarget.text
+		ttext.fontSize = 1.375 // 22px // https://nekocalc.com/px-to-em-converter
+		// ttext.outlineWidth = 0.05
+		ttext.position.copy(point)
+		// ttext.outlineColor = 'black'
+		// ttext.color = 'white'
+		// ttext.strokeColor = 'white'
+		ttext.shadows = false // todo not working?
+		const expiresInSeconds = this.babs.debugMode ? 10 : 3
+		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+		ttext.maxWidth = 18.75 // 300px
+		ttext.textAlign = 'center'
+		ttext.anchorX = 'center'
+		ttext.anchorY = 'bottom'
+		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
+
+		ttext.sync()
+		this.textElements.push(ttext)
+		ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
 	}
 	serverSaid(text :string) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
@@ -355,11 +368,12 @@ export class UiSys {
 		}
 
 		if(this.babs.debugMode) {
-			const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xz: (${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.z/4)}), y: ${Math.floor(this.oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()}`
+			const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xz: (${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.z/4)}), y: ${Math.floor(this.oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
 				this.logText = newLogText
 				window.document.getElementById('log').innerText = this.logText
 			}
+			console.log()
 		}
 
 		this.labelElements.forEach(chat => {
@@ -370,6 +384,20 @@ export class UiSys {
 				this.labelElements = this.labelElements.filter(e => !e.hidden)
 				chat.remove()
 			}
+		})
+
+		this.textElements.forEach(ttext => {
+			if(Date.now() > ttext.expires) {
+				console.log('Removing text', ttext, ttext.id)
+				this.babs.group.remove(ttext)
+				ttext.dispose()
+
+				this.textElements = this.textElements.filter(t => t.id !== ttext.id)
+			}
+
+			// console.log('looking at', ttext, this.babs.camera.position, this.babs.cameraSys.camera.position, this.babs.cameraSys.cameraGroup.position)
+			// ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
+
 		})
 
 

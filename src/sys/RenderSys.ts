@@ -2,7 +2,7 @@ import { UiSys } from './UiSys'
 import { log } from './../Utils'
 import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, Matrix4, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
-import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton'
 import { Flame } from '@/comp/Flame'
@@ -12,6 +12,7 @@ import { Zone } from '@/ent/Zone'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
+
 
 export class RenderSys {
 
@@ -23,6 +24,11 @@ export class RenderSys {
 	public isVrSupported = false
 	public documentHasFocus :boolean|'forced' = true
 	public calcRecalcImmediately = false
+
+	// Custom FPS counter
+	public frames = 0
+	public prevTime = performance.now()
+	public fpsDetected = 0
 
 	constructor(babs) {
 		this.babs = babs

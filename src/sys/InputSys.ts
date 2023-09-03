@@ -21,6 +21,7 @@ import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
+import { Text as TroikaText } from 'troika-three-text'
 
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
@@ -73,7 +74,7 @@ export class InputSys {
 		fingerlasty: 0,
 		finger2downstart: 0,
 
-		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre * 4),
+		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre),
 		xy: new Vector2(0, 0),
 
 		movetarget: undefined,
@@ -1036,19 +1037,14 @@ export class InputSys {
 			}
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 
-				if (this.mouseRayTargets[i].object?.type === 'LineSegments' // Wireframe
-					|| this.mouseRayTargets[i].object?.name === 'destinationmesh' // debug dest mesh
-					|| this.mouseRayTargets[i].object?.name === 'three-helper' // debug dest mesh
-					|| this.mouseRayTargets[i].object?.parent?.name === 'three-helper' // debug dest mesh
-					|| this.mouseRayTargets[i].object?.name === 'water' // water cubes IM
-					// || this.mouseRayTargets[i].object?.name === 'farzone' // zonetodo
-					|| this.mouseRayTargets[i].object?.name === 'camerahelper' // zonetodo
-					|| this.mouseRayTargets[i].object?.name === 'flame') { // flame effect
+				const objectMaybe = this.mouseRayTargets[i].object
+				const excluded = ['LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'landSaid', 'clientSaid', 'playerSaid', 'wobSaid', 'craftSaid', 'serverSaid']
+				if (excluded.includes(objectMaybe?.name) || objectMaybe?.parent?.name === 'three-helper') {
 					continue // Skip
 				}
-				else if (this.mouseRayTargets[i].object instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
+				else if (objectMaybe instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
 					// Instanced things like wobjects, water, trees, etc unless caught above
-					const name = this.mouseRayTargets[i].object.name
+					const name = objectMaybe.name
 					const feim = Wob.InstancedWobs.get(name)
 					const index = this.mouseRayTargets[i].instanceId
 					const position = feim.coordFromIndex(index)
@@ -1056,7 +1052,7 @@ export class InputSys {
 
 					const yard = YardCoord.Create({position: position, babs: this.babs})
 
-					// log('mouse name', this.mouseRayTargets[i].object, name, instanced, index, position, yard)
+					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
 					this.pickedObject = {
 						feim: feim,
 						instancedBpid: name,
@@ -1066,23 +1062,23 @@ export class InputSys {
 					}
 
 				}
-				else if (this.mouseRayTargets[i].object instanceof Mesh) { // Must go after more specific mesh types
+				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
 
 
-					if (this.mouseRayTargets[i].object?.name === 'player_bbox') {
-						if(!this.mouseRayTargets[i].object?.clickable) {
+					if (objectMaybe?.name === 'player_bbox') {
+						if(!objectMaybe?.clickable) {
 							continue
 						}
 						// Player bounding box, not in first person view
-						const temp = this.mouseRayTargets[i].object
+						const temp = objectMaybe
 						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 						// log('player_bbox', this.pickedObject)
 						this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
 					}
-					else if (this.mouseRayTargets[i].object?.name === 'ground') { // Mesh?
+					else if (objectMaybe?.name === 'ground') { // Mesh?
 						// if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
 						
-						const ground = this.mouseRayTargets[i].object
+						const ground = objectMaybe
 						const zone = ground.zone
 						const pos = this.mouseRayTargets[i].point
 						const yardCoord = YardCoord.Create({
@@ -1109,23 +1105,26 @@ export class InputSys {
 
 						// Also, maybe we should highlight this square or something?  By editing index color
 					}
-					else if (this.mouseRayTargets[i].object?.name === 'daysky') { // Sky
+					else if (objectMaybe?.name === 'daysky') { // Sky
 						// log('ray to sky')
 					}
-					else if (this.mouseRayTargets[i].object?.name === 'nightsky') { // Sky
+					else if (objectMaybe?.name === 'nightsky') { // Sky
 						// log('ray to skybox')
 					}
-					else if (this.mouseRayTargets[i].object?.name === 'flame') { // Flame
+					else if (objectMaybe?.name === 'flame') { // Flame
 						// log('ray to flame')
 					}
+					else if (objectMaybe instanceof TroikaText) { // Troika text
+						log('troika text')
+					}
 					else { // All other meshes
-						log('Uncaught mouseRayTarget', this.mouseRayTargets[i])
-						this.pickedObject = this.mouseRayTargets[i].object
+						console.warn('Uncaught Mesh mouseRayTarget', this.mouseRayTargets[i])
+						// this.pickedObject = objectMaybe
 					}
 				}
 				else { // Everything else
 
-					log('ray to unknown:', this.mouseRayTargets[i].object)
+					console.warn('ray to unknown:', objectMaybe)
 				}
 
 				if (this.pickedObject) { // We've set a picked object in ifs above
