@@ -7,7 +7,7 @@ import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from '../stores'
 import { log, v3out } from './../Utils'
-import { Color, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, Vector3 } from 'three'
+import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, SRGBColorSpace, Vector3 } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
@@ -174,34 +174,39 @@ export class UiSys {
 
 		log.info('landSaid', landtarget.text)
 		
+		// Setup and position
 		const ttext = new TroikaText()
-		ttext.material = new MeshBasicMaterial
-		// ttext.material = new MeshStandardMaterial
-		ttext.material.color = new Color().setHSL(0.5, 1, 1)
-
-
-		// ttext.material = new MeshPhongMaterial
-		this.babs.group.add(ttext)
+		ttext.material.side = DoubleSide
 		ttext.name = 'landSaid'
 		ttext.text = landtarget.text
-		ttext.fontSize = 1.375 // 22px // https://nekocalc.com/px-to-em-converter
-		// ttext.outlineWidth = 0.05
 		ttext.position.copy(point)
-		// ttext.outlineColor = 'black'
-		// ttext.color = 'white'
-		// ttext.strokeColor = 'white'
-		ttext.shadows = false // todo not working?
-		const expiresInSeconds = this.babs.debugMode ? 10 : 3
-		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+
+		// Styling
+		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
+		ttext.fontSize = 1.375 // 22px // https://nekocalc.com/px-to-em-converter
+		ttext.outlineWidth = 0.06180339887
+		ttext.outlineColor = 'black'
+		ttext.curveRadius = -10
+		ttext.letterSpacing = 0.04
+		// ttext.strokeWidth = 0.03 // Stroke is inside
+		// ttext.strokeColor = 'red'
+
+		// Alignment
 		ttext.maxWidth = 18.75 // 300px
 		ttext.textAlign = 'center'
 		ttext.anchorX = 'center'
 		ttext.anchorY = 'bottom'
+
+		// ttext.shadows = false // todo not working?
 		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
 
+		// Add to scene
+		const expiresInSeconds = this.babs.debugMode ? 10 : 3
+		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+		this.babs.group.add(ttext)
+		ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
 		ttext.sync()
 		this.textElements.push(ttext)
-		ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
 	}
 	serverSaid(text :string) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
@@ -394,10 +399,6 @@ export class UiSys {
 
 				this.textElements = this.textElements.filter(t => t.id !== ttext.id)
 			}
-
-			// console.log('looking at', ttext, this.babs.camera.position, this.babs.cameraSys.camera.position, this.babs.cameraSys.cameraGroup.position)
-			// ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
-
 		})
 
 

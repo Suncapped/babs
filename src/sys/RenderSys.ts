@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearEncoding, LinearToneMapping, Matrix4, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearToneMapping, Matrix4, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
@@ -39,7 +39,6 @@ export class RenderSys {
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
-			// physicallyCorrectLights: true, // todo https://discoverthreejs.com/book/first-steps/physically-based-rendering/
 			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017
 
 		})
@@ -48,17 +47,17 @@ export class RenderSys {
 
 		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
 		// this.renderer.physicallyCorrectLights = false
-		this.renderer.useLegacyLights = true // todo lights https://github.com/mrdoob/three.js/releases/tag/r154
+		// this.renderer.useLegacyLights = true // https://github.com/mrdoob/three.js/releases/tag/r154
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10
 		this.renderer.toneMapping = ACESFilmicToneMapping
 		// this.renderer.toneMapping = NoToneMapping // LinearToneMapping(enables toneMappingExposure) // ACESFilmicToneMapping
 		// this.renderer.toneMapping = LinearToneMapping // (enables toneMappingExposure for sky) // ACESFilmicToneMapping
-		this.renderer.toneMappingExposure = 0.2///1//0.5
+		this.renderer.toneMappingExposure = 1//0.5///1//0.5
 		// I don't like having to do global exposure just for Sky.js, but perhaps that's considered "mid level" 5/10.  I don't know much about these kinds of things.  // Now re-setting to 1.0
 		// In that case, might as well use ACES until we know whether monitors support HDR (or make a player toggle)
+		// 		Later: From the sound of things, web output is in sRGB anyway, so I don't need to worry about HDR for now.
 		// Now I've changed it to 0.3 but multiplied lights by (1/it), such that sky is less white and more blue, but light is still good.
-
 
 		// this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setPixelRatio(window.devicePixelRatio)
@@ -81,8 +80,9 @@ export class RenderSys {
 		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
-		const near = 0.1
-		this._camera = new PerspectiveCamera(fov, undefined, near, WorldSys.MAX_VIEW_DISTANCE*2)
+		const nearClip = 12
+		this._camera = new PerspectiveCamera(fov, undefined, nearClip, WorldSys.MAX_VIEW_DISTANCE*2)
+		// Add near clip plane to camera
 
 		this._scene = new Scene()
 

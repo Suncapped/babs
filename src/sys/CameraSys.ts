@@ -13,7 +13,7 @@ import { Controller } from '@/comp/Controller'
 export class CameraSys {
 	static DefaultOffsetHeight = 15
 
-	_target
+	_target :Controller
 	offsetHeight
 	gh
 	idealOffset
@@ -100,6 +100,21 @@ export class CameraSys {
 	vrSetupDone = false
 	xrCam
 	update(dt) {
+
+		// this.camera.updateMatrix()
+		// this.camera.updateMatrixWorld(true)
+		// this.cameraGroup.updateMatrix()
+		// this.cameraGroup.updateMatrixWorld(true)
+
+		// this.camera.position.copy(this.cameraGroup.position)
+		// const cameraDistanceToPlayer = this.babs.renderSys._camera.position.distanceTo(this._target.Position)
+		// const cameraDistanceToPlayer = this.cameraGroup.position.distanceTo(this._target.Position)
+		// console.log(cameraDistanceToPlayer)
+		// console.log('near', this.babs.renderSys._camera.near)
+		// this.babs.renderSys._camera.near = 10//cameraDistanceToPlayer // Clip anything between camera and player
+		// - CameraGroup is messed up; probably part of why XR is having trouble, and more likely why nearclip isn't working.
+		// Yep pretty much!  It's clipping based on the actual/visible camera location (when camera copies its position in from group).
+
 		// const idealOffset = this._CalculateIdealOffset()
 		this._CalculateIdealOffset()
 		const idealLookat = this._CalculateIdealLookat()

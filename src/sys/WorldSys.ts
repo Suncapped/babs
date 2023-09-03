@@ -8,34 +8,17 @@ import {
 	FrontSide,
 	MeshPhongMaterial,
 	Vector3,
-	Raycaster,
-	Fog,
 	HemisphereLightHelper,
 	HemisphereLight,
 	DirectionalLight,
 	DirectionalLightHelper,
-	SphereGeometry,
-	ShaderMaterial,
 	BackSide,
-	PerspectiveCamera,
-	WebGLRenderer,
-	PCFSoftShadowMap,
-	AxesHelper,
-	LineBasicMaterial,
-	TubeGeometry,
-	BufferGeometry,
-	Vector2,
 	CameraHelper,
-	AmbientLight,
 	MathUtils,
-	BufferAttribute,
-	MeshStandardMaterial,
 	Float32BufferAttribute,
 	BoxGeometry,
 	MeshLambertMaterial,
 	InstancedMesh,
-	Object3D,
-	DynamicDrawUsage,
 	Matrix4,
 	Quaternion,
 	Euler,
@@ -43,18 +26,17 @@ import {
 	StreamDrawUsage,
 	TextureLoader,
 	FogExp2,
-	NeverDepth,
-	BasicShadowMap,
 	PCFShadowMap,
-	VSMShadowMap,
 	Material,
 	NearestFilter,
 	IcosahedronGeometry,
+	SRGBColorSpace,
 } from 'three'
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
-import { Sky } from 'three/examples/jsm/objects/Sky.js'
+// import { Sky } from 'three/examples/jsm/objects/Sky.js'
+import { Sky } from 'three/addons/objects/Sky.js'
 import { debugMode } from '../stores'
 
 import { Wob } from '@/ent/Wob'
@@ -70,6 +52,8 @@ import { Player } from '@/ent/Player'
 import { DateTime } from 'luxon'
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 
+import { GUI } from 'lil-gui'
+
 export class WorldSys {
 
 	static ZoneLength = 1000
@@ -79,7 +63,7 @@ export class WorldSys {
 	static Acre = WorldSys.Plot *5 // 200; 5 plots
 	
 	static MAX_VIEW_DISTANCE = 1_000_000 // ~200 miles
-	static DAYSKY_SCALE = 900_000
+	static DAYSKY_SCALE = 450_000
 	static NIGHTSKY_SIZE = 800_000
 
 	static ZoneSegments = 25
@@ -100,15 +84,26 @@ export class WorldSys {
 
 	sky
 	sunPosition
+	// effectController = {
+	// 	turbidity: 10,
+	// 	rayleigh: 1,//3,
+	// 	mieCoefficient: 0.005,
+	// 	mieDirectionalG: 0.5, // 0.7,
+	// 	elevation: 75,//2,
+	// 	azimuth: 180,
+	// 	// exposure: renderer.toneMappingExposure
+	// }
 	effectController = {
-		turbidity: 10,
-		rayleigh: 1,//3,
-		mieCoefficient: 0.005,
-		mieDirectionalG: 0.5, // 0.7,
+		turbidity: 0.8,
+		rayleigh: 0.2,
+		mieCoefficient: 0.1,
+		mieDirectionalG: 0.999,
 		elevation: 75,//2,
 		azimuth: 180,
 		// exposure: renderer.toneMappingExposure
 	}
+
+	updateSkyValues
 
 	daysky :Sky
 	nightsky :Mesh & {material: Material[]}
@@ -227,46 +222,31 @@ export class WorldSys {
 		
 		this.sunPosition = new Vector3()
 
-		this.effectController.exposure = renderer.toneMappingExposure
-		const updateSkyValues = () => {
-
-
+		// this.effectController.exposure = renderer.toneMappingExposure
+		this.updateSkyValues = () => {
 			const uniforms = this.daysky.material.uniforms
 			uniforms[ 'turbidity' ].value = this.effectController.turbidity
-			uniforms[ 'rayleigh' ].value = this.effectController.rayleigh
 			uniforms[ 'mieCoefficient' ].value = this.effectController.mieCoefficient
 			uniforms[ 'mieDirectionalG' ].value = this.effectController.mieDirectionalG
-
-			const phi = MathUtils.degToRad( 90 - this.effectController.elevation )
-			const theta = MathUtils.degToRad( this.effectController.azimuth )
-			this.sunPosition.setFromSphericalCoords( 1, phi, theta )
-
+			uniforms[ 'rayleigh' ].value = this.effectController.rayleigh
+			// const phi = MathUtils.degToRad( 90 - this.effectController.elevation )
+			// const theta = MathUtils.degToRad( this.effectController.azimuth )
+			// this.sunPosition.setFromSphericalCoords( 1, phi, theta )
 			uniforms['sunPosition'].value.copy( this.sunPosition )
-
-			renderer.toneMappingExposure = this.effectController.exposure
-			renderer.render( this.babs.scene, camera )
-
+			// renderer.toneMappingExposure = this.effectController.exposure
+			// renderer.render( this.babs.scene, camera )
+			this.daysky.material.uniforms = uniforms
 		}
+		this.updateSkyValues()
 
-
-		// import { GUI } from 'dat.gui'
 		// const gui = new GUI()
-		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( updateSkyValues )
-		// gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( updateSkyValues )
-
-
-		updateSkyValues()
-
-
-		// New lighting
-		// Might want ambient light in addition to hemispheric?  Maybe for indoors?
-		// let light = new AmbientLight(0xFFFFFF, 1)
-		// this.babs.group.add(light)
+		// gui.add( this.effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( this.updateSkyValues )
+		// gui.add( this.effectController, 'mieCoefficient', 0.0, 0.1, 0.001 ).onChange( this.updateSkyValues )
+		// gui.add( this.effectController, 'mieDirectionalG', 0.0, 1, 0.001 ).onChange( this.updateSkyValues )
+		// gui.add( this.effectController, 'rayleigh', 0.0, 4, 0.001 ).listen().disable().onChange( this.updateSkyValues )
+		// // gui.add( this.effectController, 'elevation', 0, 90, 0.1 ).onChange( this.updateSkyValues )
+		// // gui.add( this.effectController, 'azimuth', - 180, 180, 0.1 ).onChange( this.updateSkyValues )
+		// // gui.add( this.effectController, 'exposure', 0, 1, 0.0001 ).onChange( this.updateSkyValues )
 
 		this.hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0)
 		this.hemiLight.name = 'hemilight'
@@ -279,7 +259,7 @@ export class WorldSys {
 		this.babs.group.add(this.hemiLight)
 
 		this.babs.scene.fog = new FogExp2(
-			new Color(), 
+			new Color(), // Gets set in update
 			// 1, 
 			// WorldSys.MAX_VIEW_DISTANCE
 			WorldSys.FogDefaultDensity // Default is 0.00025 // Has to be low enough to see stars/skybox
@@ -311,13 +291,11 @@ export class WorldSys {
 			
 			const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
-			// const tl = new TextureLoader()
+			// const ktx2Loader = new TextureLoader()
 			let ktx2Loader = new KTX2Loader()
-			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
-			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/basis/')
 			ktx2Loader.setTranscoderPath('/basis/')
-			// ktx2Loader.setTranscoderPath('https://raw.githubusercontent.com/BinomialLLC/basis_universal/master/webgl/transcoder/build/')
 			ktx2Loader.detectSupport(this.babs.renderSys.renderer)
+			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
 			// dracoLoader.setDecoderConfig({ type: 'js' })
 			// this.dracoLoader.preload()
 			// this.loader.setDRACOLoader(this.dracoLoader)
@@ -340,7 +318,12 @@ export class WorldSys {
 
 				*/
 
+				// return ktx2Loader.loadAsync(`${this.babs.urlFiles}/texture/sky/direction-ref/stars-${side}.png`)
 				return ktx2Loader.loadAsync(`${this.babs.urlFiles}/texture/sky/etc1s-128/stars-${side}.ktx2`)
+					.then(texture => {
+						texture.colorSpace = SRGBColorSpace
+						return texture
+					})
 
 			})
 
@@ -361,7 +344,7 @@ export class WorldSys {
 					texture.magFilter = NearestFilter // These make them sparkle
 					texture.minFilter = NearestFilter //   !
 					// texture.anisotropy = 16
-					materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: true, })
+					materialArray[index] = new MeshBasicMaterial({ map: texture, side: BackSide, transparent: false, })
 					if(index === images.length -1 && !this.nightsky) { // Done loading the final one
 						buildSkybox()
 					}
@@ -387,7 +370,7 @@ export class WorldSys {
 
 			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 1000)
 			this.dirLightHelper.name = 'three-helper'
-			this.babs.group.add(this.dirLightHelper)
+			// this.babs.group.add(this.dirLightHelper)
 			
 			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
 			
@@ -488,9 +471,9 @@ export class WorldSys {
 			this.renderer.shadowMap.needsUpdate = true
 
 			// this.secondsSinceHour = this.secondsSinceHour.plus({milliseconds: dt *1000 *this.GAME_SPEED_MULTIPLIER})
-			const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600
+			const proximaRealSecondsAsGameHours = (this.proximaSecondsSinceHour *24) /3600// +801
 			const localSecondsPassedSinceProxima = DateTime.utc().diff(this.localTimeWhenGotProximaTime, 'seconds').seconds
-			const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600 //        *3600 /20
+			const localGameHoursPassedSinceProxima = (localSecondsPassedSinceProxima *24) /3600// *3600/100
 			// console.log('localGameHoursPassedSinceProxima', proximaRealSecondsAsGameHours, localGameHoursPassedSinceProxima)
 			const secondsAsDatetime = DateTime.utc().set({
 				year: 2022, month: 8, day: 6, // Sat
@@ -512,6 +495,9 @@ export class WorldSys {
 			const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
 			// log('time:', noonness)
 
+			this.effectController.rayleigh = Math.max(0.2, MathUtils.lerp(3, 0.2 -3.5, noonness))
+			this.daysky.material.uniforms['rayleigh'].value = this.effectController.rayleigh
+
 			if(noonness < 0 +this.duskMargin) { // nighttime
 				if(this.nightsky?.material[0].opacity !== 1.0) { // Optimization; only run once 
 					// Doesn't happen on nighttime launch I think, since material opacity starts out as 1.0
@@ -521,6 +507,15 @@ export class WorldSys {
 			else if(noonness >= 0 +this.duskMargin) { // daytime
 				const opacity = MathUtils.lerp(1, 0, (noonness +0.1) *10)
 				this.nightsky?.material.forEach(m => m.opacity = opacity)
+				if(this.nightsky) {
+					if(opacity < 0) {
+						this.nightsky.visible = false
+					}
+					else {
+						this.nightsky.visible = true
+					}
+				}
+				// console.log('opacity', opacity)
 				this.dirLight ? this.dirLight.castShadow = true : 0
 			}
 
@@ -530,7 +525,7 @@ export class WorldSys {
 
 			const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
 			// log(noonness, 90 -MathUtils.radToDeg(phi))
-			this.babs.scene.fog.color.setHSL(
+			this.babs.scene.fog?.color.setHSL(
 				34/360, // Which color
 				0.1, // How much color
 				0.02 + (elevationRatioCapped *1.25) // Tweak this 1.25 and the 50 above, to adjust fog appropriateness
@@ -556,23 +551,21 @@ export class WorldSys {
 					// ^ todo have shadows fade out rather than just disappear?
 					// 	Or just have less ambient lighting of objects at night?
 					this.dirLight.castShadow = false
-					// this.isDaytime = false
 					this.dirLight.intensity = 0
 
-					;(this.babs.scene.fog as FogExp2).density = 0
+					if(this.babs.scene.fog) (this.babs.scene.fog as FogExp2).density = 0
 				}
 				else {
 					this.isDaytimeWithShadows = true
 					this.dirLight.castShadow = true
-					// this.isDaytime = true
 					// Intensity based on noonness
 					this.dirLight.intensity = MathUtils.lerp(
 						0.01, 
 						1 *(1/this.renderer.toneMappingExposure), 
-						Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boots light around dusk!
-					)
+						Math.max(this.duskMargin, (noonness) +0.5) // +0.5 boosts light around dusk!
+					) * MathUtils.lerp(0.5,6, noonness) // Why ~4?  Why not?
 
-					;(this.babs.scene.fog as FogExp2).density = WorldSys.FogDefaultDensity
+					if(this.babs.scene.fog) (this.babs.scene.fog as FogExp2).density = WorldSys.FogDefaultDensity
 				}
 			}
 			this.hemiLight.intensity = MathUtils.lerp(
@@ -977,24 +970,24 @@ export class WorldSys {
 			'camerahelper', 
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
-			'cameraGroup',
+			'cameraGroup', 'camera',
 
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
 		let shiftingLog = []
 		this.babs.group.children.forEach(child => {
-			if(!excludeFromShift.includes(child.name)) {
-				child.position.setX(child.position.x +shiftVector.x)
-				child.position.setZ(child.position.z +shiftVector.z)
-				if(child.name != 'ground' && child.name != 'groundgrid' ) {
-					shiftingLog.push(child.name || child)
-				}
-				if(child.name == 'player') {
-					// const player = this.babs.ents.get(child.idplayer) as Player
-					// const shiftYards = shiftVector.clone().divideScalar(4).floor()
-					// player.controller.gDestination.add(shiftYards)
-				}
+			if(excludeFromShift.includes(child.name)) return
+
+			child.position.setX(child.position.x +shiftVector.x)
+			child.position.setZ(child.position.z +shiftVector.z)
+			if(child.name != 'ground' && child.name != 'groundgrid' ) {
+				shiftingLog.push(child.name || child)
+			}
+			if(child.name == 'player') {
+				// const player = this.babs.ents.get(child.idplayer) as Player
+				// const shiftYards = shiftVector.clone().divideScalar(4).floor()
+				// player.controller.gDestination.add(shiftYards)
 			}
 		})
 		this.shiftiness.add(shiftVector)

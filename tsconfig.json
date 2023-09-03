@@ -24,7 +24,12 @@
 		"@/*": ["src/*"],
 	},
 	"verbatimModuleSyntax": true,
-	"allowSyntheticDefaultImports": true
+	"allowSyntheticDefaultImports": true,
+
+	// These are both required in order to keep instantiating arrays as `const example = []`?
+	// https://stackoverflow.com/questions/72659865/in-typescript-why-is-an-empty-array-inferred-as-any-when-noimplicitany-is-t
+	"strictNullChecks": false,
+	"noImplicitAny": false
 	
   },
   "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],

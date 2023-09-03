@@ -86,7 +86,10 @@ export class LoaderSys {
 
 
 		// Prefetch Firetex
-		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`)
+		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`).then((texture) => {
+			texture.colorSpace = SRGBColorSpace
+			return texture
+		})
 
 		// Prefetch Color Textures
 		LoaderSys.MegaColorAtlas = this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
