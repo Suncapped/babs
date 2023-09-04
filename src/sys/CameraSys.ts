@@ -7,6 +7,7 @@ import { Controller } from '@/comp/Controller'
 // Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 export class CameraSys {
+	static SCALE = 1/3.281 // Feet to meters
 	static DefaultOffsetHeight = 15
 
 	_target :Controller
@@ -30,21 +31,20 @@ export class CameraSys {
 		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
 		
-		this.cameraGroup.position.set(12, 8, 12)
+		// this.babs.scene.add(this.cameraGroup)
 
 		// log('cameraGroup', this.cameraGroup)
 	}
 
 	_CalculateIdealOffset() {
-		const minDistance = -15
-		const maxDistance = -30
-		const limitDistance = 100
-
+		// const minDistance = -15
+		// const maxDistance = -30
+		// const limitDistance = 100
 		// const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
 
-		let offsetDist = -40//this.offsetHeight
+		let offsetDist = -40
 		if (this.offsetHeight < 30) {
-			offsetDist = -40 + (30 - this.offsetHeight)
+			offsetDist = offsetDist + (30 - this.offsetHeight)
 		}
 		// let mat = this._target.playerRig.children[0]?.children[1]?.material
 		if (this.offsetHeight < 4) {
@@ -58,13 +58,17 @@ export class CameraSys {
 		}
 		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera
-
-		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)// -(this.offsetHeight*2))//-(this.offsetHeight*2))//-75) 
+		
+		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)
 
 		this.idealOffset.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.Rotation)
 		this.idealOffset.add(this._target.Position)
+		// const worldPosition = new Vector3()
+		// worldPosition.setFromMatrixPosition(this._target.playerRig.matrixWorld)
+		// this.idealOffset.add(worldPosition)
 
+		// return idealOffset
 	}
 
 	_CalculateIdealLookat() {
@@ -75,23 +79,15 @@ export class CameraSys {
 		idealLookat.applyQuaternion(this._target.Rotation)
 
 		idealLookat.add(this._target.Position)
+		// const worldPosition = new Vector3()
+		// worldPosition.setFromMatrixPosition(this._target.playerRig.matrixWorld)
+		// idealLookat.add(worldPosition)
 		return idealLookat
 	}
 
 	vrSetupDone = false
 	xrCam
 	update(dt) {
-
-		// Camera position needs to be taken as world coords, because otherwise it's going to be parent(cameraGroup)-relative.
-		// Note this may affect VR too!
-		// const cameraWorldPosition = new Vector3()
-		// cameraWorldPosition.setFromMatrixPosition(this.camera.matrixWorld)
-		// const cameraGroupDistanceToPlayer = this.cameraGroup.position.distanceTo(this._target.Position)
-		// const cameraDistanceToPlayer = cameraWorldPosition.distanceTo(this._target.Position)
-		// console.log('group, camera', cameraGroupDistanceToPlayer, cameraDistanceToPlayer) // The same!  Yay!
-		// this.camera.near = cameraGroupDistanceToPlayer +20
-		// this.camera.updateProjectionMatrix()
-
 
 		// const idealOffset = this._CalculateIdealOffset()
 		this._CalculateIdealOffset()
@@ -110,14 +106,9 @@ export class CameraSys {
 		// this.camera.lookAt(idealLookat)
 		// this.camera.position.copy(this.idealOffset) // But, cannot move camera in VR
 		this.cameraGroup.position.copy(this.idealOffset)
-
-
-		this.camera.lookAt(idealLookat)
-		// this.cameraGroup.lookAt(idealLookat) // Not needed; let VR handle its own rotation
-		
-		// this.camera.matrixWorldNeedsUpdate = true
-		this.camera.updateMatrixWorld(true)
-		// this.cameraGroup.updateMatrixWorld(true)
+		this.cameraGroup.lookAt(idealLookat) // Not needed?; let VR handle its own rotation?
+		// this.cameraGroup.matrixWorldNeedsUpdate = true
+		this.cameraGroup.updateMatrixWorld()
 
 		if(this.babs.renderSys.isVrSupported) {
 
@@ -146,9 +137,9 @@ export class CameraSys {
 					// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
 	
 					// Temporary hack to offset everything to where the camera seems to start.
-					this.babs.group.children.forEach(child => {
-						child.position.add(new Vector3(-100, -8360, -500))
-					})
+					// this.babs.group.children.forEach(child => {
+					// 	child.position.add(new Vector3(-100, -8360, -500))
+					// })
 	
 	
 					// Controllers

@@ -87,7 +87,7 @@ export class LoaderSys {
 
 		// Prefetch Firetex
 		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`).then((texture) => {
-			texture.colorSpace = SRGBColorSpace
+			// texture.colorSpace = SRGBColorSpace // Nope!  Made it quite transparent
 			return texture
 		})
 

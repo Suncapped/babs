@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, ColorManagement, CullFaceBack, LinearToneMapping, Matrix4, NoToneMapping, PerspectiveCamera, Scene, SRGBColorSpace, sRGBEncoding, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
 import { WorldSys } from './WorldSys'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
@@ -9,6 +9,7 @@ import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
 import { Wob } from '@/ent/Wob'
 import { Zone } from '@/ent/Zone'
+import { CameraSys } from './CameraSys'
 
 // Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 // Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
@@ -40,6 +41,7 @@ export class RenderSys {
 			// alpha: true,
 			// premultipliedAlpha: false,
 			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017
+			// On VR, that helps with far tree base z fighting, but doesn't help with wob antialiasing
 
 		})
 		this.renderer.xr.enabled = true
@@ -60,7 +62,7 @@ export class RenderSys {
 		// Now I've changed it to 0.3 but multiplied lights by (1/it), such that sky is less white and more blue, but light is still good.
 
 		// this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
-		this.renderer.setPixelRatio(window.devicePixelRatio)
+		this.renderer.setPixelRatio(window.devicePixelRatio) // *4 did not help with VR AA
 		this.renderer.setSize(0,0)
 
 		// document.body.appendChild(this.renderer.domElement) // Now done in html
@@ -80,9 +82,16 @@ export class RenderSys {
 		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
-		const nearClip = 12
-		this._camera = new PerspectiveCamera(fov, undefined, nearClip, WorldSys.MAX_VIEW_DISTANCE*2)
+		const nearClip = 12 *(1/CameraSys.SCALE) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
+		this._camera = new PerspectiveCamera(fov, undefined, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
+		this._camera.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI)
+		// ^ eek "Camera’s look along the negative z-axis by default. You have to rotate the camera around the y-axis around 180 degrees so it looks along the positive z-axis like ordinary 3D objects."
+		// https://discourse.threejs.org/t/three-js-attach-camera-to-a-3d-object-and-rotate-move-with-the-object-and-show-in-inset-window/12343
+
 		// Add near clip plane to camera
+
+		this._camera.matrixAutoUpdate = true
+		this._camera.matrixWorldAutoUpdate = true
 
 		this._scene = new Scene()
 
@@ -176,6 +185,13 @@ export class RenderSys {
 			this.calcRecalcImmediately = false
 			this.calcShowOnlyNearbyWobs()
 		}
+
+		const scaleMatrix = new Matrix4().makeScale(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
+		this._camera.matrixWorldInverse.multiply(scaleMatrix)
+		this._camera.updateMatrixWorld()
+		this._camera.updateMatrix()
+
+		this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
 
 		this.renderer.render(this._scene, this._camera)
 		this.labelRenderer.render(this._scene, this._camera)

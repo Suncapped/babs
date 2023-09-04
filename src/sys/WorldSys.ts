@@ -970,8 +970,7 @@ export class WorldSys {
 			'camerahelper', 
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
-			'cameraGroup', 'camera',
-
+			'cameraGroup', 'camera', // Doesn't really matter since they're set per frame anyway, but might as well.
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
