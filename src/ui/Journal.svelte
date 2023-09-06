@@ -97,7 +97,7 @@
 <svelte:window on:resize={updateDimensions} />
 
 <div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
-	<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Journal</div>
+	<div on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Journal</div>
 	<div bind:this={content} class="content card-body"></div>
 </div>
 
