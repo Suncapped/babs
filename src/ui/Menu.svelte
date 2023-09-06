@@ -211,7 +211,7 @@
 
 	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="display:{$topmenuAvailable ? 'block' : 'none'}">
 
-		<div on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
+		<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
 		<div class="content card-body">
 			<div id="picker"></div>
 			<ul style="text-align:left;">			
@@ -227,7 +227,7 @@
 			<li>&bull; FE works best on Chrome on Mac/PC</li>
 			<li>&nbsp;</li>
 			<li style="text-align:right;">
-					Speech color: <span id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
+					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
 			</li>
 			<li style="text-align:right;">
 				<fieldset class="form-group">

@@ -129,13 +129,6 @@ export class CameraSys {
 					// let pos = views[0].transform.position;
 					// // const c = renderer.xr.getCamera().cameras[0].position;
 					
-	
-				
-					// renderer.xr.getCamera().cameras[0].position.x = pos.x +this.camera.position.x +10000
-					// renderer.xr.getCamera().cameras[0].position.y = pos.y +this.camera.position.y +10000
-					// renderer.xr.getCamera().cameras[0].position.z = pos.z +this.camera.position.z +10000
-					// renderer.render(this.babs.scene, renderer.xr.getCamera().cameras[0]);
-	
 					// Temporary hack to offset everything to where the camera seems to start.
 					// this.babs.group.children.forEach(child => {
 					// 	child.position.add(new Vector3(-100, -8360, -500))

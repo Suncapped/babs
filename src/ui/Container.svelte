@@ -86,7 +86,7 @@
 	let containerName = 'Bag'
 	let header
 	export function addWob(wob, renderedIcon) {
-		log.info('Container addWob', wob, renderedIcon, this)
+		log.info('Container addWob', wob, renderedIcon)
 
 		const size = UiSys.ICON_SIZE
 		const p = document.createElement('img')
@@ -125,6 +125,7 @@
 	class="Container card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}"
 	>
 	<div 
+		role="presentation"
 		bind:this={header} 
 		on:contextmenu={(ev) => ev.preventDefault()} 
 		class="handle card-header" 

@@ -80,6 +80,7 @@
 			// What we want is; send 'visitor'.  Proxima will reply with stuff that may include a refresh.
 			// If you're sending 'visitor', Proxima will certainly reply with 'visitor', and we can reload.
 			// And that is the only time proxima sends 'visitor'.
+			//	Except: If the session we send is invalid on the server.  Then, it'll send 'visitor'.
 	
 			// This needs to happen before Babs() runs (in body tag), because that starts its own websocket.
 
@@ -100,6 +101,7 @@
 			if(existingSession && existingSession != 'visitor'){
 				// console.log('HTML setting window.FeExistingSession to ', existingSession)
 				window.FeExistingSession = existingSession // SocketSys will look for this
+				// ^ Note, a situation can happen where this exists but doesn't match one on the server, eg when switching from playerdev (prod) to dev.
 				window.FeWs = null
 			}
 			else {

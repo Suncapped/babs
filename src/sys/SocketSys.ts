@@ -47,6 +47,7 @@ export class SocketSys {
 						this.finishSocketSetup(window.FeExistingSession)
 					}
 					else {
+						// This can come from index.html as: There's an existing session already, so it didn't create a WS.
 						this.ws = new WebSocket(babs.urlSocket)
 						// console.log('inner socket launched with', babs.urlSocket)
 						this.ws.onopen = (event) => {
@@ -60,6 +61,8 @@ export class SocketSys {
 	}
 
 	finishSocketSetup(existingSession :string) {
+		// Note: Needs to be able to handle a situation where existingSession exists but isn't valid (eg doesn't exist on the server)
+
 		toprightText.set('Connecting...')
 		this.ws.binaryType = 'arraybuffer'
 
@@ -75,7 +78,7 @@ export class SocketSys {
 		})
 
 		this.ws.onmessage = (event) => {
-			// log.info('Socket rec:', event.data)
+			log('finishSocketSetup socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
 				const payload = JSON.parse(event.data) as Sendable
 				this.processEnqueue(payload)
@@ -196,16 +199,19 @@ export class SocketSys {
 			}
 		}
 		else if('visitor' in payload) {
-			console.warn('Somehow skipped initial html (slow) visitor', payload)
-			// this.session = payload.visitor
-			// log('setting cookie, visitor', this.babs.baseDomain, this.babs.isProd)
-			// Cookies.set('session', this.session, { 
-			// 	domain: this.babs.baseDomain,
-			// 	secure: this.babs.isProd,
-			// 	sameSite: 'strict',
-			// }) // Non-set expires means it's a session cookie only, not saved across sessions
+			// console.warn('Somehow skipped initial html (slow) visitor', payload)
+			// The (only) valid way to get here is when the client cookie session id was sent to the server,
+			//		But was invalid (eg didn't exist/match any on the server). 
+			//		And that's why the server sent 'visitor' back; it considers the client a new visitor.
+
+			Cookies.set('session', payload.visitor, { 
+				domain: window.FeBaseDomain,
+				secure: window.FeIsProd,
+				sameSite: 'strict',
+			})
+
 			toprightText.set('Visiting...')
-			// window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
+			window.location.reload() // Simpler than continuous flow for now
 		}
 		else if('session' in payload) {
 			log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)

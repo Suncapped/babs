@@ -202,8 +202,7 @@ export class LoaderSys {
 			let url = `${this.urlFiles}${path}`
 
 			const success = (gltf) => {
-				log.info('Loaded GLTF:', gltf)
-				// log('Loaded GLTF:', gltf.scene.children[0])
+				// log.info('Loaded GLTF:', gltf)
 	
 				gltf.scene.traverse(child => {
 					if (child instanceof Mesh) {
@@ -299,12 +298,11 @@ export class LoaderSys {
 		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
 		groupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
-
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
-		cube.scale.multiplyScalar(1 /groupScene.scale.x)
+		cube.scale.multiplyScalar(1 /groupScene.scale.x).multiplyScalar(1.5)
 		cube.position.setY(3*(1 /groupScene.scale.x))
 		cube.visible = false
 		cube.clickable = true

@@ -1,5 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3 } from 'three'
+import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper } from 'three'
 import { Wob } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
@@ -996,50 +996,30 @@ export class InputSys {
 		if (this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
 		) {
-			this.mouse.ray.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
+			const raycaster = this.mouse.ray as Raycaster
+			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 
-			// const length = 100; // Length for visualization
-			// const startPoint = this.mouse.ray.ray.origin;
-			// const endPoint = startPoint.clone().add(this.mouse.ray.ray.direction.clone().multiplyScalar(length));
-			// const geometry = new BufferGeometry().setFromPoints([startPoint, endPoint]);
-			// const material = new LineBasicMaterial({ color: 0xff0000 }); // Red color for the line
-			// const line = new Line(geometry, material);
-			// line.name = 'wtfline'
-			// this.babs.scene.add(line);
-
+			// Good arrow:
+			// this.babs.scene.add(new ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 100, Math.random() * 0xffffff ))
 
 			this.mouseRayTargets.length = 0
-			// this.mouse.ray.intersectObjects(scene.children, true, this.mouseRayTargets) 
-			// intersectObjects is 10% of performance.  Maybe don't do children? Works, below improves performance
+			
+			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'landSaid', 'clientSaid', 'playerSaid', 'wobSaid', 'craftSaid', 'serverSaid']
+			const filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
+			// Well, filtering out 'tree twotris' does help a lot with framerate.
 
-			const filteredChildren = this.babs.group.children.filter(c=>c.name!=Wob.FarwobName && c.name!='groundgrid')
-			this.mouse.ray.intersectObjects(filteredChildren, false, this.mouseRayTargets) // Gets everything but player?
-			// Hmm I guess it's not actually too bad here, because instancedmeshes are just 1 per instancedmesh
-			// Unless getting instanceId is expensive...I don't know.
-			// Well, filtering out 'tree twotris' does help a lot with framerate.  So I do think it matters...the ray must subsearch the instancedmesh.
+			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
+			// So for anything contained by a Group (Object3D), we need to manually raise it to the top level?
+			let groups = this.babs.group.children.filter(c=>c.type=='Group')
+			groups.forEach(g=>filteredChildren.push(...g.children))
+			
+			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
 
-			const mouseRayPlayers = []
-			const players = this.babs.group.children.filter(c=>c.name=='self'||c.name=='player')
-			const playerBboxes = players.map(p=>p.children.find(c=>c.name=='player_bbox'))
-			if(playerBboxes.length) {
-				this.mouse.ray.intersectObjects(playerBboxes, false, mouseRayPlayers)
-				this.mouseRayTargets = this.mouseRayTargets.concat(mouseRayPlayers)
-			}
-
-			// Ensure ground is last.  It was getting in the way of objects on the ground
-			// Todo is this still true, and does this type of swap even work?
-			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) {
-				if (this.mouseRayTargets[i].object?.name === 'ground') {
-					const temp = this.mouseRayTargets[this.mouseRayTargets.length - 1]
-					this.mouseRayTargets[this.mouseRayTargets.length - 1] = this.mouseRayTargets[i]
-					this.mouseRayTargets[i] = temp
-				}
-			}
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 
 				const objectMaybe = this.mouseRayTargets[i].object
-				const excluded = ['LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'landSaid', 'clientSaid', 'playerSaid', 'wobSaid', 'craftSaid', 'serverSaid']
-				if (excluded.includes(objectMaybe?.name) || objectMaybe?.parent?.name === 'three-helper') {
+				if (objectMaybe?.parent?.name === 'three-helper') { // Special case since it's parent name instead of name
 					continue // Skip
 				}
 				else if (objectMaybe instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
@@ -1062,20 +1042,16 @@ export class InputSys {
 					}
 
 				}
-				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
-
-
-					if (objectMaybe?.name === 'player_bbox') {
-						if(!objectMaybe?.clickable) {
-							continue
-						}
-						// Player bounding box, not in first person view
-						const temp = objectMaybe
-						// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
-						// log('player_bbox', this.pickedObject)
-						this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
+				else if(objectMaybe?.name === 'player_bbox') {
+					if(!objectMaybe?.clickable) {
+						continue
 					}
-					else if (objectMaybe?.name === 'ground') { // Mesh?
+					const temp = objectMaybe
+					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
+					this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
+				}
+				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
+					if (objectMaybe?.name === 'ground') { // Mesh?
 						// if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
 						
 						const ground = objectMaybe
