@@ -658,7 +658,7 @@ export class InputSys {
 							this.askTargetSourceWob = null
 
 						}
-						else {
+						else { // First click (and not in target selection mode)
 							if (this.pickedObject?.type === 'SkinnedMesh') {
 								// Single click player, get their name or nick
 								const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)

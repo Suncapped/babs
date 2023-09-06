@@ -49,6 +49,50 @@ export class UiSys {
 		}
 	}
 
+	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number) {
+		log.info(name, content)
+			
+		// Setup and position
+		const ttext = new TroikaText()
+		ttext.material.side = DoubleSide
+		ttext.name = name
+		ttext.text = content
+		ttext.position.copy(worldPos)
+
+		// Styling
+		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
+		ttext.fontSize = sizeEm // 22px // https://nekocalc.com/px-to-em-converter
+		ttext.outlineWidth = 0.06180339887
+		ttext.outlineColor = 'black'
+		ttext.curveRadius = -20
+		ttext.letterSpacing = 0.04
+		// ttext.strokeWidth = 0.03 // Stroke is inside
+		// ttext.strokeColor = 'red'
+
+		// Alignment
+		ttext.maxWidth = 18.75 // 300px
+		ttext.textAlign = 'center'
+		ttext.anchorX = 'center'
+		ttext.anchorY = 'bottom'
+
+		// ttext.shadows = false // todo not working?
+		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
+
+		// Add to scene
+		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
+		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+		this.babs.group.add(ttext)
+
+		// Make text face the screen flatly, rather than facing the character.
+		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
+		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
+		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
+
+		ttext.sync()
+		this.textElements.push(ttext)
+	}
+
 	playerSaid(idPlayer, text, options?) {
 		options = {
 			color: '#eeeeee',
@@ -172,48 +216,14 @@ export class UiSys {
 			landtarget.text += `\n${v3out(landtarget.point)}`
 		}
 
-		log.info('landSaid', landtarget.text)
-		
-		// Setup and position
-		const ttext = new TroikaText()
-		ttext.material.side = DoubleSide
-		ttext.name = 'landSaid'
-		ttext.text = landtarget.text
-		ttext.position.copy(point)
-
-		// Styling
-		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
-		ttext.fontSize = 1.375 // 22px // https://nekocalc.com/px-to-em-converter
-		ttext.outlineWidth = 0.06180339887
-		ttext.outlineColor = 'black'
-		ttext.curveRadius = -10
-		ttext.letterSpacing = 0.04
-		// ttext.strokeWidth = 0.03 // Stroke is inside
-		// ttext.strokeColor = 'red'
-
-		// Alignment
-		ttext.maxWidth = 18.75 // 300px
-		ttext.textAlign = 'center'
-		ttext.anchorX = 'center'
-		ttext.anchorY = 'bottom'
-
-		// ttext.shadows = false // todo not working?
-		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
-
-		// Add to scene
-		const expiresInSeconds = this.babs.debugMode ? 10 : 3
-		ttext.expires = Date.now() +(1000 *expiresInSeconds)
-		this.babs.group.add(ttext)
-
-		// Make text face the screen flatly, rather than facing the character.
-		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
-		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
-		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
-		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite));
-
-		ttext.sync()
-		this.textElements.push(ttext)
+		this.makeTextAt('landSaid', landtarget.text, point, 1.375) // 22px
 	}
+	wobSaid(text, coord :YardCoord) {
+		let point = coord.zone.rayHeightAt(coord)
+		point.setY(point.y +4) // Lower down
+		this.makeTextAt('wobSaid', text, point, 1.375) // 22px
+	}
+
 	serverSaid(text :string) {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
@@ -221,84 +231,53 @@ export class UiSys {
 		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
 	}
 
-	wobSaid(text, coord :YardCoord) {
-		log.info('wobSaid', text)
-		const chatDiv = document.createElement('div')
-		chatDiv.classList.add('label')
-
-		const chatSpan = document.createElement('span')
-		chatSpan.innerText = text
-		// chatSpan.style.backgroundColor = 'black'
-		// chatSpan.style.padding = '3px'
-		// chatSpan.style.paddingTop = '1px'
-		// chatSpan.style.border = `1px solid ${svelteGet(menuSelfData).color || 'white'}`
-		// chatSpan.style.border = `1px solid #aaaaaa`
-		chatDiv.appendChild(chatSpan)
-		
-		// chatDiv.style.color = '#aaaaaa'
-		// this.svJournal.appendText(`You see: ${text}`, chatDiv.style.color, 'right')
-
-		const expiresInSeconds = this.babs.debugMode ? 10 : 3
-		chatDiv.setAttribute('data-expires', Date.now() + (1000 *expiresInSeconds))
-		this.labelElements.push(chatDiv)
-		
-		const chatLabel = new CSS2DObject(chatDiv)
-		chatLabel.name = 'wobSaid'
-		let point = coord.zone.rayHeightAt(coord)
-		log.info('wobSaid point', point, coord)
-
-		point.setY(point.y -1.75) // Lower down
-		chatLabel.position.copy(point)
-
-		this.babs.group.add(chatLabel) // todo not ground // OMG this is why there's an offset
-	}
-
 	craftSaid(options :Array<string>, wob :SharedWob, wobZone :Zone) {	
-		const chatDiv = document.createElement('div')
-		chatDiv.id = 'Crafting'
-		const chatLabel = new CSS2DObject(chatDiv)
-		chatLabel.name = 'craftSaid'
+		console.warn('Crafting UI currently in transition')
 
-		const yardCoord = YardCoord.Create({
-			...wob,
-			zone: wobZone,
-		})
-		let point = wobZone.rayHeightAt(yardCoord)
-		point.setY(point.y +2) // Raise up
-		chatLabel.position.copy(point)
+		// const chatDiv = document.createElement('div')
+		// chatDiv.id = 'Crafting'
+		// const chatLabel = new CSS2DObject(chatDiv)
+		// chatLabel.name = 'craftSaid'
 
-		options.forEach(option => {
-			const chatButton = document.createElement('button')
-			chatButton.innerText = option
-			chatButton.id = option
-			chatButton.className = 'craftbtn'
-			chatButton.style.cssText = 'pointer-events: auto;'
-			chatButton.onsubmit = (ev) => ev.preventDefault()
-			chatButton.onclick = (ev) => updateWOB(option)
+		// const yardCoord = YardCoord.Create({
+		// 	...wob,
+		// 	zone: wobZone,
+		// })
+		// let point = wobZone.rayHeightAt(yardCoord)
+		// point.setY(point.y +2) // Raise up
+		// chatLabel.position.copy(point)
 
-			chatDiv.appendChild(chatButton)
+		// options.forEach(option => {
+		// 	const chatButton = document.createElement('button')
+		// 	chatButton.innerText = option
+		// 	chatButton.id = option
+		// 	chatButton.className = 'craftbtn'
+		// 	chatButton.style.cssText = 'pointer-events: auto;'
+		// 	chatButton.onsubmit = (ev) => ev.preventDefault()
+		// 	chatButton.onclick = (ev) => updateWOB(option)
 
-			this.babs.group.add(chatLabel)
-		})	
+		// 	chatDiv.appendChild(chatButton)
+
+		// 	this.babs.group.add(chatLabel)
+		// })	
 		
-		const updateWOB = (opt :string) => {
-			log('User selected: ' + opt + ' wobID: ' + wob.id())
-			log('parent', chatLabel.parent)
-			this.babs.group.remove(chatLabel)
+		// const updateWOB = (opt :string) => {
+		// 	log('User selected: ' + opt + ' wobID: ' + wob.id())
+		// 	log('parent', chatLabel.parent)
+		// 	this.babs.group.remove(chatLabel)
 
-			// Need a way to send an update to the server, will circle back to this
-			socketSend.set({
-				'action': {
-					verb: 'craft',
-					noun: wob.id(),
-					data: {
-						craftName: opt,
-					},
-				}
-			})
-		}
+		// 	// Need a way to send an update to the server, will circle back to this
+		// 	socketSend.set({
+		// 		'action': {
+		// 			verb: 'craft',
+		// 			noun: wob.id(),
+		// 			data: {
+		// 				craftName: opt,
+		// 			},
+		// 		}
+		// 	})
+		// }
 	}
-
 
 	offerReconnect(reason) {
 		toprightReconnect.set(reason)
@@ -399,7 +378,7 @@ export class UiSys {
 
 		this.textElements.forEach(ttext => {
 			if(Date.now() > ttext.expires) {
-				console.log('Removing text', ttext, ttext.id)
+				log.info('Removing text', ttext, ttext.id)
 				this.babs.group.remove(ttext)
 				ttext.dispose()
 
