@@ -24,7 +24,7 @@ export class RenderSys {
 	_scene :Scene
 	public isVrSupported = false
 	public documentHasFocus :boolean|'forced' = true
-	public calcRecalcImmediately = false
+	public recalcImmediatelyBpids = new Set<string>()
 
 	// Custom FPS counter
 	public frames = 0
@@ -154,10 +154,6 @@ export class RenderSys {
 				}
 			}
 		}, 1000)
-
-		setInterval(() => {
-			this.calcShowOnlyNearbyWobs()
-		}, 1000)
 	}
 
 	firstTime = true
@@ -181,125 +177,122 @@ export class RenderSys {
 	}
 
 	update(dt) {
-		if(this.calcRecalcImmediately) {
-			this.calcRecalcImmediately = false
-			this.calcShowOnlyNearbyWobs()
+		if(this.recalcImmediatelyBpids.size > 0) {
+			// Run recalc for each item in the Set
+			this.recalcImmediatelyBpids.forEach(bpid => this.calcNearbyWobs(bpid))
+			this.recalcImmediatelyBpids.clear()
 		}
 
+		// Efficiently get a Wob.InstancedWobs item based on its index, and calc nearby wobs for that bpid
+		let currentIndex = 0
+		for (let [key, value] of Wob.InstancedWobs) {
+			if (currentIndex === this.calcMapIndex) {
+				this.calcNearbyWobs(key)
+				break
+			}
+			currentIndex++
+		}
+		this.calcMapIndex++
+		if(this.calcMapIndex >= Wob.InstancedWobs.size) {
+			this.calcMapIndex = 0
+		}
+		
+		// Scaling attempt for VR
 		const scaleMatrix = new Matrix4().makeScale(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
 		this._camera.matrixWorldInverse.multiply(scaleMatrix)
 		this._camera.updateMatrixWorld()
 		this._camera.updateMatrix()
-
+		// Set camera group scale too?
 		this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
 
 		this.renderer.render(this._scene, this._camera)
 		this.labelRenderer.render(this._scene, this._camera)
 	}
 
-	calcShowOnlyNearbyWobs() {
-		// return
-		// console.log('calcShowOnlyNearbyWobs')
-
-		// this.babs.scene.updateWorldMatrix(true, true)
-		// this._camera.updateMatrixWorld(true)
-		// this._camera.parent.updateMatrixWorld(true)
-		// this.babs.inputSys.playerSelf.controller.playerRig.updateMatrixWorld(true)
-		// this.babs.group.updateMatrixWorld(true)
-		// // Update the world matrix of every single babs child recursively
-		// this.babs.scene.traverse((child) => {
-		// 	// console.log('updating', child.name)
-		// 	child.matrixWorldNeedsUpdate = true
-		// 	child.updateMatrixWorld(true)
-		// })
+	calcMapIndex = 0
+	calcNearbyWobs(bpid :string) {
+		// console.log('calcShowOnlyNearbyWobs', bpid)
 
 		const playerpos = this.babs.inputSys?.playerSelf?.controller?.playerRig?.position
 		if(!playerpos) return
 
 		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
-		for(let [key, feim] of Wob.InstancedWobs) {
+		const feim = Wob.InstancedWobs.get(bpid)
 
-			// feim.instancedMesh.computeBoundingBox()
-			feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
-			// TODO only do on rescale?  (And note there is: .copy()) https://github.com/mrdoob/three.js/blob/master/src/objects/InstancedMesh.js
-			// Note that sphere is used for depth sorting: https://github.com/mrdoob/three.js/pull/25974/files
-			// Also for frustum culling https://discourse.threejs.org/t/boundingsphere-and-boundingbox/17868
-			// "The bounding sphere is also computed automatically when doing raycasting. The bounding box is optional. If you define it, the raycasting logic will test it too"
+		// feim.instancedMesh.computeBoundingBox()
+		feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
+		// TODO only do on rescale?  (And note there is: .copy()) https://github.com/mrdoob/three.js/blob/master/src/objects/InstancedMesh.js
+		// Note that sphere is used for depth sorting: https://github.com/mrdoob/three.js/pull/25974/files
+		// Also for frustum culling https://discourse.threejs.org/t/boundingsphere-and-boundingbox/17868
+		// "The bounding sphere is also computed automatically when doing raycasting. The bounding box is optional. If you define it, the raycasting logic will test it too"
 
-			// feim.instancedMesh.instanceMatrix.needsUpdate = true 
-			// feim.instancedMesh.updateMatrixWorld(true)
-			// setTimeout(() => {
-			// 	feim.instancedMesh.updateMatrixWorld(true)
-			// }, 40)
+		// For each index in instancedMesh, get the position relative to the player
+		const instanceMatrix = feim.instancedMesh.instanceMatrix
+		
+		// Rather than a cutoff at a number, cutoff based on dist.
+		const distCutoff = 1000// (feim.asFarWobs ? 1000 : 500)
 
-			// For each index in instancedMesh, get the position relative to the player
-			const instanceMatrix = feim.instancedMesh.instanceMatrix
+		// let nearItems :Array<{dist: number, originalIndex: number}> = []
+		const imLoadedCount = feim.getLoadedCount()
+
+		let iNearby = 0
+		for(let i=0; i<imLoadedCount; i++) { // Each instance is a 4x4 matrix; 16 floats
+			// if(i/16 >= loadedCount) break
 			
-			// Rather than a cutoff at a number, cutoff based on dist.
-			const distCutoff = 1000// (feim.asFarWobs ? 1000 : 500)
+			// Each instance is a 4x4 matrix; 16 floats
+			const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
+			const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
 
-			// let nearItems :Array<{dist: number, originalIndex: number}> = []
-			const imLoadedCount = feim.getLoadedCount()
+			if(!(x && z)) {
+				if(feim.blueprint_id == 'sneezeweed') {
 
-			let iNearby = 0
-			for(let i=0; i<imLoadedCount; i++) { // Each instance is a 4x4 matrix; 16 floats
-				// if(i/16 >= loadedCount) break
-				
-				// Each instance is a 4x4 matrix; 16 floats
-				const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
-				const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
-
-				if(!(x && z)) {
-					if(feim.blueprint_id == 'sneezeweed') {
-
-						// console.log('nox', x) // There's your problem.  It's all null.
-					}
-					continue
+					// console.log('nox', x) // There's your problem.  It's all null.
 				}
-
-				// Get distance from playerpos in 2 dimensions
-				const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
-
-				/* Something like:
-				Search for() oldArray
-				When you find oldArray[i] where dist < 500:
-					if i===iNearby, iNearby++ and continue (already in right place)
-					Look at dist of oldArray[iNearby].  
-					If that dist itself is < 500: 
-						iNearby++ and while() until not < 500
-						Then, swap oldArray[i] into oldArray[iNearby]
-						Then iNearby++
-				*/
-
-				let tries = 10000
-				const distanceCondition = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
-				if(distanceCondition) {
-					if(i === iNearby) {
-						iNearby++
-						continue // Already in the right place; skip self
-					}
-					do {
-						// Find next nearby that's far
-						const xOld = instanceMatrix.array[iNearby*16 +12] +this.babs.worldSys.shiftiness.x
-						const zOld = instanceMatrix.array[iNearby*16 +14] +this.babs.worldSys.shiftiness.z
-						const distOld = Math.sqrt(Math.pow(playerpos.x -xOld, 2) +Math.pow(playerpos.z -zOld, 2))
-
-						const distanceCondition2 = feim.asFarWobs ? distOld >= distCutoff : distOld < distCutoff
-						if(distanceCondition2) {
-							iNearby++
-							continue
-						}
-					} while(tries < 10000) // Just in case
-
-					// Swap far iNearby with this near i
-					Zone.swapWobsAtIndexes(iNearby, i, feim)
-					iNearby++
-				}
+				continue
 			}
 
-			feim.instancedMesh.instanceMatrix.needsUpdate = true
+			// Get distance from playerpos in 2 dimensions
+			const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 
-			feim.instancedMesh.count = iNearby 
+			/* Something like:
+			Search for() oldArray
+			When you find oldArray[i] where dist < 500:
+				if i===iNearby, iNearby++ and continue (already in right place)
+				Look at dist of oldArray[iNearby].  
+				If that dist itself is < 500: 
+					iNearby++ and while() until not < 500
+					Then, swap oldArray[i] into oldArray[iNearby]
+					Then iNearby++
+			*/
+
+			let tries = 10000
+			const distanceCondition = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
+			if(distanceCondition) {
+				if(i === iNearby) {
+					iNearby++
+					continue // Already in the right place; skip self
+				}
+				do {
+					// Find next nearby that's far
+					const xOld = instanceMatrix.array[iNearby*16 +12] +this.babs.worldSys.shiftiness.x
+					const zOld = instanceMatrix.array[iNearby*16 +14] +this.babs.worldSys.shiftiness.z
+					const distOld = Math.sqrt(Math.pow(playerpos.x -xOld, 2) +Math.pow(playerpos.z -zOld, 2))
+
+					const distanceCondition2 = feim.asFarWobs ? distOld >= distCutoff : distOld < distCutoff
+					if(distanceCondition2) {
+						iNearby++
+						continue
+					}
+				} while(tries < 10000) // Just in case
+
+				// Swap far iNearby with this near i
+				Zone.swapWobsAtIndexes(iNearby, i, feim)
+				iNearby++
+			}
 		}
+
+		feim.instancedMesh.instanceMatrix.needsUpdate = true
+
+		feim.instancedMesh.count = iNearby 
 	}
 }

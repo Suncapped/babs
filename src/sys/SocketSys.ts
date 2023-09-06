@@ -78,7 +78,7 @@ export class SocketSys {
 		})
 
 		this.ws.onmessage = (event) => {
-			log('finishSocketSetup socket rec:', event.data)
+			// log('finishSocketSetup socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
 				const payload = JSON.parse(event.data) as Sendable
 				this.processEnqueue(payload)

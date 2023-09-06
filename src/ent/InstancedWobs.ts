@@ -113,7 +113,7 @@ export class InstancedWobs {
 
 		Wob.totalArrivedWobs++ // For debug display
 
-		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
+		this.babs.renderSys.recalcImmediatelyBpids.add(this.blueprint_id) // Recalc on next render; allows all the adds to happen before recalcing
 	}
 	decreaseLoadedCount() {
 		this.loadedCount--
@@ -123,7 +123,7 @@ export class InstancedWobs {
 
 		Wob.totalArrivedWobs-- // For debug display
 
-		this.babs.renderSys.calcRecalcImmediately = true // Recalc on next render; allows all the adds to happen before recalcing
+		this.babs.renderSys.recalcImmediatelyBpids.add(this.blueprint_id) // Recalc on next render; allows all the adds to happen before recalcing
 	}
 
 	reallocateLargerBuffer(maxCount :number) {

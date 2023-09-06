@@ -204,7 +204,13 @@ export class UiSys {
 		const expiresInSeconds = this.babs.debugMode ? 10 : 3
 		ttext.expires = Date.now() +(1000 *expiresInSeconds)
 		this.babs.group.add(ttext)
-		ttext.lookAt(this.babs.cameraSys.cameraGroup.position)
+
+		// Make text face the screen flatly, rather than facing the character.
+		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
+		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
+		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite));
+
 		ttext.sync()
 		this.textElements.push(ttext)
 	}
