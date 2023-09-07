@@ -1,5 +1,6 @@
 import * as Utils from '../Utils'
 import { type WobId } from './SharedWob'
+import { SharedZone } from './SharedZone'
 
 export const NLCD = {
 	// Water
@@ -207,10 +208,23 @@ export type SendZoneIn = {
 	},
 }
 
-export type SendJournal = {
-	journal :{
-		text :string,
-	},
+// export type SendJournal = {
+// 	journal :{
+// 		text :string,
+// 	},
+// }
+export class FeWords {
+	content :string
+	idZone :number // Zone it's about
+	isJournaled? :'isJournaled' = null // Whether it goes into journal
+	isOoc? :'isOoc' = null // OOC/service message (different font/color)
+	colorHex? :string
+	targetLocation? :{x:number, z:number}
+	idTargetWob? :WobId // Follows above a wob
+	idTargetPlayer? :number // Follows above a player head
+}
+export type SendFeWords = {
+	fewords :FeWords,
 }
 
 export type SendCraftable = {
@@ -242,7 +256,7 @@ export type SendFeTime = {
 export type Sendable = SendLoad|SendVisitor|SendSession
 	|SendAuth
 	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
-	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendJournal|SendCraftable|SendAskTarget|SendServerRestart
+	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 
 

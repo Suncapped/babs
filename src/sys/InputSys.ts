@@ -678,10 +678,10 @@ export class InputSys {
 									// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 								}
 
-
+								const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 								
 								log.info('picked', this.pickedObject, yardCoord)
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, yardCoord)
+								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
@@ -860,7 +860,11 @@ export class InputSys {
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
 						log.info('Other drop', this.carrying)
-						this.babs.uiSys.clientSaid(`Cannot place ${this.carrying.instancedBpid} there.`)
+						this.babs.uiSys.feWords({
+							content: `Cannot place ${this.carrying.instancedBpid} there.`,
+							idZone: this.playerSelf.controller.playerRig.zone.id,
+							idTargetPlayer: this.playerSelf.id,
+						})
 					}
 
 					this.carrying = null
@@ -1005,7 +1009,7 @@ export class InputSys {
 			this.mouseRayTargets.length = 0
 			
 			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
-			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'landSaid', 'clientSaid', 'playerSaid', 'wobSaid', 'craftSaid', 'serverSaid']
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords']
 			const filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
 			// Well, filtering out 'tree twotris' does help a lot with framerate.
 

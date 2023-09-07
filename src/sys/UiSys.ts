@@ -17,6 +17,8 @@ import { Babs } from '@/Babs'
 import type { SharedWob } from '@/shared/SharedWob'
 import type { Player } from '@/ent/Player'
 import { Text as TroikaText } from 'troika-three-text'
+import type { FeWords } from '@/shared/consts'
+import { WorldSys } from './WorldSys'
 
 export class UiSys {
 	babs :Babs
@@ -47,50 +49,6 @@ export class UiSys {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
 			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 		}
-	}
-
-	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number) {
-		log.info(name, content)
-			
-		// Setup and position
-		const ttext = new TroikaText()
-		ttext.material.side = DoubleSide
-		ttext.name = name
-		ttext.text = content
-		ttext.position.copy(worldPos)
-
-		// Styling
-		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
-		ttext.fontSize = sizeEm // 22px // https://nekocalc.com/px-to-em-converter
-		ttext.outlineWidth = 0.06180339887
-		ttext.outlineColor = 'black'
-		ttext.curveRadius = -20
-		ttext.letterSpacing = 0.04
-		// ttext.strokeWidth = 0.03 // Stroke is inside
-		// ttext.strokeColor = 'red'
-
-		// Alignment
-		ttext.maxWidth = 18.75 // 300px
-		ttext.textAlign = 'center'
-		ttext.anchorX = 'center'
-		ttext.anchorY = 'bottom'
-
-		// ttext.shadows = false // todo not working?
-		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
-
-		// Add to scene
-		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
-		ttext.expires = Date.now() +(1000 *expiresInSeconds)
-		this.babs.group.add(ttext)
-
-		// Make text face the screen flatly, rather than facing the character.
-		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
-		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
-		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
-		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
-
-		ttext.sync()
-		this.textElements.push(ttext)
 	}
 
 	playerSaid(idPlayer, text, options?) {
@@ -199,40 +157,35 @@ export class UiSys {
 		}
 	}
 
-
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
-		// Calculate position
-		const zone = this.babs.ents.get(landtarget.idzone) as Zone
+		log.info('landSaid', landtarget)
 		const yardCoord = YardCoord.Create({
 			position: landtarget.point,
 			babs: this.babs,
 		})
-		
-		let point = zone.rayHeightAt(yardCoord)
-		point.setY(point.y +1)
 
 		if(this.babs.debugMode) {
 			landtarget.text += `\n${yardCoord}`
 			landtarget.text += `\n${v3out(landtarget.point)}`
 		}
 
-		this.makeTextAt('landSaid', landtarget.text, point, 1.375) // 22px
+		this.feWords({
+			content: landtarget.text,
+			idZone: landtarget.idzone,
+			targetLocation: {x: yardCoord.x, z: yardCoord.z},
+		})
 	}
-	wobSaid(text, coord :YardCoord) {
-		let point = coord.zone.rayHeightAt(coord)
-		point.setY(point.y +4) // Lower down
-		this.makeTextAt('wobSaid', text, point, 1.375) // 22px
-	}
-
-	serverSaid(text :string) {
-		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
-	}
-	clientSaid(text :string) {
-		this.svJournal.appendText(`${text}`, '#aaaaaa', 'right')
+	wobSaid(content :string, wob :SharedWob) {
+		log.info('wobSaid', content, wob)
+		this.feWords({
+			content: content,
+			idZone: wob.idzone,
+			idTargetWob: wob.id(),
+		})
 	}
 
 	craftSaid(options :Array<string>, wob :SharedWob, wobZone :Zone) {	
-		console.warn('Crafting UI currently in transition')
+		console.warn('Crafting UI currently in transition', options, wob, wobZone)
 
 		// const chatDiv = document.createElement('div')
 		// chatDiv.id = 'Crafting'
@@ -277,6 +230,107 @@ export class UiSys {
 		// 		}
 		// 	})
 		// }
+	}
+
+	feWords(words :FeWords) {
+		let colorHex = '#ffffff'
+		if(words.isOoc) colorHex = '#aaaaaa'
+		if(words.colorHex) colorHex = words.colorHex // If present, overrides normal OOC color
+
+		if(words.isJournaled) {
+			this.svJournal.appendText(`${words.content}`, '#aaaaaa', 'right')
+		}
+
+		const zone = this.babs.ents.get(words.idZone) as Zone
+
+		if(words.targetLocation) {
+			const yardCoord = YardCoord.Create({
+				x: words.targetLocation.x, 
+				z: words.targetLocation.z,
+				zone: zone,
+			})
+			let point = zone.rayHeightAt(yardCoord)
+			point.setY(point.y +1)
+
+			this.makeTextAt('feWords', words.content, point, 1.375, colorHex)
+		}
+		else if(words.idTargetWob) {
+			// Display at wob location
+			const yardCoord = YardCoord.Create({
+				x: words.idTargetWob.x, 
+				z: words.idTargetWob.z,
+				zone: zone,
+			})
+			let pointCentered = zone.rayHeightAt(yardCoord)
+			pointCentered.setY(pointCentered.y +WorldSys.Yard /2)
+
+			// Get the direction of the cameraGroup from pointCentered
+			let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
+			this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+			// Move pointCentered toward the camera by 2 units
+			// Actually some things are quite offset, so move it 1.75 tiles toward us
+			pointCentered.add(cameraGroupDirectionOpposite.multiplyScalar(2 +4 +1)) 
+
+			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
+		}
+		else if(words.idTargetPlayer) {
+			// Over head of player
+			
+			// Attach to player
+			const player = this.babs.ents.get(words.idTargetPlayer) as Player
+			if (player.controller.playerRig) {
+				// TODO Bit of a can of worms, really.  Gotta replace the whole above-head system!
+			}
+			this.playerSaid(player.id, words.content, {journal: false, color: '#cccccc', italics: true})
+			
+		}
+		else {
+			console.warn('feWords with no target', words)
+		}
+	}
+
+	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') {
+		log.info(name, content)
+			
+		// Setup and position
+		const ttext = new TroikaText()
+		ttext.material.side = DoubleSide
+		ttext.name = name
+		ttext.text = content
+		ttext.position.copy(worldPos)
+
+		// Styling
+		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
+		ttext.fontSize = sizeEm // 22px // https://nekocalc.com/px-to-em-converter
+		ttext.outlineWidth = 0.06180339887
+		ttext.outlineColor = 'black'
+		ttext.curveRadius = -20
+		ttext.letterSpacing = 0.04
+		// ttext.strokeWidth = 0.03 // Stroke is inside
+		// ttext.strokeColor = 'red'
+
+		// Alignment
+		ttext.maxWidth = 18.75 // 300px
+		ttext.textAlign = 'center'
+		ttext.anchorX = 'center'
+		ttext.anchorY = 'bottom'
+
+		// ttext.shadows = false // todo not working?
+		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
+
+		// Add to scene
+		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
+		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+		this.babs.group.add(ttext)
+
+		// Make text face the screen flatly, rather than facing the character.
+		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
+		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
+		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
+
+		ttext.sync()
+		this.textElements.push(ttext)
 	}
 
 	offerReconnect(reason) {

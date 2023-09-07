@@ -454,9 +454,11 @@ export class SocketSys {
 			// 	await Wob.LoadInstancedWobs(payload.contains.wobs, this.babs, false)
 			// }
 		}
-		else if('journal' in payload) {
-			log.info('journal', payload.journal)
-			this.babs.uiSys.serverSaid(payload.journal.text)
+		else if('fewords' in payload) {
+			const fewords = payload.fewords
+			log('server fewords', fewords)
+
+			this.babs.uiSys.feWords(fewords)
 		}
 		else if('serverrestart' in payload) {
 			log('serverrestart', payload.serverrestart)

@@ -289,7 +289,7 @@ export class Wob extends SharedWob {
 				feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 				if(shownames) {
-					babs.uiSys.wobSaid(wob.name, YardCoord.Create(wob))
+					babs.uiSys.wobSaid(wob.name, wob)
 				}
 
 				if(wob.name === 'campfire' || wob.name === 'torch') {
