@@ -1,5 +1,5 @@
 import { Babs } from '@/Babs'
-import type { WobId } from '@/shared/consts'
+import type { WobId } from '@/shared/SharedWob'
 import { log } from '../Utils'
 
 export class Comp {

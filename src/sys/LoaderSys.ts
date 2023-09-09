@@ -1,15 +1,15 @@
 import { BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
 import { Vector3 } from 'three'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
 import { MeshPhongMaterial } from 'three'
 import { log } from './../Utils'
-import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils'
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader'
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { Controller } from '@/comp/Controller'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import JSZip, { type files } from 'jszip'
-import { Wob } from '@/ent/Wob'
+import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { Babs } from '@/Babs'
 
 export class LoaderSys {
@@ -37,8 +37,8 @@ export class LoaderSys {
 
 		this.loader = new GLTFLoader()
 		this.dracoLoader = new DRACOLoader()
-		// this.dracoLoader.setDecoderPath('../../node_modules/three/examples/jsm/libs/draco/gltf/')
-		// this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/draco/')
+		// this.dracoLoader.setDecoderPath('../../node_modules/three/addons/libs/draco/gltf/')
+		// this.dracoLoader.setDecoderPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/addons/libs/draco/')
 		this.dracoLoader.setDecoderPath('/draco/')
 		// this.dracoLoader.setDecoderPath('three/examples/js/libs/draco')
 		// this.dracoLoader.setDecoderConfig({ type: 'wasm' })
@@ -131,8 +131,8 @@ export class LoaderSys {
 		LoaderSys.KidAnimList.forEach(anim => {
 			LoaderSys.KidAnimPaths[anim] = `/char/female/female-anim-${anim}.glb`
 		})
-		Object.entries(LoaderSys.KidAnimPaths).forEach(([anim, path] :[string, string]) => {
-			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path) as unknown as Promise<GLTF> // It's not meant to error and return {name}
+		Object.entries(LoaderSys.KidAnimPaths).forEach(([anim, path] :[string, string|unknown]) => {
+			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path as string) as unknown as Promise<GLTF> // It's not meant to error and return {name}
 		})
 
 	}
@@ -271,19 +271,19 @@ export class LoaderSys {
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
 		const path = `/char/female/female-rig.glb`
 		const cached = this.mapPathRigCache.get(path)
-		let groupScene :Object3D
+		let rigGroupScene :Object3D
 		if(cached) {
 			log.info('cached rig', path)
-			groupScene = SkeletonUtils.clone(cached)
+			rigGroupScene = SkeletonUtils.clone(cached)
 		}
 		else {
 			log.info('download rig', path)
 			let group = await LoaderSys.CachedKidRig
 			this.mapPathRigCache.set(path, group.scene)
-			groupScene = SkeletonUtils.clone(group.scene)
+			rigGroupScene = SkeletonUtils.clone(group.scene)
 		}
 		
-		const skinnedMesh = groupScene.children[0].children[0] as SkinnedMesh//group.traverse(c => c instanceof SkinnedMesh)
+		const skinnedMesh = rigGroupScene.children[0].children[0] as SkinnedMesh//group.traverse(c => c instanceof SkinnedMesh)
 		skinnedMesh.material = material
 
 		skinnedMesh.castShadow = true
@@ -297,16 +297,16 @@ export class LoaderSys {
 		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
 		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
-		groupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
+		rigGroupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
 		
 		// Put in a box for raycast bounding // must adjust with scale
-		const cube = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())
+		const cube :FeObject3D = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())
 		cube.name = 'player_bbox'
-		cube.scale.multiplyScalar(1 /groupScene.scale.x).multiplyScalar(1.5)
-		cube.position.setY(3*(1 /groupScene.scale.x))
+		cube.scale.multiplyScalar(1 /rigGroupScene.scale.x).multiplyScalar(1.5)
+		cube.position.setY(3*(1 /rigGroupScene.scale.x))
 		cube.visible = false
 		cube.clickable = true
-		groupScene.add(cube)
+		rigGroupScene.add(cube)
 
 		skinnedMesh.geometry.computeBoundingSphere()
 		// skinnedMesh.geometry.boundingSphere.center = new Vector3(0, 3, 0)
@@ -338,7 +338,7 @@ export class LoaderSys {
 			// skinnedMesh.geometry.matrixWorldNeedsUpdate = true
 		}, 1)
 
-		return groupScene
+		return rigGroupScene
 	}
 
 	mapPathAnimCache = new Map<string, GLTF>()

@@ -9,7 +9,6 @@ import { WorldSys } from '@/sys/WorldSys'
 
 import  { State, DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
 import { Matrix4 } from 'three'
-import { isPowerOfTwo } from 'three/src/math/MathUtils'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'

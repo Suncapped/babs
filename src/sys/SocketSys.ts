@@ -403,14 +403,15 @@ export class SocketSys {
 			log.info('said by chattyPlayer', chattyPlayer?.id, said.name, said.text)
 			// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
 			// In that case, data.name is set to their name.
-			this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
+			// this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
+			this.babs.uiSys.aboveHeadChat(chattyPlayer?.id, said.text, said.color)
 		}
 		else if('nicklist' in payload) {
 			log.info('nicklist', payload.nicklist)
 			for(let pair of payload.nicklist) {
 				const player = this.babs.ents.get(pair.idtarget) as Player
 				log.info('nicklist player', player)
-				player?.setNick(pair.nick)
+				player?.nickSetAndDisplay(pair.nick)
 				this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 				if(player?.id === this.babs.idSelf) {
 					menuSelfData.set({

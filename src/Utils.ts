@@ -3,6 +3,8 @@
 import { Vector2, Vector3 } from 'three'
 import { debugMode } from './stores'
 import { get as svelteGet } from 'svelte/store'
+import type { Mesh } from 'three'
+import type { Zone } from './ent/Zone'
 
 
 

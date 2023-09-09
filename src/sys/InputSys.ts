@@ -1,6 +1,6 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper } from 'three'
-import { Wob } from '@/ent/Wob'
+import { Wob, type FeObject3D } from '@/ent/Wob'
 import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
@@ -42,6 +42,8 @@ type PickedObject = {
 	yardCoord? :YardCoord,
 	material? :Material,
 	type? :string,
+	id? :string,
+	parent? :Object3D,
 }
 
 export class InputSys {
@@ -171,7 +173,7 @@ export class InputSys {
 			log.info('keydown:', ev.code)
 			// OS-level key repeat keeps sending down events; 
 			if (this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
-				if (ev.target.id !== 'chatbox') { // Except do it allow it when editing chatbox
+				if ((ev.target as HTMLElement).id !== 'chatbox') { // Except do it allow it when editing chatbox
 					this.keys[inputCodeMap[ev.code]] = PRESS
 				}
 			}
@@ -227,33 +229,7 @@ export class InputSys {
 
 				if (this.keys.f === PRESS) {
 					Wob.InstancedWobs.forEach((feim, bpid) => {
-						if(bpid == 'sneezeweed') {
-							if(!window.savedmatrix) {
-								window.savedmatrix = feim.instancedMesh.instanceMatrix
-							}
-							else {
-								// Diff window.savedmatrix array with feim.instancedMesh.instanceMatrix
-								function diffArrays(arr1, arr2) {
-									const set1 = new Set(arr1);
-									const set2 = new Set(arr2);
-								
-									const onlyInArr1 = [...set1].filter(item => !set2.has(item));
-									const onlyInArr2 = [...set2].filter(item => !set1.has(item));
-								
-									return {
-										onlyInArr1, // items only in arr1
-										onlyInArr2  // items only in arr2
-									};
-								}
-								
-								const arr1 = window.savedmatrix;
-								const arr2 = feim.instancedMesh.instanceMatrix; // Woaahh this is WAY lower now!
-								
-								// console.log(diffArrays(arr1.array, arr2.array)); // { onlyInArr1: [ 1, 2, 3 ], onlyInArr2: [ 6, 7, 8 ] }
-								console.log(arr1, arr2); // { onlyInArr1: [ 1, 2, 3 ], onlyInArr2: [ 6, 7, 8 ] }
-								
-							}
-						}
+						
 
 					})
 
@@ -469,11 +445,23 @@ export class InputSys {
 
 		this.lastMoveHoldPicked
 		this.carrying = null
-		document.addEventListener('mousemove', async ev => { // :MouseEvent
+		interface FeMouseEvent extends MouseEvent { 
+			target: HTMLElement,
+			mozMovementX: number,
+			mozMovementY: number,
+			webkitMovementX: number,
+			webkitMovementY: number,
+			mozOffsetX: number,
+			mozOffsetY: number,
+			webkitOffsetX: number,
+			webkitOffsetY: number,
+		}
+		document.addEventListener('mousemove', async (e :MouseEvent) => {
 			// Close top menu if it's open
 			// if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
 			// 	topmenuUnfurled.set(false)
 			// }
+			const ev = e as FeMouseEvent
 
 			this.babs.renderSys.documentHasFocus = 'forced'
 
@@ -504,68 +492,68 @@ export class InputSys {
 			this.mouse.xy.x = (ev.clientX / parseInt(this.canvas.style.width)) * 2 - 1
 			this.mouse.xy.y = - (ev.clientY / parseInt(this.canvas.style.height)) * 2 + 1
 
-			if (ev.target.classList.contains('container-body')) {
+			// if (ev.target.classList.contains('container-body')) {
 
-				// There's another problem: Transparent corner of one png will overlap another, preventing mousemove target!
-				// What if I extract the coords within the parent, then check every child there for transparency, sorted by updated?
-				// Alright, so 1. get all items under mouse by looking through the bag!
-				for (const item of ev.target.childNodes) {
-					const itemBox = new Box2(
-						new Vector2(parseInt(item.style.left), parseInt(item.style.top)),
-						new Vector2(parseInt(item.style.left) + parseInt(item.style.width), parseInt(item.style.top) + parseInt(item.style.height))
-					)
-					// log(ev.offsetX, ev.offsetY, itemBox)
-					if (itemBox.containsPoint(new Vector2(ev.offsetX, ev.offsetY))) {
-						// Mouse is within image bounds
-						if (this.babs.debugMode) item.style.border = '1px solid white'
-						// 2. Check whether over transparency 
-						const wobId = parseInt(item.id.split('-')[2])
-						const wob = this.babs.ents.get(wobId)
-						const feim = Wob.InstancedWobs.get(wob.name)
-						// log(wob,  Wob.InstancedMeshes, this.babs.ents)
+			// 	// There's another problem: Transparent corner of one png will overlap another, preventing mousemove target!
+			// 	// What if I extract the coords within the parent, then check every child there for transparency, sorted by updated?
+			// 	// Alright, so 1. get all items under mouse by looking through the bag!
+			// 	for (const item of ev.target.childNodes) {
+			// 		const itemBox = new Box2(
+			// 			new Vector2(parseInt(item.style.left), parseInt(item.style.top)),
+			// 			new Vector2(parseInt(item.style.left) + parseInt(item.style.width), parseInt(item.style.top) + parseInt(item.style.height))
+			// 		)
+			// 		// log(ev.offsetX, ev.offsetY, itemBox)
+			// 		if (itemBox.containsPoint(new Vector2(ev.offsetX, ev.offsetY))) {
+			// 			// Mouse is within image bounds
+			// 			if (this.babs.debugMode) item.style.border = '1px solid white'
+			// 			// 2. Check whether over transparency 
+			// 			const wobId = parseInt(item.id.split('-')[2])
+			// 			const wob = this.babs.ents.get(wobId)
+			// 			const feim = Wob.InstancedWobs.get(wob.name)
+			// 			// log(wob,  Wob.InstancedMeshes, this.babs.ents)
 
-						// if(instanced) {
-						const pixels = (await feim.renderedIcon()).pixels
-						const colorChannels = 4
-						const mouseImageX = ev.offsetX - itemBox.min.x
-						const mouseImageY = ev.offsetY - itemBox.min.y
-						let index = Utils.coordToIndex(mouseImageX, mouseImageY, UiSys.ICON_SIZE, colorChannels)
-						const alphaChannel = pixels[index + 3] // r,g,b,a, so +3 is alpha
-						// log(alphaChannel) // Noramlly it's 255, but sometimes like 191 etc on the borders
-						// }
-						if (alphaChannel > 0) { // We are on top of non-transparency
-							// log('solid!', wob.name, wobId)
-							item.style.filter = 'brightness(200%)'
+			// 			// if(instanced) {
+			// 			const pixels = (await feim.renderedIcon()).pixels
+			// 			const colorChannels = 4
+			// 			const mouseImageX = ev.offsetX - itemBox.min.x
+			// 			const mouseImageY = ev.offsetY - itemBox.min.y
+			// 			let index = Utils.coordToIndex(mouseImageX, mouseImageY, UiSys.ICON_SIZE, colorChannels)
+			// 			const alphaChannel = pixels[index + 3] // r,g,b,a, so +3 is alpha
+			// 			// log(alphaChannel) // Noramlly it's 255, but sometimes like 191 etc on the borders
+			// 			// }
+			// 			if (alphaChannel > 0) { // We are on top of non-transparency
+			// 				// log('solid!', wob.name, wobId)
+			// 				item.style.filter = 'brightness(200%)'
 
-							// Instanced things like wobjects, water, trees, etc unless caught above
-							// const instanced = Wob.InstancedMeshes.get(wob.name)
-							// const index = this.mouseRayTargets[i].instanceId
-							// const position = Wob.GetPositionFromIndex(instanced, index)
+			// 				// Instanced things like wobjects, water, trees, etc unless caught above
+			// 				// const instanced = Wob.InstancedMeshes.get(wob.name)
+			// 				// const index = this.mouseRayTargets[i].instanceId
+			// 				// const position = Wob.GetPositionFromIndex(instanced, index)
 
-							// log('instanced?', wob)
+			// 				// log('instanced?', wob)
 
 
 
-							this.pickedObject = {
-								feim: feim,
-								instancedBpid: wob.name,
-								isIcon: true,
-							}
-						}
-						else {
-							// log('notsolid', wob.name)
-							item.style.filter = 'none'
-							this.pickedObject = undefined
-						}
+			// 				this.pickedObject = {
+			// 					feim: feim,
+			// 					instancedBpid: wob.name,
+			// 					isIcon: true,
+			// 				}
+			// 			}
+			// 			else {
+			// 				// log('notsolid', wob.name)
+			// 				item.style.filter = 'none'
+			// 				this.pickedObject = undefined
+			// 			}
 
-					}
-					else {
-						if (this.babs.debugMode) item.style.border = 'none'
-					}
+			// 		}
+			// 		else {
+			// 			if (this.babs.debugMode) item.style.border = 'none'
+			// 		}
 
-				}
+			// 	}
 
-			}
+			// }
 
 
 			// Determine if dragging a wobject
@@ -605,14 +593,17 @@ export class InputSys {
 		})
 
 		document.addEventListener('mousedown', async ev => {
-			log.info('mouseOnDown', ev.button, ev.target.id)
+			const eventTargetId = (ev.target as HTMLElement).id
+
+			log.info('mouseOnDown', ev.button, eventTargetId)
+
 
 			// Close top menu if it's open
-			if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
+			if (eventTargetId === 'canvas' && this.topMenuVisibleLocal) {
 				topmenuUnfurled.set(false)
 			}
 
-			if (!this.topMenuVisibleLocal && (ev.target.id === 'canvas')) {
+			if (!this.topMenuVisibleLocal && (eventTargetId === 'canvas')) {
 				this.characterControlMode = true
 
 				if (ev.button === MOUSE_LEFT_CODE) {
@@ -661,7 +652,9 @@ export class InputSys {
 						else { // First click (and not in target selection mode)
 							if (this.pickedObject?.type === 'SkinnedMesh') {
 								// Single click player, get their name or nick
-								const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+								const pl = this.pickedObject.parent.parent as FeObject3D
+								const player = this.babs.ents.get(pl.idplayer) as Player
+								// Display name about head when you click a player or yourself
 								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
 							}
 							else if (this.pickedObject?.feim) {
@@ -696,7 +689,7 @@ export class InputSys {
 					else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 						this.mouse.ldouble = 0
 						if (this.pickedObject?.type === 'SkinnedMesh') {
-							const player = this.babs.ents.get(this.pickedObject.parent.parent.idplayer)
+							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
 							nickTargetId.set(player.id)
 
 							const box = document.getElementById('chatbox')
@@ -1058,7 +1051,7 @@ export class InputSys {
 					if (objectMaybe?.name === 'ground') { // Mesh?
 						// if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
 						
-						const ground = objectMaybe
+						const ground = objectMaybe as FeObject3D
 						const zone = ground.zone
 						const pos = this.mouseRayTargets[i].point
 						const yardCoord = YardCoord.Create({
@@ -1416,7 +1409,6 @@ export class InputSys {
 							const text = data.text
 							log.info('Audio converted successfully:', data.text)
 
-							// this.babs.uiSys.playerSaid(this.babs.idSelf, text)
 							this.babs.socketSys.send({
 								chat: {
 									text: text,

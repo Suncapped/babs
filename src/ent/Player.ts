@@ -43,8 +43,7 @@ export class Player extends Ent {
 		
 		plr.self = bSelf
 
-		// plr.nick = arrival.meta?.nick // Too confusing for players
-		plr.setNick(babs.uiSys.nicklist.get(arrival.id))
+		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id))
 
 		log.info('New Player:', plr)
 
@@ -83,7 +82,7 @@ export class Player extends Ent {
 		
 	}
 
-	setNick(newNick) {
+	nickSetAndDisplay(newNick) {
 		if(this.nick == newNick) return // Only show once, or if undefined == undefined
 		this.nick = newNick
 		this.babs.uiSys.playerSaid(this.id, this.nick, {journal: false, isname: true}) // Show above head

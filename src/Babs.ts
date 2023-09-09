@@ -24,8 +24,21 @@ import { Controller } from '@/comp/Controller'
 
 import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
+import type { Wob } from './ent/Wob'
+import type { Zone } from './ent/Zone'
 
-
+declare global {
+	interface Window {
+		FeIsProd: boolean
+		FeBaseDomain :string
+		FeUrlFiles :string
+		FeUrlSocket :string
+		FeUsePail :boolean
+		FeWs :WebSocket
+		FeExistingSession :string
+	}
+}
+  
 export class Babs {
 
 	isProd = window.FeIsProd

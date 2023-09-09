@@ -1,5 +1,5 @@
-import Stats from 'three/examples/jsm/libs/stats.module'
-import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import Stats from 'three/addons/libs/stats.module.js'
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
@@ -7,7 +7,7 @@ import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from '../stores'
 import { log, v3out } from './../Utils'
-import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, SRGBColorSpace, Vector3 } from 'three'
+import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
@@ -20,12 +20,17 @@ import { Text as TroikaText } from 'troika-three-text'
 import type { FeWords } from '@/shared/consts'
 import { WorldSys } from './WorldSys'
 
+interface TroikaText extends Mesh {
+	[key: string]: any
+	material :Material // NOTE: This assumes a single material (which is currently true)
+}
+
 export class UiSys {
 	babs :Babs
 	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 	ctext
 	labelElements = []
-	textElements = Array<any>()
+	expiringText = Array<any>()
 	svJournal
 	svMenu
 	svContainers = []
@@ -51,6 +56,10 @@ export class UiSys {
 		}
 	}
 
+	
+
+
+
 	playerSaid(idPlayer, text, options?) {
 		options = {
 			color: '#eeeeee',
@@ -64,6 +73,7 @@ export class UiSys {
 		chatDiv.classList.add('label')
 
 		if(options.isname) {
+			// eslint-disable-next-line no-irregular-whitespace
 			text = `< ${text} >`
 		}
 
@@ -102,7 +112,7 @@ export class UiSys {
 		const seconds = countWords / wps + startingTimeMin
 		const secondsClamped = MathUtils.clamp(seconds, startingTimeMin, 20)
 		
-		chatDiv.setAttribute('data-expires', Date.now() + (1000 *secondsClamped))
+		chatDiv.setAttribute('data-expires', (Date.now() + (1000 *secondsClamped)).toString())
 		chatDiv.setAttribute('data-idPlayer', idPlayer || options.name)
 		chatDiv.style.visibility = 'hidden'
 		this.labelElements.push(chatDiv)
@@ -183,6 +193,25 @@ export class UiSys {
 			idTargetWob: wob.id(),
 		})
 	}
+	
+	// aboveHeadStack = Array<TroikaText>()
+	aboveHeadChat(idPlayer, content, colorHex = '#eeeeee') {
+		const player = this.babs.ents.get(idPlayer) as Player
+		log('abovePlayerHead', idPlayer, content)
+		const ttext = this.feWords({
+			content: content,
+			idZone: player.controller.playerRig.zone.id,
+			idTargetPlayer: idPlayer,
+			colorHex: colorHex,
+			isJournaled: 'isJournaled',
+		})
+		ttext.isAboveHead = true
+
+		
+	}
+	belowHeadInfo(idPlayer, content) {
+
+	}
 
 	craftSaid(options :Array<string>, wob :SharedWob, wobZone :Zone) {	
 		console.warn('Crafting UI currently in transition', options, wob, wobZone)
@@ -232,7 +261,7 @@ export class UiSys {
 		// }
 	}
 
-	feWords(words :FeWords) {
+	feWords(words :FeWords) :TroikaText {
 		let colorHex = '#ffffff'
 		if(words.isOoc) colorHex = '#aaaaaa'
 		if(words.colorHex) colorHex = words.colorHex // If present, overrides normal OOC color
@@ -274,33 +303,45 @@ export class UiSys {
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
-			// Over head of player
-			
-			// Attach to player
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
-			if (player.controller.playerRig) {
-				// TODO Bit of a can of worms, really.  Gotta replace the whole above-head system!
-			}
-			this.playerSaid(player.id, words.content, {journal: false, color: '#cccccc', italics: true})
-			
+			const yardCoord = YardCoord.Create(player.controller.playerRig)
+			let point = zone.rayHeightAt(yardCoord)
+			point.setY(point.y +5.8)
+			// this.playerSaid(player.id, words.content, {journal: false, color: '#cccccc', italics: true})
+
+			const ttext = this.makeTextAt('feWords', words.content, point, 1.375, colorHex)
+
+			// Place in player object parent, and reposition
+			const rigScale = player.controller.playerRig.scale.clone()
+			const height = 6
+			ttext.position.copy(new Vector3(0, height *(1/rigScale.y), 0))
+			ttext.scale.copy(new Vector3(1/rigScale.x, 1/rigScale.y, 1/rigScale.z))
+			ttext.rotation.set(0, Math.PI, 0)
+
+			console.log(player.controller.playerRig.scale)
+			player.controller.playerRig.add(ttext)
+
+			return ttext
 		}
 		else {
 			console.warn('feWords with no target', words)
 		}
 	}
 
-	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') {
+	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') :TroikaText {
 		log.info(name, content)
 			
-		// Setup and position
-		const ttext = new TroikaText()
+		// Setup
+		const ttext = new TroikaText() as TroikaText
 		ttext.material.side = DoubleSide
 		ttext.name = name
 		ttext.text = content
-		ttext.position.copy(worldPos)
+		// ttext.shadows = false // todo not working?
+		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
 
 		// Styling
-		ttext.color = new Color(222, 222, 222).convertLinearToSRGB() // todo buggy; white due to bugs // https://github.com/protectwise/troika/pull/267
+		ttext.color = new Color(colorHex).convertSRGBToLinear()
+		// ^ todo wait for update or figure this out? https://github.com/protectwise/troika/pull/267
 		ttext.fontSize = sizeEm // 22px // https://nekocalc.com/px-to-em-converter
 		ttext.outlineWidth = 0.06180339887
 		ttext.outlineColor = 'black'
@@ -315,14 +356,16 @@ export class UiSys {
 		ttext.anchorX = 'center'
 		ttext.anchorY = 'bottom'
 
-		// ttext.shadows = false // todo not working?
-		ttext.font = `${window.FeUrlFiles}/css/neucha-subset.woff`
-
-		// Add to scene
+		// Display time length
 		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
 		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+		this.expiringText.push(ttext)
+
+		// Position in scene
+		ttext.position.copy(worldPos)
 		this.babs.group.add(ttext)
 
+		// Rotate to camera
 		// Make text face the screen flatly, rather than facing the character.
 		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
 		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
@@ -330,7 +373,8 @@ export class UiSys {
 		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
 
 		ttext.sync()
-		this.textElements.push(ttext)
+		// ^ "It's a good idea to call the .sync() method after changing any properties that would affect the text's layout. If you don't, it will be called automatically on the next render frame, but calling it yourself can get the result sooner."
+		return ttext
 	}
 
 	offerReconnect(reason) {
@@ -398,28 +442,8 @@ export class UiSys {
 		}
 	}
 
-	oldPos = new Vector3(0,0,0)
 	logText = ''
 	update() {
-
-		let playerSelf :Player
-		if(this.babs?.idSelf) { // Player is loaded
-			playerSelf = this.babs.ents.get(this.babs.idSelf) as Player
-			const playerPos = playerSelf?.controller?.playerRig?.position
-			if(playerPos && !this.oldPos.equals(playerPos)) {
-				this.oldPos = playerPos.clone()
-			}
-		}
-
-		if(this.babs.debugMode) {
-			const newLogText = `zone: ${playerSelf?.controller?.playerRig.zone.id}, in-zone xz: (${Math.floor(this.oldPos.x/4)}, ${Math.floor(this.oldPos.z/4)}), y: ${Math.floor(this.oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
-			if(this.logText !== newLogText) {
-				this.logText = newLogText
-				window.document.getElementById('log').innerText = this.logText
-			}
-			console.log()
-		}
-
 		this.labelElements.forEach(chat => {
 			const expires = chat.getAttribute('data-expires') // Could store objects with refs instead
 			// const player = this.babs.ents.get(parseInt(idPlayer))
@@ -430,15 +454,51 @@ export class UiSys {
 			}
 		})
 
-		this.textElements.forEach(ttext => {
+		this.expiringText.forEach(ttext => {
 			if(Date.now() > ttext.expires) {
-				log.info('Removing text', ttext, ttext.id)
-				this.babs.group.remove(ttext)
+				// log.info('Removing text', ttext, ttext.id)
+				ttext.parent.remove(ttext)
 				ttext.dispose()
 
-				this.textElements = this.textElements.filter(t => t.id !== ttext.id)
+				this.expiringText = this.expiringText.filter(t => t.id !== ttext.id)
 			}
 		})
+
+
+		// Now do things that rely on the playerRig being present; otherwise return
+		const selfRig = this.babs.inputSys.playerSelf.controller?.playerRig
+		if(!selfRig) return
+
+		// For aboveHeadStack, set position, rotation, element height in stack
+		// We want items that are earlier in the index to be higher up.
+		// We can't just multiply by the index, because multiline items have different heights.
+		// Instead, we kind of want to go in reverse; start with the last (bottom) item,
+		// 	and it has no height modification.  Each item count down the index, goes a little higher.
+		const scale = 1/selfRig.scale.y
+		const heightStartingPoint = 6 *scale
+		let heightAccum = 0
+		for(let index=this.expiringText.length -1; index >= 0; index--) {
+			const ttext = this.expiringText[index]
+			if(!ttext.isAboveHead) return
+			
+			ttext.position.setY(heightStartingPoint +heightAccum)
+			
+			const height = (ttext.geometry.boundingBox.max.y -ttext.geometry.boundingBox.min.y)
+			heightAccum += height *scale
+		}
+
+		const oldPos = selfRig?.position
+
+		if(this.babs.debugMode) {
+			const newLogText = `zone: ${selfRig?.zone.id}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}), y: ${Math.floor(oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
+			if(this.logText !== newLogText) {
+				this.logText = newLogText
+				window.document.getElementById('log').innerText = this.logText
+			}
+			console.log()
+		}
+
+
 
 
 	}

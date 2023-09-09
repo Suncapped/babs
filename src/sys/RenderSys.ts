@@ -1,10 +1,10 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
+import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace } from 'three'
 import { WorldSys } from './WorldSys'
-import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
-import { VRButton } from 'three/examples/jsm/webxr/VRButton'
+import { VRButton } from 'three/addons/webxr/VRButton.js'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
 import { Wob } from '@/ent/Wob'
@@ -53,7 +53,7 @@ export class RenderSys {
 
 		// https://discourse.threejs.org/t/acesfilmictonemapping-leading-to-low-contrast-textures/15484/10
 		this.renderer.toneMapping = ACESFilmicToneMapping
-		// this.renderer.toneMapping = NoToneMapping // LinearToneMapping(enables toneMappingExposure) // ACESFilmicToneMapping
+		// this.renderer.toneMapping = ACESFilmicToneMapping // LinearToneMapping(enables toneMappingExposure) // ACESFilmicToneMapping
 		// this.renderer.toneMapping = LinearToneMapping // (enables toneMappingExposure for sky) // ACESFilmicToneMapping
 		this.renderer.toneMappingExposure = 1//0.5///1//0.5
 		// I don't like having to do global exposure just for Sky.js, but perhaps that's considered "mid level" 5/10.  I don't know much about these kinds of things.  // Now re-setting to 1.0

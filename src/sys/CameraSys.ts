@@ -1,8 +1,9 @@
-import { Group, PerspectiveCamera, Vector3 } from 'three'
+import { Group, PerspectiveCamera, Vector3, Object3D } from 'three'
 import { Babs } from '@/Babs'
 
-import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js'
 import { Controller } from '@/comp/Controller'
+import type { FeMesh } from '@/Utils'
 
 // Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -47,14 +48,15 @@ export class CameraSys {
 			offsetDist = offsetDist + (30 - this.offsetHeight)
 		}
 		// let mat = this._target.playerRig.children[0]?.children[1]?.material
+		const playerBbox = this._target.playerRig.children.find(c => c.name == 'player_bbox') as FeMesh
 		if (this.offsetHeight < 4) {
 			// if(mat) mat.opacity = 0.2
 			this._target.playerRig.visible = false
-			this._target.playerRig.children.find(c => c.name == 'player_bbox').clickable = false
+			playerBbox.clickable = false
 		}
 		else {
 			this._target.playerRig.visible = true
-			this._target.playerRig.children.find(c => c.name == 'player_bbox').clickable = true
+			playerBbox.clickable = true
 		}
 		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera

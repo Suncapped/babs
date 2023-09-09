@@ -5,7 +5,7 @@ import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, SharedWob as SharedWob, type Rotation } from '@/shared/SharedWob'
+import { Blueprint, SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs, type IconData } from './InstancedWobs'
 import { LoaderSys } from '@/sys/LoaderSys'
@@ -357,4 +357,5 @@ export class Wob extends SharedWob {
 export type FeObject3D = Object3D & {
 	idplayer? :number
 	zone? :Zone
+	clickable? :boolean
 }

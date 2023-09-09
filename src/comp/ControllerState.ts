@@ -1,13 +1,19 @@
 import { log } from './../Utils'
+import { LoopOnce } from 'three'
 
 export class State {
+	
+	_finishedCallback
+	_parent
+	_cleanupCallback
+
 	constructor(parent) {
 		this._parent = parent
 	}
 
-	enter() { }
+	enter(prevState) { }
 	exit() { }
-	update() { }
+	update(_) { }
 }
 
 
@@ -33,7 +39,7 @@ export class DanceState extends State {
 			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.reset()
-			curAction.setLoop(THREE.LoopOnce, 1)
+			curAction.setLoop(LoopOnce, 1)
 			curAction.clampWhenFinished = true
 			curAction.crossFadeFrom(prevAction, 0.2, true)
 			curAction.play()
@@ -84,7 +90,7 @@ export class JumpState extends State {
 			const prevAction = this._parent._proxy._animations[prevState.name].action
 
 			curAction.reset()
-			curAction.setLoop(THREE.LoopOnce, 1)
+			curAction.setLoop(LoopOnce, 1)
 			curAction.clampWhenFinished = true
 			curAction.crossFadeFrom(prevAction, 0.2, true)
 			curAction.play()
@@ -208,7 +214,7 @@ export class BackwardState extends State {
 		// 	}
 		// }
 		// else {
-			this._parent.setState('idle')
+		this._parent.setState('idle')
 		// }
 	}
 }

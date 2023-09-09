@@ -1,4 +1,4 @@
-import * as Utils from './../Utils'
+import { coordToIndex, indexToCoord, clamp } from './../Utils'
 import { 
 	PlaneGeometry, 
 	MeshBasicMaterial, 
@@ -35,22 +35,22 @@ import {
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
-// import { Sky } from 'three/examples/jsm/objects/Sky.js'
+// import { Sky } from 'three/addons/objects/Sky.js'
 import { Sky } from 'three/addons/objects/Sky.js'
 import { debugMode } from '../stores'
 
-import { Wob } from '@/ent/Wob'
+import { Wob, type FeObject3D } from '@/ent/Wob'
 import { EventSys } from './EventSys'
 import * as SunCalc from 'suncalc'
-// import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
-// import { CSM } from 'three/examples/jsm/csm/CSM.js';
+// import { KTX2Loader } from 'three/addons/loaders/KTX2Loader'
+// import { CSM } from 'three/addons/csm/CSM.js';
 
 import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { Player } from '@/ent/Player'
 import { DateTime } from 'luxon'
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 
 import { GUI } from 'lil-gui'
 
@@ -295,7 +295,7 @@ export class WorldSys {
 			let ktx2Loader = new KTX2Loader()
 			ktx2Loader.setTranscoderPath('/basis/')
 			ktx2Loader.detectSupport(this.babs.renderSys.renderer)
-			// ktx2Loader.setTranscoderPath('/node_modules/three/examples/jsm/libs/basis/');
+			// ktx2Loader.setTranscoderPath('/node_modules/three/addons/libs/basis/');
 			// dracoLoader.setDecoderConfig({ type: 'js' })
 			// this.dracoLoader.preload()
 			// this.loader.setDRACOLoader(this.dracoLoader)
@@ -678,7 +678,7 @@ export class WorldSys {
 		
 		geometry.computeVertexNormals()
 
-		const newGround = new Mesh( geometry, this.groundMaterial )
+		const newGround :FeObject3D = new Mesh( geometry, this.groundMaterial)
 		newGround.name = 'ground'
 		newGround.castShadow = true
 		newGround.receiveShadow = true
@@ -695,7 +695,7 @@ export class WorldSys {
 
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.name = 'groundgrid'
-		groundGrid.material.color.setHex(0x333333).convertSRGBToLinear()
+		;(groundGrid.material as any).color.setHex(0x333333).convertSRGBToLinear()
 		groundGrid.position.setX(WorldSys.ZoneLength *zone.x)
 		groundGrid.position.setZ(WorldSys.ZoneLength *zone.z)
 		this.babs.group.add(groundGrid)
@@ -795,24 +795,24 @@ export class WorldSys {
 				// Set vertex height from elevations data
 				// verticesRef[j +1] = zone.elevationData[i] * zone.yscale// +zone.y
 
-				const {x: thisx, z: thisz} = Utils.indexToCoord(i)
+				const {x: thisx, z: thisz} = indexToCoord(i)
 
 				// Stitch terrain elevations together
 				if(thisx === 0 && thisz === 0) { // angled one, not a side
 					if(zoneMinusBoth) {
-						const indexOnOtherZone = Utils.coordToIndex(25, 25, 26, 3)
+						const indexOnOtherZone = coordToIndex(25, 25, 26, 3)
 						verticesRef[j +1] = zoneMinusBothVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
 				else if(thisz === 0) { // rearward edge on z
 					if(zoneMinusZ) {
-						const indexOnOtherZone = Utils.coordToIndex(thisx, 25, 26, 3)
+						const indexOnOtherZone = coordToIndex(thisx, 25, 26, 3)
 						verticesRef[j +1] = zoneMinusZVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
 				else if(thisx === 0) {
 					if(zoneMinusX) {
-						const indexOnOtherZone = Utils.coordToIndex(25, thisz, 26, 3)
+						const indexOnOtherZone = coordToIndex(25, thisz, 26, 3)
 						verticesRef[j +1] = zoneMinusXVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
@@ -844,10 +844,10 @@ export class WorldSys {
 			let color = this.colorFromLc[lcString]
 
 			// Spread color from this vertex as well as to its +1 forward vertices (ie over the plot, the 40x40ft)
-			const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
+			const coordOfVerticesIndex = indexToCoord(index, 26) // i abstracts away color index
 			for(let z=0; z<=1; z++) {
 				for(let x=0; x<=1; x++) {
-					const colorsIndexOfGridPoint = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
+					const colorsIndexOfGridPoint = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
 					if(!color) {
 						colorNotFound = zone.landcoverData[index] + lcString
 						color = this.colorFromLc.Grassland // todo add colors?
@@ -862,7 +862,7 @@ export class WorldSys {
 			// Find water nearby
 			for(let z=-1; z<=1; z++) {
 				for(let x=-1; x<=1; x++) {
-					const offsetIndex = Utils.coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
+					const offsetIndex = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
 					if(
 						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'River'
 						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Lake'
@@ -896,7 +896,7 @@ export class WorldSys {
 
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
-				const coordOfVerticesIndex = Utils.indexToCoord(index, 26) // i abstracts away color index
+				const coordOfVerticesIndex = indexToCoord(index, 26) // i abstracts away color index
 				// log('gridPointofVerticesIndex', coordOfVerticesIndex)
 				// Create cubes on all spots in between
 				if(this.WaterTypes.includes(lcString)) {
@@ -908,8 +908,8 @@ export class WorldSys {
 							const zpos = coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4
 							
 							const yardCoord = YardCoord.Create({
-								x: Utils.clamp(xpos, 0, 249),
-								z: Utils.clamp(zpos, 0, 249),
+								x: clamp(xpos, 0, 249),
+								z: clamp(zpos, 0, 249),
 								zone: entZone,
 							})
 							// const engineCoord = yardCoord.toEngineCoord()
