@@ -228,7 +228,7 @@ export class SocketSys {
 		}
 		else if('alreadyin' in payload) {
 			// Just have them repeat the auth if this was their second login device
-			this.babs.uiSys.offerReconnect('Disconnected from other tab.')
+			this.babs.uiSys.offerReconnect('Disconnected from other tab; try a refresh.')
 		}
 		else if('load' in payload) {
 
@@ -371,7 +371,8 @@ export class SocketSys {
 				else {
 					const bSelf = false
 					const player = await Player.Arrive(arrival, bSelf, this.babs)
-					this.babs.uiSys.svJournal.appendText('You notice '+(player.nick || 'a stranger')+' nearby.', null, 'right')
+
+					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(player.nick || 'a stranger')+' is nearby>', 'copy', player.colorHex)
 				}
 
 			}
@@ -383,7 +384,7 @@ export class SocketSys {
 			if(departPlayer && departPlayer.id !== this.babs.idSelf) {
 				// Could be self departing from a previous session, or person already otherwise departed?
 				if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-					this.babs.uiSys.svJournal.appendText((departPlayer.nick || 'A stranger')+' has departed.', null, 'right')
+					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(departPlayer.nick || 'a stranger')+' departs>', 'copy', departPlayer.colorHex)
 					departPlayer.remove()
 
 				}
@@ -393,7 +394,7 @@ export class SocketSys {
 			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
 			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
 			const exitZone = this.babs.ents.get(player.controller.playerRig.zone.id) as Zone // player.controller.playerRig.zone ?
-			const playerIsSelf = player.id === this.babs.idSelf
+			// const playerIsSelf = player.id === this.babs.idSelf
 
 			await player.controller.zoneIn(player, enterZone, exitZone)
 		}
@@ -404,15 +405,23 @@ export class SocketSys {
 			// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
 			// In that case, data.name is set to their name.
 			// this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
-			this.babs.uiSys.aboveHeadChat(chattyPlayer?.id, said.text, said.color)
+			chattyPlayer.colorHex = said.color // Update their color
+			// ^ In future, could send a color change event, but with text chat isn't too bad.
+			
+			this.babs.uiSys.aboveHeadChat(chattyPlayer?.id, said.text, `${chattyPlayer?.nick || 'Stranger'}: ${said.text}`, said.color)
 		}
 		else if('nicklist' in payload) {
 			log.info('nicklist', payload.nicklist)
 			for(let pair of payload.nicklist) {
-				const player = this.babs.ents.get(pair.idtarget) as Player
-				log.info('nicklist player', player)
-				player?.nickSetAndDisplay(pair.nick)
 				this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+
+				const player = this.babs.ents.get(pair.idtarget) as Player
+				if(!player) continue // If no player, skip display stuff.  
+				// Note, that can happen when 'load' is still awaiting rig download etc, so socketsys moved on to nicklist.
+
+				player?.nickSetAndDisplay(pair.nick)
+				
+				// Also...I don't understand why this part is working to fill in menu name, if player is false?
 				if(player?.id === this.babs.idSelf) {
 					menuSelfData.set({
 						...svelteGet(menuSelfData),
@@ -466,7 +475,7 @@ export class SocketSys {
 			const babs = this.babs
 			if(babs.isProd) {
 				setTimeout(() => {
-					babs.uiSys.svJournal.appendText('Reconnecting... (or try a refresh)', '#ff0000', 'right')
+					babs.uiSys.aboveHeadChat(this.babs.idSelf, '<<Reconnecting... (or try a refresh)>>', 'copy')
 				}, 2000)
 			}
 			setTimeout(() => {

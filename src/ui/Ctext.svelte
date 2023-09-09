@@ -124,52 +124,6 @@
 		
 	}
 	
-	:global #Ctext > #labelRenderer > .label{
-		width: 300px;
-		text-align: center;
-		/* vertical-align: top; */
-		/* position:absolute; */
-		/* top: 100px; */
-
-		/* background-color:red; opacity: 0.5; */
-		/* border: 2px solid green; */
-		
-	}
-
-	#chatbox, :global #Ctext > #labelRenderer > .label { /* Font settings, basically */
-        /* font-family: "Nunito", sans-serif; */
-		/* font-weight: bold; */
-		font-size: 22px;
-		vertical-align: top;
-        /* color: white; */
-        /* text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;  */
-		/* letter-spacing: 1.5px; */
-		/* -webkit-text-stroke: 3px #000; */ /* Actually works on chrome/ff too */
-		position: absolute; /* UiSys counts on this for placement */
-	}
-	:global #Ctext > #labelRenderer > .label > span{
-        display: inline-block;
-		text-align: left;
-		/* hyphens: auto;
-		-webkit-hyphens: auto; */
-		margin-top:-50%; /* hmm; bottom-align paragraphs */
-
-		/* background-color:blue; opacity: 0.5; */
-		/* border:1px solid red; */
-
-		background-color:rgba(0, 0, 0, 0.75);
-
-
-		border-radius: 5px;
-		
-		/* ugh Windows vs Macos font-itself paddings are different?! So there is a Babs.js js modification of this style */
-		padding-top: 7px;
-		padding-bottom: 3px;
-		padding-left: 8px;
-		padding-right: 8px;
-	}
-
-
 	#chatbox{
 		background-color:rgba(0, 0, 0, 0.75);
 		/* height: 100px; */

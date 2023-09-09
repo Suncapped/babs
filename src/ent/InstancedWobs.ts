@@ -96,7 +96,7 @@ export class InstancedWobs {
 		Wob.InstancedWobs.set(this.blueprint_id, this)
 		this.babs.group.add(this.instancedMesh)
 
-		log.info('InstancedMesh created:', this.blueprint_id, this.maxCount)
+		// log.info('InstancedMesh created:', this.blueprint_id, this.maxCount)
 
 	}
 

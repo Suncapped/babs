@@ -3,7 +3,7 @@ import { Babs } from '@/Babs'
 
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js'
 import { Controller } from '@/comp/Controller'
-import type { FeMesh } from '@/Utils'
+import type { FeObject3D } from '@/ent/Wob'
 
 // Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
@@ -48,7 +48,7 @@ export class CameraSys {
 			offsetDist = offsetDist + (30 - this.offsetHeight)
 		}
 		// let mat = this._target.playerRig.children[0]?.children[1]?.material
-		const playerBbox = this._target.playerRig.children.find(c => c.name == 'player_bbox') as FeMesh
+		const playerBbox = this._target.playerRig.children.find(c => c.name == 'player_bbox') as FeObject3D
 		if (this.offsetHeight < 4) {
 			// if(mat) mat.opacity = 0.2
 			this._target.playerRig.visible = false

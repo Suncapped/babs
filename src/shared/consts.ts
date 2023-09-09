@@ -167,6 +167,7 @@ export type PlayerArrive = {
 	x :number,
 	z :number,
 	r :number,
+	color? :string,
 
 	// movestate? :number, // Optional because of load.self // Deprecated
 	meta :{
@@ -216,12 +217,12 @@ export type SendZoneIn = {
 export class FeWords {
 	content :string
 	idZone :number // Zone it's about
-	isJournaled? :'isJournaled' = null // Whether it goes into journal
 	isOoc? :'isOoc' = null // OOC/service message (different font/color)
 	colorHex? :string
 	targetLocation? :{x:number, z:number}
 	idTargetWob? :WobId // Follows above a wob
 	idTargetPlayer? :number // Follows above a player head
+	journalContent? :null|'copy'|string = null // Copy existing content, or do not journal, or override
 }
 export type SendFeWords = {
 	fewords :FeWords,

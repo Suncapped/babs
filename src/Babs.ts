@@ -78,12 +78,13 @@ export class Babs {
 
 		const isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0
 		const isWindows = navigator.platform.toUpperCase().indexOf('WIN')>=0
-		if(isWindows) {
-			let stylesheet = document.styleSheets[document.styleSheets.length-1]
-			console.log(stylesheet)
-			stylesheet.insertRule('#Ctext>#labelRenderer>.label>span { padding-top:2px !important; padding-bottom: 2px !important; }', stylesheet.cssRules.length)
-			// Hax, see also Ctext.svelte at same tab ^
-		}
+		// if(isWindows) {
+		// 	let stylesheet = document.styleSheets[document.styleSheets.length-1]
+		// 	console.log(stylesheet)
+		// 	stylesheet.insertRule('#Ctext>#labelRenderer>.label>span { padding-top:2px !important; padding-bottom: 2px !important; }', stylesheet.cssRules.length)
+		// 	// Hax, see also Ctext.svelte at same tab ^
+		// }
+		// No longer needed due to mesh texts! :)
 
 		// let preservedConsoleLog = console.warn
 		// console.warn = function() { // Overriding to suppress Threejs FBXLoader warnings
@@ -195,8 +196,9 @@ export class Babs {
 			|| this.dtSinceLastFocus > 0.15) { // Allow a frame a few times per second; just about right for not breaking movement (ie rubberbanding).
 			// todo just fix Controller.ts:update() to not break so badly on longer dt?
 
-			this.uiSys.update()
-			this.inputSys?.update(this.dtSinceLastFocus)
+			this.cameraSys?.update(this.dtSinceLastFocus) // Camera gets rotated first
+			this.inputSys?.update(this.dtSinceLastFocus) // Then character gets rotated
+			this.uiSys.update() // Then we can determine where to place following UI elements
 			for(let [name, coms] of this.compcats) {
 				if(coms) {
 					for(let com of coms) {
@@ -206,7 +208,6 @@ export class Babs {
 			}
 
 			this.worldSys.update(this.dtSinceLastFocus)
-			this.cameraSys?.update(this.dtSinceLastFocus)
 			this.renderSys.update(this.dtSinceLastFocus)
 
 			this.dtSinceLastFocus = 0

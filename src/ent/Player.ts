@@ -28,6 +28,8 @@ export class Player extends Ent {
 	
 	model :Scene
 
+	colorHex :string
+
 	// References:
 
 	
@@ -38,12 +40,11 @@ export class Player extends Ent {
 	static async Arrive(arrival :PlayerArrive, bSelf :boolean, babs :Babs) {
 
 		const plr = new Player(arrival.id, babs)
+		plr.colorHex = arrival.color
 		plr.babs = babs
 		plr.char = arrival.char
 		
 		plr.self = bSelf
-
-		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id))
 
 		log.info('New Player:', plr)
 
@@ -55,12 +56,14 @@ export class Player extends Ent {
 		playerRig.idplayer = arrival.id
 		playerRig.visible = false
 		plr.babs.group.add(playerRig)
-
+		
 		if(plr.self) {
 			plr.babs.idSelf = plr.id
 		}
 
 		plr.controller = await Controller.Create(arrival, plr.babs, playerRig)
+
+		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id))
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -82,10 +85,13 @@ export class Player extends Ent {
 		
 	}
 
-	nickSetAndDisplay(newNick) {
-		if(this.nick == newNick) return // Only show once, or if undefined == undefined
+	nickSetAndDisplay(newNick :string) {
+		if(this.nick == newNick) {
+			// console.log('nickSetAndDisplay canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first.
+			return // Only show once, or if undefined == undefined
+		}
 		this.nick = newNick
-		this.babs.uiSys.playerSaid(this.id, this.nick, {journal: false, isname: true}) // Show above head
+		this.babs.uiSys.aboveHeadChat(this.id, `< ${this.nick} >`, null, this.colorHex) // Show above head // todo include player's chat color?
 	}
 
 	remove() {

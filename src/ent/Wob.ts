@@ -328,7 +328,7 @@ export class Wob extends SharedWob {
 
 		for(const wobName of arrivalWobsNames) {
 			if(!Wob.LoadedGltfs.get(wobName)){
-				log.info('Loading gltf:', wobName)
+				// log.info('Loading gltf:', wobName)
 				const load = babs.loaderSys.loadGltf(`/environment/gltf/${wobName}.glb`, wobName, await LoaderSys.CachedGlbFiles)
 				Wob.LoadedGltfs.set(wobName, true) // Gets set right after this
 				loads.push(load)

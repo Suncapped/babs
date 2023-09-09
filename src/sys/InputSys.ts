@@ -48,7 +48,7 @@ type PickedObject = {
 
 export class InputSys {
 
-	static NickPromptStart = '> Name for'
+	static NickPromptStart = '>> Name for'
 
 	mouse :{[key :string] :boolean|number|Raycaster|Record<any,any>|any} = {
 		left: OFF,
@@ -625,13 +625,13 @@ export class InputSys {
 							// todo make work for non-instanced things, and ground, players, etc.
 							const coord = this.pickedObject?.yardCoord
 							if(!coord) {
-								this.babs.uiSys.playerSaid(this.babs.idSelf, 'There is no effect.', {journal: false, color: '#cccccc', italics: true})
+								this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no effect>')
 							}
 
 							const zone = coord.zone
 							const wob = zone.getWob(coord.x, coord.z)
 							if(!wob) {
-								this.babs.uiSys.playerSaid(this.babs.idSelf, 'Target not found.', {journal: false, color: '#cccccc', italics: true})
+								this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
 							}
 							else {
 								this.babs.socketSys.send({
@@ -655,7 +655,7 @@ export class InputSys {
 								const pl = this.pickedObject.parent.parent as FeObject3D
 								const player = this.babs.ents.get(pl.idplayer) as Player
 								// Display name about head when you click a player or yourself
-								this.babs.uiSys.playerSaid(player.id, player.nick || 'Stranger', { journal: false, isname: true })
+								this.babs.uiSys.aboveHeadChat(player.id, `< ${player.nick || 'Stranger'} >`, null, player.colorHex)
 							}
 							else if (this.pickedObject?.feim) {
 								let debugStuff = ''
@@ -1009,8 +1009,8 @@ export class InputSys {
 			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
 			// So for anything contained by a Group (Object3D), we need to manually raise it to the top level?
 			let groups = this.babs.group.children.filter(c=>c.type=='Group')
-			groups.forEach(g=>filteredChildren.push(...g.children))
-			
+			groups.forEach(g=>filteredChildren.push(...g.children.filter(c=>!excluded.includes(c.name))))
+
 			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
 
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
@@ -1088,7 +1088,8 @@ export class InputSys {
 						// log('ray to flame')
 					}
 					else if (objectMaybe instanceof TroikaText) { // Troika text
-						log('troika text')
+						console.warn('ray to troika text')
+						console.log(objectMaybe)
 					}
 					else { // All other meshes
 						console.warn('Uncaught Mesh mouseRayTarget', this.mouseRayTargets[i])
@@ -1494,7 +1495,7 @@ export class InputSys {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.playerSaid(this.babs.idSelf, `What would you like to use this ${fwob?.name} on?`, {journal: false, color: '#cccccc', italics: true})
+		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name}'s target?>`)
 	}
 
 

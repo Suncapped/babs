@@ -2,7 +2,6 @@ import { UiSys } from './UiSys'
 import { log } from './../Utils'
 import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace } from 'three'
 import { WorldSys } from './WorldSys'
-import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
 import { dividerOffset } from '../stores'
 import { VRButton } from 'three/addons/webxr/VRButton.js'
 import { Flame } from '@/comp/Flame'
@@ -19,7 +18,6 @@ export class RenderSys {
 
 	babs :Babs
 	renderer :WebGLRenderer
-	labelRenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
 	public isVrSupported = false
@@ -98,11 +96,6 @@ export class RenderSys {
 		this._scene.matrixAutoUpdate = false 
 		// ^ https://discourse.threejs.org/t/question-about-object3d-updatematrixworld/6925/4
 
-		this.labelRenderer = new CSS2DRenderer()
-		this.labelRenderer.domElement.id = 'labelRenderer'
-
-		document.getElementById('Ctext').appendChild(this.labelRenderer.domElement)
-
 		window.addEventListener('resize', () => {
 			this.handleResize()
 		}, false)
@@ -171,7 +164,6 @@ export class RenderSys {
 		
 		const height = parseFloat(getComputedStyle(this.renderer.domElement, null)?.height)
 		this.renderer.setSize(width, height)
-		this.labelRenderer.setSize(width, height)
 		this._camera.aspect = width / height
 		this._camera.updateProjectionMatrix()
 	}
@@ -206,7 +198,6 @@ export class RenderSys {
 		this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
 
 		this.renderer.render(this._scene, this._camera)
-		this.labelRenderer.render(this._scene, this._camera)
 	}
 
 	calcMapIndex = 0

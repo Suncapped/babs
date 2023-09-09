@@ -1,5 +1,4 @@
 import Stats from 'three/addons/libs/stats.module.js'
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
@@ -59,113 +58,7 @@ export class UiSys {
 	
 
 
-
-	playerSaid(idPlayer, text, options?) {
-		options = {
-			color: '#eeeeee',
-			italics: false,
-			journal: true,
-			isname: false,
-			show: true, // show above head?
-			...options,
-		}
-		const chatDiv = document.createElement('div')
-		chatDiv.classList.add('label')
-
-		if(options.isname) {
-			// eslint-disable-next-line no-irregular-whitespace
-			text = `< ${text} >`
-		}
-
-		const player = this.babs.ents.get(idPlayer) as Player
-
-		// Set color based on our menu or the color send with chat for other player
-		// if(idPlayer === this.babs.idSelf) {
-		// 	chatDiv.style.color = svelteGet(menuSelfData).color
-		// }
-		// else {
-		chatDiv.style.color = options.color
-		// }
-
-		if(options.italics) chatDiv.style.fontStyle = 'italic'
-		
-		const chatSpan = document.createElement('span')
-		chatSpan.innerText = text
-		chatDiv.appendChild(chatSpan)
-
-		if(options.journal) {
-			this.svJournal.appendText((player?.nick || options.name || 'Stranger')+': '+text, options.color)
-		}
-
-		if(!options.show) {
-			return
-		}
-
-		// Decide how long to display for
-		// 200-300 wpm is normal for high school through adults // https://scholarwithin.com/average-reading-speed
-		// But since it's not continuous reading, it takes time to move eyes to it and read.  200 way too fast.
-		// Also it's nice to have time to read it 2-3x
-		const wpm = 120
-		const wps = wpm/60 // 200wpm/60s=3.3wps
-		const countWords = text.trim().split(/\s+/).length
-		const startingTimeMin = 3 // Give 3 seconds at start for everything (to refocus), then add onto it
-		const seconds = countWords / wps + startingTimeMin
-		const secondsClamped = MathUtils.clamp(seconds, startingTimeMin, 20)
-		
-		chatDiv.setAttribute('data-expires', (Date.now() + (1000 *secondsClamped)).toString())
-		chatDiv.setAttribute('data-idPlayer', idPlayer || options.name)
-		chatDiv.style.visibility = 'hidden'
-		this.labelElements.push(chatDiv)
-
-		const chatLabel = new CSS2DObject(chatDiv)
-		chatLabel.name = 'playerSaid'
-		const chatStartingHeight = (idPlayer === this.babs.idSelf ? 26 : 29) 
-		chatLabel.position.set( 0, chatStartingHeight, 0 )
-
-		const moveUpCheck = () => {
-			if(chatDiv.clientHeight !== 0) {
-				const newSpanHeight = chatDiv.firstChild.offsetHeight // gets span
-				// It's added to DOM; now move everything up and then make this one visible
-
-				// Move older divs upward
-				for(let div of this.labelElements) {
-					if(parseInt(div.getAttribute('data-idPlayer')) === (idPlayer || options.name)){
-						if(chatDiv === div) continue // Skip self
-						const currentDistanceUp = Math.abs(parseInt(div.style.top)) || 0
-						const pad = 3
-						div.style.top = `-${currentDistanceUp +newSpanHeight +pad}px`
-					}
-				}
-
-				// Indent multiline instead of using hyphens
-				const singleLineTypicalHeight = 18
-				if(newSpanHeight > singleLineTypicalHeight *1.5) { // *1.5 just in case font change etc
-					// chatDiv.style.left = `${chatDiv.offsetWidth * 0.05}px` // % of width
-				}
-
-				// Make new one visible finally
-				chatDiv.style.visibility = 'visible' 
-			}
-			else {
-				setTimeout(moveUpCheck, 100)
-			}
-		}
-		moveUpCheck()
-
-		if(player?.controller?.playerRig) { 
-			// Needed to avoid latency of interval below
-			player.controller.playerRig.add(chatLabel)
-		}
-		else {
-			let waitForMesh = setInterval(() => {
-				log('waiting for said')
-				if(player?.controller?.playerRig) {
-					player.controller.playerRig.add(chatLabel)
-					clearInterval(waitForMesh)
-				}
-			}, 200)
-		}
-	}
+	
 
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
 		log.info('landSaid', landtarget)
@@ -195,17 +88,20 @@ export class UiSys {
 	}
 	
 	// aboveHeadStack = Array<TroikaText>()
-	aboveHeadChat(idPlayer, content, colorHex = '#eeeeee') {
+	aboveHeadChat(idPlayer :number, content :string, journalContent :null|'copy'|string = null, colorHex = '#eeeeee') {
 		const player = this.babs.ents.get(idPlayer) as Player
-		log('abovePlayerHead', idPlayer, content)
+		log.info('aboveHeadChat', idPlayer, content, colorHex, player)
+		
 		const ttext = this.feWords({
 			content: content,
-			idZone: player.controller.playerRig.zone.id,
+			idZone: player.controller?.playerRig?.zone.id,
 			idTargetPlayer: idPlayer,
 			colorHex: colorHex,
-			isJournaled: 'isJournaled',
+			journalContent: journalContent,
 		})
 		ttext.isAboveHead = true
+
+		// console.log('setting ttext.isAboveHead', ttext.isAboveHead, ttext)
 
 		
 	}
@@ -266,8 +162,8 @@ export class UiSys {
 		if(words.isOoc) colorHex = '#aaaaaa'
 		if(words.colorHex) colorHex = words.colorHex // If present, overrides normal OOC color
 
-		if(words.isJournaled) {
-			this.svJournal.appendText(`${words.content}`, '#aaaaaa', 'right')
+		if(words.journalContent) {
+			this.svJournal.appendText(`${words.journalContent === 'copy' ? words.content : words.journalContent}`, colorHex, 'right')
 		}
 
 		const zone = this.babs.ents.get(words.idZone) as Zone
@@ -307,7 +203,6 @@ export class UiSys {
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
 			let point = zone.rayHeightAt(yardCoord)
 			point.setY(point.y +5.8)
-			// this.playerSaid(player.id, words.content, {journal: false, color: '#cccccc', italics: true})
 
 			const ttext = this.makeTextAt('feWords', words.content, point, 1.375, colorHex)
 
@@ -316,9 +211,10 @@ export class UiSys {
 			const height = 6
 			ttext.position.copy(new Vector3(0, height *(1/rigScale.y), 0))
 			ttext.scale.copy(new Vector3(1/rigScale.x, 1/rigScale.y, 1/rigScale.z))
-			ttext.rotation.set(0, Math.PI, 0)
 
-			console.log(player.controller.playerRig.scale)
+			// ttext.rotation.set(0, Math.PI, 0)
+			// We are going to per-frame ensure that it faces the camera, in update()			
+
 			player.controller.playerRig.add(ttext)
 
 			return ttext
@@ -356,10 +252,23 @@ export class UiSys {
 		ttext.anchorX = 'center'
 		ttext.anchorY = 'bottom'
 
-		// Display time length
+		// How much time it will display for
 		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
 		ttext.expires = Date.now() +(1000 *expiresInSeconds)
 		this.expiringText.push(ttext)
+		// todo use this from before?
+		// 	// Decide how long to display for
+		// 	// 200-300 wpm is normal for high school through adults // https://scholarwithin.com/average-reading-speed
+		// 	// But since it's not continuous reading, it takes time to move eyes to it and read.  200 way too fast.
+		// 	// Also it's nice to have time to read it 2-3x
+		// 	const wpm = 120
+		// 	const wps = wpm/60 // 200wpm/60s=3.3wps
+		// 	const countWords = text.trim().split(/\s+/).length
+		// 	const startingTimeMin = 3 // Give 3 seconds at start for everything (to refocus), then add onto it
+		// 	const seconds = countWords / wps + startingTimeMin
+		// 	const secondsClamped = MathUtils.clamp(seconds, startingTimeMin, 20)
+		// 	chatDiv.setAttribute('data-expires', (Date.now() + (1000 *secondsClamped)).toString())
+		// 	chatDiv.setAttribute('data-idPlayer', idPlayer || options.name)
 
 		// Position in scene
 		ttext.position.copy(worldPos)
@@ -383,7 +292,7 @@ export class UiSys {
 		document.getElementById('Overlay').style.zIndex = '1000'
 		document.getElementById('topleft').style.display = 'none' 
 
-		this.svJournal.appendText(reason, '#ff0000', 'right')
+		this.aboveHeadChat(this.babs.idSelf, `<<${reason}>>`, 'copy')
 	}
 
 	/** 
@@ -456,10 +365,8 @@ export class UiSys {
 
 		this.expiringText.forEach(ttext => {
 			if(Date.now() > ttext.expires) {
-				// log.info('Removing text', ttext, ttext.id)
 				ttext.parent.remove(ttext)
 				ttext.dispose()
-
 				this.expiringText = this.expiringText.filter(t => t.id !== ttext.id)
 			}
 		})
@@ -467,7 +374,7 @@ export class UiSys {
 
 		// Now do things that rely on the playerRig being present; otherwise return
 		const selfRig = this.babs.inputSys.playerSelf.controller?.playerRig
-		if(!selfRig) return
+		if(!selfRig) return	
 
 		// For aboveHeadStack, set position, rotation, element height in stack
 		// We want items that are earlier in the index to be higher up.
@@ -476,19 +383,28 @@ export class UiSys {
 		// 	and it has no height modification.  Each item count down the index, goes a little higher.
 		const scale = 1/selfRig.scale.y
 		const heightStartingPoint = 6 *scale
-		let heightAccum = 0
+		let heightAccumPerPlayer = []
 		for(let index=this.expiringText.length -1; index >= 0; index--) {
 			const ttext = this.expiringText[index]
-			if(!ttext.isAboveHead) return
+			if(!ttext.isAboveHead) continue
+
+			const idPlayer = parseInt(ttext.parent.idplayer)
+			const heightAccum = heightAccumPerPlayer[idPlayer] || 0
 			
 			ttext.position.setY(heightStartingPoint +heightAccum)
 			
 			const height = (ttext.geometry.boundingBox.max.y -ttext.geometry.boundingBox.min.y)
-			heightAccum += height *scale
+			heightAccumPerPlayer[idPlayer] = heightAccum +(height *scale)
+
+			// Get the direction of the camera from
+			let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
+			this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+			ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
 		}
 
-		const oldPos = selfRig?.position
 
+
+		const oldPos = selfRig?.position
 		if(this.babs.debugMode) {
 			const newLogText = `zone: ${selfRig?.zone.id}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}), y: ${Math.floor(oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
