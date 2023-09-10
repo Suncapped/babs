@@ -124,7 +124,6 @@ export type SendLoad = {
 			credits :number,
 			roles :string,
 			reason :string,
-			color :string,
 			debugmode :boolean,
 			divider :number,
 			
@@ -132,10 +131,10 @@ export type SendLoad = {
 			meta :{
 				mousedevice :string,
 				debugmode :boolean,
+				color :string,
 			},
 			char :{
 				gender :string,
-				color :string,
 			},
 		},
 		farZones :Array<Zoneinfo>,
@@ -167,16 +166,15 @@ export type PlayerArrive = {
 	x :number,
 	z :number,
 	r :number,
-	color? :string,
 
 	// movestate? :number, // Optional because of load.self // Deprecated
 	meta :{
 		mousedevice? :string,
 		debugmode? :boolean,
+		color :string,
 	},
 	char :{
 		gender :string,
-		color :string,
 	},
 }
 export type SendPlayersArrive = {

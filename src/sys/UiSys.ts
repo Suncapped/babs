@@ -174,10 +174,10 @@ export class UiSys {
 				z: words.targetLocation.z,
 				zone: zone,
 			})
-			let point = zone.rayHeightAt(yardCoord)
-			point.setY(point.y +1)
+			let pointCentered = zone.rayHeightAt(yardCoord)
+			pointCentered.setY(pointCentered.y +2)
 
-			this.makeTextAt('feWords', words.content, point, 1.375, colorHex)
+			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetWob) {
 			// Display at wob location
@@ -190,21 +190,21 @@ export class UiSys {
 			pointCentered.setY(pointCentered.y +WorldSys.Yard /2)
 
 			// Get the direction of the cameraGroup from pointCentered
-			let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
-			this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+			let moveDirection = new Vector3()
+			this.babs.inputSys.playerSelf.controller.playerRig.getWorldDirection(moveDirection).negate()
 			// Move pointCentered toward the camera by 2 units
 			// Actually some things are quite offset, so move it 1.75 tiles toward us
-			pointCentered.add(cameraGroupDirectionOpposite.multiplyScalar(2 +4 +1)) 
+			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)))
 
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
-			let point = zone.rayHeightAt(yardCoord)
-			point.setY(point.y +5.8)
+			let pointCentered = zone.rayHeightAt(yardCoord)
+			pointCentered.setY(pointCentered.y +5.8)
 
-			const ttext = this.makeTextAt('feWords', words.content, point, 1.375, colorHex)
+			const ttext = this.makeTextAt('feWords', words.content, pointCentered, 1.0, colorHex)
 
 			// Place in player object parent, and reposition
 			const rigScale = player.controller.playerRig.scale.clone()
@@ -239,7 +239,7 @@ export class UiSys {
 		ttext.color = new Color(colorHex).convertSRGBToLinear()
 		// ^ todo wait for update or figure this out? https://github.com/protectwise/troika/pull/267
 		ttext.fontSize = sizeEm // 22px // https://nekocalc.com/px-to-em-converter
-		ttext.outlineWidth = 0.06180339887
+		ttext.outlineWidth = 0.06180339887 *sizeEm
 		ttext.outlineColor = 'black'
 		ttext.curveRadius = -20
 		ttext.letterSpacing = 0.04
@@ -277,8 +277,9 @@ export class UiSys {
 		// Rotate to camera
 		// Make text face the screen flatly, rather than facing the character.
 		// So get the normalized direction the cameraGroup is facing in world space, then turn it 180 degrees
-		let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
-		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
+		let cameraGroupDirectionOpposite = new Vector3()
+		this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite)
+		cameraGroupDirectionOpposite.negate()
 		ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
 
 		ttext.sync()
@@ -386,15 +387,17 @@ export class UiSys {
 		let heightAccumPerPlayer = []
 		for(let index=this.expiringText.length -1; index >= 0; index--) {
 			const ttext = this.expiringText[index]
-			if(!ttext.isAboveHead) continue
+			if(ttext.isAboveHead) {
 
-			const idPlayer = parseInt(ttext.parent.idplayer)
-			const heightAccum = heightAccumPerPlayer[idPlayer] || 0
-			
-			ttext.position.setY(heightStartingPoint +heightAccum)
-			
-			const height = (ttext.geometry.boundingBox.max.y -ttext.geometry.boundingBox.min.y)
-			heightAccumPerPlayer[idPlayer] = heightAccum +(height *scale)
+				const idPlayer = parseInt(ttext.parent.idplayer)
+				const heightAccum = heightAccumPerPlayer[idPlayer] || 0
+				
+				ttext.position.setY(heightStartingPoint +heightAccum)
+				
+				const height = (ttext.geometry.boundingBox.max.y -ttext.geometry.boundingBox.min.y)
+				heightAccumPerPlayer[idPlayer] = heightAccum +(height *scale)
+			}
+
 
 			// Get the direction of the camera from
 			let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)

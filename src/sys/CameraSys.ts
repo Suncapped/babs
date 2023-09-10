@@ -89,7 +89,7 @@ export class CameraSys {
 
 	vrSetupDone = false
 	xrCam
-	update(dt) {
+	update() {
 
 		// const idealOffset = this._CalculateIdealOffset()
 		this._CalculateIdealOffset()

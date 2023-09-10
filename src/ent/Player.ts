@@ -40,7 +40,7 @@ export class Player extends Ent {
 	static async Arrive(arrival :PlayerArrive, bSelf :boolean, babs :Babs) {
 
 		const plr = new Player(arrival.id, babs)
-		plr.colorHex = arrival.color
+		plr.colorHex = arrival.meta.color
 		plr.babs = babs
 		plr.char = arrival.char
 		

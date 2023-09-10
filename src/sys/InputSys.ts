@@ -532,8 +532,6 @@ export class InputSys {
 
 			// 				// log('instanced?', wob)
 
-
-
 			// 				this.pickedObject = {
 			// 					feim: feim,
 			// 					instancedBpid: wob.name,
@@ -545,16 +543,13 @@ export class InputSys {
 			// 				item.style.filter = 'none'
 			// 				this.pickedObject = undefined
 			// 			}
-
 			// 		}
 			// 		else {
 			// 			if (this.babs.debugMode) item.style.border = 'none'
 			// 		}
-
 			// 	}
-
 			// }
-
+			// It is regretful this won't be used in new inventory :p
 
 			// Determine if dragging a wobject
 			if (!this.carrying) { // Not already carrying something
@@ -673,12 +668,25 @@ export class InputSys {
 
 								const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 								
-								log.info('picked', this.pickedObject, yardCoord)
+								log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
 								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
 							}
 	
 							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
-								this.babs.uiSys.landSaid(this.mouse.landtarget)
+								if(this.babs.debugMode) { // If in debug, show land type
+									this.babs.uiSys.landSaid(this.mouse.landtarget)
+								}
+								else { // Otherwise, label the wob at the location!
+									const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+									const coord = YardCoord.Create({
+										position: this.mouse.landtarget.point,
+										babs: this.babs,
+									})
+									const wobAtCoord = zone.getWob(coord.x, coord.z)
+									if(wobAtCoord) {
+										this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+									}
+								}
 							}
 	
 	
@@ -853,11 +861,7 @@ export class InputSys {
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
 						log.info('Other drop', this.carrying)
-						this.babs.uiSys.feWords({
-							content: `Cannot place ${this.carrying.instancedBpid} there.`,
-							idZone: this.playerSelf.controller.playerRig.zone.id,
-							idTargetPlayer: this.playerSelf.id,
-						})
+						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.carrying.instancedBpid} there>`)
 					}
 
 					this.carrying = null
@@ -1076,7 +1080,15 @@ export class InputSys {
 
 						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
 
+						// Highlight and label wob at location
+						// const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
+						// if(wobAtCoord) {
+						// 	this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+						// }
+
+
 						// Also, maybe we should highlight this square or something?  By editing index color
+
 					}
 					else if (objectMaybe?.name === 'daysky') { // Sky
 						// log('ray to sky')
@@ -1115,7 +1127,8 @@ export class InputSys {
 						this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, highlight)
 						this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 					}
-					else {
+					else if(this.pickedObject instanceof SkinnedMesh){ // Player bbox
+						// console.log(this.pickedObject)
 						// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
 						// We can clone the material temporarily?
 						if (this.pickedObject.material.name === 'megamaterial') {

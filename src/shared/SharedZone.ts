@@ -1,5 +1,6 @@
 import type { SharedBlueprintWithComps, WobId, blueprint_id } from './SharedWob'
 import { Blueprint, SharedWob, type Rotation } from './SharedWob'
+import { type UintRange } from './TypeUtils'
 
 /*
 

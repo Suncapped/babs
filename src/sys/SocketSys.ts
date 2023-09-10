@@ -253,7 +253,10 @@ export class SocketSys {
 
 				topmenuAvailable.set(true)
 
-				menuSelfData.set(load.self)
+				menuSelfData.set({
+					...load.self,
+					color: load.self.meta.color, // Kind of a hax; need to extract it from meta so we can ...spread and such.
+				})
 			}
 
 			let farZones = load.farZones.map(zone => new Zone(this.babs, zone.id, zone.x, zone.z, zone.y, zone.yscale, new Uint8Array, new Uint8Array))
@@ -468,7 +471,12 @@ export class SocketSys {
 			const fewords = payload.fewords
 			log('server fewords', fewords)
 
-			this.babs.uiSys.feWords(fewords)
+			if(fewords.idTargetPlayer) {
+				this.babs.uiSys.aboveHeadChat(fewords.idTargetPlayer, fewords.content, fewords.journalContent, fewords.colorHex)
+			}
+			else {
+				this.babs.uiSys.feWords(fewords)
+			}
 		}
 		else if('serverrestart' in payload) {
 			log('serverrestart', payload.serverrestart)
