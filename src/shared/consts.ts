@@ -247,7 +247,7 @@ export type SendServerRestart = {
 
 export type SendFeTime = {
 	fetime :{
-		secondsSinceHour :number,
+		rlSecondsSinceHour :number,
 		hoursSinceBeginning :number,
 	}
 }

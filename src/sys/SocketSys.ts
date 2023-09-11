@@ -532,12 +532,13 @@ export class SocketSys {
 		else if('fetime' in payload) {
 			log.info('fetime', payload.fetime)
 
-			this.babs.worldSys.localTimeWhenGotProximaTime = DateTime.utc()
-			this.babs.worldSys.proximaSecondsSinceHour = payload.fetime.secondsSinceHour
-			// this.babs.worldSys.proximaSecondsSinceHour = 2400 // night
-			// this.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *21) // dawn
-			this.babs.worldSys.proximaSecondsSinceHour = 2400 +(60 *30) // day
-			// this.babs.worldSys.proximaSecondsSinceHour += +(60 *47) // Flip daytime&nighttime
+			this.babs.worldSys.snapshotTimestamp = DateTime.utc()
+			const addRealMinutes = 0
+			this.babs.worldSys.snapshotRealHourFraction = (payload.fetime.rlSecondsSinceHour /60 /60) +(addRealMinutes/60)
+			// this.babs.worldSys.rlSecondsSinceHour = 2400 // night
+			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *21) // dawn
+			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *30) // day
+			// this.babs.worldSys.rlSecondsSinceHour += +(60 *30) // Flip daytime&nighttime?
 		}
 		else if('creatures' in payload) {
 			// log.info('creatures', payload.creatures)
