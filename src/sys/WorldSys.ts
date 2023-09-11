@@ -400,8 +400,7 @@ export class WorldSys {
 			// this.renderer.shadowMap.type = PCFSoftShadowMap
 			// this.renderer.shadowMap.type = VSMShadowMap
 
-			this.renderer.shadowMap.autoUpdate = false // /needsUpdate 
-			// ^ Only needed to false if updating manually; true updates every frame
+			this.renderer.shadowMap.autoUpdate = true 
 
 			debugMode.subscribe(on => {
 				this.cameraHelper.visible = on
@@ -455,23 +454,60 @@ export class WorldSys {
 	GAME_SPEED_MULTIPLIER = 24
 
 	update(dt) {
-		this.renderer.shadowMap.needsUpdate = true // todo switch to autoupdate, or occasional?
 		if(!this.snapshotRealHourFraction) return // Time comes before Earth :)
 		// if(this.frameCount % this.DO_EVERY_FRAMES === 0) // No to this; makes shadows and sun too jerky.
 
 		////
 		// Update sun position over time!
-		// Todo how well does this handle playing for 1+ hours without a refresh?
 
 		// We pretty much need to add the snapshotted fetime to the time passed since then
 		const realHoursElapsedSinceSnapshot = DateTime.utc().diff(this.snapshotTimestamp, 'hours').hours
-		const realHoursIntoHour = this.snapshotRealHourFraction  +realHoursElapsedSinceSnapshot
+		const realHoursIntoHour = (this.snapshotRealHourFraction +realHoursElapsedSinceSnapshot) %1 
+		// ^ Modulus to wrap this from <1.0 into 0.0, while keeping decimal places.
+		
+		// Attempt to make it usually be daytime, with only a 5min night
+		// Attempt #1:
+		// That is a decimal between 0.0 and <1.0.
+		// 1. First, figure out how far past the hour we are.  realHoursIntoHour is that.
+		// 2. Divide it up and sum the two parts.
+		// 		This is about finding how much of the hour needs to be multiplied vs how much of it needs to be divided.
+		// 3. For the portion up to the first part, we multiply by something to slow it down (reduce the number).
+		// 4. For the portion up to the second part, we multiply by something to speed it up (increase the number).
+		// 5. (Later, we should make sure to %/modulus as needed.)
 
-		// We want day to last for 55 rl minutes, and night 5 rl minutes.  Hmm
-		// Could we just modify realHoursIntoHour?
+		// 2. 
+		// const daytimeRealPortionOfHour = Math.min(0.90, realHoursIntoHour)
+		// ^ So if input is 0.20, output is 0.10.  0.60, 0.50.
+		// let nighttimePortionOfHour = 0
+		// if(realHoursIntoHour > 0.90) {
+		// 	nighttimePortionOfHour = realHoursIntoHour -0.90
+		// }
+		// console.log('portions', daytimeRealPortionOfHour.toFixed(3), nighttimePortionOfHour.toFixed(3))
 
+		// 3 & 4
+		// const fakeDaytimePassed = daytimeRealPortionOfHour *0.5
+		// const fakeNighttimePassed = nighttimePortionOfHour *4
+
+		// const fakeHoursIntoHour = fakeDaytimePassed +fakeNighttimePassed
+		// console.log('fake', fakeDaytimePassed.toFixed(3), fakeNighttimePassed.toFixed(3), '=', realHoursIntoHour.toFixed(3), '->', fakeHoursIntoHour.toFixed(3))
+
+		// Attempt #2:
+		// Let's try something else; a simple multiplied slowdown of 'sun time', then it just loops back to 0.
+		// So night doesn't truly speed up, it just skips; worry about that later :-P  Maybe future me will be smarter...
+
+		const fakeHoursIntoHour = realHoursIntoHour *0.64 // ~16 out of 24 hours; 0.64 landed sunset right at :55.
+		// ^ If we simply divide the hour time, then the day will move more slowly.  At 0.5, it will be 6am to 6pm, before resetting to zero (6am again).  We're zooming in.
+		// ^ Being 0.5 is a bit too much, because sunset should actually be past 7pm, so 13 hours.  
+		// / That works well enough for now!  
+		// Note some of the below comments are based on the old unmultiplied version.
+		// In theory, we could perhaps change this speed during the night.  But there's no use for that currently.
+		// console.log(realHoursIntoHour.toFixed(3), '->', fakeHoursIntoHour.toFixed(3))
+
+		//
+
+		// fakeHoursIntoHour = realHoursIntoHour // old 'equal-time' nights
 		// Turn it into game hours
-		const gameHoursFromTopOfRealHour = realHoursIntoHour *24 // 24 game hours per real hour // eg =24 after 1 real hour has passed
+		const gameHoursFromTopOfRealHour = fakeHoursIntoHour *24 // 24 game hours per real hour // eg =24 after 1 real hour has passed
 		let gameTimeOfDayHours = gameHoursFromTopOfRealHour +6 // +6 for 6am sunrise // eg =30 after 1 real hour has passed (6am)
 		// Game time of day represents the "Real" time of day in game.  Eg 12 is noon, 24 is midnight, 28 is 4am.
 

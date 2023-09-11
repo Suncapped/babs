@@ -534,7 +534,8 @@ export class SocketSys {
 
 			this.babs.worldSys.snapshotTimestamp = DateTime.utc()
 			const addRealMinutes = 0
-			this.babs.worldSys.snapshotRealHourFraction = (payload.fetime.rlSecondsSinceHour /60 /60) +(addRealMinutes/60)
+			const proximaTime = payload.fetime.rlSecondsSinceHour || payload.fetime.secondsSinceHour! // todo remove ! when server is updated
+			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
 			// this.babs.worldSys.rlSecondsSinceHour = 2400 // night
 			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *21) // dawn
 			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *30) // day
