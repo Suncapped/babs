@@ -1071,8 +1071,6 @@ export class InputSys {
 				}
 				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
 					if (objectMaybe?.name === 'ground') { // Mesh?
-						// if(this.playerSelf.controller.selfZoningWait) continue // don't deal with ground intersects while zoning
-						
 						const ground = objectMaybe as FeObject3D
 						const zone = ground.zone
 						const pos = this.mouseRayTargets[i].point
@@ -1314,7 +1312,6 @@ export class InputSys {
 
 				)
 			)
-			// && !this.playerSelf.controller.selfZoningWait // Except while waiting for zonein.  Then it doesn't run.  :p
 		)) {
 			
 			// log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')

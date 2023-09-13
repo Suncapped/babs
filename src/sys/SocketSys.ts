@@ -419,8 +419,9 @@ export class SocketSys {
 		else if('zonein' in payload) { // Handle self or others switching zones
 			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
 			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
-			const exitZone = this.babs.ents.get(player.controller.playerRig.zone.id) as Zone // player.controller.playerRig.zone ?
-			// const playerIsSelf = player.id === this.babs.idSelf
+			const exitZone = player.controller.selfWaitZoningExitZone || player.controller.playerRig.zone
+
+			// console.log('exitZone', player.controller.waitZoningExitZone, player.controller.playerRig.zone, exitZone.id)
 
 			await player.controller.zoneIn(player, enterZone, exitZone)
 		}

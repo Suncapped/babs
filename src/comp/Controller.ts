@@ -148,11 +148,10 @@ export class Controller extends Comp {
 		return this.headRotationX
 	}
 
-	selfZoningWait = false // Only applies to self!
+	selfWaitZoningExitZone :Zone
 	setDestination(gDestVector3, movestate) {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
-		// if(this.selfZoningWait) return // Do not process during zoning
 
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
@@ -160,18 +159,17 @@ export class Controller extends Comp {
 		this.run = movestate === 'run'
 		this._stateMachine.setState(movestate)
 		
-
+		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 ||
+		gDestVector3.x > 249 || gDestVector3.z > 249
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
 			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
 
 			let enterzone_id :number = undefined
-			const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 ||
-									gDestVector3.x > 249 || gDestVector3.z > 249
 			if(isOutsideOfZone){
 
-				if(this.selfZoningWait) {
+				if(this.selfWaitZoningExitZone) { // TODO I can stop them from leaving world here!
 					// Do not initiate shift/zoning while already zoning.
 					// Do not even update this.gDestination; reset it to to old.
 					this.gDestination = gDestOld
@@ -185,16 +183,19 @@ export class Controller extends Comp {
 
 				enterzone_id = targetYardCoord.zone.id
 
-				this.selfZoningWait = true
 
 				this.gDestination.x = targetYardCoord.x
 				this.gDestination.z = targetYardCoord.z
 
+				const zonecurrent = this.playerRig.zone
 				const zonetarget = targetYardCoord.zone
-				const zonecurrent = this.babs.worldSys.currentGround.zone
 				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
 
 				log('Initiating Zoning', zonecurrent.id, '->', zonetarget.id)
+
+				this.selfWaitZoningExitZone = zonecurrent
+				this.playerRig.zone = zonetarget
+				this.babs.worldSys.currentGround = zonetarget.ground
 
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
 
@@ -370,7 +371,7 @@ export class Controller extends Comp {
 		// console.log('FARRRRR', zDeltaFar, xDeltaFar)
 
 		// Move velocity toward the distance delta.  
-		const isFar = (zDeltaFar || xDeltaFar) && !this.selfZoningWait
+		const isFar = (zDeltaFar || xDeltaFar) && !this.selfWaitZoningExitZone
 		if(isFar) {
 			if(zDeltaFar) {
 				this.velocity.z = 0
@@ -438,7 +439,7 @@ export class Controller extends Comp {
 		else {
 			const gravityFtS = 32 *10 // Why does it feel off without *10?
 
-			if(!this.selfZoningWait) { // No gravity while walking between zones waiting for zonein
+			if(!this.selfWaitZoningExitZone) { // No gravity while walking between zones waiting for zonein
 				this.velocity.y -= gravityFtS*dt
 			}
 		}
@@ -481,19 +482,17 @@ export class Controller extends Comp {
 	}
 
 	raycastPlayerGroundCalcs() {
-		// Ground stickiness/gravity
-		const ground :FeObject3D = this.isSelf ? this.babs.worldSys.currentGround : this.playerRig.zone.ground // zonetodo this null!
+		const zone = this.playerRig.zone // This gets set well before zoneIn(), so it's current (ie doesn't wait for network)
 
 		// Note that raycaster uses global coords
 		// this.raycaster.ray.origin.copy(this.playerRig.position)
 		// this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
-		if(ground){// && this.raycaster) {
+		if(zone){// && this.raycaster) {
 			// const groundIntersect = this.raycaster.intersectObject(ground, false)
 			// const worldGroundHeight = groundIntersect?.[0]?.point
 
 			const yardCoord = YardCoord.Create(this.playerRig)
-			const worldGroundHeight = ground.zone.engineHeightAt(yardCoord)
-			// console.log(this.playerRig.zone, worldGroundHeight)
+			const worldGroundHeight = zone.engineHeightAt(yardCoord)
 
 			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
 				// Keep above ground
@@ -517,7 +516,7 @@ export class Controller extends Comp {
 		log.info('zonein player zone', player.id, enterZone.id, )
 		log.info('this.gDestination', this.gDestination)
 
-		this.playerRig.zone = enterZone
+		this.playerRig.zone = enterZone // This re-applies to self, but for others, this is the only place it's set
 
 		// Calculate the zones we're exiting and the zones we're entering
 		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
@@ -535,7 +534,7 @@ export class Controller extends Comp {
 		log.info('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
 
 		if(this.isSelf) {
-			this.babs.worldSys.currentGround = enterZone.ground
+			// this.babs.worldSys.currentGround = enterZone.ground // Now happens before network
 
 			for(const removedZone of removedZonesNearby) {
 				const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
@@ -588,28 +587,19 @@ export class Controller extends Comp {
 					farWobsToAdd.push(...fWobs)
 				}
 
-				return [detailedWobsToAdd, farWobsToAdd]
+				// return [detailedWobsToAdd, farWobsToAdd]
+				// These loads don't need to await for zonein to complete~!
+				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+				await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
+				log.info('farwobs to add', farWobsToAdd.length)
+				await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
+
+				
+				player.controller.selfWaitZoningExitZone = null
 
 			}
-			// console.time('LoadingTiming')
-			const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
-			// console.timeLog('LoadingTiming')
-
-			// const zoneFwobs = addedZone.getSharedWobsBasedOnLocations() // This is how to get wobs if doing separately from load above.
-			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
-
-
-			// console.timeLog('LoadingTiming')
-			
-			log.info('farwobs to add', farWobsToAdd.length)
-			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
-
-
-			// console.timeEnd('LoadingTiming')
-			
-			// Everything was already shifted around us locally, when we gDestination across the line!
-			this.selfZoningWait = false
+			// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
+			pullWobsData() // NOT awaited!
 
 		}
 		else { // Others
@@ -617,7 +607,6 @@ export class Controller extends Comp {
 
 			
 		}
-
 
 	}
 
