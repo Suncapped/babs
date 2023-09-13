@@ -396,26 +396,7 @@ export class Flame extends Comp {
 	}
 
 	update(dt) {
-
-		// if(this.babs?.inputSys?.playerSelf?.controller?.playerRig && this.line) {
-			
-		// 	const positions = this.line.geometry.attributes.position.array
-		// 	const temppos = this.babs.inputSys.playerSelf.controller.playerRig.position//new Vector3(35.78, 8361.13 +10, 77.47)
-		// 	const temppos2 = this.fire.position//new Vector3(55.78, 8361.13 +40, 67.47)
-		// 	positions[0 +0] = temppos.x
-		// 	positions[0 +1] = temppos.y
-		// 	positions[0 +2] = temppos.z
-		// 	positions[0 +3] = temppos2.x
-		// 	positions[0 +4] = temppos2.y
-		// 	positions[0 +5] = temppos2.z
-			
-		// 	this.line.geometry.attributes.position.needsUpdate = true
-		// 	this.line.geometry.computeBoundingBox()
-		// 	this.line.geometry.computeBoundingSphere()
-		// }
-
 		this.fire?.update(dt *Flame.settings.speed)
-
 	}
 
 }

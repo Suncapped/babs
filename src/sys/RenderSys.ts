@@ -80,7 +80,7 @@ export class RenderSys {
 		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
-		const nearClip = 12 *(1/CameraSys.SCALE) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
+		const nearClip = 12 *(CameraSys.SCALE) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
 		this._camera = new PerspectiveCamera(fov, undefined, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
 		this._camera.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI)
 		// ^ eek "Camera’s look along the negative z-axis by default. You have to rotate the camera around the y-axis around 180 degrees so it looks along the positive z-axis like ordinary 3D objects."
@@ -191,11 +191,20 @@ export class RenderSys {
 		
 		// Scaling attempt for VR
 		const scaleMatrix = new Matrix4().makeScale(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
-		this._camera.matrixWorldInverse.multiply(scaleMatrix)
-		this._camera.updateMatrixWorld()
-		this._camera.updateMatrix()
-		// Set camera group scale too?
-		this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
+		// this._camera.matrixWorldInverse.multiply(scaleMatrix)
+		// this._camera.updateMatrixWorld()
+		// this._camera.updateMatrix()
+		// // Set camera group scale too?
+		// // this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
+
+		// Or like this?
+		// let cmw = this._camera.matrixWorld
+		// cmw = cmw.invert()
+		// this.babs.cameraSys.cameraGroup.matrixWorld.copy(cmw.multiply(scaleMatrix))
+		// this.babs.cameraSys.cameraGroup.updateMatrixWorld()
+		// this.babs.cameraSys.cameraGroup.updateMatrix()
+
+		// Or a full scale?
 
 		this.renderer.render(this._scene, this._camera)
 	}

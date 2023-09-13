@@ -136,15 +136,6 @@ export class Controller extends Comp {
 		return this
 	}
 
-	get Position() {
-		return this.playerRig?.position || new Vector3()
-	}
-
-	get Rotation() {
-		if (!this.playerRig) return new Quaternion() 
-		return this.playerRig.quaternion
-	}
-
 	modelHead
 	modelNeck
 	headRotationX = 0
@@ -543,10 +534,6 @@ export class Controller extends Comp {
 		log.info('zonein player zone', player.id, enterZone.id, )
 		log.info('this.gDestination', this.gDestination)
 
-
-		// this.playerRig.position.setY(-1000) // works since it will pop up back up to the ground
-
-
 		this.playerRig.zone = enterZone
 
 		// Calculate the zones we're exiting and the zones we're entering
@@ -644,9 +631,6 @@ export class Controller extends Comp {
 		}
 		else { // Others
 			// Translate other players to a new zone
-
-			// player.controller.playerRig
-			// this.playerRig.position.add(new Vector3(1000, 0, 0))
 
 			
 		}

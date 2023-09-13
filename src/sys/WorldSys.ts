@@ -217,7 +217,7 @@ export class WorldSys {
 		// New sky (not lighting)
 		this.daysky = new Sky()
 		this.daysky.name = 'daysky'
-		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE )
+		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE)
 		this.babs.group.add(this.daysky)
 		
 		this.sunPosition = new Vector3()
@@ -355,18 +355,18 @@ export class WorldSys {
 	}
 
 	shadowDist = 150
-	playerTarget
 	Event(type, data) {
 		if(type === 'controller-ready') {
 			if(!data.isSelf) return // Only add lights for self
 
+			const playerRig = data.controller.playerRig
+
 			// Directional light
-			this.playerTarget = data.controller.playerRig
 
 			// todo have this track not-the-player lol.  Perhaps an origin that doesn't move?  Used to be cube
 			this.dirLight = new DirectionalLight(0xffffff, 0)
 			this.dirLight.name = 'dirlight'
-			this.dirLight.target = this.playerTarget
+			this.dirLight.target = playerRig
 
 			this.dirLightHelper = new DirectionalLightHelper(this.dirLight, 1000)
 			this.dirLightHelper.name = 'three-helper'
@@ -576,11 +576,10 @@ export class WorldSys {
 		if(this.dirLight){
 			// Put directional light at sun position, but closer in!
 			this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
-			this.dirLight.position.add(this.playerTarget.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
+			this.dirLight.position.add(this.babs.inputSys.playerSelf.controller.playerRig.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
 
 			this.dirLightHelper.update()
 			this.cameraHelper.update()
-			// console.log('dirlight', this.dirLightHelper.position, this.playerTarget.position)
 
 			if(noonness < 0 +this.duskMargin /7) { 
 				this.isDaytimeWithShadows = false

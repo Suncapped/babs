@@ -1,22 +1,22 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import * as path from 'path'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vitejs.dev/config/
 let config = {
 	plugins: [
 		svelte(),
+		process.env.FE_HTTPS && basicSsl(), // For local network VR testing
 		{
 			// Display a URL that has the fe_env param for playerdev
 			name: 'log-full-url',
 			configResolved(config) {
-				const serverConfig = config.server
-				const openUrl = serverConfig.open
 				// console.log(config)
-				if (serverConfig && openUrl) {
+				if (config.server?.open) {
 					setTimeout(() => {
-						console.log(`\n  ➜  Full Local URL:   http://localhost:${serverConfig.port || 3000}${openUrl}`)
-						console.log(`  ➜  Full Network URL: http://[your network IP]:${serverConfig.port || 3000}${openUrl}\n`)
+						console.log(`\n  ➜  Full Local URL:   http://localhost:${config.server.port || 3000}${config.server.open}`)
+						console.log(`  ➜  Full Network URL: http://[your-network-IP]:${config.server.port || 3000}${config.server.open}\n`)
 					}, 200)
 				}
 			},

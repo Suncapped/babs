@@ -1209,32 +1209,19 @@ export class InputSys {
 
 			// Delta accumulation for angle rotation snap
 			if (Math.abs(this.mouse.accumx) > this.mouseAccumThreshold) {
-				const gCurrentPosition = this.playerSelf.controller.playerRig.position.clone().multiplyScalar(1 / 4).floor()
-				const eCurrentPositionCentered = gCurrentPosition.clone().multiplyScalar(4).addScalar(2)
+				const _Q = new Quaternion()
+				const _A = new Vector3()
+				const _R = this.playerSelf.controller.idealTargetQuaternion.clone()
 
-				// const eDiff = eCurrentPositionCentered.clone().sub(this.player.controller.playerRig.position) // Distance from CENTER
-				// const characterNearMiddle = Math.abs(eDiff.x) < 1 && Math.abs(eDiff.z) < 1
-				// log.info('characterNearMiddle', characterNearMiddle, eDiff)
-				// There's some interaction with turning fast and `if(characterNearMiddle)`.  Might be related to head rotation setting; putting it first changed things.  But might be something else.
-				// So just leave that off for now.
-				const characterNearMiddle = true
+				_A.set(0, this.mouse.accumx > 0 ? -1 : 1, 0)
+				_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
+				_R.multiply(_Q)
+				this.playerSelf.controller.setRotation(_R)
 
-				if (characterNearMiddle) {
-					const _Q = new Quaternion()
-					const _A = new Vector3()
-					const _R = this.playerSelf.controller.idealTargetQuaternion.clone()
+				log.info('InputSys: call controller.setRotation')
 
-					_A.set(0, this.mouse.accumx > 0 ? -1 : 1, 0)
-					_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
-					_R.multiply(_Q)
-					this.playerSelf.controller.setRotation(_R)
-
-					log.info('InputSys: call controller.setRotation')
-
-					// After character snap rotate, bring head (camera) back to roughly where it was before (2.2 magic number)
-					this.mouse.accumx = -this.mouseAccumThreshold * (2.2 / 3) * Math.sign(this.mouse.accumx)
-				}
-
+				// After character snap rotate, bring head (camera) back to roughly where it was before (2.2 magic number)
+				this.mouse.accumx = -this.mouseAccumThreshold * (2.2 / 3) * Math.sign(this.mouse.accumx)
 			}
 
 		}

@@ -32,9 +32,7 @@ export class CameraSys {
 		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
 		
-		// this.babs.scene.add(this.cameraGroup)
-
-		// log('cameraGroup', this.cameraGroup)
+		this.babs.group.add(this.cameraGroup)
 	}
 
 	_CalculateIdealOffset() {
@@ -64,26 +62,26 @@ export class CameraSys {
 		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)
 
 		this.idealOffset.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
-		this.idealOffset.applyQuaternion(this._target.Rotation)
-		this.idealOffset.add(this._target.Position)
-		// const worldPosition = new Vector3()
-		// worldPosition.setFromMatrixPosition(this._target.playerRig.matrixWorld)
-		// this.idealOffset.add(worldPosition)
+		this.idealOffset.applyQuaternion(this._target.playerRig.quaternion)
+		// this.idealOffset.add(this._target.playerRig.position)
+		this.idealOffset.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.SCALE))
+		// this.idealOffset.multiplyScalar(1/CameraSys.SCALE)
 
 		// return idealOffset
 	}
 
 	_CalculateIdealLookat() {
-		const sideOffset = 0//10
-		const idealLookat = new Vector3(sideOffset, 10, 0)
+		// const idealLookat = new Vector3(sideOffset, 10, 0)
+		
+		const idealLookat = new Vector3(0, 10, 0)
 
 		idealLookat.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
-		idealLookat.applyQuaternion(this._target.Rotation)
+		idealLookat.applyQuaternion(this._target.playerRig.quaternion)
 
-		idealLookat.add(this._target.Position)
-		// const worldPosition = new Vector3()
-		// worldPosition.setFromMatrixPosition(this._target.playerRig.matrixWorld)
-		// idealLookat.add(worldPosition)
+		// idealLookat.add(this._target.playerRig.position)
+		idealLookat.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.SCALE))//.multiplyScalar(CameraSys.SCALE) // Why .SCALE?
+		// TODO note: It's possible that all uses of playerRig.position could be similarly off?  Like with direcitonallight/helper.
+		
 		return idealLookat
 	}
 

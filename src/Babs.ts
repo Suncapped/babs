@@ -128,8 +128,7 @@ export class Babs {
 		this.group = new Group
 		this.group.name = 'fegroup'
 		this.scene.add(this.group)
-		// this.group.scale.set(1.001,1.001,1.001)
-		// this.group.scale.set(2,2,2)
+		this.group.scale.setScalar(CameraSys.SCALE)
 
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 
