@@ -187,14 +187,19 @@ export class UiSys {
 				zone: zone,
 			})
 			let pointCentered = zone.rayHeightAt(yardCoord)
-			pointCentered.setY(pointCentered.y +WorldSys.Yard /2)
+			pointCentered.setY(pointCentered.y)// +WorldSys.Yard /2)
+
+			const wob = zone.getWob(words.idTargetWob.x, words.idTargetWob.z)
+			const feim = Wob.InstancedWobs.get(wob.name)
+			const engHeight = feim.boundingSize.y
+			// console.log('engHeight', wob.name, feim.boundingSize, engHeight)
 
 			// Get the direction of the cameraGroup from pointCentered
 			let moveDirection = new Vector3()
 			this.babs.inputSys.playerSelf.controller.playerRig.getWorldDirection(moveDirection).negate()
 			// Move pointCentered toward the camera by 2 units
 			// Actually some things are quite offset, so move it 1.75 tiles toward us
-			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)))
+			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)).setY(engHeight))
 
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
