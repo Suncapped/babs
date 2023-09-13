@@ -244,6 +244,29 @@ export class SocketSys {
 			toprightText.set(this.babs.uiSys.toprightTextDefault)
 			document.getElementById('topleft').style.visibility = 'visible'
 
+			// Move button to menu
+			if(this.babs.vrSupported) {
+				const tryMoveVrButton = () => { 
+					setTimeout(() => {
+						// console.log('trying to move')
+						const vrButton = document.getElementById('VRButton')
+						const menuVrArea = document.getElementById('menuVrArea')
+						if(!vrButton || !menuVrArea) {
+							tryMoveVrButton()
+							return
+						}
+						vrButton.style.position = 'relative'
+						vrButton.style.bottom = '10px'
+						menuVrArea.style.display = 'block'
+						// menuVrArea.style.textAlign = 'center'
+						menuVrArea.appendChild(vrButton)
+					}, 200) 
+				}
+				tryMoveVrButton()
+			}
+
+
+
 			debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
 			dividerOffset.set(load.self.divider)
 
@@ -534,7 +557,7 @@ export class SocketSys {
 
 			this.babs.worldSys.snapshotTimestamp = DateTime.utc()
 			const addRealMinutes = 0
-			const proximaTime = payload.fetime.rlSecondsSinceHour || payload.fetime.secondsSinceHour! // todo remove ! when server is updated
+			const proximaTime = payload.fetime.rlSecondsSinceHour
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
 			// this.babs.worldSys.rlSecondsSinceHour = 2400 // night
 			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *21) // dawn

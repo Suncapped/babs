@@ -26,6 +26,7 @@ import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
 import type { Wob } from './ent/Wob'
 import type { Zone } from './ent/Zone'
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 declare global {
 	interface Window {
@@ -46,6 +47,8 @@ export class Babs {
 	urlFiles :string = window.FeUrlFiles
 	urlSocket :string = window.FeUrlSocket
 	usePail :boolean = window.FeUsePail
+
+	vrSupported :boolean = false
 
 	browser
 
@@ -112,6 +115,15 @@ export class Babs {
 			}
 		})(window.navigator.userAgent.toLowerCase())
 		log.info('Browser is', this.browser)
+
+		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
+			this.vrSupported = vrSupported
+
+			if(this.vrSupported) {
+				const vrButton = VRButton.createButton(this.renderer)
+				document.body.appendChild(vrButton)
+			}
+		})
 
 		this.socketSys = new SocketSys(this)
 

@@ -110,7 +110,7 @@ export class CameraSys {
 		// this.cameraGroup.matrixWorldNeedsUpdate = true
 		this.cameraGroup.updateMatrixWorld()
 
-		if(this.babs.renderSys.isVrSupported) {
+		if(this.babs.vrSupported) {
 
 			if(this.vrSetupDone === false) {
 				this.vrSetupDone = true
@@ -121,7 +121,7 @@ export class CameraSys {
 	
 					// const renderer = this.babs.renderSys.renderer
 					// // console.log(xrCam)
-					// // this.babs.renderSys.isVrSupported = false
+					// // this.babs.renderSys.vrSupported = false
 	
 					// const frame = renderer.xr.getFrame();
 					// const refSpace = renderer.xr.getReferenceSpace();

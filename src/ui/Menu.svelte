@@ -218,7 +218,9 @@
 			<li style="text-align:center;">Welcome to First Earth{#if $menuSelfData.nick}, {$menuSelfData.nick}{/if}!</li>
 			<li style="text-align:center;">
 				{$menuSelfData.email} (<span title="{joinDate}">{joinMonth} '{joinYear}</span>) <a id="logout" href on:click|preventDefault={logout}>Logout</a>
-			</li><li>&nbsp;</li>
+			</li>
+			<li>&nbsp;</li>
+			<li id="menuVrArea" style="display:none;"></li>
 			<li>&bull; Laptop: Slide two fingers across touchpad</li>
 			<li>&bull; Mouse: Right button looks, both buttons walk</li>
 			<li>&bull; Chat: Type, or hold Alt/Option and speak</li>

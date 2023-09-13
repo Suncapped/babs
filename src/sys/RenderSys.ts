@@ -20,7 +20,6 @@ export class RenderSys {
 	renderer :WebGLRenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
-	public isVrSupported = false
 	public documentHasFocus :boolean|'forced' = true
 	public recalcImmediatelyBpids = new Set<string>()
 
@@ -66,15 +65,6 @@ export class RenderSys {
 		// document.body.appendChild(this.renderer.domElement) // Now done in html
 		// this.renderer.domElement.id = 'canvas'
 
-		// Detect and offer VR
-		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
-			if(vrSupported) {
-				const vrButton = VRButton.createButton(this.renderer)
-				document.body.appendChild(vrButton)
-				this.isVrSupported = true
-			}
-		})
-
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
 		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
@@ -116,7 +106,7 @@ export class RenderSys {
 
 		this.documentHasFocus = 'forced' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
 		setInterval(() => {
-			if(this.babs.renderSys.isVrSupported) {
+			if(this.babs.vrSupported) {
 				this.documentHasFocus = true
 				return // Don't do this for VR, since the browser itself can lose focus while user clicks elsewhere!
 			}

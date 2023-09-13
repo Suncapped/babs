@@ -204,13 +204,14 @@ export class UiSys {
 			let pointCentered = zone.rayHeightAt(yardCoord)
 			pointCentered.setY(pointCentered.y +5.8)
 
-			const ttext = this.makeTextAt('feWords', words.content, pointCentered, 1.0, colorHex)
+			const ttext = this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 
 			// Place in player object parent, and reposition
 			const rigScale = player.controller.playerRig.scale.clone()
 			const height = 6
 			ttext.position.copy(new Vector3(0, height *(1/rigScale.y), 0))
-			ttext.scale.copy(new Vector3(1/rigScale.x, 1/rigScale.y, 1/rigScale.z))
+			ttext.startingScaleScalar = 1/rigScale.x
+			ttext.scale.setScalar(ttext.startingScaleScalar)
 
 			// ttext.rotation.set(0, Math.PI, 0)
 			// We are going to per-frame ensure that it faces the camera, in update()			
@@ -403,6 +404,14 @@ export class UiSys {
 			let cameraGroupDirectionOpposite = new Vector3(0, 0, -1)
 			this.babs.cameraSys.cameraGroup.getWorldDirection(cameraGroupDirectionOpposite).negate()
 			ttext.lookAt(ttext.getWorldPosition(new Vector3()).add(cameraGroupDirectionOpposite))
+
+			// Scale text size to distance
+			// const distance = ttext.getWorldPosition(new Vector3()).distanceTo(selfRig.getWorldPosition(new Vector3()))
+			const distance = ttext.getWorldPosition(new Vector3()).distanceTo(this.babs.cameraSys.cameraGroup.getWorldPosition(new Vector3()))
+			const distScale = distance /40//MathUtils.clamp(distance / 10, 1, 8)
+
+			// console.log(distance.toFixed(2), distScale.toFixed(2))
+			ttext.scale.setScalar(distScale *(ttext.startingScaleScalar || 1))
 		}
 
 
