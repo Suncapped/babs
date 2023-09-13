@@ -23,6 +23,12 @@ import type { WobId, SharedWob } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 
+// import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
+// BufferGeometry.prototype.computeBoundsTree = computeBoundsTree // bvh
+// BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree // bvh
+// Mesh.prototype.raycast = acceleratedRaycast // bvh
+// ^ Unfortunately is slower due to the simplicity of my meshes.
+
 // Stateful tracking of inputs
 // 0=up(lifted), false=off, 1=down(pressed), true=on, 
 const LIFT = 0
@@ -1007,7 +1013,7 @@ export class InputSys {
 			
 			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
 			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords']
-			const filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
+			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
 			// Well, filtering out 'tree twotris' does help a lot with framerate.
 
 			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
@@ -1015,7 +1021,19 @@ export class InputSys {
 			let groups = this.babs.group.children.filter(c=>c.type=='Group')
 			groups.forEach(g=>filteredChildren.push(...g.children.filter(c=>!excluded.includes(c.name))))
 
+			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+			const idsZonesNearby = currentZone.getZonesAround(Zone.loadedZones, 1).map(z=>z.id)
+			filteredChildren = filteredChildren.filter((c :FeObject3D) => {
+				// Filter out far away zones
+				if(c.name !== 'ground') return true
+				if(idsZonesNearby.includes(c.zone.id)) return true
+				return false
+			})
+			// console.log(filteredChildren)
+
+			// raycaster.firstHitOnly = true // BVH thing
 			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
+
 
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 

@@ -22,9 +22,9 @@
     "deploy": "rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs",
     "// Disabling for now, too noisy! // postdeploy": "node discord.js",
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10",
-	"clean": "rm -rf node_modules/*",
-	"cleanwin": "rmdir purgetemp 2>nul & mkdir purgetemp && robocopy /LOG:nul /MIR purgetemp node_modules && rmdir node_modules && timeout /T 1 && rmdir purgetemp && mkdir node_modules && npm run diwin",
-	"diwin": "powershell -command \"Set-Content -Path './node_modules' -Stream com.dropbox.ignored -Value 1\""
+    "clean": "rm -rf node_modules/*",
+    "cleanwin": "rmdir purgetemp 2>nul & mkdir purgetemp && robocopy /LOG:nul /MIR purgetemp node_modules && rmdir node_modules && timeout /T 1 && rmdir purgetemp && mkdir node_modules && npm run diwin",
+    "diwin": "powershell -command \"Set-Content -Path './node_modules' -Stream com.dropbox.ignored -Value 1\""
   },
   "devDependencies": {
     "@suncapped/eslint-plugin": "file:eslint",

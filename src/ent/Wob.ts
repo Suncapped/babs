@@ -191,6 +191,7 @@ export class Wob extends SharedWob {
 				// log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
 				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, wobMesh as Mesh, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
 				// log.info('Created instanced for blueprint_id', blueprint_id)
+				// instanced.instancedMesh.geometry.computeBoundsTree() // bvh
 			}
 			else {
 				if(instanced.getLoadedCount() +newWobsCount > instanced.maxCount) {

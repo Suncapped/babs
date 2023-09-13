@@ -481,48 +481,31 @@ export class Controller extends Comp {
 	}
 
 	raycastPlayerGroundCalcs() {
-
 		// Ground stickiness/gravity
-		// Setup
-		// const zone = this.playerRig.zone
-		// log('this.playerRig', this.playerRig)
-		const ground = this.isSelf ? this.babs.worldSys.currentGround : this.playerRig.zone.ground // zonetodo this null!
+		const ground :FeObject3D = this.isSelf ? this.babs.worldSys.currentGround : this.playerRig.zone.ground // zonetodo this null!
 
 		// Note that raycaster uses global coords
+		// this.raycaster.ray.origin.copy(this.playerRig.position)
+		// this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
+		if(ground){// && this.raycaster) {
+			// const groundIntersect = this.raycaster.intersectObject(ground, false)
+			// const worldGroundHeight = groundIntersect?.[0]?.point
 
-		// const playerWorldPos = ground.localToWorld(this.playerRig.position)
-		this.raycaster.ray.origin.copy(this.playerRig.position)
-		this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
-		
-		if(ground && this.raycaster) {
-			const groundIntersect = this.raycaster.intersectObject(ground, false)
-			const worldGroundHeight = groundIntersect?.[0]?.point
+			const yardCoord = YardCoord.Create(this.playerRig)
+			const worldGroundHeight = ground.zone.engineHeightAt(yardCoord)
+			// console.log(this.playerRig.zone, worldGroundHeight)
 
-			if(worldGroundHeight && (worldGroundHeight.y > this.playerRig?.position?.y || this.hover)) {
+			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
 				// Keep above ground
 				this.groundDistance = 1
-
-				this.playerRig.position.setY(worldGroundHeight.y +this.hover)
-				// const playerLocalPos = this.playerRig.position.clone()
-				// const playerGlobalPos = ground.localToWorld(playerLocalPos)
-				// const oldy = playerWorldPos.y
-				// playerWorldPos.setY(worldGroundHeight.y +this.hover)
-				// const updatedPlayerLocal = ground.worldToLocal(playerWorldPos)
-				// this.playerRig.position.copy(updatedPlayerLocal)
-
-				// Wait...the local and the world Y are the same, LOL!  Only x/z are not.
-
-				// If on ground, y velocity stops // ?
-				// if(!isSelf) {
-					
-				// }
+				this.playerRig.position.setY(worldGroundHeight +this.hover)
 			}
-			if(!groundIntersect.length) {
-				this.velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
-			}
-			else {
-				this.groundDistance = this.playerRig.position.y - worldGroundHeight.y // Used for jump
-			}
+			// if(!groundIntersect.length) { // aka no ground beneath!
+			// 	this.velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
+			// }
+			// else {
+			this.groundDistance = this.playerRig.position.y - worldGroundHeight // Used for jump
+			// }
 
 			return worldGroundHeight
 		}

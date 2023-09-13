@@ -160,7 +160,7 @@ export class Zone extends SharedZone {
 	coordToInstanceIndex :Record<string, number> = {}
 	farCoordToInstanceIndex :Record<string, number> = {}
 
-	engineHeightAt(coord :YardCoord, doCenter = true) { // Height of (corner or center) in engine
+	engineHeightAt(coord :YardCoord, doCenter = true) :number { // Height of (corner or center) in engine
 		// Fetch from actual ground mesh vertices!
 
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
@@ -235,7 +235,7 @@ export class Zone extends SharedZone {
 		let baryOut = new Vector3()
 		triangle.getBarycoord(new Vector3(xInnerCoord +halfTileCenter, 0, zInnerCoord +halfTileCenter), baryOut)
 
-		let combinedWeights
+		let combinedWeights :number
 		if(isFirstHalf) {
 			combinedWeights = (height00 *baryOut.x) +(height10 *baryOut.y) +(height01 *baryOut.z)
 		}
