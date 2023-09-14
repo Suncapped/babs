@@ -156,8 +156,6 @@ export class Controller extends Comp {
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
 		// log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
-		this.run = movestate === 'run'
-		this._stateMachine.setState(movestate)
 		
 		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 ||
 		gDestVector3.x > 249 || gDestVector3.z > 249
@@ -169,20 +167,24 @@ export class Controller extends Comp {
 			let enterzone_id :number = undefined
 			if(isOutsideOfZone){
 
-				if(this.selfWaitZoningExitZone) { // TODO I can stop them from leaving world here!
-					// Do not initiate shift/zoning while already zoning.
-					// Do not even update this.gDestination; reset it to to old.
-					this.gDestination = gDestOld
-					return 
-				}
-
 				const targetYardCoord = YardCoord.Create({
 					...this.gDestination, 
 					zone: this.babs.worldSys.currentGround.zone,
 				})
+				// console.log('targetYardCoord.zone', targetYardCoord.zone)
+
+				const nextZoneExists = targetYardCoord.zone // I can stop us from running off the edge here!
+				if(this.selfWaitZoningExitZone || !nextZoneExists) { // TODO 
+					// Do not initiate shift/zoning while already zoning.
+					// Do not even update this.gDestination; reset it to to old.
+					this.gDestination = gDestOld
+					this._stateMachine.setState('idle')
+					return 
+				}
+
+				// Zone exists, let's go there!
 
 				enterzone_id = targetYardCoord.zone.id
-
 
 				this.gDestination.x = targetYardCoord.x
 				this.gDestination.z = targetYardCoord.z
@@ -229,6 +231,10 @@ export class Controller extends Comp {
 
 
 		}
+
+		
+		this.run = movestate === 'run'
+		this._stateMachine.setState(movestate)
 	}
 
 	setRotation(_R) {
@@ -482,7 +488,7 @@ export class Controller extends Comp {
 	}
 
 	raycastPlayerGroundCalcs() {
-		const zone = this.playerRig.zone // This gets set well before zoneIn(), so it's current (ie doesn't wait for network)
+		const zone = this.playerRig?.zone // This gets set well before zoneIn(), so it's current (ie doesn't wait for network)
 
 		// Note that raycaster uses global coords
 		// this.raycaster.ray.origin.copy(this.playerRig.position)
@@ -491,7 +497,10 @@ export class Controller extends Comp {
 			// const groundIntersect = this.raycaster.intersectObject(ground, false)
 			// const worldGroundHeight = groundIntersect?.[0]?.point
 
-			const yardCoord = YardCoord.Create(this.playerRig)
+			const yardCoord = YardCoord.Create({
+				...this.playerRig,
+				zone,
+			})
 			const worldGroundHeight = zone.engineHeightAt(yardCoord)
 
 			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
