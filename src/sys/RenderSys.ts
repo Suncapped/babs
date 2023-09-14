@@ -20,7 +20,7 @@ export class RenderSys {
 	renderer :WebGLRenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
-	public documentHasFocus :boolean|'forced' = true
+	public documentHasFocus :boolean = true
 	public recalcImmediatelyBpids = new Set<string>()
 
 	// Custom FPS counter
@@ -92,34 +92,16 @@ export class RenderSys {
 		dividerOffset.subscribe(offsetOrObj => {
 			this.handleResize()
 		})
-		// var ro = new ResizeObserver(entries => {
-		// 	for (let entry of entries) {
-		// 		// const cr = entry.contentRect;
-		// 		// console.log('Element:', entry.target);
-		// 		// console.log(`Element size: ${cr.width}px x ${cr.height}px`);
-		// 		// console.log(`Element padding: ${cr.top}px ; ${cr.left}px`);
-		// 		this.handleResize()
-		// 	}
-		// });
-		// ro.observe(this.renderer.domElement);
-		// this.handleResize()
 
-		this.documentHasFocus = 'forced' // Start out as focused when launched, in case they launch it in background (such as on live refresh)
 		setInterval(() => {
-			if(this.babs.vrSupported) {
-				this.documentHasFocus = true
-				return // Don't do this for VR, since the browser itself can lose focus while user clicks elsewhere!
-			}
 			let hasFocusNow = document.hasFocus()
-			if (this.documentHasFocus !== hasFocusNow && this.documentHasFocus) {
-				// console.log('unfocused')
-			} else if (this.documentHasFocus !== hasFocusNow) {
-				// console.log('focused')
+			if (this.documentHasFocus && hasFocusNow !== this.documentHasFocus) {
+				console.log('document unfocused /', this.documentHasFocus, hasFocusNow)
+			} else if (!this.documentHasFocus && hasFocusNow !== this.documentHasFocus) {
+				console.log('document focused /', this.documentHasFocus, hasFocusNow)
 			}
-			if(!(this.documentHasFocus === 'forced' && hasFocusNow == false)) { // Don't turn off focus if we're still in forced mode (eg was loaded in background and hasn't yet been focused)
-				this.documentHasFocus = hasFocusNow
-			}
-		}, 500)
+			this.documentHasFocus = hasFocusNow
+		}, 200)
 
 		setInterval(() => {
 			if(Flame.player?.controller?.playerRig) {

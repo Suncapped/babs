@@ -1,5 +1,4 @@
 import { writable } from 'svelte/store'
-import { SocketSys } from '@/sys/SocketSys'
 
 export const toprightText = writable('')
 export const topmenuAvailable = writable(false)

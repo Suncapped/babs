@@ -190,7 +190,6 @@ export class SharedZone {
 					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
-						// console.warn('No blueprint found @5!', locid, this.locidToBlueprint)Was spamming on asset/bp mismatch or something.  Like 108 missing, which was lodgepole medium maybe?  So moved to outside of loop.
 						locidsOfBlueprintsNotFound[locid] = locid
 						continue
 					}
@@ -201,7 +200,7 @@ export class SharedZone {
 		}
 
 		const keys = Object.keys(locidsOfBlueprintsNotFound)
-		if(keys.length) console.warn('No blueprint found @5!', keys.join(','))
+		if(keys.length) console.warn('No blueprint found @5!  bpid[]:', keys.join(','))
 
 		return wobs
 	}
@@ -230,7 +229,7 @@ export class SharedZone {
 		}
 
 		const keys = Object.keys(locidsOfBlueprintsNotFound)
-		if(keys.length) console.warn('No blueprint found @6!', keys.join(','))
+		if(keys.length) console.warn('No blueprint found @6!  bpid[]:', keys.join(','))
 
 		return fwobs
 	}
