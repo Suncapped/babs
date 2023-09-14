@@ -1,4 +1,4 @@
-import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode, dividerOffset } from '../stores'
+import { menuSelfData, topmenuAvailable, toprightReconnect, toprightText, socketSend, debugMode } from '../stores'
 import Cookies from 'js-cookie'
 import { UiSys } from '@/sys/UiSys'
 import { EventSys } from './EventSys'
@@ -268,7 +268,7 @@ export class SocketSys {
 
 
 			debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
-			dividerOffset.set(load.self.divider)
+			// dividerOffset.set(load.self.divider)
 
 			if(load.self.visitor !== true) {
 				document.getElementById('topleft').style.visibility = 'visible'

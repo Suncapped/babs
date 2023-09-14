@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper } from 'three'
 import { Wob, type FeObject3D } from '@/ent/Wob'
-import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, dividerOffset, settings } from '../stores'
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from 'three'
@@ -596,12 +596,6 @@ export class InputSys {
 
 			log.info('mouseOnDown', ev.button, eventTargetId)
 
-
-			// Close top menu if it's open
-			if (eventTargetId === 'canvas' && this.topMenuVisibleLocal) {
-				topmenuUnfurled.set(false)
-			}
-
 			if (!this.topMenuVisibleLocal && (eventTargetId === 'canvas')) {
 				this.characterControlMode = true
 
@@ -803,6 +797,7 @@ export class InputSys {
 				}
 
 			}
+			
 		})
 
 		document.addEventListener('mouseup', ev => {
@@ -820,8 +815,8 @@ export class InputSys {
 					) { // UI main bag
 						log('Main bag drop', this.mouse.movetarget)
 						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
-						const wob = this.babs.ents.get(this.carrying.id) 
-							|| Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
+						// @ts-ignore
+						const wob = this.babs.ents.get(this.carrying.id) || Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
 						log.info('Found', wob, this.carrying)
 						this.babs.socketSys.send({
 							action: {
@@ -985,6 +980,7 @@ export class InputSys {
 				this.pickedObjectSavedMaterial = undefined
 			}
 			else { // non-mega color materials?  Should there even be any anymore? :)
+				// @ts-ignore
 				this.pickedObject.material.emissive.copy(this.pickedObjectSavedColor)
 			}
 			this.pickedObject = undefined
@@ -1135,6 +1131,7 @@ export class InputSys {
 						let oldColor = new Color()
 						this.pickedObject.feim.instancedMesh.getColorAt(this.pickedObject.instancedIndex, oldColor)
 						let hsl = new Color() // This indirection prevents accumulation across frames
+						// @ts-ignore
 						oldColor.getHSL(hsl)
 						const highlight = hsl.multiplyScalar(3)
 
@@ -1475,7 +1472,7 @@ export class InputSys {
 			document.getElementById('Journal').style.display = 'none'
 			document.getElementById('topleft').style.display = 'none'
 			document.getElementById('topright').style.paddingBottom = '12px'
-			dividerOffset.set(5)
+			// dividerOffset.set(0)
 		}
 
 		log('Device detected: ', newDevice)

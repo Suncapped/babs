@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { toprightText, toprightReconnect, menuSelfData, uiWindows, socketSend } from '../stores'
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect } from '../stores'
 import { log, v3out } from './../Utils'
 import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -57,7 +57,22 @@ export class UiSys {
 
 	
 
+	gotFocus() {
+		log('gotFocus')
+		// topmenuUnfurled.set(false)
+		// Actually, we won't close menu until they click away from it.
+		
 
+
+	}
+
+	lostFocus() {
+		log('lostFocus')
+		topmenuUnfurled.set(true)
+
+
+
+	}
 	
 
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {

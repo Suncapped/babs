@@ -2,7 +2,6 @@ import { UiSys } from './UiSys'
 import { log } from './../Utils'
 import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace } from 'three'
 import { WorldSys } from './WorldSys'
-import { dividerOffset } from '../stores'
 import { VRButton } from 'three/addons/webxr/VRButton.js'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
@@ -28,7 +27,7 @@ export class RenderSys {
 	public prevTime = performance.now()
 	public fpsDetected = 0
 
-	constructor(babs) {
+	constructor(babs :Babs) {
 		this.babs = babs
 		this.renderer = new WebGLRenderer({ 
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
@@ -60,10 +59,7 @@ export class RenderSys {
 
 		// this.renderer.setPixelRatio( babs.browser == 'chrome' ? window.devicePixelRatio : 1 )// <-'1' Helps on safari // window.devicePixelRatio )
 		this.renderer.setPixelRatio(window.devicePixelRatio) // *4 did not help with VR AA
-		this.renderer.setSize(0,0)
-
-		// document.body.appendChild(this.renderer.domElement) // Now done in html
-		// this.renderer.domElement.id = 'canvas'
+		this.renderer.setSize(window.innerWidth, window.innerHeight)
 
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
 		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
@@ -71,7 +67,7 @@ export class RenderSys {
 
 		const fov = 45
 		const nearClip = 12 *(CameraSys.SCALE) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
-		this._camera = new PerspectiveCamera(fov, undefined, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
+		this._camera = new PerspectiveCamera(fov, window.innerWidth / window.innerHeight, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
 		this._camera.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI)
 		// ^ eek "Camera’s look along the negative z-axis by default. You have to rotate the camera around the y-axis around 180 degrees so it looks along the positive z-axis like ordinary 3D objects."
 		// https://discourse.threejs.org/t/three-js-attach-camera-to-a-3d-object-and-rotate-move-with-the-object-and-show-in-inset-window/12343
@@ -86,21 +82,19 @@ export class RenderSys {
 		this._scene.matrixAutoUpdate = false 
 		// ^ https://discourse.threejs.org/t/question-about-object3d-updatematrixworld/6925/4
 
-		window.addEventListener('resize', () => {
-			this.handleResize()
-		}, false)
-		dividerOffset.subscribe(offsetOrObj => {
-			this.handleResize()
-		})
+		window.addEventListener('resize', this.handleResize, false)
 
 		setInterval(() => {
-			let hasFocusNow = document.hasFocus()
-			if (this.documentHasFocus && hasFocusNow !== this.documentHasFocus) {
-				console.log('document unfocused /', this.documentHasFocus, hasFocusNow)
-			} else if (!this.documentHasFocus && hasFocusNow !== this.documentHasFocus) {
-				console.log('document focused /', this.documentHasFocus, hasFocusNow)
+			const hasFocusOld = this.documentHasFocus
+			const hasFocusNew = document.hasFocus()
+			this.documentHasFocus = hasFocusNew
+
+			// Now that it's set, run the events
+			if (!hasFocusOld && hasFocusNew) {
+				this.babs.uiSys.gotFocus()
+			} else if (hasFocusOld && !hasFocusNew) {
+				this.babs.uiSys.lostFocus()
 			}
-			this.documentHasFocus = hasFocusNow
 		}, 200)
 
 		setInterval(() => {
@@ -121,23 +115,10 @@ export class RenderSys {
 		}, 1000)
 	}
 
-	firstTime = true
 	handleResize() {
-		let width
-		if(!this.renderer?.domElement) {
-			setTimeout(() => this.handleResize(), 10) 
-			return
-		}
-		width = parseFloat(getComputedStyle(this.renderer.domElement, null)?.width)			
-		if(!width) {
-			setTimeout(() => this.handleResize(), 10) 
-			return
-		}
-		
-		const height = parseFloat(getComputedStyle(this.renderer.domElement, null)?.height)
-		this.renderer.setSize(width, height)
-		this._camera.aspect = width / height
+		this._camera.aspect = window.innerWidth / window.innerHeight
 		this._camera.updateProjectionMatrix()
+		this.renderer.setSize(window.innerWidth, window.innerHeight)
 	}
 
 	update(dt) {
