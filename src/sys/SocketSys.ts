@@ -408,12 +408,8 @@ export class SocketSys {
 			log.info('departPlayer', payload.playerdepart, departPlayer, this.babs.scene)
 
 			if(departPlayer && departPlayer.id !== this.babs.idSelf) {
-				// Could be self departing from a previous session, or person already otherwise departed?
-				if(departPlayer.id !== this.babs.idSelf) { // Skip self departs - happens from refreshes sometimes
-					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(departPlayer.nick || 'a stranger')+' departs>', 'copy', departPlayer.colorHex)
-					departPlayer.remove()
-
-				}
+				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(departPlayer.nick || 'a stranger')+' departs>', 'copy', departPlayer.colorHex)
+				departPlayer.remove()
 			}
 		}
 		else if('zonein' in payload) { // Handle self or others switching zones

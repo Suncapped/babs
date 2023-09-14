@@ -95,36 +95,32 @@ export class Player extends Ent {
 	}
 
 	remove() {
-		this.babs.ents.delete(this.id)
-		this.babs.zips.delete(this.idzip)
+
+		const doRemove = () => {
+			this.babs.ents.delete(this.id)
+			this.babs.zips.delete(this.idzip)
+			this.babs.group.remove(this.controller.playerRig) 
+			
+			this.babs.compcats.set(Controller.name, this.babs.compcats.get(Controller.name)?.filter((c :Controller) => c.playerRig.id !== this.controller.playerRig.id))
+			delete this.controller
+
+			log.info('comp cats after Player.remove()', this.babs.compcats)
+
+			// todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
+		}
 
 		if(this.controller?.playerRig) {
-			this.babs.group.remove(this.controller.playerRig) 
-			// Needed to avoid latency of interval below
+			doRemove()
 		}
 		else {
 			let waitForMesh = setInterval(() => {
 				log('waiting for remove')
 				if(this.controller.playerRig) {
-					this.babs.group.remove(this.controller.playerRig) 
+					doRemove()
 					clearInterval(waitForMesh)
 				}
 			}, 200)
 		}
-		// todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
-
-		this.babs.compcats.set('Controller', this.babs.compcats.get('Controller')?.filter(c => c.arrival.id !== this.id))
-		// ^ Does that even work?  Had to do ?filter
-		
-		// for(let [cat, coms] of this.babs.compcats) {
-		// 	for(let com of coms) {
-		// 		com.update()
-		// 	}
-		// }
-		
-		// this.babs.compcats.forEach(cat => cat.filter(com => com.id !== departer.id))
-		// this.babs.ents.delete(departer.id)
-
 	}
 
 }

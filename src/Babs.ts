@@ -189,7 +189,6 @@ export class Babs {
 
 
 	prevTime = performance.now()
-	dtSinceLastFocus = 0
 	update(time) {
 		const dt = (time -this.prevTime) /1000 // In seconds!
 		// const dt = time /1000 // In seconds!
@@ -201,27 +200,19 @@ export class Babs {
 			this.uiSys['mem']?.begin()
 		}
 		
-		// Only update these if window has focus
-		this.dtSinceLastFocus += dt
-		if(this.renderSys.documentHasFocus 
-			|| this.dtSinceLastFocus > 0.15) { // Allow a frame a few times per second; just about right for not breaking movement (ie rubberbanding).
-			// todo just fix Controller.ts:update() to not break so badly on longer dt?
-
-			this.inputSys?.update(this.dtSinceLastFocus) // Needs to happen before camera updates
-			for(let [name, coms] of this.compcats) {
-				if(!coms) continue
-				for(let com of coms) {
-					com.update(this.dtSinceLastFocus)
-				}
+		this.inputSys?.update(dt) // Needs to happen before camera updates
+		for(let [name, coms] of this.compcats) {
+			if(!coms) continue
+			for(let com of coms) {
+				com.update(dt)
 			}
-
-			this.worldSys.update(this.dtSinceLastFocus)
-			this.cameraSys?.update() // Camera gets rotated first
-			this.uiSys.update() // Needs camera to have been updated
-			this.renderSys.update(this.dtSinceLastFocus)
-
-			this.dtSinceLastFocus = 0
 		}
+
+		this.worldSys.update(dt)
+		this.cameraSys?.update() // Camera gets rotated first
+		this.uiSys.update() // Needs camera to have been updated
+		this.renderSys.update(dt)
+
 
 
 		this.prevTime = time

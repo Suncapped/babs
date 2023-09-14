@@ -57,14 +57,14 @@ export class YardCoord extends Coord {
 					Like, if you have -5, That is player.zone.x -1 & 250-5
 			*/
 
-			let babs
+			let babs :Babs
 			if(coord.zone instanceof Zone) {
 				babs = coord.zone.babs
 			}
 			else if(coord.babs instanceof Babs) {
 				babs = coord.babs
 			}
-			const zoneSelf = babs.worldSys.currentGround.zone as Zone // lol hmm
+			const zoneSelf = babs.inputSys.playerSelf.controller.playerRig.zone as Zone
 
 			// First let's find the target zone x,z relative to us.  (The engine position is already relative)
 			// Actually, crosszoneCoord does this.
@@ -287,13 +287,14 @@ function crosszoneCoord(startingCoord :XZandZone, perZone :number) {
 	// Find target zone's id
 	for(const [id, zone] of babs.ents) {
 		if(zone instanceof Zone && zone.x === absTargetZoneCoord.x && zone.z === absTargetZoneCoord.z) {
-			// log('hhhhhmph', startingCoord.x, deltaZoneX, startingCoord.zone.x, absTargetZoneCoord.x, zone)
 			absTargetZoneCoord.zone = zone
+			// ^ in bug, this was not getting found.  Because x was -5 which is beyond the edge.
 			break
 		}
 	}
+	// console.warn('Finished trying to match')
 	if(!absTargetZoneCoord.zone) {
-		log('crosszoneCoord: No target zone at', absTargetZoneCoord, 'for startingCoord', startingCoord)
+		console.warn('crosszoneCoord: No target zone at', absTargetZoneCoord, 'for startingCoord', startingCoord, 'from delta', deltaZoneX, deltaZoneZ)
 	}
 	else {
 		// log('FOUND ZONE?!?!', startingCoord, absTargetZoneCoord.zone)

@@ -198,11 +198,12 @@ export class Controller extends Comp {
 				this.selfWaitZoningExitZone = zonecurrent
 				this.playerRig.zone = zonetarget
 				this.babs.worldSys.currentGround = zonetarget.ground
+				log.info('setDestination', this.playerRig, this.babs.worldSys.currentGround)
 
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
 
-				// this.playerRig.updateMatrixWorld(true)
-				// this.playerRig.updateMatrix()
+				this.playerRig.updateMatrixWorld(true)
+				this.playerRig.updateMatrix()
 
 				// zonetarget.geometry.computeBoundingSphere()
 				// zonetarget.ground.updateMatrixWorld(true)
@@ -212,12 +213,6 @@ export class Controller extends Comp {
 				zonecurrent.geometry.computeBoundingSphere()
 				zonecurrent.ground.updateMatrixWorld(true)
 				zonecurrent.ground.updateMatrix()
-				
-				// const worldGroundHeight = this.raycastPlayerGroundCalcs()
-				// if(worldGroundHeight) {
-				// 	// this.playerRig.position.setY(worldGroundHeight.y +this.hover)
-				// 	// this.update(0)
-				// }
 			}
 
 			this.babs.socketSys.send({
@@ -497,10 +492,7 @@ export class Controller extends Comp {
 			// const groundIntersect = this.raycaster.intersectObject(ground, false)
 			// const worldGroundHeight = groundIntersect?.[0]?.point
 
-			const yardCoord = YardCoord.Create({
-				...this.playerRig,
-				zone,
-			})
+			const yardCoord = YardCoord.Create(this.playerRig)
 			const worldGroundHeight = zone.engineHeightAt(yardCoord)
 
 			if(worldGroundHeight > this.playerRig.position.y || this.hover) {

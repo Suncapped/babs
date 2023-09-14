@@ -996,7 +996,7 @@ export class WorldSys {
 
 	shiftiness = new Vector3()
 	shiftEverything(xShift :number, zShift :number, initialLoadExcludeSelf = false) {
-		// console.log('shiftEverything', xShift, zShift, initialLoadExcludeSelf)
+		log.info('shiftEverything', xShift, zShift, initialLoadExcludeSelf ? 'initialLoadExcludeSelf=truthy' : 'initialLoadExcludeSelf=falsy')
 		const shiftVector = new Vector3(xShift, 0, zShift)
 
 		const excludeFromShift = [
