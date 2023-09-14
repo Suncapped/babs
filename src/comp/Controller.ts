@@ -202,8 +202,8 @@ export class Controller extends Comp {
 
 				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
 
-				this.playerRig.updateMatrixWorld(true)
-				this.playerRig.updateMatrix()
+				// this.playerRig.updateMatrixWorld(true)
+				// this.playerRig.updateMatrix()
 
 				// zonetarget.geometry.computeBoundingSphere()
 				// zonetarget.ground.updateMatrixWorld(true)

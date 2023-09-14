@@ -223,6 +223,15 @@ export class UiSys {
 
 			player.controller.playerRig.add(ttext)
 
+			// Hax, make name stay up
+			if(player.nickWrapped() === words.content) {
+				this.expiringText
+					.filter(t => t.parent.idplayer === player.id && t.expires === Infinity)
+					.forEach(t=>t.expires=Date.now()) // Remove any old stickies on this player
+				ttext.expires = Infinity
+			}
+			
+
 			return ttext
 		}
 		else {
@@ -261,6 +270,7 @@ export class UiSys {
 		// How much time it will display for
 		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
 		ttext.expires = Date.now() +(1000 *expiresInSeconds)
+
 		this.expiringText.push(ttext)
 		// todo use this from before?
 		// 	// Decide how long to display for
@@ -423,7 +433,7 @@ export class UiSys {
 
 		const oldPos = selfRig?.position
 		if(this.babs.debugMode) {
-			const newLogText = `zone: ${selfRig?.zone.id}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}), y: ${Math.floor(oldPos.y)} \n draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} \n ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
+			const newLogText = `zone: ${selfRig?.zone.id}, y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
 				this.logText = newLogText
 				window.document.getElementById('log').innerText = this.logText

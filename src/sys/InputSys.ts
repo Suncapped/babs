@@ -656,7 +656,7 @@ export class InputSys {
 								const pl = this.pickedObject.parent.parent as FeObject3D
 								const player = this.babs.ents.get(pl.idplayer) as Player
 								// Display name about head when you click a player or yourself
-								this.babs.uiSys.aboveHeadChat(player.id, `< ${player.nick || 'Stranger'} >`, null, player.colorHex)
+								this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
 							}
 							else if (this.pickedObject?.feim) {
 								let debugStuff = ''

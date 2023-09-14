@@ -91,7 +91,11 @@ export class Player extends Ent {
 			return // Only show once, or if undefined == undefined
 		}
 		this.nick = newNick
-		this.babs.uiSys.aboveHeadChat(this.id, `< ${this.nick} >`, null, this.colorHex) // Show above head // todo include player's chat color?
+		this.babs.uiSys.aboveHeadChat(this.id, this.nickWrapped(), null, this.colorHex) // Show above head // todo include player's chat color?
+	}
+
+	nickWrapped() {
+		return `< ${this.nick || 'Stranger'} >`
 	}
 
 	remove() {
