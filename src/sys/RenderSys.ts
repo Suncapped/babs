@@ -82,7 +82,7 @@ export class RenderSys {
 		this._scene.matrixAutoUpdate = false 
 		// ^ https://discourse.threejs.org/t/question-about-object3d-updatematrixworld/6925/4
 
-		window.addEventListener('resize', this.handleResize, false)
+		window.addEventListener('resize', () => this.handleResize(), false)
 
 		setInterval(() => {
 			const hasFocusOld = this.documentHasFocus
@@ -96,6 +96,11 @@ export class RenderSys {
 				this.babs.uiSys.lostFocus()
 			}
 		}, 200)
+		window.addEventListener('focus', (ev) => {
+			console.log('window focus event')
+			this.documentHasFocus = true
+			this.babs.uiSys.gotFocus(ev)
+		})
 
 		setInterval(() => {
 			if(Flame.player?.controller?.playerRig) {

@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings } from "../stores"
+	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings, isFullscreen } from "../stores"
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 	import Cookies from 'js-cookie'
@@ -8,6 +8,7 @@
 
 	const DRAG_THRESHOLD = 2
 	let Menu
+	let ResumeButton
 
 	// Defaults
 	let ui = $$props.ui
@@ -31,28 +32,28 @@
 	let dragOffsetX
 	let dragOffsetY
 	const dragStart = (ev) => {
-		dragDistance = 0
-		dragOffsetX = ev.detail.offsetX
-		dragOffsetY = ev.detail.offsetY
+		// dragDistance = 0
+		// dragOffsetX = ev.detail.offsetX
+		// dragOffsetY = ev.detail.offsetY
 	}
 	const onDrag = (ev) => {
-		dragDistance = Math.max(Math.abs(ev.detail.offsetX -dragOffsetX), Math.abs(ev.detail.offsetY -dragOffsetY), dragDistance)
+		// dragDistance = Math.max(Math.abs(ev.detail.offsetX -dragOffsetX), Math.abs(ev.detail.offsetY -dragOffsetY), dragDistance)
 	}
 	const dragEnd = (ev) => {
-		if(dragDistance > DRAG_THRESHOLD) { // Save new position and set virtual to it
-			ui.virtx = ui.x = ev.detail.offsetX
-			ui.virty = ui.y = ev.detail.offsetY
-			socketSend.set({
-				'saveui': ui,
-			})
-		}
-		else { // Retain original
-			ui.virtx = ui.x
-			ui.virty = ui.y
-		}
-		setTimeout(() => {
-			dragDistance = 0
-		}, 10)
+		// if(dragDistance > DRAG_THRESHOLD) { // Save new position and set virtual to it
+		// 	ui.virtx = ui.x = ev.detail.offsetX
+		// 	ui.virty = ui.y = ev.detail.offsetY
+		// 	socketSend.set({
+		// 		'saveui': ui,
+		// 	})
+		// }
+		// else { // Retain original
+		// 	ui.virtx = ui.x
+		// 	ui.virty = ui.y
+		// }
+		// setTimeout(() => {
+		// 	dragDistance = 0
+		// }, 10)
 	}
 	function updateDimensions(ev) {
 		if(!Menu) return
@@ -61,34 +62,40 @@
 
 		setTimeout(() => {
 			const rect = Menu.getBoundingClientRect()
-			const xOverflow = ui.x +rect.width -window.innerWidth
-			const yOverflow = ui.y +rect.height -window.innerHeight
-			ui.virtx = ui.x -Math.max(0, xOverflow)
-			ui.virty = ui.y -Math.max(0, yOverflow)
+			// const xOverflow = ui.x +rect.width -window.innerWidth
+			// const yOverflow = ui.y +rect.height -window.innerHeight
+			// ui.virtx = ui.x -Math.max(0, xOverflow)
+			// ui.virty = ui.y -Math.max(0, yOverflow)
+			ui.virtx = window.innerWidth -rect.width
+			ui.virty = window.innerHeight -rect.height
+		}, 1)
+
+		ResumeButton.style.position = 'absolute'
+		ResumeButton.style.padding = '10px'
+		setTimeout(() => {
+			const rect = ResumeButton.getBoundingClientRect()
+			ResumeButton.style.top = (window.innerHeight /2 -rect.height/2)+'px'
+			ResumeButton.style.left = (window.innerWidth /2 -rect.width/2)+'px'
 		}, 1)
 	}
 
-	function setFurl(ev, furl) {
-		if(ev instanceof KeyboardEvent && ev.key !== 'Escape') {
-			return
-		}
-		if(dragDistance > DRAG_THRESHOLD) {
-			return // Don't toggle if they were just dragging
-		}
-		ui.unfurled = furl
+	// function setFurl(ev, furl) {
+	// 	if(ev instanceof KeyboardEvent && ev.key !== 'Escape') {
+	// 		return
+	// 	}
+	// 	if(dragDistance > DRAG_THRESHOLD) {
+	// 		return // Don't toggle if they were just dragging
+	// 	}
+	// 	ui.unfurled = furl
 
-		// Unfurling of menu does not get saved
-		// socketSend.set({
-		// 	'saveui': ui,
-		// })
-		updateDimensions()
+	// 	updateDimensions()
 
-		$topmenuUnfurled = ui.unfurled
-		if(!$topmenuUnfurled) { // If closing menu, hide picker and stuff too
-			document.getElementById('picker').style.display = 'none'
-			movementTips = true
-		}
-	}
+	// 	$topmenuUnfurled = ui.unfurled
+	// 	if(!$topmenuUnfurled) { // If closing menu, hide picker and stuff too
+	// 		document.getElementById('picker').style.display = 'none'
+	// 		movementTips = true
+	// 	}
+	// }
 
 	let colorPicker
 	let joinDate, joinMonth, joinYear
@@ -205,31 +212,53 @@
 		}
 	}
 
+	function toggleFullscreen(ev) {
+		if(document.fullscreenElement) {
+			document.exitFullscreen()
+		}
+		else {
+			document.documentElement.requestFullscreen()
+		}
+	}
+
 </script>
 
-<svelte:window on:resize={updateDimensions} on:keydown={(ev) => setFurl(ev, !ui.unfurled)}/>
+<svelte:window on:resize={updateDimensions}/>
 
-	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="display:{$topmenuAvailable ? 'block' : 'none'}">
+	<button bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="text-align:center; display:{$topmenuUnfurled ? 'block' : 'none'}">- Away -<br/>Click to Resume First Earth</button>
 
-		<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Menu</div>
+	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="cursor:default; display:{$topmenuAvailable ? 'block' : 'none'}">
+
+		<!-- <div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Menu</div> -->
 		<div class="content card-body">
 			<div id="picker"></div>
 			<ul style="text-align:left;">			
-			<li style="text-align:center;">Welcome to First Earth{#if $menuSelfData.nick}, {$menuSelfData.nick}{/if}!</li>
+			<li style="text-align:center;">Welcome to First Earth!</li>
 			<li style="text-align:center;">
-				{$menuSelfData.email} (<span title="{joinDate}">{joinMonth} '{joinYear}</span>) <a id="logout" href on:click|preventDefault={logout}>Logout</a>
+				{$menuSelfData.email} <a id="logout" href on:click|preventDefault={logout}>Logout</a>
 			</li>
 			<li>&nbsp;</li>
 			<li id="menuVrArea" style="display:none;"></li>
-			<li>&bull; Laptop: Slide two fingers across touchpad</li>
-			<li>&bull; Mouse: Right button looks, both buttons walk</li>
-			<li>&bull; Chat: Type, or hold Alt/Option and speak</li>
-			<li>&bull; Naming: Double click players</li>
-			<li>&bull; Items: Click, drag, or double click</li>
-			<li>&bull; FE works best on Chrome on Mac/PC</li>
+			<li>&bull; Two fingers on mouse to move.</li>
+			<li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li>
+			<li>&bull; Double click to name someone.</li>
 			<li>&nbsp;</li>
 			<li style="text-align:right;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
+			</li>
+			<li style="text-align:right;">
+				<fieldset class="form-group">
+					<label for="paperSwitch6" class="paper-switch-label">
+						Fullscreen
+					</label>
+					<label class="paper-switch">
+						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={toggleFullscreen} bind:checked={$isFullscreen} />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch6" class="paper-switch-label">
+						Windowed
+					</label>
+				</fieldset>
 			</li>
 			<li style="text-align:right;">
 				<fieldset class="form-group">
@@ -266,10 +295,10 @@
 
 			<!-- <li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> -->
 			<li style="text-align:center;">
-				What are you most excited to do in First Earth?
+				What are you most excited<br/>to do in First Earth?
 			</li>
 			<li style="text-align:center;">
-				<textarea id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
+				<textarea style="width: 220px; height: 80px;" id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
 			</li>
 		</ul>
 	</div>

@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, topmenuUnfurled } from "../stores"
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 
@@ -23,6 +23,7 @@
 	let options = {
 		handle: '#Journal > .handle',
 		bounds: 'parent',
+		axis: 'none', // Disable drag
 	}
 	log.info('init, options, ui:', options, ui)
 
@@ -30,28 +31,28 @@
 	let dragOffsetX
 	let dragOffsetY
 	const dragStart = (ev) => {
-		dragDistance = 0
-		dragOffsetX = ev.detail.offsetX
-		dragOffsetY = ev.detail.offsetY
+		// dragDistance = 0
+		// dragOffsetX = ev.detail.offsetX
+		// dragOffsetY = ev.detail.offsetY
 	}
 	const onDrag = (ev) => {
-		dragDistance = Math.max(Math.abs(ev.detail.offsetX -dragOffsetX), Math.abs(ev.detail.offsetY -dragOffsetY), dragDistance)
+		// dragDistance = Math.max(Math.abs(ev.detail.offsetX -dragOffsetX), Math.abs(ev.detail.offsetY -dragOffsetY), dragDistance)
 	}
 	const dragEnd = (ev) => {
-		if(dragDistance > DRAG_THRESHOLD) { // Save new position and set virtual to it
-			ui.virtx = ui.x = ev.detail.offsetX
-			ui.virty = ui.y = ev.detail.offsetY
-			socketSend.set({
-				'saveui': ui,
-			})
-		}
-		else { // Retain original
-			ui.virtx = ui.x
-			ui.virty = ui.y
-		}
-		setTimeout(() => {
-			dragDistance = 0
-		}, 10)
+		// if(dragDistance > DRAG_THRESHOLD) { // Save new position and set virtual to it
+		// 	ui.virtx = ui.x = ev.detail.offsetX
+		// 	ui.virty = ui.y = ev.detail.offsetY
+		// 	socketSend.set({
+		// 		'saveui': ui,
+		// 	})
+		// }
+		// else { // Retain original
+		// 	ui.virtx = ui.x
+		// 	ui.virty = ui.y
+		// }
+		// setTimeout(() => {
+		// 	dragDistance = 0
+		// }, 10)
 	}
 	function updateDimensions(ev) {
 		Journal.style.width = ui.unfurled ? ui.w+'px' : 'auto'
@@ -59,27 +60,37 @@
 
 		setTimeout(() => {
 			const rect = Journal.getBoundingClientRect()
-			const xOverflow = ui.x +rect.width -window.innerWidth
-			const yOverflow = ui.y +rect.height -window.innerHeight
-			ui.virtx = ui.x -Math.max(0, xOverflow)
-			ui.virty = ui.y -Math.max(0, yOverflow)
+			// const xOverflow = ui.x +rect.width -window.innerWidth
+			// const yOverflow = ui.y +rect.height -window.innerHeight
+			// ui.virtx = ui.x -Math.max(0, xOverflow)
+			// ui.virty = ui.y -Math.max(0, yOverflow)
+
+			ui.virtx = 0
+			ui.virty = window.innerHeight -rect.height
 		}, 1)
 	}
 
-	function setFurl(ev, furl) {
-		if(dragDistance > DRAG_THRESHOLD) {
-			return // Don't toggle if they were just dragging
-		}
-		ui.unfurled = furl
-		socketSend.set({
-			'saveui': ui,
-		})
-		updateDimensions()
-	}
+	// function setFurl(ev, furl) {
+	// 	if(dragDistance > DRAG_THRESHOLD) {
+	// 		return // Don't toggle if they were just dragging
+	// 	}
+	// 	ui.unfurled = furl
+	// 	socketSend.set({
+	// 		'saveui': ui,
+	// 	})
+	// 	updateDimensions()
+	// }
 
+
+	
 	onMount(() => {
 		// Style based on ui input
 		updateDimensions()
+
+		topmenuUnfurled.subscribe(vis => {
+			ui.unfurled = vis
+			updateDimensions()
+		})
 	})
 
 	export function appendText(text, color, align) {
@@ -96,8 +107,10 @@
 
 <svelte:window on:resize={updateDimensions} />
 
-<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
-	<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header" on:mouseup={(ev) => setFurl(ev, !ui.unfurled)}>Journal</div>
+<div style="cursor:default;" use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
+	{#if $topmenuUnfurled}
+		<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Journal</div>
+	{/if}
 	<div bind:this={content} class="content card-body"></div>
 </div>
 

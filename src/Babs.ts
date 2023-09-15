@@ -66,6 +66,8 @@ export class Babs {
 	socketSys :SocketSys
 	public renderSys :RenderSys
 
+	public inVr :boolean = false
+
 
 	ents = new Map<number, Ent>() // id key, value ent
 	compcats = new Map() // comType key, value is an array of those coms

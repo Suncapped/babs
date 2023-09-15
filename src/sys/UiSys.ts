@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect } from '../stores'
+import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
 import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -34,6 +34,7 @@ export class UiSys {
 	svMenu
 	svContainers = []
 	nicklist = new Map()
+	isFullscreen = false
 
 	static ICON_SIZE = 50
 
@@ -53,25 +54,83 @@ export class UiSys {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
 			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 		}
+
+		
+
+		// gameAway.subscribe(away => {
+		// 	if(!this.isGameAway && away) { // Switching to away
+		// 		this.awayGame()
+		// 	}
+		// 	else if(this.isGameAway && !away) { // Switching to not away
+		// 		this.resumeGame()
+		// 	}
+		// })
+
+
+		document.onfullscreenchange = (ev) => {
+			this.isFullscreen = !!document.fullscreenElement
+			isFullscreen.set(this.isFullscreen)
+			if(!this.isFullscreen) { // Leaving fullscreen, they hit esc to bring up the pause menu
+				this.awayGame()
+			}
+			else {
+				this.resumeGame()
+			}
+		}
+
+
 	}
 
 	
 
-	gotFocus() {
-		log('gotFocus')
-		// topmenuUnfurled.set(false)
-		// Actually, we won't close menu until they click away from it.
-		
+	gotFocus(ev? :FocusEvent) {
+		log('gotFocus', ev)
 
+		// if(ev && !this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
+		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
+		// }
+		
 
 	}
 
 	lostFocus() {
 		log('lostFocus')
+		if(!this.babs.inVr) {
+			this.awayGame()
+		}
+
+	}
+
+	isGameAway = false
+	awayGame() {
+		log('awayGame')
+		this.isGameAway = true
 		topmenuUnfurled.set(true)
+	}
 
+	resumeGame() {
+		log('resumeGame')
+		this.isGameAway = false
+		topmenuUnfurled.set(false)
+	}
 
+	leftClickCanvas(ev :MouseEvent) {
+		log('leftClickCanvas', ev)
+		if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
+			document.body.requestPointerLock() // Doesn't work on first page load, so for consistency only do this on click
+		}
+		this.resumeGame()
+	}
+	leftClickHtml(ev :MouseEvent) {
+		log('leftClickHtml', ev)
 
+		if((ev.target as HTMLElement).id == 'ResumeButton') {
+			if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
+				document.body.requestPointerLock() // Doesn't work on first page load, so for consistency only do this on click
+			}
+			topmenuUnfurled.set(false)
+			this.resumeGame()
+		}
 	}
 	
 

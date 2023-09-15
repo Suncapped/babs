@@ -150,6 +150,15 @@ export class InputSys {
 		this.setMouseDevice(mousedevice || 'mouse') 
 		// ^^ Default to mouse; because touchpad user has to figure out two finger touch either way.
 
+		document.addEventListener('pointerlockchange', (ev) => {
+			if (document.pointerLockElement) {
+				console.log('The pointer lock status is now locked')
+			} else {
+				console.log('The pointer lock status is now unlocked')
+				this.babs.uiSys.awayGame()
+			}
+		}, false)
+
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
 			'ArrowUp': 'up',
@@ -173,6 +182,8 @@ export class InputSys {
 		'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
 			inputCodeMap[`Key${letter.toUpperCase()}`] = letter
 		})
+
+
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
@@ -323,10 +334,18 @@ export class InputSys {
 
 
 
-				if (this.keys.d === PRESS) {
-
-
+			}
+			if (this.keys.esc === PRESS) {
+				console.log('Key esc')
+				if(this.babs.renderSys.documentHasFocus) {
+					if(!this.babs.uiSys.isGameAway) {
+						this.babs.uiSys.awayGame()
+					}
+					else {
+						this.babs.uiSys.resumeGame()
+					}
 				}
+
 			}
 
 		})
@@ -363,6 +382,7 @@ export class InputSys {
 		// })
 
 		const touchHandler = (event) => {
+			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 
 			if (event.target.id !== 'canvas') return
@@ -457,17 +477,19 @@ export class InputSys {
 			mozMovementY: number,
 			webkitMovementX: number,
 			webkitMovementY: number,
-			mozOffsetX: number,
+			mozOffsetX: number,ht
 			mozOffsetY: number,
 			webkitOffsetX: number,
 			webkitOffsetY: number,
 		}
 		document.addEventListener('mousemove', async (e :MouseEvent) => {
-			// Close top menu if it's open
-			// if (ev.target.id === 'canvas' && this.topMenuVisibleLocal) {
-			// 	topmenuUnfurled.set(false)
-			// }
 			const ev = e as FeMouseEvent
+
+			if(ev.webkitForce > 1) { // Safari only
+				// (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
+				console.log('mousemove ev.webkitForce', ev.webkitForce)
+				this.setMouseDevice('touchpad')
+			}
 
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
@@ -591,10 +613,25 @@ export class InputSys {
 
 		})
 
+		// document.addEventListener('webkitmouseforcewillbegin', (ev) => { // Safari only; not useful, just 1
+		// 	console.log('webkitmouseforcewillbegin', ev.webkitForce)
+		// 	this.setMouseDevice('touchpad')
+		// })
+		document.addEventListener('webkitmouseforcechanged', (ev) => { // Safari only
+			// console.log('webkitmouseforcechanged', ev.webkitForce)
+			if(ev.webkitForce > 1) { // Safari only
+				// console.log('ev.webkitForce', ev.webkitForce)
+				this.setMouseDevice('touchpad')
+			}
+		})
 		document.addEventListener('mousedown', async ev => {
-			const eventTargetId = (ev.target as HTMLElement).id
+			const eventTargetId = (ev.target as HTMLElement)?.id
+			if(ev.webkitForce > 1) { // Safari only
+				// console.log('ev.webkitForce', ev.webkitForce)
+				this.setMouseDevice('touchpad')
+			}
 
-			log.info('mouseOnDown', ev.button, eventTargetId)
+			log('mouseOnDown', ev.button, eventTargetId, ev)
 
 			if (!this.topMenuVisibleLocal && (eventTargetId === 'canvas')) {
 				this.characterControlMode = true
@@ -776,7 +813,7 @@ export class InputSys {
 							await this.canvas.requestPointerLock()
 						}
 						catch(e) {
-							log('PointerLock Exception', e)
+							log('w Exception', e)
 						}
 						// this.canvas.style.cursor = 'none'
 
@@ -797,7 +834,22 @@ export class InputSys {
 				}
 
 			}
+
 			
+			if(eventTargetId === 'canvas' || eventTargetId === null) { // null is during pointerlock
+				if (ev.button === MOUSE_LEFT_CODE) {
+					this.babs.uiSys.leftClickCanvas(ev)
+				}
+			}
+			else {
+				if (ev.button === MOUSE_LEFT_CODE) {
+					this.babs.uiSys.leftClickHtml(ev)
+				}
+			}
+
+			// if (eventTargetId === 'canvas' && this.topMenuVisibleLocal) {
+			// 	topmenuUnfurled.set(false)
+			// }
 		})
 
 		document.addEventListener('mouseup', ev => {
@@ -922,18 +974,18 @@ export class InputSys {
 
 		}, {passive: false})
 
-		topmenuUnfurled.subscribe(vis => { // Menu becomes visible
-			this.topMenuVisibleLocal = vis
+		// topmenuUnfurled.subscribe(vis => { // Menu becomes visible
+		// 	this.topMenuVisibleLocal = vis
 
-			if (vis) {
-				this.characterControlMode = false
-				document.exitPointerLock?.()
-				this.canvas.style.cursor = 'inherit'
-			}
-			else {
-				// Doesn't go back to this.characterControlMode until they mouse-right-hold
-			}
-		})
+		// 	if (vis) {
+		// 		this.characterControlMode = false
+		// 		document.exitPointerLock?.()
+		// 		this.canvas.style.cursor = 'inherit'
+		// 	}
+		// 	else {
+		// 		// Doesn't go back to this.characterControlMode until they mouse-right-hold
+		// 	}
+		// })
 		settings.subscribe(sets => { // Menu becomes visible
 
 			for (const key in sets) {
