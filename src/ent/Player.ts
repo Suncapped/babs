@@ -86,12 +86,12 @@ export class Player extends Ent {
 	}
 
 	nickSetAndDisplay(newNick :string) {
-		if(this.nick == newNick) {
+		if(!newNick) {
 			// console.log('nickSetAndDisplay canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first.
-			return // Only show once, or if undefined == undefined
+			return
 		}
 		this.nick = newNick
-		this.babs.uiSys.aboveHeadChat(this.id, this.nickWrapped(), null, this.colorHex) // Show above head // todo include player's chat color?
+		this.babs.uiSys.aboveHeadChat(this.id, this.nickWrapped(), null, this.colorHex) // Show above head
 	}
 
 	nickWrapped() {

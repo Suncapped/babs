@@ -35,7 +35,7 @@
 		// 	left.style.width = (window.innerWidth -offsetRight) +'px'
 		// 	left.style.height = window.innerHeight+'px'
 		// }
-		// document.addEventListener('mousemove', function (ev) {
+		// document.addEventListener('pointermove', function (ev) {
 		// 	if(!isResizing) return // we don't want to do anything if we aren't resizing.
 		// 	ev.preventDefault()
 
@@ -76,6 +76,15 @@
 		// 	right.style.backgroundPositionX = '0px'
 		// 	right.style.overflow = 'visible'
 		// })
+
+
+		let customcursor = document.getElementById('customcursor')
+		urlFiles.subscribe(urlFiles => {
+			if(!urlFiles) return
+			// customcursor.style.backgroundImage = `url(${urlFiles}/icon/knotlight.png)`
+			customcursor.style.backgroundImage = `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCwwLDI1NiwyNTYiCnN0eWxlPSJmaWxsOiMwMDAwMDA7Ij4KPGcgdHJhbnNmb3JtPSIiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IiIgc3Ryb2tlLWRhc2hvZmZzZXQ9IjAiIGZvbnQtZmFtaWx5PSJub25lIiBmb250LXdlaWdodD0ibm9uZSIgZm9udC1zaXplPSJub25lIiB0ZXh0LWFuY2hvcj0ibm9uZSIgc3R5bGU9Im1peC1ibGVuZC1tb2RlOiBub3JtYWwiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01OS42NjkzMywtMjEuMjUxNDUpIHNjYWxlKDIuMTMzMzMsMi4xMzMzMykiPjxyZWN0IHg9IjUuOTA4NTEiIHk9Ijg2Ljc1MjAzIiB0cmFuc2Zvcm09InJvdGF0ZSgtMzMuMzMyKSIgd2lkdGg9IjI0IiBoZWlnaHQ9IjUzIiBmaWxsPSIjMDAwMDAwIiBvcGFjaXR5PSIwLjM1Ij48L3JlY3Q+PHJlY3QgeD0iNS45MDc5MyIgeT0iODIuNzUxODQiIHRyYW5zZm9ybT0icm90YXRlKC0zMy4zMzIpIiB3aWR0aD0iMjQiIGhlaWdodD0iNTMiIGZpbGw9IiM1OTQxMjgiPjwvcmVjdD48cGF0aCBkPSJNMTA1LjkyNiw1OS44NjlsLTQwLjU2NCwxMS4xMTdsLTI2LjI3NywzMi44NDFsLTEwLjUzOCwtODguODJ6IiBmaWxsPSIjMDAwMDAwIiBvcGFjaXR5PSIwLjM1Ij48L3BhdGg+PHBhdGggZD0iTTEwNS4zOTIsNTQuODY5bC00MC41NjMsMTEuMTE3bC0yNi4yNzgsMzIuODQxbC0xMC41MzcsLTg4LjgyeiIgZmlsbD0iIzAwNDcyYiI+PC9wYXRoPjwvZz48L2c+PC9nPgo8L3N2Zz4=')`
+			customcursor.style.backgroundRepeat = 'no-repeat'
+		})
 	})
 
 </script>
@@ -92,7 +101,7 @@
 			{/if}
 		</div>
 		<div id="topleft">
-			<span>Join:</span>
+			<span>Save:</span>
 			<form method="post">
 				<input
 					id="email"
@@ -241,6 +250,20 @@
 
 	:global div.dg.ac { /* Move dat.gui down */
 		top: 40px;
+	}
+
+	:global #customcursor {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 32px;
+		height: 32px;
+		pointer-events: none;
+		z-index: 100;
+		/* background: url(/icon/cursor.png) no-repeat; Must set in code for urlFiles */ 
+		background-size: 32px 32px;
+		display: none;
+		transform-origin: 0 0;
 	}
 
 </style>

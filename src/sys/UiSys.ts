@@ -26,7 +26,7 @@ interface TroikaText extends Mesh {
 
 export class UiSys {
 	babs :Babs
-	toprightTextDefault = 'Made for Chrome on Mac/PC <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
+	toprightTextDefault = 'Welcome to First Earth!  <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
 	ctext
 	labelElements = []
 	expiringText = Array<any>()
@@ -52,7 +52,7 @@ export class UiSys {
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
-			this.toprightTextDefault = '<span>Movement: Slide or hold two fingers.</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
+			this.toprightTextDefault = '<span>Move using two mouse fingers</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>' //  or w or ↑ // inputtodo
 		}
 
 		
@@ -84,7 +84,7 @@ export class UiSys {
 	
 
 	gotFocus(ev? :FocusEvent) {
-		log('gotFocus', ev)
+		log.info('gotFocus', ev)
 
 		// if(ev && !this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
 		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
@@ -94,7 +94,7 @@ export class UiSys {
 	}
 
 	lostFocus() {
-		log('lostFocus')
+		log.info('lostFocus')
 		if(!this.babs.inVr) {
 			this.awayGame()
 		}
@@ -103,34 +103,49 @@ export class UiSys {
 
 	isGameAway = false
 	awayGame() {
-		log('awayGame')
+		log.info('awayGame')
 		this.isGameAway = true
 		topmenuUnfurled.set(true)
 	}
 
 	resumeGame() {
-		log('resumeGame')
+		log.info('resumeGame')
 		this.isGameAway = false
 		topmenuUnfurled.set(false)
 	}
 
-	leftClickCanvas(ev :MouseEvent) {
-		log('leftClickCanvas', ev)
-		if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
-			document.body.requestPointerLock() // Doesn't work on first page load, so for consistency only do this on click
-		}
-		this.resumeGame()
-	}
-	leftClickHtml(ev :MouseEvent) {
-		log('leftClickHtml', ev)
-
-		if((ev.target as HTMLElement).id == 'ResumeButton') {
-			if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
-				document.body.requestPointerLock() // Doesn't work on first page load, so for consistency only do this on click
-			}
-			topmenuUnfurled.set(false)
+	async leftClickCanvas(ev :MouseEvent) {
+		log.info('leftClickCanvas', ev)
+		const gotLock = await this.tryPointerLock()
+		if(gotLock && this.isGameAway) {
 			this.resumeGame()
 		}
+	}
+	leftClickHtml(ev :MouseEvent) {
+		log.info('leftClickHtml', ev)
+		// if((ev.target as HTMLElement).id == 'ResumeButton') { // No longer needed; it doesn't receive pointer events
+		// And clicking HTML won't in any other circumstance be a resume.
+	}
+	async rightClickCanvas(ev :MouseEvent) {
+		log.info('rightClickCanvas', ev)
+		const gotLock = await this.tryPointerLock()
+		if(gotLock && this.isGameAway) {
+			this.resumeGame()
+		}
+	}
+
+	async tryPointerLock() {
+		if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
+			try {
+				const promise = await document.body.requestPointerLock()
+				return true
+			}
+			catch(e) {
+				console.warn('PointerLock must wait for 1000ms after a user-initiated unlock')
+				return false
+			}
+		}
+
 	}
 	
 
@@ -298,7 +313,8 @@ export class UiSys {
 			player.controller.playerRig.add(ttext)
 
 			// Hax, make name stay up
-			if(player.nickWrapped() === words.content) {
+			const isPlayerNickBeingSet = player.nickWrapped() === words.content
+			if(isPlayerNickBeingSet) {
 				this.expiringText
 					.filter(t => t.parent.idplayer === player.id && t.expires === Infinity)
 					.forEach(t=>t.expires=Date.now()) // Remove any old stickies on this player
@@ -502,6 +518,7 @@ export class UiSys {
 			// console.log(distance.toFixed(2), distScale.toFixed(2))
 			ttext.scale.setScalar(distScale *(ttext.startingScaleScalar || 1))
 		}
+
 
 
 

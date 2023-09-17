@@ -139,23 +139,35 @@ export class InputSys {
 
 	activityTimestamp :number
 
+	customcursor :HTMLElement
+
+	isPointerLocked = false
+
 	constructor(babs :Babs, player :Player, mousedevice) {
-
-
-
 		this.babs = babs
 		this.playerSelf = player
 		this.canvas = document.getElementById('canvas')
 
-		this.setMouseDevice(mousedevice || 'mouse') 
+		this.setMouseDevice(mousedevice || 'undetermined') 
 		// ^^ Default to mouse; because touchpad user has to figure out two finger touch either way.
 
+		this.customcursor = document.getElementById('customcursor')
+
 		document.addEventListener('pointerlockchange', (ev) => {
+			log.info('pointerlockchange', ev)
 			if (document.pointerLockElement) {
-				console.log('The pointer lock status is now locked')
+				this.isPointerLocked = true
+				log.info('The pointer lock status is now locked')
+				this.customcursor.style.display = 'block'
+
+				// this.customcursor.style.left = `${this.mouse.x}px`
+				// this.customcursor.style.top = `${this.mouse.y}px`
+				this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
 			} else {
-				console.log('The pointer lock status is now unlocked')
-				this.babs.uiSys.awayGame()
+				this.isPointerLocked = false
+				log.info('The pointer lock status is now unlocked')
+				this.babs.uiSys.awayGame() // We might not get esc key event?
+				this.customcursor.style.display = 'none'
 			}
 		}, false)
 
@@ -195,8 +207,8 @@ export class InputSys {
 				}
 			}
 
-			if (this.characterControlMode) {
-				if (this.mouse.right) {
+			if(this.characterControlMode) {
+				if(this.mouse.right) {
 					// Jump on spacebar if mouse right held
 					if (this.keys.space === PRESS) {
 						this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
@@ -342,7 +354,11 @@ export class InputSys {
 						this.babs.uiSys.awayGame()
 					}
 					else {
-						this.babs.uiSys.resumeGame()
+						// Can't do this because it's not a gesture, plus nice to have esc idempotent
+						// if(this.mouse.device == 'mouse' && !this.isPointerLocked) {
+						// 	document.body.requestPointerLock()
+						// }
+						// this.babs.uiSys.resumeGame()
 					}
 				}
 
@@ -396,7 +412,7 @@ export class InputSys {
 			let type = ''
 			switch (event.type) {
 			case 'touchstart': type = 'mousedown'; break
-			case 'touchmove': type = 'mousemove'; break
+			case 'touchmove': type = 'pointermove'; break
 			case 'touchend': type = 'mouseup'; break
 			default: return
 			}
@@ -471,7 +487,7 @@ export class InputSys {
 
 		this.lastMoveHoldPicked
 		this.carrying = null
-		interface FeMouseEvent extends MouseEvent { 
+		interface FePointerEvent extends PointerEvent { 
 			target: HTMLElement,
 			mozMovementX: number,
 			mozMovementY: number,
@@ -482,45 +498,91 @@ export class InputSys {
 			webkitOffsetX: number,
 			webkitOffsetY: number,
 		}
-		document.addEventListener('mousemove', async (e :MouseEvent) => {
-			const ev = e as FeMouseEvent
-
-			if(ev.webkitForce > 1) { // Safari only
-				// (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
-				console.log('mousemove ev.webkitForce', ev.webkitForce)
+		document.addEventListener('pointermove', async (e :PointerEvent) => {
+			const ev = e as FePointerEvent
+			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
+			// @ts-ignore
+			if(ev.webkitForce > 1) { // (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
+				// console.log('pointermove ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
 
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
-			// log('mousemove', ev.target.id, ev.offsetX, ev.movementX)
+			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
 
-			// Note I get MULTIPLE mousemove calls of this func in between a single update frame!
+			// Note I get MULTIPLE pointermove calls of this func in between a single update frame!
 			// Thus, setting this.mouse.dy =, doesn't work as it loses ones in between frames.
 			// Instead, I should either do accumx here, or sum the deltas here instead of add, then wipe them at update.
 			// Done.  What I notice is, with devtools open, events come in a lot faster than updates() (RAFs)
+			// 2 years later, ohhh it's this: https://nolanlawson.com/2019/08/11/high-performance-input-handling-on-the-web/
+			// In Chrome, pointermove is actually supposed to align/throttle to requestAnimationFrame automatically, but there is a bug where it behaves differently with Dev Tools open.
+			// https://bugs.chromium.org/p/chromium/issues/detail?id=992954
 
-			// Mouse movement since last frame (including during pointer lock)
+			// Mouse movement since last frame (including during pointerlock)
 			// These are set by browser during real mouse move, but not by touchpad or touch events.
 			// Touchpad instead uses .onwheel for gestures.
-			this.mouse.dx += ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
-			this.mouse.dy += ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
+			// Doing this solves the above multiple events issues for my uses:
+			if(this.mouse.right) {
+				this.mouse.dx += ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
+				this.mouse.dy += ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
+			}
+			else {
+				this.mouse.dx = ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
+				this.mouse.dy = ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
+			}
 
-			// Mouse position (unchanging during pointer lock or gestures)
-			// 'offsetX' means offset from screen origin, not offset from last event/frame
-			this.mouse.x = ev.offsetX || ev.mozOffsetX || ev.webkitOffsetX || 0
-			this.mouse.y = ev.offsetY || ev.mozOffsetY || ev.webkitOffsetY || 0
-			// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
+			if(this.isPointerLocked && !this.mouse.right) {
+				const [xOldPos, yOldPos] = this.customcursor.style.transform.replace('translate(', '').split(', ').map(s => parseInt(s))
+				// console.log('OldPos', xOldPos, yOldPos)
 
-			// From threejs:
-			// calculate mouse position in normalized device coordinates
-			// (-1 to +1) for both components
-			this.mouse.xy.x = (ev.clientX / parseInt(this.canvas.style.width)) * 2 - 1
-			this.mouse.xy.y = - (ev.clientY / parseInt(this.canvas.style.height)) * 2 + 1
+				this.mouse.x = xOldPos +this.mouse.dx
+				this.mouse.y = yOldPos +this.mouse.dy
+				// Is all this really necessary?
+				this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
+				this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
+
+				// Release mouse if it goes well outside the window
+				const margin = parseInt(this.canvas.style.width) *0.10
+				if(this.mouse.x < 0 -margin || this.mouse.x > window.innerWidth +margin || this.mouse.y < 0 -margin || this.mouse.y > window.innerHeight +margin) {
+					document.exitPointerLock()
+				}
+
+				// this.customcursor.style.left = `${this.mouse.x}px`
+				// this.customcursor.style.top = `${this.mouse.y}px`
+				// console.log('translate', this.customcursor.style.translate)
+				// Speedy update of fake cursor
+				// https://www.paulirish.com/2012/why-moving-elements-with-translate-is-better-than-posabs-topleft/
+				// https://stackoverflow.com/questions/16868122/mousemove-very-laggy
+				this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
+
+			}
+			else {
+				// https://stackoverflow.com/questions/6073505/
+				// (most useful) client is visible part of the page
+				// offset is relative to parent container (useful if no weird parent offset)
+				// page is relative without considering scrolling
+				// (not useful) screen includes window position on monitor
+
+				// Mouse position (unchanging during pointer lock or gestures)
+				// 'offsetX' means offset from screen origin, not offset from last event/frame
+				this.mouse.x = ev.clientX// || ev.mozOffsetX || ev.webkitOffsetX || 0
+				this.mouse.y = ev.clientY// || ev.mozOffsetY || ev.webkitOffsetY || 0
+				// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
+
+				// From threejs:
+				// calculate mouse position in normalized device coordinates
+				// (-1 to +1) for both components
+				// One use is during raycast
+				this.mouse.xy.x = (ev.clientX / parseInt(this.canvas.style.width)) * 2 - 1
+				this.mouse.xy.y = - (ev.clientY / parseInt(this.canvas.style.height)) * 2 + 1
+			}
+
+
 
 			// if (ev.target.classList.contains('container-body')) {
 
-			// 	// There's another problem: Transparent corner of one png will overlap another, preventing mousemove target!
+			// 	// There's another problem: Transparent corner of one png will overlap another, preventing pointermove target!
 			// 	// What if I extract the coords within the parent, then check every child there for transparency, sorted by updated?
 			// 	// Alright, so 1. get all items under mouse by looking through the bag!
 			// 	for (const item of ev.target.childNodes) {
@@ -586,7 +648,7 @@ export class InputSys {
 						isSameAsPrevious = this.lastMoveHoldPicked?.feim?.instancedMesh.uuid === this.pickedObject?.feim?.instancedMesh.uuid // Ensures it's comparable object
 							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
 					}
-					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in mousemove), in UI
+					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in pointermove), in UI
 						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id // fasttodo
 						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
 					}
@@ -619,21 +681,23 @@ export class InputSys {
 		// })
 		document.addEventListener('webkitmouseforcechanged', (ev) => { // Safari only
 			// console.log('webkitmouseforcechanged', ev.webkitForce)
-			if(ev.webkitForce > 1) { // Safari only
+			// @ts-ignore
+			if(ev.webkitForce > 1) { // Safari only 
 				// console.log('ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
 		})
 		document.addEventListener('mousedown', async ev => {
 			const eventTargetId = (ev.target as HTMLElement)?.id
+			// @ts-ignore
 			if(ev.webkitForce > 1) { // Safari only
 				// console.log('ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
 
-			log('mouseOnDown', ev.button, eventTargetId, ev)
+			// log('mouseOnDown', ev.button, eventTargetId, ev)
 
-			if (!this.topMenuVisibleLocal && (eventTargetId === 'canvas')) {
+			if (eventTargetId === 'canvas' || ev.target === null || ev.target === document.body) {
 				this.characterControlMode = true
 
 				if (ev.button === MOUSE_LEFT_CODE) {
@@ -642,11 +706,14 @@ export class InputSys {
 					if (this.mouse.right) {
 						// Modern touchpads don't have both buttons to click at once; it's a mouse
 						this.setMouseDevice('mouse')
-					}
 
-					// Turn off movelock if hitting left (while right) after a delay
-					if (this.mouse.right && this.movelock && Date.now() - this.mouse.ldouble > this.doubleClickMs) {
-						this.movelock = false
+						// Turn off movelock if hitting left (while right) after a delay
+						if(this.movelock && Date.now() - this.mouse.ldouble > this.doubleClickMs) {
+							this.movelock = false
+						}
+					}
+					else { // Normal left click on canvas
+						this.babs.uiSys.leftClickCanvas(ev)
 					}
 
 					// Single click
@@ -789,12 +856,16 @@ export class InputSys {
 					if (this.mouse.left) {
 						// Modern touchpads don't have both buttons to click at once; it's a mouse
 						this.setMouseDevice('mouse')
+						
+						// Right+left mouse during movelock, stops movement
+						if(this.movelock) {
+							this.movelock = false
+						}
+					}
+					else { // Normal right click on canvas
+						this.babs.uiSys.rightClickCanvas(ev)
 					}
 
-					// Right+left mouse during movelock, stops movement
-					if (this.mouse.left && this.movelock) {
-						this.movelock = false
-					}
 
 					if (this.mouse.device === 'touchpad') {
 						// Two-finger click on touchpad toggles touchmove (similar to movelock)
@@ -804,23 +875,6 @@ export class InputSys {
 						else {
 							this.touchmove = 0
 							this.mouse.scrollaccumy = 0
-						}
-					}
-					else {
-						// If not touchpad, do pointer lock.  Touchpad doesn't need it because look is via gestures
-
-						try{
-							await this.canvas.requestPointerLock()
-						}
-						catch(e) {
-							log('w Exception', e)
-						}
-						// this.canvas.style.cursor = 'none'
-
-						// If you started pressing w before mouse, chat now has annoying 'w's in it; clear them.
-						const box = document.getElementById('chatbox')
-						if (box.textContent === 'w' || box.textContent?.[1] === 'w') {
-							box.textContent = ''
 						}
 					}
 				}
@@ -833,23 +887,13 @@ export class InputSys {
 					this.movelock = !this.movelock
 				}
 
-			}
-
-			
-			if(eventTargetId === 'canvas' || eventTargetId === null) { // null is during pointerlock
-				if (ev.button === MOUSE_LEFT_CODE) {
-					this.babs.uiSys.leftClickCanvas(ev)
-				}
-			}
-			else {
+			}{
 				if (ev.button === MOUSE_LEFT_CODE) {
 					this.babs.uiSys.leftClickHtml(ev)
 				}
 			}
 
-			// if (eventTargetId === 'canvas' && this.topMenuVisibleLocal) {
-			// 	topmenuUnfurled.set(false)
-			// }
+
 		})
 
 		document.addEventListener('mouseup', ev => {
@@ -928,7 +972,7 @@ export class InputSys {
 
 				this.mouse.ldouble = 0
 
-				document.exitPointerLock?.()
+				// document.exitPointerLock?.()
 				this.canvas.style.cursor = 'inherit'
 			}
 			if (ev.button == 1) {
@@ -948,7 +992,7 @@ export class InputSys {
 				if (ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
 				this.mouse.scrolldx -= ev.deltaX
 
-				if (this.mouse.device !== 'mouse') { // Do not move on wheel, if we know it's a mouse.
+				if (this.mouse.device !== 'mouse' && this.mouse.device !== 'undetermined') { // Do not move on wheel, if we know it's a mouse.
 					// this.mouse.scrolldy += ev.deltaY
 					// Disabling touchpad vertical scroll to move.  Instead, use code similar to mouse
 
@@ -956,14 +1000,14 @@ export class InputSys {
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 					// Only increase offsetHeight if camera is above ground, or moving camera up
 					if(!this.topMenuVisibleLocal) {
-						this.babs.cameraSys.offsetHeight -= ev.deltaY * 0.05
+						this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight -(ev.deltaY * 0.05))
 					}
 					// }
 
 				}
 			}
 
-			if (this.mouse.device === 'mouse') {
+			if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') {
 				if (ev.deltaY < 0) {
 					this.runmode = true
 				}
@@ -1012,7 +1056,6 @@ export class InputSys {
 	carrying :PickedObject|null
 
 	async update(dt) {
-
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
 			this.isAfk = true
 		}
@@ -1046,7 +1089,7 @@ export class InputSys {
 		}
 
 		// log('mt', this.mouse.movetarget)
-		if (this.mouse.movetarget?.id === 'canvas' // Only highlight things in canvas, not css ui
+		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body) // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
 		) {
 			const raycaster = this.mouse.ray as Raycaster
@@ -1224,6 +1267,19 @@ export class InputSys {
 
 		}
 
+		if(this.mouse.right === PRESS) {
+			if(this.isPointerLocked) {
+				// Hide cursor while controlling character right rightmouse hold
+				this.babs.inputSys.customcursor.style.display = 'none'
+			}
+		}
+		if(this.mouse.right === LIFT) {
+			if(this.isPointerLocked) {
+				// Show cursor while controlling character right rightmouse hold
+				this.babs.inputSys.customcursor.style.display = 'block'
+			}
+		}
+
 		if (!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse
 			// Tested on Mac touchpads; not sure how it will do on PC
@@ -1326,7 +1382,7 @@ export class InputSys {
 
 			// if (this.mouse.dy > 0 || !this.babs.cameraSys.gh || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 			// Only increase offsetHeight if camera is above ground, or moving camera up
-			this.babs.cameraSys.offsetHeight += this.mouse.dy * 0.05
+			this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight +(this.mouse.dy * 0.05))
 			// }
 			// Above is matched to touchpad similar code
 		}
@@ -1512,6 +1568,11 @@ export class InputSys {
 			if (this.keys[key] === PRESS) this.keys[key] = ON
 			else if (this.keys[key] === LIFT) this.keys[key] = OFF
 		}
+		for (const key in this.mouse) { // Update key states after press/lift
+			if(!(key==='left' || key==='right' || key==='middle')) continue
+			if (this.mouse[key] === PRESS) this.mouse[key] = ON
+			else if (this.mouse[key] === LIFT) this.mouse[key] = OFF
+		}
 	}
 
 
@@ -1527,11 +1588,16 @@ export class InputSys {
 			// dividerOffset.set(0)
 		}
 
-		log('Device detected: ', newDevice)
+		log('Device detected: ', newDevice, `(was ${this.mouse.device})`)
 		// Device has changed.
 
+		if(this.mouse.device === undefined && newDevice === 'mouse') {
+			// Joined the game with saved mouse device; mouse gets set so we need them to click to pointerlock.
+			// this.babs.uiSys.awayGame()
+		}
 
-		if (this.mouse.device === 'mouse') { // Switching away from mouse
+
+		if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') { // Switching away from mouse
 			this.movelock = false // Stop mouse autorun
 
 		}
@@ -1556,7 +1622,7 @@ export class InputSys {
 	askTarget(fwob :SharedWob = null) {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
-		document.body.style.cursor = `url(${this.babs.urlFiles}/icon/cursor-aim.png) ${32/2} ${32/2}, auto`
+		document.body.style.cursor = `url(${this.babs.urlFiles}/cursors/cursor-aim.png) ${32/2} ${32/2}, auto`
 		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name}'s target?>`)
 	}
 

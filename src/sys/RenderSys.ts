@@ -97,7 +97,7 @@ export class RenderSys {
 			}
 		}, 200)
 		window.addEventListener('focus', (ev) => {
-			console.log('window focus event')
+			// console.log('window focus event')
 			this.documentHasFocus = true
 			this.babs.uiSys.gotFocus(ev)
 		})

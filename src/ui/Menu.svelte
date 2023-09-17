@@ -225,7 +225,7 @@
 
 <svelte:window on:resize={updateDimensions}/>
 
-	<button bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="text-align:center; display:{$topmenuUnfurled ? 'block' : 'none'}">- Away -<br/>Click to Resume First Earth</button>
+	<button bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="pointer-events:none; text-align:center; display:{$topmenuUnfurled ? 'block' : 'none'}">- Away -<br/>Click to Resume First Earth</button>
 
 	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="cursor:default; display:{$topmenuAvailable ? 'block' : 'none'}">
 
@@ -237,13 +237,11 @@
 			<li style="text-align:center;">
 				{$menuSelfData.email} <a id="logout" href on:click|preventDefault={logout}>Logout</a>
 			</li>
-			<li>&nbsp;</li>
-			<li id="menuVrArea" style="display:none;"></li>
-			<li>&bull; Two fingers on mouse to move.</li>
-			<li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li>
-			<li>&bull; Double click to name someone.</li>
-			<li>&nbsp;</li>
-			<li style="text-align:right;">
+			<li id="menuVrArea" style="display:none; margin-top:10px;"></li>
+			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
+			<!-- <li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li> inputtodo -->
+			<li>&bull; Double click someone to name.</li>
+			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
 			</li>
 			<li style="text-align:right;">
@@ -288,17 +286,15 @@
 					</label>
 				</fieldset>
 			</li>
-			<li style="text-align:right;">
-				<a target="_new" href="https://discord.gg/r4pdPTWbm5">discord.gg/r4pdPTWbm5</a>
-			</li>
-			<li>&nbsp;</li>
+			<!-- <li>&nbsp;</li> -->
 
 			<!-- <li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> -->
-			<li style="text-align:center;">
-				What are you most excited<br/>to do in First Earth?
+			<li style="text-align:center; margin-top:10px; margin-bottom: 10px;">
+				<a href="https://discord.gg/r4pdPTWbm5" target="_blank">Discord</a> <a href="https://github.com/Suncapped/babs" target="_blank">Github</a> <a href="https://suncapped.com/blog" target="_blank">Blog</a>
 			</li>
+			<li style="text-align:center;">What are you excited to do in FE?</li>
 			<li style="text-align:center;">
-				<textarea style="width: 220px; height: 80px;" id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
+				<textarea style="width: 240px; height: 80px;" id="inputreason" maxlength="10000" bind:value={$menuSelfData.reason} />
 			</li>
 		</ul>
 	</div>
