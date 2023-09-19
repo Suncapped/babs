@@ -465,7 +465,7 @@ export class Controller extends Comp {
 			this._mixer.update(dt)
 		}
 
-		this.raycastPlayerGroundCalcs()
+		this.setPlayerGroundY()
 		
 		if(this.headRotationX) {
 			// this.modelHead ||= this.playerRig.getObjectByName( 'Head_M' )
@@ -478,20 +478,12 @@ export class Controller extends Comp {
 		if(!this.gPrevDestination?.equals(this.gDestination)) {
 			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
 		}
-
-		
 	}
 
-	raycastPlayerGroundCalcs() {
+	setPlayerGroundY() {
 		const zone = this.playerRig?.zone // This gets set well before zoneIn(), so it's current (ie doesn't wait for network)
 
-		// Note that raycaster uses global coords
-		// this.raycaster.ray.origin.copy(this.playerRig.position)
-		// this.raycaster.ray.origin.setY(WorldSys.ZoneTerrainMax.y) // Use min from below?  No, backfaces not set to intersect!
 		if(zone){// && this.raycaster) {
-			// const groundIntersect = this.raycaster.intersectObject(ground, false)
-			// const worldGroundHeight = groundIntersect?.[0]?.point
-
 			const yardCoord = YardCoord.Create(this.playerRig)
 			const worldGroundHeight = zone.engineHeightAt(yardCoord)
 
@@ -500,13 +492,7 @@ export class Controller extends Comp {
 				this.groundDistance = 1
 				this.playerRig.position.setY(worldGroundHeight +this.hover)
 			}
-			// if(!groundIntersect.length) { // aka no ground beneath!
-			// 	this.velocity.y = 6 // Makes you float upward because floating up is more fun than falling down :)
-			// }
-			// else {
 			this.groundDistance = this.playerRig.position.y - worldGroundHeight // Used for jump
-			// }
-
 			return worldGroundHeight
 		}
 		return null

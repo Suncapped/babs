@@ -39,7 +39,9 @@ const ON = true
 const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
+type PickedType = 'wob' | 'player'
 type PickedObject = {
+	pickedType :PickedType,
 	feim :InstancedWobs,
 	instancedBpid :string,
 	isIcon? :boolean,
@@ -126,6 +128,7 @@ export class InputSys {
 	runmode = true // Run mode, as opposed to walk mode
 	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
+	recheckMouseIntersects = false
 
 	isAfk = false
 	babs :Babs
@@ -154,6 +157,7 @@ export class InputSys {
 		this.customcursor = document.getElementById('customcursor')
 
 		document.addEventListener('pointerlockchange', (ev) => {
+			this.recheckMouseIntersects = true
 			log.info('pointerlockchange', ev)
 			if (document.pointerLockElement) {
 				this.isPointerLocked = true
@@ -356,7 +360,7 @@ export class InputSys {
 
 			}
 			if (this.keys.esc === PRESS) {
-				console.log('Key esc')
+				// console.log('Key esc')
 				if(this.babs.renderSys.documentHasFocus) {
 					if(!this.babs.uiSys.isGameAway) {
 						this.babs.uiSys.awayGame()
@@ -510,6 +514,8 @@ export class InputSys {
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
 			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
+
+			this.recheckMouseIntersects = true
 			
 			const ev = e as FePointerEvent
 			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
@@ -993,6 +999,7 @@ export class InputSys {
 
 		this.canvas.addEventListener('wheel', ev => {
 			ev.preventDefault()
+			this.recheckMouseIntersects = true // So that laptop mouselook highlights wobs still
 
 			// https://medium.com/@auchenberg/detecting-multi-touch-trackpad-gestures-in-javascript-a2505babb10e
 			if (ev.ctrlKey) {
@@ -1069,14 +1076,13 @@ export class InputSys {
 	async update(dt) {
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
 			this.isAfk = true
+			this.babs.uiSys.awayGame()
 		}
-		// if(this.isAfk) { // todo let's send it to server, then have server notify zone
-		// 	this.player.controller.playerRig.children[0].material.transparent = true
-		// 	this.player.controller.playerRig.children[0].material.opacity = 0.2
-		// }
 
 		if (this.pickedObject
-			&& !this.pickedObject.isIcon) { // Don't unpick when it's dragged from bag icon
+			&& !this.pickedObject.isIcon
+			&& this.recheckMouseIntersects
+		) { // Don't unpick when it's dragged from bag icon
 			if (this.pickedObject.feim) { // InstancedMesh picks
 				this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
 				this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
@@ -1091,7 +1097,9 @@ export class InputSys {
 			}
 			this.pickedObject = undefined
 		}
-		if (this.mouse.landtarget.text) {
+		if (this.mouse.landtarget.text
+			&& this.recheckMouseIntersects
+		) {
 			this.mouse.landtarget = {
 				text: '',
 				idzone: null,
@@ -1102,7 +1110,10 @@ export class InputSys {
 		// log('mt', this.mouse.movetarget)
 		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body) // Only highlight things in canvas, not css ui
 			&& !this.mouse.right // And not when mouselooking
+			&& this.recheckMouseIntersects
 		) {
+			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
+
 			const raycaster = this.mouse.ray as Raycaster
 			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
 
@@ -1134,7 +1145,6 @@ export class InputSys {
 			// raycaster.firstHitOnly = true // BVH thing
 			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
 
-
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 
 				const objectMaybe = this.mouseRayTargets[i].object
@@ -1146,13 +1156,14 @@ export class InputSys {
 					const name = objectMaybe.name
 					const feim = Wob.InstancedWobs.get(name)
 					const index = this.mouseRayTargets[i].instanceId
-					const position = feim.coordFromIndex(index)
+					const position = feim.engCoordFromIndex(index)
 					// console.log('im', this.mouseRayTargets[i], index, position)
 
 					const yard = YardCoord.Create({position: position, babs: this.babs})
 
 					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
 					this.pickedObject = {
+						pickedType: 'wob',
 						feim: feim,
 						instancedBpid: name,
 						instancedIndex: index,
@@ -1168,6 +1179,7 @@ export class InputSys {
 					const temp = objectMaybe
 					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 					this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
+					this.pickedObject.pickedType = 'player'
 				}
 				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
 					if (objectMaybe?.name === 'ground') { // Mesh?
@@ -1197,10 +1209,26 @@ export class InputSys {
 						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
 
 						// Highlight and label wob at location
-						// const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
-						// if(wobAtCoord) {
-						// 	this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
-						// }
+						const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
+						if(wobAtCoord) {
+							// this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+							
+							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
+							// log('feim', feim.blueprint_id, yardCoord)
+							const index = feim.indexFromYardCoord(yardCoord)
+							const position = feim?.engCoordFromIndex(index)
+							if(position) { // Ensure feim and wobs have been loaded
+								// log('index', index, position)
+								this.pickedObject = {
+									pickedType: 'wob',
+									feim: feim,
+									instancedBpid: wobAtCoord.blueprint_id,
+									instancedIndex: index,
+									instancedPosition: position,
+									yardCoord: yardCoord,
+								}
+							}
+						}
 
 
 						// Also, maybe we should highlight this square or something?  By editing index color
@@ -1233,7 +1261,7 @@ export class InputSys {
 					// console.log(scene.children)
 					// console.log(scene.children.find(c => c.children.length))
 
-					if (this.pickedObject.feim) { // InstancedMesh 
+					if (this.pickedObject.pickedType === 'wob') { // InstancedMesh 
 						let oldColor = new Color()
 						this.pickedObject.feim.instancedMesh.getColorAt(this.pickedObject.instancedIndex, oldColor)
 						let hsl = new Color() // This indirection prevents accumulation across frames
@@ -1244,7 +1272,7 @@ export class InputSys {
 						this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, highlight)
 						this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 					}
-					else if(this.pickedObject instanceof SkinnedMesh){ // Player bbox
+					else if(this.pickedObject.pickedType === 'player'){ // Player bbox
 						// console.log(this.pickedObject)
 						// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
 						// We can clone the material temporarily?

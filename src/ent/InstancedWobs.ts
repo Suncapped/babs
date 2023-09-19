@@ -2,6 +2,7 @@ import type { Babs } from '@/Babs'
 import { InstancedMesh, Vector3, Matrix4, Mesh, DynamicDrawUsage, InstancedBufferAttribute } from 'three'
 import { Wob } from './Wob'
 import { log } from '@/Utils'
+import { YardCoord } from '@/comp/Coord'
 
 export type IconData = {image :string, pixels :Uint8Array}
 
@@ -172,7 +173,7 @@ export class InstancedWobs {
 	}
 
 		
-	coordFromIndex(index) { 
+	engCoordFromIndex(index) { 
 		// Returns world coord; instanced are zero-oriented since they have to be shared across zones, and their 'getMatrixAt()' positions are all local, not world.  So we change them to world using shiftiness.
 		const matrix = new Matrix4()
 		this.instancedMesh.getMatrixAt(index, matrix)
@@ -188,5 +189,55 @@ export class InstancedWobs {
 		// 	const x = instanceMatrix.array[i +12]
 		// 	const z = instanceMatrix.array[i +14]
 		// }
+	}
+	indexFromYardCoord(yardCoord :YardCoord) {
+		// Returns instanced index
+		const instanceMatrix = this.instancedMesh.instanceMatrix
+		const imLoadedCount = this.getLoadedCount()
+		
+		// console.log(this.instancedMesh.count, 'vs', instanceMatrix.count)
+		// for(let i=0; i<imLoadedCount; i++) {
+		// 	const x = instanceMatrix.array[i *16 +12]// +this.babs.worldSys.shiftiness.x
+		// 	const z = instanceMatrix.array[i *16 +14]// +this.babs.worldSys.shiftiness.z
+		// 	console.log((x-2)/4, (z-2)/4, 'vs', yardCoord.x, yardCoord.z)
+		// 	if((x-2)/4 === yardCoord.x && (z-2)/4 === yardCoord.z) {
+		// 		return i
+		// 	}
+		// }
+
+
+		// const tempMatrix = new Matrix4()
+		// const tempPosition = new Vector3()
+		// for(let i=0; i<imLoadedCount; i++) {
+		// 	this.instancedMesh.getMatrixAt(i, tempMatrix)
+		// 	tempPosition.setFromMatrixPosition(tempMatrix)
+		// 	const engWorldCoord = tempPosition.add(this.babs.worldSys.shiftiness)
+
+		// 	engWorldCoord.addScalar(-2).divideScalar(4)
+
+		// 	const targetYc = YardCoord.Create({
+		// 		x: engWorldCoord.x, 
+		// 		z: engWorldCoord.z,
+		// 		zone: yardCoord.zone,
+		// 	})
+
+		// 	// console.log(engWorldCoord.x, engWorldCoord.z, 'vs', yardCoord.x, yardCoord.z)
+		// 	if(engWorldCoord.x === yardCoord.x && engWorldCoord.z === yardCoord.z) {
+		// 		return i
+		// 	}
+		// }
+
+		// It's simpler than all that!  Using toEngineCoordCentered
+		const engCoord = yardCoord.toEngineCoordCentered()
+		for(let i=0; i<imLoadedCount; i++) {
+			const x = instanceMatrix.array[i *16 +12]// +this.babs.worldSys.shiftiness.x
+			const z = instanceMatrix.array[i *16 +14]// +this.babs.worldSys.shiftiness.z
+			// console.log((x-2)/4, (z-2)/4, 'vs', yardCoord.x, yardCoord.z)
+			if(x === engCoord.x && z === engCoord.z) {
+				return i
+			}
+		}
+
+
 	}
 }
