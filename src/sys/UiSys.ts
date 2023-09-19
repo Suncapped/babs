@@ -294,6 +294,7 @@ export class UiSys {
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
+			log.info('words.idTargetPlayer', words.idTargetPlayer, words.content)
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
 
@@ -315,7 +316,7 @@ export class UiSys {
 
 			// Hax, make name stay up
 			const isPlayerNickBeingSet = player.nickWrapped() === words.content
-			if(isPlayerNickBeingSet) {
+			if(isPlayerNickBeingSet && player.id !== this.babs.idSelf) { // Do not pin self name
 				this.expiringText
 					.filter(t => t.parent.idplayer === player.id && t.expires === Infinity)
 					.forEach(t=>t.expires=Date.now()) // Remove any old stickies on this player
@@ -331,7 +332,7 @@ export class UiSys {
 	}
 
 	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') :TroikaText {
-		log.info(name, content)
+		log.info('makeTextAt', name, content)
 			
 		// Setup
 		const ttext = new TroikaText() as TroikaText
@@ -470,6 +471,8 @@ export class UiSys {
 				chat.remove()
 			}
 		})
+
+		// console.log(this.expiringText.map(t=>t.text))
 
 		this.expiringText.forEach(ttext => {
 			if(Date.now() > ttext.expires) {
