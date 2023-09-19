@@ -117,7 +117,7 @@ export class UiSys {
 	async leftClickCanvas(ev :MouseEvent) {
 		log.info('leftClickCanvas', ev)
 		const gotLock = await this.tryPointerLock()
-		if(gotLock && this.isGameAway) {
+		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
 	}
@@ -129,7 +129,7 @@ export class UiSys {
 	async rightClickCanvas(ev :MouseEvent) {
 		log.info('rightClickCanvas', ev)
 		const gotLock = await this.tryPointerLock()
-		if(gotLock && this.isGameAway) {
+		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
 	}
@@ -144,6 +144,9 @@ export class UiSys {
 				console.warn('PointerLock must wait for 1000ms after a user-initiated unlock')
 				return false
 			}
+		}
+		else {
+			return null
 		}
 
 	}

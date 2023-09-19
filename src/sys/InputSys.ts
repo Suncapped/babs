@@ -401,6 +401,7 @@ export class InputSys {
 			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 
+			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touch '+event.target.id) // Don't worry, it is canvas!
 			if (event.target.id !== 'canvas') return
 			event.preventDefault()
 
@@ -435,7 +436,7 @@ export class InputSys {
 
 			})
 
-			// Two finger touch to look
+			// One finger touch to look
 			if (event.touches.length === 1) {
 				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
 				// Probably like touchpad.
@@ -458,7 +459,7 @@ export class InputSys {
 				this.mouse.fingerlasty = event.touches[0].clientY
 			}
 
-			// Handle double finger double tap
+			// Handle one finger double tap
 			if (event.type === 'touchstart' && event.touches.length === 1) {
 				if (Date.now() - this.mouse.finger1downstart < this.doubleClickMs) { // Quick down them up, autorun
 					// log('finger2 runmode')
@@ -478,7 +479,7 @@ export class InputSys {
 			// newEvent.movementX = finger1.clientX -this.mouse.x
 			// newEvent.movementY = finger1.clientY -this.mouse.y
 			// finger2?.target.dispatchEvent(newEvent)
-			// document.dispatchEvent(newEvent)
+			event.target.dispatchEvent(newEvent)
 		}
 		document.addEventListener('touchstart', touchHandler, {passive:false})
 		document.addEventListener('touchmove', touchHandler, {passive:false})
