@@ -25,18 +25,12 @@ body {
     box-shadow: none; /* 15px 28px 25px -18px rgb(0 0 0 / 20%);  Grabbed from paper.min */
 }
 
-.card.unfurled { /* When unfurled, paper css is wider, which makes corner cuts cut across the header; so move card up during that */
-    /* No longer applies; only applied when header was left aligned */
-    /* margin-top:-8px; */
-    /* padding-top: 8px; */
-}
-
-.card .card-body {
+/* .card .card-body {
     display: none;
 }
-.card.unfurled .card-body { /* Display body, when unfurled */
+.card.unfurled .card-body {
     display: block;
-}
+} */
 
 .card > .card-header {
     text-align: center;
@@ -47,7 +41,7 @@ body {
     background: none;
 
     padding: 6px 8px;
-    padding-bottom:4px;
+    padding-bottom:1px;
 
     font-size: 22px;
 }
@@ -63,6 +57,9 @@ a:hover{
     border-bottom: 2px solid lightblue;
 }
 
+.hide {
+	display: none !important;
+}
 
 
 #HiddenRenderFrame {

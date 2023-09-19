@@ -249,38 +249,32 @@ export class Zone extends SharedZone {
 	// 	return (this.elevationData[index] *this.yscale) +this.y
 	// }
 	
-	rayHeightAt(coord :Vector3|YardCoord) :Vector3 {
-		let offset = new Vector3()
-		if(coord instanceof YardCoord) {
-			coord = coord.toEngineCoordCentered()
-		}
-		else {
-			// Offset engine things since they're otherwise not shiftiness-aware?  Not sure
-		}
-		// offset = new Vector3(this.ground.position.x, 0, this.ground.position.z)
+	// Let's use engineHeightAt instead, it's much more efficient!
+	// rayHeightAt(coord :Vector3|YardCoord) :Vector3 { 
+	// 	let offset = new Vector3()
+	// 	if(coord instanceof YardCoord) {
+	// 		coord = coord.toEngineCoordCentered()
+	// 	}
 
-		// log('ground', this.ground)
+	// 	const raycaster = new Raycaster(
+	// 		new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner
+	// 		new Vector3( 0, -1, 0 ), 
+	// 		0, WorldSys.ZoneTerrainMax.y *2
+	// 	)
 
-		const raycaster = new Raycaster(
-			new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner
-			new Vector3( 0, -1, 0 ), 
-			0, WorldSys.ZoneTerrainMax.y *2
-		)
+	// 	let [intersect] = raycaster.intersectObject(this.ground, true)
+	// 	if(!intersect) {
+	// 		log.info('rayHeightAt: no ground intersect!', coord, raycaster)
+	// 		intersect = {
+	// 			point: new Vector3(0,0,0),
+	// 			distance: null,
+	// 			object: null,
+	// 		}
+	// 	}
+	// 	let result = intersect?.point
 
-		let [intersect] = raycaster.intersectObject(this.ground, true)
-		if(!intersect) {
-			log.info('calcHeightAt: no ground intersect!', coord, raycaster)
-			intersect = {
-				point: new Vector3(0,0,0),
-				distance: null,
-				object: null,
-			}
-		}
-		let result = intersect?.point
-		// log('intersect', result)
-
-		return result
-	}
+	// 	return result
+	// }
 
 
 

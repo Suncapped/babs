@@ -46,6 +46,8 @@ export function isWobId(item :any): item is WobId {
 }
 
 export type Rotation = UintRange<0, 4>
+export type PlayerRotation = UintRange<0, 8>
+export type YardRange = UintRange<0, 250>
 export class SharedWob extends Blueprint {
 	constructor(
 		public idzone :number,

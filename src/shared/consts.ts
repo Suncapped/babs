@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { type WobId } from './SharedWob'
+import { PlayerRotation, Rotation, type WobId } from './SharedWob'
 import { SharedZone } from './SharedZone'
 
 export const NLCD = {
@@ -207,11 +207,15 @@ export type SendZoneIn = {
 	},
 }
 
-// export type SendJournal = {
-// 	journal :{
-// 		text :string,
-// 	},
-// }
+export type SendReposition = {
+	reposition :{
+		idZone :number,
+		x :number,
+		z :number,
+		r? :PlayerRotation,
+	},
+}
+
 export class FeWords {
 	content :string
 	idZone :number // Zone it's about
@@ -255,7 +259,7 @@ export type SendFeTime = {
 export type Sendable = SendLoad|SendVisitor|SendSession
 	|SendAuth
 	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
-	|SendZoneIn|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
+	|SendZoneIn|SendReposition|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 
 

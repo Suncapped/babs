@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper } from 'three'
 import { Wob, type FeObject3D } from '@/ent/Wob'
-import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings } from '../stores'
+import { isAwayUiDisplayed, rightMouseDown, debugMode, nickTargetId, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from 'three'
@@ -207,6 +207,14 @@ export class InputSys {
 				}
 			}
 
+			// Non-typed commands
+			if(!this.keys.ShiftLeft && !this.keys.ShiftRight) {
+
+				if(this.keys.j === PRESS) {
+					this.babs.uiSys.svJournal.toggleFurl()
+				}
+			}
+
 			if(this.characterControlMode) {
 				if(this.mouse.right) {
 					// Jump on spacebar if mouse right held
@@ -364,6 +372,7 @@ export class InputSys {
 
 			}
 
+
 		})
 
 		document.addEventListener('keyup', ev => {
@@ -500,6 +509,8 @@ export class InputSys {
 			webkitOffsetY: number,
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
+			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
+			
 			const ev = e as FePointerEvent
 			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
 			// @ts-ignore
@@ -510,7 +521,6 @@ export class InputSys {
 
 			this.mouse.movetarget = ev.target
 			this.activityTimestamp = Date.now()
-			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
 
 			// Note I get MULTIPLE pointermove calls of this func in between a single update frame!
 			// Thus, setting this.mouse.dy =, doesn't work as it loses ones in between frames.
@@ -1019,7 +1029,7 @@ export class InputSys {
 
 		}, {passive: false})
 
-		// topmenuUnfurled.subscribe(vis => { // Menu becomes visible
+		// isAwayUiDisplayed.subscribe(vis => { // Menu becomes visible
 		// 	this.topMenuVisibleLocal = vis
 
 		// 	if (vis) {

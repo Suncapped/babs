@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { topmenuUnfurled, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
+import { isAwayUiDisplayed, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
 import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -30,7 +30,7 @@ export class UiSys {
 	ctext
 	labelElements = []
 	expiringText = Array<any>()
-	svJournal
+	svJournal :Journal
 	svMenu
 	svContainers = []
 	nicklist = new Map()
@@ -105,13 +105,13 @@ export class UiSys {
 	awayGame() {
 		log.info('awayGame')
 		this.isGameAway = true
-		topmenuUnfurled.set(true)
+		isAwayUiDisplayed.set(true)
 	}
 
 	resumeGame() {
 		log.info('resumeGame')
 		this.isGameAway = false
-		topmenuUnfurled.set(false)
+		isAwayUiDisplayed.set(false)
 	}
 
 	async leftClickCanvas(ev :MouseEvent) {
@@ -266,8 +266,7 @@ export class UiSys {
 				z: words.targetLocation.z,
 				zone: zone,
 			})
-			let pointCentered = zone.rayHeightAt(yardCoord)
-			pointCentered.setY(pointCentered.y +2)
+			const pointCentered = yardCoord.toEngineCoordCentered('withCalcY').add(new Vector3(0, 2, 0))
 
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
@@ -278,12 +277,11 @@ export class UiSys {
 				z: words.idTargetWob.z,
 				zone: zone,
 			})
-			let pointCentered = zone.rayHeightAt(yardCoord)
-			pointCentered.setY(pointCentered.y)// +WorldSys.Yard /2)
+			let pointCentered = yardCoord.toEngineCoordCentered('withCalcY')
 
 			const wob = zone.getWob(words.idTargetWob.x, words.idTargetWob.z)
 			const feim = Wob.InstancedWobs.get(wob.name)
-			const engHeight = feim.boundingSize.y
+			const boundingEngHeight = feim.boundingSize.y
 			// console.log('engHeight', wob.name, feim.boundingSize, engHeight)
 
 			// Get the direction of the cameraGroup from pointCentered
@@ -291,15 +289,15 @@ export class UiSys {
 			this.babs.inputSys.playerSelf.controller.playerRig.getWorldDirection(moveDirection).negate()
 			// Move pointCentered toward the camera by 2 units
 			// Actually some things are quite offset, so move it 1.75 tiles toward us
-			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)).setY(engHeight))
+			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)).setY(boundingEngHeight))
 
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
-			let pointCentered = zone.rayHeightAt(yardCoord)
-			pointCentered.setY(pointCentered.y +5.8)
+
+			const pointCentered = yardCoord.toEngineCoordCentered('withCalcY').add(new Vector3(0, 5.8, 0))
 
 			const ttext = this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 

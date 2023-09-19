@@ -16,7 +16,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
@@ -574,6 +574,20 @@ export class SocketSys {
 			// // Must find diff between server creatures and client creatures
 
 			// Flame.Create(wob, zone, this.babs, 6, 4)
+		}
+
+		else if('reposition' in payload) {
+			const reposition = payload.reposition
+			// Reposition self
+			// const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+			// const idsZonesNearby = currentZone.getZonesAround(Zone.loadedZones, 1).map(z=>z.id)
+			// const zoneIsNearby = idsZonesNearby.includes(reposition.idzone)
+			// if(zoneIsNearby) {
+
+			// }
+			// else {
+			window.location.reload()
+			// }
 		}
 		else {
 			log('unknown command: ', payload)

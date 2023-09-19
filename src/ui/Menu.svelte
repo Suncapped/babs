@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { topmenuUnfurled, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings, isFullscreen } from "../stores"
+	import { isAwayUiDisplayed, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings, isFullscreen } from "../stores"
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 	import Cookies from 'js-cookie'
@@ -90,8 +90,8 @@
 
 	// 	updateDimensions()
 
-	// 	$topmenuUnfurled = ui.unfurled
-	// 	if(!$topmenuUnfurled) { // If closing menu, hide picker and stuff too
+	// 	$isAwayUiDisplayed = ui.unfurled
+	// 	if(!$isAwayUiDisplayed) { // If closing menu, hide picker and stuff too
 	// 		document.getElementById('picker').style.display = 'none'
 	// 		movementTips = true
 	// 	}
@@ -189,7 +189,7 @@
 
 	let movementTips = true
 
-	topmenuUnfurled.subscribe(vis => {
+	isAwayUiDisplayed.subscribe(vis => {
 		ui.unfurled = vis
 		updateDimensions()
 	})
@@ -225,14 +225,14 @@
 
 <svelte:window on:resize={updateDimensions}/>
 
-	<button bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="pointer-events:none; text-align:center; display:{$topmenuUnfurled ? 'block' : 'none'}">- Away -<br/>Click to Resume First Earth</button>
+<button class:hide="{!$isAwayUiDisplayed}" bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary" style="pointer-events:none; text-align:center;">- Away -<br/>Click to Resume First Earth</button>
 
-	<div use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary {ui.unfurled ? 'unfurled' : ''}" style="cursor:default; display:{$topmenuAvailable ? 'block' : 'none'}">
+<div class:hide="{!$isAwayUiDisplayed}" use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary" style="cursor:default;">
 
-		<!-- <div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Menu</div> -->
-		<div class="content card-body">
-			<div id="picker"></div>
-			<ul style="text-align:left;">			
+	<!-- <div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Menu</div> -->
+	<div class="content card-body">
+		<div id="picker"></div>
+		<ul style="text-align:left;">			
 			<li style="text-align:center;">Welcome to First Earth!</li>
 			<li style="text-align:center;">
 				{$menuSelfData.email} <a id="logout" href on:click|preventDefault={logout}>Logout</a>

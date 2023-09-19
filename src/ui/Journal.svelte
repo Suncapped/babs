@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, topmenuUnfurled } from "../stores"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, isAwayUiDisplayed } from "../stores"
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 
@@ -55,8 +55,10 @@
 		// }, 10)
 	}
 	function updateDimensions(ev) {
-		Journal.style.width = ui.unfurled ? ui.w+'px' : 'auto'
-		Journal.style.height = ui.unfurled ? ui.h+'px' : 'auto'
+		Journal.style.width = true || ui.unfurled ? ui.w+'px' : 'auto'
+		Journal.style.height = true || ui.unfurled ? ui.h+'px' : 'auto'
+		// Note: I am on-purpose misusing 'unfurled' here; instead of rolling the body in or out of display, it's being used to
+		// say "whether the Journal is displayed even when Away screen isn't up".
 
 		setTimeout(() => {
 			const rect = Journal.getBoundingClientRect()
@@ -70,16 +72,16 @@
 		}, 1)
 	}
 
-	// function setFurl(ev, furl) {
-	// 	if(dragDistance > DRAG_THRESHOLD) {
-	// 		return // Don't toggle if they were just dragging
-	// 	}
-	// 	ui.unfurled = furl
-	// 	socketSend.set({
-	// 		'saveui': ui,
-	// 	})
-	// 	updateDimensions()
-	// }
+	export function toggleFurl() {
+		if(dragDistance > DRAG_THRESHOLD) {
+			return // Don't toggle if they were just dragging
+		}
+		ui.unfurled = !ui.unfurled
+		socketSend.set({
+			'saveui': ui,
+		})
+		updateDimensions()
+	}
 
 
 	
@@ -87,10 +89,11 @@
 		// Style based on ui input
 		updateDimensions()
 
-		topmenuUnfurled.subscribe(vis => {
-			ui.unfurled = vis
+		isAwayUiDisplayed.subscribe(vis => {
+			// ui.unfurled = vis
 			updateDimensions()
 		})
+
 	})
 
 	export function appendText(text, color, align) {
@@ -107,10 +110,8 @@
 
 <svelte:window on:resize={updateDimensions} />
 
-<div style="cursor:default;" use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary {ui.unfurled ? 'unfurled' : ''}">
-	{#if $topmenuUnfurled}
-		<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Journal</div>
-	{/if}
+<div class:hide="{!($isAwayUiDisplayed || ui.unfurled)}" style="cursor:default;" use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Journal} id="Journal" class="card border border-1 border-primary">
+	<div role="presentation" on:contextmenu={(ev) => ev.preventDefault()} class="handle card-header">Journal</div>
 	<div bind:this={content} class="content card-body"></div>
 </div>
 
@@ -120,8 +121,12 @@
 		background-color:rgba(12, 12, 12, 0.8);
 	}
 	#Journal > .content {
-		padding: 8px;
-		padding-left: 12px;	
+		/* padding: 8px;
+		padding-left: 12px;	 */
+
+		padding: 0;
+		margin: 8px; /* Helps to hide overflow text */
+		margin-top: 0px;
 
 		font-size: 18px;
 		user-select: text;

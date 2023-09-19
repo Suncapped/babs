@@ -6,6 +6,7 @@ import { Babs } from '@/Babs'
 import { InstancedMesh, RedIntegerFormat, Vector2, Vector3 } from 'three'
 import { type UintRange } from '@/shared/TypeUtils'
 import { Zone } from '@/ent/Zone'
+import type { YardRange } from '@/shared/SharedWob'
 
 /*
 April '22: "Pllllease let's create types for engine vs yard vs plot, so I stop messing it up.  Start on Proxima, plot vs yard.  Maybe this is integrated into types, I dunno.  Or at least declare it, with size limits etc.  Or just named consts."
@@ -40,8 +41,6 @@ type XZandZone = {x :number, z :number, zone :Zone} // eg a wob with x, z, and z
 type XZandZoneOrIdzoneBabs = {x :number, z :number, zone? :Zone, idzone? :number, babs? :Babs} // zone, or babs+idzone
 
 // Specific Coord Classes:
-
-type YardRange = UintRange<0, 250>
 export class YardCoord extends Coord {
 	static PER_ZONE = 250
 	
@@ -116,7 +115,7 @@ export class YardCoord extends Coord {
 		return this
 	}
 
-	toEngineCoord() {
+	toEngineCoord(withCalcY :boolean = false) {
 		/* Its engine coordinate is not: this.zone.x *1000 +this.x *4
 		Because that is just its theoretical coordinate if the player were at 0,0.
 		Rather, its engine coordinate would be relative. ?? maybe?
@@ -147,14 +146,14 @@ export class YardCoord extends Coord {
 		// shiftiness not needed; it's built into this.zone.ground.position
 		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4, 
-			0, 
+			withCalcY ? this.zone.engineHeightAt(this) : 0, 
 			(this.zone.ground.position.z) +this.z *4,
 		)
 	}
-	toEngineCoordCentered() {
+	toEngineCoordCentered(withCalcY :'withCalcY' = null) {
 		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4 +2, 
-			0, 
+			withCalcY ? this.zone.engineHeightAt(this) : 0, 
 			(this.zone.ground.position.z) +this.z *4 +2,
 		)
 	}
@@ -162,6 +161,7 @@ export class YardCoord extends Coord {
 	toString(){
 		return `${this.zone.id}(${this.zone.x},${this.zone.z})zn.(${this.x}, ${this.z})yd`
 	}
+
 }
 
 // type PlotRange = UintRange<0, 25>
@@ -241,7 +241,7 @@ export class ZoneCoord extends Coord {
 // 		// But why even do this?  Click enginecoord, convert to yard, then back to engine for display?
 // 		// I guess because the original enginecoord is not grid-aware.
 // 		// Ohhh and we need elevation.  (But...wouldn't that be on the click ray?)
-// 		// Is this all for zone.calcHeightAt()??? lol
+// 		// Is this all for zone.rayHeightAt()??? lol
 // 		// Hmm also for getting the sub-zone landcover
 
 
