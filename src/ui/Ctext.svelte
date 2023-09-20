@@ -1,13 +1,13 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData, nickTargetId } from "../stores"
+	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores"
 	import Cookies from 'js-cookie'
 	import { log } from '@/Utils'
 	import { InputSys } from '@/sys/InputSys'
 
 	let chatbox
 
-	document.addEventListener('keydown', chatKeydown);
+	// document.addEventListener('keydown', chatKeydown);
 
 	const sendChat = () => {
 		if(!chatbox.textContent) return
@@ -26,10 +26,10 @@
 			const nickparts = chatbox.textContent.split(':')
 			nickparts.shift()
 			socketSend.set({
-				savenick: {
-					idplayer: $nickTargetId,
-					nick: nickparts.join(':'),
-				},
+				// savenick: {
+				// 	idplayer: $nickTargetId,
+				// 	nick: nickparts.join(':'),
+				// },
 			})
 		}
 		else { // Regular chat
@@ -46,13 +46,13 @@
 	function chatKeydown(ev) {
 		// log('chatKeydown', $rightMouseDown, ev)
 
-		if($rightMouseDown) return
+		// if($rightMouseDown) return
 
 		// Don't add anything if they are manually editing the div
 		if(ev.target.id === 'chatbox') {
 			// Except if they hit enter; then send it
 			if(ev.code === 'Enter') {
-				sendChat()
+				// sendChat()
 				// No return, so that style visibility gets updated
 				ev.preventDefault()
 			}
@@ -83,7 +83,7 @@
 				chatbox.textContent = chatbox.textContent.slice(0, -1)
 			}
 			else if(ev.key === 'Enter') { // Enter submits instead of other stuff
-				sendChat()
+				// sendChat()
 			}
 			else { // Skip control keys like Control, Meta, etc
 				return
@@ -99,7 +99,7 @@
 	}
 	
 
-	menuSelfData.subscribe(val => {
+	menuSelfData.subscribe((val) => {
 		if(chatbox && val?.color) {
 			chatbox.style.color = val.color
 		}
@@ -110,7 +110,6 @@
 <svelte/>
 
 <div id="Ctext">
-	
 	<div contenteditable bind:this={chatbox} id="chatbox"></div>
 </div>
 
@@ -138,7 +137,12 @@
 		padding: 5px 10px;
 		padding-top:10px;
 		z-index: 40;
+
+		white-space: pre-wrap;
+		pointer-events: none;
+		user-select: none;
 	}
+	#chatbox::selection { background: transparent; } /* Hide visible selection during select-all */
 
 	#Ctext [contenteditable]:focus {
     	outline: 0px solid transparent;

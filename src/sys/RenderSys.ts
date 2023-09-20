@@ -91,7 +91,7 @@ export class RenderSys {
 
 			// Now that it's set, run the events
 			if (!hasFocusOld && hasFocusNew) {
-				this.babs.uiSys.gotFocus()
+				// this.babs.uiSys.gotFocus()
 			} else if (hasFocusOld && !hasFocusNew) {
 				this.babs.uiSys.lostFocus()
 			}
@@ -99,7 +99,7 @@ export class RenderSys {
 		window.addEventListener('focus', (ev) => {
 			// console.log('window focus event')
 			this.documentHasFocus = true
-			this.babs.uiSys.gotFocus(ev)
+			this.babs.uiSys.gotWindowFocus(ev)
 		})
 
 		setInterval(() => {

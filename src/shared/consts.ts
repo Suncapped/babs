@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { PlayerRotation, Rotation, type WobId } from './SharedWob'
+import { type PlayerRotation, type WobId } from './SharedWob'
 import { SharedZone } from './SharedZone'
 
 export const NLCD = {

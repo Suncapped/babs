@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { isAwayUiDisplayed, rightMouseDown, debugMode, nickTargetId, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
+import { isAwayUiDisplayed, rightMouseDown, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
 import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -83,12 +83,18 @@ export class UiSys {
 
 	
 
-	gotFocus(ev? :FocusEvent) {
-		log.info('gotFocus', ev)
+	async gotWindowFocus(ev? :FocusEvent) {
+		log.info('gotWindowFocus', ev)
 
 		// if(ev && !this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
 		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
 		// }
+
+		const gotLock = await this.tryPointerLock()
+		if((gotLock === true || gotLock === null) && this.isGameAway) {
+			this.resumeGame()
+		}
+		// ^ This can fail on first page load since the user hasn't done a gesture yet.  That's fine, because then the game stays away and they can click again to get a lock.
 		
 
 	}
@@ -135,13 +141,13 @@ export class UiSys {
 	}
 
 	async tryPointerLock() {
-		if(!this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
+		if(!this.babs.inVr && this.babs.inputSys?.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
 			try {
 				const promise = await document.body.requestPointerLock()
 				return true
 			}
 			catch(e) {
-				console.warn('PointerLock must wait for 1000ms after a user-initiated unlock')
+				console.warn('PointerLock must wait for 1000ms after a user-initiated unlock, and requres a user gesture (ie not a window focus) the first time.')
 				return false
 			}
 		}
@@ -528,7 +534,7 @@ export class UiSys {
 
 		const oldPos = selfRig?.position
 		if(this.babs.debugMode) {
-			const newLogText = `zone: ${selfRig?.zone.id}, y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
+			const newLogText = `zone: ${selfRig?.zone.id} (${selfRig?.zone.x}, ${selfRig?.zone.z}), y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
 				this.logText = newLogText
 				window.document.getElementById('log').innerText = this.logText

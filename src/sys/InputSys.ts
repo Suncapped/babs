@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper } from 'three'
+import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper, MeshStandardMaterial } from 'three'
 import { Wob, type FeObject3D } from '@/ent/Wob'
-import { isAwayUiDisplayed, rightMouseDown, debugMode, nickTargetId, settings } from '../stores'
+import { isAwayUiDisplayed, rightMouseDown, debugMode, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
 import { log } from './../Utils'
 import { MathUtils } from 'three'
@@ -22,6 +22,8 @@ import { Zone } from '@/ent/Zone'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
+import * as KeyCode from 'keycode-js'
+
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
 // BufferGeometry.prototype.computeBoundsTree = computeBoundsTree // bvh
@@ -48,7 +50,7 @@ type PickedObject = {
 	instancedIndex? :number,
 	instancedPosition? :Vector3,
 	yardCoord? :YardCoord,
-	material? :Material,
+	material? :Material|MeshStandardMaterial,
 	type? :string,
 	id? :string,
 	parent? :Object3D,
@@ -56,7 +58,7 @@ type PickedObject = {
 
 export class InputSys {
 
-	static NickPromptStart = '>> Name for'
+	static NickPromptStart = '>> Enter new name for'
 
 	mouse :{[key :string] :boolean|number|Raycaster|Record<any,any>|any} = {
 		left: OFF,
@@ -95,7 +97,7 @@ export class InputSys {
 		},
 
 	}
-	keys :{[key:string]:boolean|number} = {
+	keyboard :{[key:string]:boolean|number} = {
 		w: OFF,
 		a: OFF,
 		s: OFF,
@@ -143,6 +145,9 @@ export class InputSys {
 	activityTimestamp :number
 
 	customcursor :HTMLElement
+	chatbox :HTMLElement
+	chatboxOpen :boolean = false
+	nickTargetId :number
 
 	isPointerLocked = false
 
@@ -200,75 +205,181 @@ export class InputSys {
 		})
 
 
+		this.chatbox = document.getElementById('chatbox')
+		
+		// start/open chatbox on everything except lower alpha keys or space
+		const chatboxStartValues = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./'.split('') 
+		const chatableValues = chatboxStartValues.concat(' abcdefghijklmnopqrstuvwxyz'.split('')) // ASCII ev.key values
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
-			log.info('keydown:', ev.code)
+			// log('keydown:', ev.key, ev.code)
 			// OS-level key repeat keeps sending down events; 
-			if (this.keys[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
-				if ((ev.target as HTMLElement).id !== 'chatbox') { // Except do it allow it when editing chatbox
-					this.keys[inputCodeMap[ev.code]] = PRESS
-				}
+			if (this.keyboard[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
+				// if ((ev.target as HTMLElement).id !== this.chatbox.id) { // Except do it allow it when editing chatbox
+				this.keyboard[inputCodeMap[ev.code]] = PRESS
+				// }
+			}
+			// log('keyboard codes', Object.entries(this.keyboard).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`))
+
+			// We probably need to use a mixture of ev.code (keyboard-key/OS based) and ev.key (output/browser based)
+			// For .key: https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
+			// For .code: https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values
+			// Also I have no idea how mobile/iOS works for this, but I assume .key will be safer.
+			// 	It does seem to worry pretty well on mobile!
+
+			// Perhaps let's try using .key primarily.
+
+			if(chatboxStartValues.includes(ev.key)
+				&& !(ev.ctrlKey || ev.metaKey || ev.altKey) // Not a command of any kind
+			) { // Goes last so ctrl+letters are caught first
+				this.chatboxOpen = true
+				this.chatbox.style.display = 'block'
+				// this.chatbox.focus() // I'm going to try doing this without focus.  Because managing focus seems worse.
 			}
 
-			// Non-typed commands
-			if(!this.keys.ShiftLeft && !this.keys.ShiftRight) {
+			if((ev.ctrlKey || ev.metaKey) && ev.key === 'v') { // Paste (even with chat closed)
+				this.chatboxOpen = true
+				this.chatbox.style.display = 'block'
+				const text = await navigator.clipboard.readText()
+				this.chatbox.textContent += text
+				ev.stopPropagation()
+			}
+			
+			if(this.chatboxOpen) {
 
-				if(this.keys.j === PRESS) {
+				// Force moveemnt keys not to work while chatting :S
+				this.keyboard.w = null
+				this.keyboard.a = null
+				this.keyboard.s = null
+				this.keyboard.d = null
+
+				if(chatableValues.includes(ev.key) // Text input
+					&& !(ev.ctrlKey || ev.metaKey || ev.altKey) // Not a command of any kind
+				) {
+					this.chatbox.textContent += ev.key
+
+				}else if(ev.key === KeyCode.VALUE_ESCAPE) {
+					this.chatbox.textContent = ''
+					this.chatboxOpen = false
+					this.chatbox.style.display = 'none'
+					ev.stopPropagation()
+				}
+				else if((ev.ctrlKey || ev.metaKey) && ev.key === 'x') { // Cut (meta is cmd on mac, win on windows)
+					navigator.clipboard.writeText(this.chatbox.textContent)
+					this.chatbox.textContent = ''
+					this.chatboxOpen = false
+					this.chatbox.style.display = 'none'
+					ev.stopPropagation()
+				}
+				else if((ev.ctrlKey || ev.metaKey) && ev.key === 'c') { // Copy (meta is cmd on mac, win on windows)
+					navigator.clipboard.writeText(this.chatbox.textContent)
+					ev.stopPropagation()
+				}
+				else if(ev.key === KeyCode.VALUE_BACK_SPACE) {
+					// If control (Windows) or option (Mac) is held, delete whole word
+					if(ev.ctrlKey || ev.altKey) { // Todo make this per-OS?
+						// Backspace whole word
+						// Find last character that is not space
+						this.chatbox.textContent = this.chatbox.textContent.trim() // Remove any trailing spaces first
+						let lastSpaceIndex = this.chatbox.textContent.lastIndexOf(' ') // Find previous word
+						if(lastSpaceIndex === -1) lastSpaceIndex = 0
+						this.chatbox.textContent = this.chatbox.textContent.slice(0, lastSpaceIndex).trim() +' ' // hax, in reality MacOS leaves any remaining whitespace
+						
+					}
+					else { // Backspace single character
+						this.chatbox.textContent = this.chatbox.textContent.slice(0, -1)
+					}
+				}
+				else if(ev.key === KeyCode.VALUE_ENTER) {
+					this.chatboxOpen = false
+					this.chatbox.style.display = 'none'
+					
+					// Send chat
+					if(this.chatbox.textContent) { // Only send if there's content
+						// chatbox.textContent.startsWith('/') // todo send these as normal chats, server decides if it's a command
+
+						if(this.chatbox.textContent.startsWith(InputSys.NickPromptStart)) { //Naming someone
+							const nickparts = this.chatbox.textContent.split(':')
+							nickparts.shift() // Remove and discard prefix
+							this.babs.socketSys.send({
+								savenick: {
+									idplayer: this.nickTargetId,
+									nick: nickparts.join(':').trim(),
+								},
+							})
+						}
+						else { // Regular chat
+							this.babs.socketSys.send({
+								chat: {
+									text: this.chatbox.textContent,
+								},
+							})
+						}
+						this.chatbox.textContent = ''
+					}
+				}
+			}
+			else { // !this.chatboxOpen
+				if(ev.key === 'j') {
 					this.babs.uiSys.svJournal.toggleFurl()
 				}
+				if(ev.key === KeyCode.VALUE_ESCAPE) {
+					if(!this.babs.uiSys.isGameAway) {
+						this.babs.uiSys.awayGame()
+					}
+				}
 			}
+
 
 			if(this.characterControlMode) {
 				if(this.mouse.right) {
 					// Jump on spacebar if mouse right held
-					if (this.keys.space === PRESS) {
-						this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
-					}
+					// if (this.keys.space === PRESS) {
+					// 	this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
+					// }
 
 					// ev.stopImmediatePropagation() // Doesn't work to prevent Ctext.svelte chatbox from receiving this event
 				}
 
 				// If arrows are used for movement, it breaks out of movelock or touchmove
-				if (this.keys.up === PRESS || this.keys.down === PRESS) {
+				if (this.keyboard.up === PRESS || this.keyboard.down === PRESS) {
 					this.movelock = false
 					this.touchmove = false
 				}
 
 				// If pressing left or right arrows it immediately turns
-				if (this.keys.left === PRESS || this.keys.right === PRESS) {
-					this.arrowHoldStartTime = 0 // Zero will trigger it immediately
-				}
+				// if (this.keyboard.left === PRESS || this.keyboard.right === PRESS) {
+				// 	this.arrowHoldStartTime = 0 // Zero will trigger it immediately
+				// }
 			}
 
 
 			// Chat shortcut combos // Todo see about these on Windows - need OS detection?
 			// Select all
-			if (this.keys.mleft && this.keys.a) {
-				const box = document.getElementById('chatbox')
-				box.textContent = box.textContent.slice(0, -1) // remove 'a' :-P
-				box.focus()
-			}
-			if (this.keys.aleft && this.keys.backspace) {
-				let el = document.getElementById('chatbox')
-				el.focus()
-				let range = document.createRange()
-				let sel = window.getSelection()
+			// if (this.keyboard.mleft && this.keyboard.a) {
+			// 	this.chatbox.textContent = this.chatbox.textContent.slice(0, -1) // remove 'a' :-P
+			// 	this.chatbox.focus()
+			// }
+			// if (this.keyboard.aleft && this.keyboard.backspace) {
+			// 	this.chatbox.focus()
+			// 	let range = document.createRange()
+			// 	let sel = window.getSelection()
 
-				if (el.childNodes?.[0]) {
-					range.setStart(el.childNodes[0], el.textContent.length)
-					range.collapse(true)
-				}
+			// 	if (this.chatbox.childNodes?.[0]) {
+			// 		range.setStart(this.chatbox.childNodes[0], this.chatbox.textContent.length)
+			// 		range.collapse(true)
+			// 	}
 
-				sel.removeAllRanges()
-				sel.addRange(range)
-			}
+			// 	sel.removeAllRanges()
+			// 	sel.addRange(range)
+			// }
 
-			// Testing commands
-			if (this.keys.cleft) {
+			// Commands, for testing
+			if (this.keyboard.cleft) {
 
 
-				if (this.keys.f === PRESS) {
+				if (this.keyboard.f === PRESS) {
 					Wob.InstancedWobs.forEach((feim, bpid) => {
 						
 
@@ -276,7 +387,7 @@ export class InputSys {
 
 				}
 
-				if (this.keys.l === PRESS) {
+				if (this.keyboard.l === PRESS) {
 
 
 					Wob.InstancedWobs.forEach((feim, bpid) => {
@@ -288,7 +399,7 @@ export class InputSys {
 				}
 
 				// Instant Forest
-				if (this.keys.o === PRESS) {
+				if (this.keyboard.o === PRESS) {
 					const [treesPerAxis, spacing] = [100, 2] // Just tons of trees
 					// const [treesPerAxis, spacing] = [5, 50] // Property (5 plots) posts
 					let count=0
@@ -314,7 +425,7 @@ export class InputSys {
 					console.log('res', res)
 
 				}
-				if (this.keys.t === PRESS) {
+				if (this.keyboard.t === PRESS) {
 
 					function countTrianglesInGeometry(geometry) {
 						if (geometry.index) {
@@ -359,33 +470,17 @@ export class InputSys {
 
 
 			}
-			if (this.keys.esc === PRESS) {
-				// console.log('Key esc')
-				if(this.babs.renderSys.documentHasFocus) {
-					if(!this.babs.uiSys.isGameAway) {
-						this.babs.uiSys.awayGame()
-					}
-					else {
-						// Can't do this because it's not a gesture, plus nice to have esc idempotent
-						// if(this.mouse.device == 'mouse' && !this.isPointerLocked) {
-						// 	document.body.requestPointerLock()
-						// }
-						// this.babs.uiSys.resumeGame()
-					}
-				}
-
-			}
 
 
 		})
 
 		document.addEventListener('keyup', ev => {
-			this.keys[inputCodeMap[ev.code]] = LIFT
+			this.keyboard[inputCodeMap[ev.code]] = LIFT
 
 			// Turning-keys repeat-delay reset
-			if (this.keys.left === LIFT || this.keys.right === LIFT) {
-				this.arrowHoldStartTime = 0
-			}
+			// if (this.keyboard.left === LIFT || this.keyboard.right === LIFT) {
+			// 	this.arrowHoldStartTime = 0
+			// }
 		})
 
 		/*
@@ -394,12 +489,12 @@ export class InputSys {
 			Solution: When window blurs, let's set all keys to off
 		*/
 		window.addEventListener('blur', () => {
-			this.keys.cleft = LIFT
-			this.keys.cright = LIFT
-			this.keys.aleft = LIFT
-			this.keys.aright = LIFT
-			this.keys.mleft = LIFT
-			this.keys.mright = LIFT
+			this.keyboard.cleft = LIFT
+			this.keyboard.cright = LIFT
+			this.keyboard.aleft = LIFT
+			this.keyboard.aright = LIFT
+			this.keyboard.mleft = LIFT
+			this.keyboard.mright = LIFT
 		})
 
 		// No 'click' handling; we do it manually via mousedown/mouseup for more control
@@ -414,6 +509,11 @@ export class InputSys {
 			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 
+			// Almost certainly mobile; show a keyboard thing
+			// Todo show a keyboard icon for this, and also, hide the real textbox.
+			// Need serious mobile/touch detection for this
+			// document.getElementById('hiddenMobileInput').focus()
+	
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touch '+event.target.id) // Don't worry, it is canvas!
 			if (event.target.id !== 'canvas') return
 			event.preventDefault()
@@ -817,12 +917,11 @@ export class InputSys {
 						this.mouse.ldouble = 0
 						if (this.pickedObject?.type === 'SkinnedMesh') {
 							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
-							nickTargetId.set(player.id)
+							this.nickTargetId = player.id
 
-							const box = document.getElementById('chatbox')
-							box.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
-							box.style.display = 'block'
-							box.focus()
+							this.chatbox.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
+							this.chatbox.style.display = 'block'
+							this.chatbox.focus()
 						}
 						else if (this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
@@ -1182,7 +1281,7 @@ export class InputSys {
 					this.pickedObject.pickedType = 'player'
 				}
 				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
-					if (objectMaybe?.name === 'ground') { // Mesh?
+					if (objectMaybe?.name === 'ground') { // The Ground
 						const ground = objectMaybe as FeObject3D
 						const zone = ground.zone
 						const pos = this.mouseRayTargets[i].point
@@ -1282,11 +1381,11 @@ export class InputSys {
 						}
 
 						// Save old color and set new one
-						if (this.pickedObject.material.emissive?.r) { // Handle uninit emissive color
-							this.pickedObject.material.emissive = new Color(0, 0, 0)
+						if ((this.pickedObject.material as MeshStandardMaterial).emissive?.r) { // Handle uninit emissive color
+							(this.pickedObject.material as MeshStandardMaterial).emissive = new Color(0, 0, 0)
 						}
-						this.pickedObjectSavedColor = this.pickedObject.material.emissive.clone() // Unused for megamaterial above
-						this.pickedObject.material.emissive.setHSL(55 / 360, 100 / 100, 20 / 100).convertSRGBToLinear()
+						this.pickedObjectSavedColor = (this.pickedObject.material as MeshStandardMaterial).emissive.clone() // Unused for megamaterial above
+						;(this.pickedObject.material as MeshStandardMaterial).emissive.setHSL(55 / 360, 100 / 100, 20 / 100).convertSRGBToLinear()
 					}
 				}
 
@@ -1351,6 +1450,13 @@ export class InputSys {
 			}
 			if (this.mouse.scrolldy) {
 				this.mouse.scrollaccumy += this.mouse.scrolldy / 12
+			}
+
+			// Keyboard smooth movement
+			if(this.keyboard.left || this.keyboard.right || this.keyboard.a || this.keyboard.d) {
+				const sign = this.keyboard.left || this.keyboard.a ? -1 : 1
+				// console.log('keyboard', this.mouse.accumx, sign)
+				this.mouse.accumx += dt *300 *sign
 			}
 
 			// touchmove
@@ -1426,30 +1532,11 @@ export class InputSys {
 			// Above is matched to touchpad similar code
 		}
 
-		// Handle arrow keys turns // Move above keys with mouse stuff?
-		if (!this.topMenuVisibleLocal && (this.keys.left || this.keys.right)) {
-			if (!this.arrowHoldStartTime || Date.now() - this.arrowHoldStartTime > this.doubleClickMs) {
-				this.arrowHoldStartTime = Date.now()
-
-				// Rotate player
-				const _Q = new Quaternion()
-				const _A = new Vector3()
-				const _R = this.playerSelf.controller.idealTargetQuaternion.clone()
-
-				// Naive version
-				_A.set(0, this.keys.right ? -1 : 1, 0)
-				// _Q.setFromAxisAngle(_A, Math.PI * dt * this.player.controller.rotationSpeed)
-				_Q.setFromAxisAngle(_A, MathUtils.degToRad(45))
-				_R.multiply(_Q)
-				this.playerSelf.controller.setRotation(_R)
-			}
-		}
-
 		// Runs every frame, selecting grid position for setDestination
 		if ((this.movelock || this.touchmove ||
 			(!this.topMenuVisibleLocal &&
-				((this.mouse.right && (this.keys.w || this.keys.s || this.mouse.left)) //  || this.keys.a || this.keys.d
-					|| this.keys.up || this.keys.down
+				((this.keyboard.w || this.keyboard.s || (this.mouse.right && this.mouse.left)) //  || this.keys.a || this.keys.d
+					|| this.keyboard.up || this.keyboard.down
 					|| this.movelock
 
 				)
@@ -1462,13 +1549,13 @@ export class InputSys {
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
 			// log.info('vector!', tempMatrix, vector)
 
-			if (this.keys.w || this.keys.up || this.mouse.left || this.keys.s || this.keys.down || this.movelock || this.touchmove) {
+			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.keyboard.s || this.keyboard.down || this.movelock || this.touchmove) {
 				vector.crossVectors(this.playerSelf.controller.playerRig.up, vector) // camera.up
 			}
 
 			// Get direction
 			vector.round()
-			if (this.keys.w || this.keys.up || this.mouse.left || this.movelock || this.touchmove === 1 || this.touchmove === 'auto') {
+			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.movelock || this.touchmove === 1 || this.touchmove === 'auto') {
 				vector.negate() // Why is negate needed?
 			}
 
@@ -1512,7 +1599,7 @@ export class InputSys {
 
 
 		// Voice
-		if(this.keys.aleft === PRESS) {
+		if(this.keyboard.aleft === PRESS) {
 			// console.log('aleft')
 			// Start recording?
 
@@ -1582,7 +1669,7 @@ export class InputSys {
 			this.mediaRecorder.start()
 
 		}
-		if(this.keys.aleft === LIFT) {
+		if(this.keyboard.aleft === LIFT) {
 			if(this.mediaRecorder?.state == 'recording') {
 				this.mediaRecorder.stop()
 			}
@@ -1603,9 +1690,9 @@ export class InputSys {
 		}
 
 		// Move PRESS states into ON states, and LIFT into OFF
-		for (const key in this.keys) { // Update key states after press/lift
-			if (this.keys[key] === PRESS) this.keys[key] = ON
-			else if (this.keys[key] === LIFT) this.keys[key] = OFF
+		for (const key in this.keyboard) { // Update key states after press/lift
+			if (this.keyboard[key] === PRESS) this.keyboard[key] = ON
+			else if (this.keyboard[key] === LIFT) this.keyboard[key] = OFF
 		}
 		for (const key in this.mouse) { // Update key states after press/lift
 			if(!(key==='left' || key==='right' || key==='middle')) continue
@@ -1622,6 +1709,7 @@ export class InputSys {
 		// Hax, show more screen on mobile devices when they first load
 		if (window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
 			document.getElementById('Journal').style.display = 'none'
+			document.getElementById('Menu').style.display = 'none'
 			document.getElementById('topleft').style.display = 'none'
 			document.getElementById('topright').style.paddingBottom = '12px'
 			// dividerOffset.set(0)

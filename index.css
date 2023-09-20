@@ -65,3 +65,8 @@ a:hover{
 #HiddenRenderFrame {
 	display: none; position:fixed; top:50px; left:50px; width: 100px; height: 100px; background-color:red;
 }
+
+.widthhidden {
+	width:0; 
+	overflow:hidden;
+}

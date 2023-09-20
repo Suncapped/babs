@@ -72,8 +72,10 @@
 
 		ResumeButton.style.position = 'absolute'
 		ResumeButton.style.padding = '10px'
+		ResumeButton.style.visibility = 'hidden' // Hide until it's resized
 		setTimeout(() => {
 			const rect = ResumeButton.getBoundingClientRect()
+			ResumeButton.style.visibility = 'visible'
 			ResumeButton.style.top = (window.innerHeight /2 -rect.height/2)+'px'
 			ResumeButton.style.left = (window.innerWidth /2 -rect.width/2)+'px'
 		}, 1)

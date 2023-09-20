@@ -13,6 +13,5 @@ export const rightMouseDown = writable(false)
 export const debugMode = writable<boolean>()
 // export const dividerOffset = writable<number|object>()
 export const urlFiles = writable()
-export const nickTargetId = writable() // Temporary state when naming someone via chatbox
 export const uiWindows = writable([])
 export const settings = writable({})

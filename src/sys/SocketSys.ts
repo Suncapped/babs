@@ -129,7 +129,6 @@ export class SocketSys {
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
 			// log('got socketSend.set', data)
-			if(Object.keys(data).length === 0) return
 			this.send(data)
 		})
 	}
@@ -144,7 +143,8 @@ export class SocketSys {
 		})
 	}
 
-	async send(json) {
+	async send(json) { // todo add :Sendable and set up client sendables
+		if(Object.keys(json).length === 0) return
 		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			await this.ws.send(JSON.stringify(json))
@@ -539,7 +539,7 @@ export class SocketSys {
 			// })
 		}
 		else if('asktarget' in payload) {
-			log('asktarget', payload.asktarget, document.body.style.cursor)
+			log.info('asktarget', payload.asktarget, document.body.style.cursor)
 
 			const wobId = payload.asktarget.sourceWobId as WobId
 

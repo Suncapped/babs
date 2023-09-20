@@ -229,6 +229,7 @@ export class InstancedWobs {
 
 		// It's simpler than all that!  Using toEngineCoordCentered
 		const engCoord = yardCoord.toEngineCoordCentered()
+		engCoord.sub(this.babs.worldSys.shiftiness)
 		for(let i=0; i<imLoadedCount; i++) {
 			const x = instanceMatrix.array[i *16 +12]// +this.babs.worldSys.shiftiness.x
 			const z = instanceMatrix.array[i *16 +14]// +this.babs.worldSys.shiftiness.z
