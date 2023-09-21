@@ -87,6 +87,13 @@
 		})
 	})
 
+	const savejoinKeydown = (ev) => {
+		// ev.preventDefault()
+		ev.stopPropagation()
+
+		console.log('savejoinKeydown', ev)
+	}
+
 </script>
 
 <svelte/>
@@ -108,8 +115,9 @@
 					name="email"
 					type="email"
 					autocomplete="email"
-					placeholder="Email - no spam"
+					placeholder="Email"
 					class="border border-2 border-primary"
+					on:keydown={savejoinKeydown}
 				/>
 				<input
 					id="password"
@@ -118,6 +126,7 @@
 					autocomplete="new-password"
 					placeholder="Password"
 					class="border border-4 border-primary"
+					on:keydown={savejoinKeydown}
 				/>
 				<button id="charsave" type="submit">Enter</button>
 			</form>

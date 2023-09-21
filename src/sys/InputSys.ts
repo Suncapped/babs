@@ -139,6 +139,7 @@ export class InputSys {
 	mediaStream :MediaStream
 	mediaStreamStartTime :number
 	mediaRecorder :MediaRecorder
+	mediaMimeType :string
 	recordedChunks :Blob[] = []
 	mediaHasListener = false
 
@@ -250,22 +251,13 @@ export class InputSys {
 				this.keyboard.s = null
 				this.keyboard.d = null
 
-
 				if(chatableValues.includes(ev.key) // Text input
 					&& !(ev.ctrlKey || ev.metaKey || ev.altKey) // Not a command of any kind
 				) {
+					// if(!this.mediaStream) { // Don't put spaces in chat while doing audio
+					// Workaround is just using trimming
 
-					// if(this.chatbox.textContent.includes('<<listening>>')
-					// || this.chatbox.textContent.includes('<<adding>>')) {
-					// if(this.mediaStream) {
-					// 	log('skip')
-					// 	// Don't put spaces in chat while doing audio
-					// }
-					// else {
-						this.chatboxSetContent(this.chatbox.textContent + ev.key)
-					// }
-
-
+					this.chatboxSetContent(this.chatbox.textContent + ev.key)
 				}
 				else if(ev.key === KeyCode.VALUE_ESCAPE) {
 					this.chatboxSetContent('')
@@ -1287,18 +1279,20 @@ export class InputSys {
 							// this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
 							
 							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
-							// log('feim', feim.blueprint_id, yardCoord)
-							const index = feim.indexFromYardCoord(yardCoord)
-							const position = feim?.engCoordFromIndex(index)
-							if(position) { // Ensure feim and wobs have been loaded
-								// log('index', index, position)
-								this.pickedObject = {
-									pickedType: 'wob',
-									feim: feim,
-									instancedBpid: wobAtCoord.blueprint_id,
-									instancedIndex: index,
-									instancedPosition: position,
-									yardCoord: yardCoord,
+							if(feim) {
+								// log('feim', feim.blueprint_id, yardCoord)
+								const index = feim.indexFromYardCoord(yardCoord)
+								const position = feim.engCoordFromIndex(index)
+								if(position) { // Ensure feim and wobs have been loaded
+									// log('index', index, position)
+									this.pickedObject = {
+										pickedType: 'wob',
+										feim: feim,
+										instancedBpid: wobAtCoord.blueprint_id,
+										instancedIndex: index,
+										instancedPosition: position,
+										yardCoord: yardCoord,
+									}
 								}
 							}
 						}
@@ -1579,10 +1573,10 @@ export class InputSys {
 			// Start recording?
 
 			// Request access to the user's microphone:
-			if(!this.mediaStream) {
+			if(!this.mediaRecorder) { // Note this is less throttled by this and more by not being able to press space while <<>> messages are up in chatbox.
 				(async () => {
 					try {
-						console.log('getUserMedia()')
+						log.info('getUserMedia()')
 						this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 						this.mediaStreamStartTime = Date.now()
 
@@ -1594,31 +1588,60 @@ export class InputSys {
 
 					// Create a MediaRecorder instance and start recording:
 					// Check browser support for preferred format
-					let mimeType = 'audio/webm;codecs=opus'
-					if (!MediaRecorder.isTypeSupported(mimeType)) {
-						// Try for Safari // Actually let's not add the complexity :p
-						// mimeType = 'audio/mp4;codecs=mp4a'
-						// if (!MediaRecorder.isTypeSupported(mimeType)) {
-						console.error('Unsupported MIME type')
-						this.chatbox.textContent = this.chatbox.textContent.replace('<<listening>>', '').replace('<<adding>>', '')
-						return
-						// }
+					let isSafari = false
+					this.mediaMimeType = 'audio/webm;codecs=opus'
+					if (!MediaRecorder.isTypeSupported(this.mediaMimeType)) {
+						log('this.mediaMimeType NOT supported 1:', this.mediaMimeType)
+						// Try for Safari
+						isSafari = true
+						this.mediaMimeType = 'audio/mp4;codecs=mp4a'
+						if (!MediaRecorder.isTypeSupported(this.mediaMimeType)) {
+							console.error('this.mediaMimeType NOT supported 2:', this.mediaMimeType)
+							this.chatbox.textContent = this.chatbox.textContent.replace('<<listening>>', '').replace('<<adding>>', '')
+							return
+						}
 					}
-					this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })
+					this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType: this.mediaMimeType })
 					// Collect recorded chunks
 					this.mediaRecorder.addEventListener('dataavailable', (event) => {
+						log.info('dataavailable', event, event.data.size, this.mediaRecorder?.state)
 						if (event.data.size > 0) {
-							log('chunk', event.data)
 							this.recordedChunks.push(event.data)
+						}
+						else {
+							// return // Safari gets a couple of these with no data before the real one with all the data :/
+							// We don't want to set this.mediaRecorder to null before that real one happens.
+							// It's worse: Safari has buggy behavior around this.  Solution was mediaRecorder.start(1000)
 						}
 
 						if(this.mediaRecorder.state != 'recording') { // After it's totally finished (final blob, after .stop() call)
 
-							const blob = new Blob(this.recordedChunks, { type: 'audio/webm' })
+							// Release access so that the browser removes the recording icon
+							// On Safari, it's much faster to not reset all this.  
+
+							if(!isSafari) {
+								this.mediaStream.getTracks()[0].stop()
+								this.mediaStream.removeTrack(this.mediaStream?.getTracks()[0])
+								log.info('Not Safari; mediaStream to null', this.mediaStream.getTracks(), this.mediaRecorder)
+								this.mediaStream = null
+							}
+
+							const blob = new Blob(this.recordedChunks, { type: this.mediaMimeType.split(';')[0] })
 							this.recordedChunks = [] // Clear recorded chunks for next recording
+
+							// // Download the blob as an mp4 file
+							// const url = URL.createObjectURL(blob)
+							// const a = document.createElement('a')
+							// a.href = url
+							// a.download = 'test.mp4'
+							// document.body.appendChild(a)
+							// a.click()
+							// setTimeout(() => {
+							// 	document.body.removeChild(a)
+							// 	window.URL.revokeObjectURL(url)
+							// }, 100)
 						
 							// You can now send this blob to your server or process it further
-							log('mediaRecorder to null, uploading blob', blob)
 							this.mediaRecorder = null
 
 							const timeElapsed = Date.now() - this.mediaStreamStartTime
@@ -1632,7 +1655,7 @@ export class InputSys {
 
 								;(async (blob :Blob) => {
 									const formData = new FormData()
-									formData.append('audio', blob, 'audio.webm')
+									formData.append('audio', blob, 'audio.'+this.mediaMimeType.split(';')[0].split('/')[1])
 									try {
 										const response = await fetch(`${this.babs.urlFiles}/voice`, {
 											method: 'POST',
@@ -1645,7 +1668,7 @@ export class InputSys {
 									
 										const data = await response.json()
 										const text = data.text
-										log('Audio converted successfully:', data.text)
+										log.info('Audio converted successfully:', data.text)
 
 										this.babs.socketSys.send({
 											chat: {
@@ -1663,7 +1686,7 @@ export class InputSys {
 							}
 						}
 					})
-					this.mediaRecorder.start()
+					this.mediaRecorder.start(1000)
 
 				})()
 			}
@@ -1672,19 +1695,13 @@ export class InputSys {
 		if(this.keyboard.space === LIFT) {
 
 			if(this.mediaStream) { // Note this can happen while they're typing into chatbox...weird scenario though.
-				// Release access so that the browser removes the recording icon
-				// this.mediaStream?.getTracks().forEach(track =>track.stop())
-				this.mediaStream.getTracks()[0].stop()
-				this.mediaStream.removeTrack(this.mediaStream?.getTracks()[0])
-				console.log('mediaStream to null', this.mediaStream.getTracks(), this.mediaRecorder)
-				this.mediaStream = null
 
 				this.chatboxSetContent(this.chatbox.textContent.replace('<<listening>>', ''))
 
 				if(this.mediaRecorder?.state == 'recording') {
+					log.info('mediaRecorder.stop()')
 					this.mediaRecorder.stop() // This starts the blob+upload process via 'dataavailable' & state != 'recording'
 					// this.mediaRecorder = null // Do only after it generates a blob
-					console.log('mediaRecorder.stop()')
 				}
 			}
 			

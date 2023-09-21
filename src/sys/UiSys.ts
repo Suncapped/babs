@@ -188,19 +188,24 @@ export class UiSys {
 	// aboveHeadStack = Array<TroikaText>()
 	aboveHeadChat(idPlayer :number, content :string, journalContent :null|'copy'|string = null, colorHex = '#eeeeee') {
 		const player = this.babs.ents.get(idPlayer) as Player
-		log.info('aboveHeadChat', idPlayer, content, colorHex, player)
-		
-		const ttext = this.feWords({
-			content: content,
-			idZone: player.controller?.playerRig?.zone.id,
-			idTargetPlayer: idPlayer,
-			colorHex: colorHex,
-			journalContent: journalContent,
-		})
-		ttext.isAboveHead = true
 
-		// console.log('setting ttext.isAboveHead', ttext.isAboveHead, ttext)
+		if(player) {
+			log.info('aboveHeadChat', idPlayer, content, colorHex, player)
+			
+			const ttext = this.feWords({
+				content: content,
+				idZone: player?.controller?.playerRig?.zone.id,
+				idTargetPlayer: idPlayer,
+				colorHex: colorHex,
+				journalContent: journalContent,
+			})
+			ttext.isAboveHead = true
 
+			// console.log('setting ttext.isAboveHead', ttext.isAboveHead, ttext)
+		}
+		else {
+			log.info('No player found for aboveHeadChat', idPlayer, content, colorHex) 
+		}
 		
 	}
 	belowHeadInfo(idPlayer, content) {
@@ -265,6 +270,10 @@ export class UiSys {
 		}
 
 		const zone = this.babs.ents.get(words.idZone) as Zone
+		if(!zone) {
+			console.warn('feWords with no zone', words)
+			return
+		}
 
 		if(words.targetLocation) {
 			const yardCoord = YardCoord.Create({
@@ -287,6 +296,10 @@ export class UiSys {
 
 			const wob = zone.getWob(words.idTargetWob.x, words.idTargetWob.z)
 			const feim = Wob.InstancedWobs.get(wob.name)
+			if(!feim) {
+				console.warn('feWords with no feim', wob.name, wob, words)
+				return
+			}
 			const boundingEngHeight = feim.boundingSize.y
 			// console.log('engHeight', wob.name, feim.boundingSize, engHeight)
 
@@ -333,7 +346,7 @@ export class UiSys {
 			return ttext
 		}
 		else {
-			console.warn('feWords with no target', words)
+			console.warn('feWords with no valid target', words)
 		}
 	}
 

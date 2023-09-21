@@ -429,7 +429,7 @@ export class SocketSys {
 			// In that case, data.name is set to their name.
 			// this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
 
-			if(chattyPlayer.colorHex !== said.color) {
+			if(chattyPlayer && chattyPlayer.colorHex !== said.color) {
 				chattyPlayer.colorHex = said.color // Update their color
 				chattyPlayer.nickSetAndDisplay(chattyPlayer.nick)
 				// ^ In future, could send a color change event, but with text chat isn't too bad.
