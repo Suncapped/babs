@@ -7,6 +7,10 @@ export class State {
 	_parent
 	_cleanupCallback
 
+	get name() {
+		return 'unnamed'
+	}
+
 	constructor(parent) {
 		this._parent = parent
 	}

@@ -453,16 +453,41 @@ export class WorldSys {
 	snapshotTimestamp :DateTime
 	GAME_SPEED_MULTIPLIER = 24
 
+	realHoursElapsedSinceSnapshot :number
+	gameBaseDatetime :DateTime = DateTime.utc().set({
+		year: 2022, month: 8, day: 6, // Sat
+		hour: 6, minute: 0, second: 0, millisecond: 0, // Note hours offset - is that time zone or?
+	})
+
+	dtSum = 0
 	update(dt) {
 		if(!this.snapshotRealHourFraction) return // Time comes before Earth :)
 		// if(this.frameCount % this.DO_EVERY_FRAMES === 0) // No to this; makes shadows and sun too jerky.
-
 		////
+
+		this.dtSum += dt *1000
+		if(this.dtSum < 100) { // Only do this update() every 100ms!
+			return
+		}
+		this.dtSum = 0
+
 		// Update sun position over time!
 
 		// We pretty much need to add the snapshotted fetime to the time passed since then
-		const realHoursElapsedSinceSnapshot = DateTime.utc().diff(this.snapshotTimestamp, 'hours').hours
-		const realHoursIntoHour = (this.snapshotRealHourFraction +realHoursElapsedSinceSnapshot) %1 
+		// if(!this.realHoursElapsedSinceSnapshot) { // Cache this and recalc it only second
+		// 	const calcRHESS = () => {
+		// 		// this.realHoursElapsedSinceSnapshot += 1/60
+		// 		this.realHoursElapsedSinceSnapshot = DateTime.utc().diff(this.snapshotTimestamp, 'hours').hours
+		// 	}
+		// 	calcRHESS()
+		// 	setInterval(calcRHESS, 100) // 150 ms is enough to where sun/shadows look animated to me!
+		// 	this.gameBaseDatetime = DateTime.utc().set({
+		// 		year: 2022, month: 8, day: 6, // Sat
+		// 		hour: 6, minute: 0, second: 0, millisecond: 0, // Note hours offset - is that time zone or?
+		// 	})
+		// }
+		this.realHoursElapsedSinceSnapshot = DateTime.utc().diff(this.snapshotTimestamp, 'hours').hours
+		const realHoursIntoHour = (this.snapshotRealHourFraction +this.realHoursElapsedSinceSnapshot) %1 
 		// ^ Modulus to wrap this from <1.0 into 0.0, while keeping decimal places.
 		
 		// Attempt to make it usually be daytime, with only a 5min night
@@ -512,11 +537,7 @@ export class WorldSys {
 		// Game time of day represents the "Real" time of day in game.  Eg 12 is noon, 24 is midnight, 28 is 4am.
 
 		// Create a DateTime
-		const gameBaseDatetime = DateTime.utc().set({
-			year: 2022, month: 8, day: 6, // Sat
-			hour: 6, minute: 0, second: 0, millisecond: 0, // Note hours offset - is that time zone or?
-		})
-		const gameDatetime = gameBaseDatetime.plus({ hours: gameTimeOfDayHours })
+		const gameDatetime = this.gameBaseDatetime.plus({ hours: gameTimeOfDayHours })
 
 		// Use on SunCalc
 		const sunDate = new Date(gameDatetime.toISO())
@@ -621,42 +642,46 @@ export class WorldSys {
 		// console.log('noonness', noonness, this.hemiLight.intensity)
 	
 
-		// Water randomized rotation
-		const spinSpeedMult = 5
-		const secondsFrequency = 1
-		const normalFps = 60
-		if(this.updateCount % (normalFps *secondsFrequency) === 0) {
-			const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
-			this.rand.add(updated).clampScalar(-0.5, 0.5)
-		}
+		if(!this.babs.uiSys.isGameAway) {
 
-		// Instanced mesh version
-		// https://www.cs.uaf.edu/2015/spring/cs482/lecture/02_16_rotation.html
-		// https://medium.com/@joshmarinacci/quaternions-are-spooky-3a228444956d
-		for(let i=0, l=this.waterInstancedMesh?.count; i<l; i++) {
-			// Get
-			this.waterInstancedMesh.getMatrixAt(i, this.waterMatrix)
-			
-			// Extract
-			this.quatRotation.setFromRotationMatrix(this.waterMatrix)
-			this.vectorPosition.setFromMatrixPosition(this.waterMatrix)
+			// Water randomized rotation
+			const spinSpeedMult = 5
+			const secondsFrequency = 1
+			const normalFps = 60
+			if(this.updateCount % (normalFps *secondsFrequency) === 0) {
+				const updated = new Vector3().random().addScalar(-0.5).multiplyScalar(0.3)
+				this.rand.add(updated).clampScalar(-0.5, 0.5)
+			}
 
-			// Rotate
-			const rot = new Quaternion().setFromEuler(new Euler(
-				spinSpeedMult *this.rand.x *this.waterInstancedRands[i] *dt,
-				spinSpeedMult *this.rand.y *this.waterInstancedRands[i] *dt,
-				spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
-			))
-			this.quatRotation.multiply(rot)
-				.normalize() // Roundoff to prevent scaling
+			// Instanced mesh version
+			// https://www.cs.uaf.edu/2015/spring/cs482/lecture/02_16_rotation.html
+			// https://medium.com/@joshmarinacci/quaternions-are-spooky-3a228444956d
+			for(let i=0, l=this.waterInstancedMesh?.count; i<l; i++) {
+				// Get
+				this.waterInstancedMesh.getMatrixAt(i, this.waterMatrix)
+				
+				// Extract
+				this.quatRotation.setFromRotationMatrix(this.waterMatrix)
+				this.vectorPosition.setFromMatrixPosition(this.waterMatrix)
 
-			// Compile
-			this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
-			this.waterMatrix.setPosition(this.vectorPosition)
-			
-			// Update
-			this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
-			this.waterInstancedMesh.instanceMatrix.needsUpdate = true
+				// Rotate
+				const rot = new Quaternion().setFromEuler(new Euler(
+					spinSpeedMult *this.rand.x *this.waterInstancedRands[i] *dt,
+					spinSpeedMult *this.rand.y *this.waterInstancedRands[i] *dt,
+					spinSpeedMult *this.rand.z *this.waterInstancedRands[i] *dt,
+				))
+				this.quatRotation.multiply(rot)
+					.normalize() // Roundoff to prevent scaling
+
+				// Compile
+				this.waterMatrix.makeRotationFromQuaternion(this.quatRotation)
+				this.waterMatrix.setPosition(this.vectorPosition)
+				
+				// Update
+				this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
+				this.waterInstancedMesh.instanceMatrix.needsUpdate = true
+			}
+
 		}
 
 		// this.csm?.update()

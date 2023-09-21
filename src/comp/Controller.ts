@@ -2,7 +2,7 @@ import { log } from '@/Utils'
 import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4, Object3D } from 'three'
 import { Comp } from '@/comp/Comp'
 import { WorldSys } from '@/sys/WorldSys'
-import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState } from './ControllerState'
+import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState, State } from './ControllerState'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
@@ -462,7 +462,7 @@ export class Controller extends Comp {
 		// this.playerRig.position.add(sideways)
 
 		if (this._mixer) {
-			this._mixer.update(dt)
+			this._mixer.update(dt) // Optimziation would be to prevent movement while they're away and/or hide characters.
 		}
 
 		this.setPlayerGroundY()
@@ -602,13 +602,13 @@ export class Controller extends Comp {
 
 class FiniteStateMachine {
 	_states
-	_currentState
+	_currentState :State
 	constructor() {
 		this._states = {}
 		this._currentState = null
 	}
 
-	addState(name, type) {
+	addState(name, type :State) {
 		this._states[name] = type
 	}
 
