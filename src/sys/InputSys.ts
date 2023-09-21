@@ -128,7 +128,6 @@ export class InputSys {
 	movelock = false // Autorun
 	touchmove :boolean|number|'auto' = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
 	runmode = true // Run mode, as opposed to walk mode
-	arrowHoldStartTime = 0 // left/right arrow rotation repeat delay tracker
 	topMenuVisibleLocal
 	recheckMouseIntersects = false
 
@@ -138,6 +137,7 @@ export class InputSys {
 	canvas :HTMLElement
 
 	mediaStream :MediaStream
+	mediaStreamStartTime :number
 	mediaRecorder :MediaRecorder
 	recordedChunks :Blob[] = []
 	mediaHasListener = false
@@ -175,8 +175,8 @@ export class InputSys {
 			} else {
 				this.isPointerLocked = false
 				log.info('The pointer lock status is now unlocked')
-				this.babs.uiSys.awayGame() // We might not get esc key event?
 				this.customcursor.style.display = 'none'
+				this.babs.uiSys.awayGame() // We might not get esc key event?  Also makes it clearer they're out.
 			}
 		}, false)
 
@@ -213,12 +213,10 @@ export class InputSys {
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
-			// log('keydown:', ev.key, ev.code)
+			log.info('keydown:', ev.key, ev.code, ev.repeat)
 			// OS-level key repeat keeps sending down events; 
-			if (this.keyboard[inputCodeMap[ev.code]] !== ON) { // stop that from turning into presses
-				// if ((ev.target as HTMLElement).id !== this.chatbox.id) { // Except do it allow it when editing chatbox
+			if (!this.chatboxOpen && !ev.repeat) { // stop that from turning into presses
 				this.keyboard[inputCodeMap[ev.code]] = PRESS
-				// }
 			}
 			// log('keyboard codes', Object.entries(this.keyboard).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`))
 
@@ -233,43 +231,50 @@ export class InputSys {
 			if(chatboxStartValues.includes(ev.key)
 				&& !(ev.ctrlKey || ev.metaKey || ev.altKey) // Not a command of any kind
 			) { // Goes last so ctrl+letters are caught first
-				this.chatboxOpen = true
-				this.chatbox.style.display = 'block'
+				this.chatboxOpen = true // Needed to allow letter to be captured
+				// this.chatbox.style.display = 'block' // Not needed, will happen on chatboxSetContent()
 				// this.chatbox.focus() // I'm going to try doing this without focus.  Because managing focus seems worse.
 			}
 
 			if((ev.ctrlKey || ev.metaKey) && ev.key === 'v') { // Paste (even with chat closed)
-				this.chatboxOpen = true
-				this.chatbox.style.display = 'block'
 				const text = await navigator.clipboard.readText()
-				this.chatbox.textContent += text
+				this.chatboxSetContent(this.chatbox.textContent + text)
 				ev.stopPropagation()
 			}
 			
 			if(this.chatboxOpen) {
 
-				// Force moveemnt keys not to work while chatting :S
+				// Force movement keys not to activate when first opening chat (eg typing 'What?')
 				this.keyboard.w = null
 				this.keyboard.a = null
 				this.keyboard.s = null
 				this.keyboard.d = null
 
+
 				if(chatableValues.includes(ev.key) // Text input
 					&& !(ev.ctrlKey || ev.metaKey || ev.altKey) // Not a command of any kind
 				) {
-					this.chatbox.textContent += ev.key
 
-				}else if(ev.key === KeyCode.VALUE_ESCAPE) {
-					this.chatbox.textContent = ''
-					this.chatboxOpen = false
-					this.chatbox.style.display = 'none'
+					// if(this.chatbox.textContent.includes('<<listening>>')
+					// || this.chatbox.textContent.includes('<<adding>>')) {
+					// if(this.mediaStream) {
+					// 	log('skip')
+					// 	// Don't put spaces in chat while doing audio
+					// }
+					// else {
+						this.chatboxSetContent(this.chatbox.textContent + ev.key)
+					// }
+
+
+				}
+				else if(ev.key === KeyCode.VALUE_ESCAPE) {
+					this.chatboxSetContent('')
 					ev.stopPropagation()
 				}
 				else if((ev.ctrlKey || ev.metaKey) && ev.key === 'x') { // Cut (meta is cmd on mac, win on windows)
 					navigator.clipboard.writeText(this.chatbox.textContent)
-					this.chatbox.textContent = ''
-					this.chatboxOpen = false
-					this.chatbox.style.display = 'none'
+
+					this.chatboxSetContent('')
 					ev.stopPropagation()
 				}
 				else if((ev.ctrlKey || ev.metaKey) && ev.key === 'c') { // Copy (meta is cmd on mac, win on windows)
@@ -284,22 +289,20 @@ export class InputSys {
 						this.chatbox.textContent = this.chatbox.textContent.trim() // Remove any trailing spaces first
 						let lastSpaceIndex = this.chatbox.textContent.lastIndexOf(' ') // Find previous word
 						if(lastSpaceIndex === -1) lastSpaceIndex = 0
-						this.chatbox.textContent = this.chatbox.textContent.slice(0, lastSpaceIndex).trim() +' ' // hax, in reality MacOS leaves any remaining whitespace
+						const lastpart = this.chatbox.textContent.slice(0, lastSpaceIndex).trim()
+						this.chatboxSetContent(lastpart ? lastpart+' ' : '') 
+						// ^ hax, in reality MacOS leaves any remaining whitespace
 						
 					}
 					else { // Backspace single character
-						this.chatbox.textContent = this.chatbox.textContent.slice(0, -1)
+
+						this.chatboxSetContent(this.chatbox.textContent.slice(0, -1))
 					}
 				}
 				else if(ev.key === KeyCode.VALUE_ENTER) {
-					this.chatboxOpen = false
-					this.chatbox.style.display = 'none'
-					
 					// Send chat
 					if(this.chatbox.textContent) { // Only send if there's content
-						// chatbox.textContent.startsWith('/') // todo send these as normal chats, server decides if it's a command
-
-						if(this.chatbox.textContent.startsWith(InputSys.NickPromptStart)) { //Naming someone
+						if(this.chatbox.textContent.startsWith(InputSys.NickPromptStart)) { // Naming someone
 							const nickparts = this.chatbox.textContent.split(':')
 							nickparts.shift() // Remove and discard prefix
 							this.babs.socketSys.send({
@@ -316,7 +319,8 @@ export class InputSys {
 								},
 							})
 						}
-						this.chatbox.textContent = ''
+
+						this.chatboxSetContent('')
 					}
 				}
 			}
@@ -343,37 +347,13 @@ export class InputSys {
 				}
 
 				// If arrows are used for movement, it breaks out of movelock or touchmove
-				if (this.keyboard.up === PRESS || this.keyboard.down === PRESS) {
+				if (this.keyboard.up === PRESS || this.keyboard.down === PRESS
+					|| this.keyboard.w === PRESS || this.keyboard.s === PRESS) {
 					this.movelock = false
 					this.touchmove = false
 				}
 
-				// If pressing left or right arrows it immediately turns
-				// if (this.keyboard.left === PRESS || this.keyboard.right === PRESS) {
-				// 	this.arrowHoldStartTime = 0 // Zero will trigger it immediately
-				// }
 			}
-
-
-			// Chat shortcut combos // Todo see about these on Windows - need OS detection?
-			// Select all
-			// if (this.keyboard.mleft && this.keyboard.a) {
-			// 	this.chatbox.textContent = this.chatbox.textContent.slice(0, -1) // remove 'a' :-P
-			// 	this.chatbox.focus()
-			// }
-			// if (this.keyboard.aleft && this.keyboard.backspace) {
-			// 	this.chatbox.focus()
-			// 	let range = document.createRange()
-			// 	let sel = window.getSelection()
-
-			// 	if (this.chatbox.childNodes?.[0]) {
-			// 		range.setStart(this.chatbox.childNodes[0], this.chatbox.textContent.length)
-			// 		range.collapse(true)
-			// 	}
-
-			// 	sel.removeAllRanges()
-			// 	sel.addRange(range)
-			// }
 
 			// Commands, for testing
 			if (this.keyboard.cleft) {
@@ -476,11 +456,6 @@ export class InputSys {
 
 		document.addEventListener('keyup', ev => {
 			this.keyboard[inputCodeMap[ev.code]] = LIFT
-
-			// Turning-keys repeat-delay reset
-			// if (this.keyboard.left === LIFT || this.keyboard.right === LIFT) {
-			// 	this.arrowHoldStartTime = 0
-			// }
 		})
 
 		/*
@@ -919,9 +894,8 @@ export class InputSys {
 							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
 							this.nickTargetId = player.id
 
-							this.chatbox.textContent = `${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `
-							this.chatbox.style.display = 'block'
-							this.chatbox.focus()
+							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
+							
 						}
 						else if (this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
@@ -1172,7 +1146,7 @@ export class InputSys {
 	lastMoveHoldPicked :PickedObject|null
 	carrying :PickedObject|null
 
-	async update(dt) {
+	update(dt) { // Do NOT make update()s async!  It can result in outdated info while future updates() run.
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
 			this.isAfk = true
 			this.babs.uiSys.awayGame()
@@ -1399,8 +1373,10 @@ export class InputSys {
 		if (this.carrying) {
 			// log.info('update carrying')
 			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
-				const riImage = (await this.carrying.feim.renderedIcon()).image
-				document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
+				(async () => {
+					const riImage = (await this.carrying.feim.renderedIcon()).image
+					document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
+				})()
 			}
 
 		}
@@ -1599,80 +1575,119 @@ export class InputSys {
 
 
 		// Voice
-		if(this.keyboard.aleft === PRESS) {
-			// console.log('aleft')
+		if(this.keyboard.space === PRESS) {
 			// Start recording?
 
 			// Request access to the user's microphone:
 			if(!this.mediaStream) {
-				try {
-					this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-				} catch (err) {
-					console.error('Error accessing microphone:', err)
-				}
-			}
+				(async () => {
+					try {
+						console.log('getUserMedia()')
+						this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+						this.mediaStreamStartTime = Date.now()
 
-			// Create a MediaRecorder instance and start recording:
-			// Check browser support for preferred format
-			let mimeType = 'audio/webm;codecs=opus'
-			if (!MediaRecorder.isTypeSupported(mimeType)) {
-				// Try for Safari // Actually let's not add the complexity :p
-				// mimeType = 'audio/mp4;codecs=mp4a'
-				// if (!MediaRecorder.isTypeSupported(mimeType)) {
-				console.error('Unsupported MIME type')
-				return
-				// }
-			}
-			this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })
-			// Collect recorded chunks
-			this.mediaRecorder.addEventListener('dataavailable', (event) => {
-				if (event.data.size > 0) {
-					this.recordedChunks.push(event.data)
-				}
+						this.chatboxSetContent(this.chatbox.textContent + ' <<listening>>')
 
-				if(this.mediaRecorder.state != 'recording') { // After it's totally finished (final blob, after .stop() call)
-					const blob = new Blob(this.recordedChunks, { type: 'audio/webm' })
-					this.recordedChunks = [] // Clear recorded chunks for next recording
-				
-					// You can now send this blob to your server or process it further
-					log.info('Recording stopped, created Blob:', blob)
-
-					const uploadAudio = async (blob :Blob) => {
-						const formData = new FormData()
-						formData.append('audio', blob, 'audio.webm')
-						try {
-							const response = await fetch(`${this.babs.urlFiles}/voice`, {
-								method: 'POST',
-								body: formData,
-							})
-						
-							if (!response.ok) {
-								throw new Error(`HTTP error ${response.status}`)
-							}
-						
-							const data = await response.json()
-							const text = data.text
-							log.info('Audio converted successfully:', data.text)
-
-							this.babs.socketSys.send({
-								chat: {
-									text: text,
-								},
-							})
-						} catch(e) {
-							console.warn('error posting audio', e)
-						}
+					} catch (err) {
+						console.error('Error accessing microphone:', err)
 					}
-					uploadAudio(blob)
-				}
-			})
-			this.mediaRecorder.start()
+
+					// Create a MediaRecorder instance and start recording:
+					// Check browser support for preferred format
+					let mimeType = 'audio/webm;codecs=opus'
+					if (!MediaRecorder.isTypeSupported(mimeType)) {
+						// Try for Safari // Actually let's not add the complexity :p
+						// mimeType = 'audio/mp4;codecs=mp4a'
+						// if (!MediaRecorder.isTypeSupported(mimeType)) {
+						console.error('Unsupported MIME type')
+						this.chatbox.textContent = this.chatbox.textContent.replace('<<listening>>', '').replace('<<adding>>', '')
+						return
+						// }
+					}
+					this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType })
+					// Collect recorded chunks
+					this.mediaRecorder.addEventListener('dataavailable', (event) => {
+						if (event.data.size > 0) {
+							log('chunk', event.data)
+							this.recordedChunks.push(event.data)
+						}
+
+						if(this.mediaRecorder.state != 'recording') { // After it's totally finished (final blob, after .stop() call)
+
+							const blob = new Blob(this.recordedChunks, { type: 'audio/webm' })
+							this.recordedChunks = [] // Clear recorded chunks for next recording
+						
+							// You can now send this blob to your server or process it further
+							log('mediaRecorder to null, uploading blob', blob)
+							this.mediaRecorder = null
+
+							const timeElapsed = Date.now() - this.mediaStreamStartTime
+							this.mediaStreamStartTime = null
+							log.info('mediaStreamStartTime timeElapsed', timeElapsed, 'ms')
+							const minMsToGetGoodAnswer = 300
+
+							if(timeElapsed >= minMsToGetGoodAnswer) { 
+
+								this.chatboxSetContent(this.chatbox.textContent + ' <<adding>>')
+
+								;(async (blob :Blob) => {
+									const formData = new FormData()
+									formData.append('audio', blob, 'audio.webm')
+									try {
+										const response = await fetch(`${this.babs.urlFiles}/voice`, {
+											method: 'POST',
+											body: formData,
+										})
+									
+										if (!response.ok) {
+											throw new Error(`HTTP error ${response.status}`)
+										}
+									
+										const data = await response.json()
+										const text = data.text
+										log('Audio converted successfully:', data.text)
+
+										this.babs.socketSys.send({
+											chat: {
+												text: text,
+											},
+										})
+									} catch(e) {
+										console.warn('error posting audio', e)
+									}
+									finally {
+
+										this.chatboxSetContent(this.chatbox.textContent.replace('<<listening>>', '').replace('<<adding>>', ''))
+									}
+								})(blob)
+							}
+						}
+					})
+					this.mediaRecorder.start()
+
+				})()
+			}
 
 		}
-		if(this.keyboard.aleft === LIFT) {
-			if(this.mediaRecorder?.state == 'recording') {
-				this.mediaRecorder.stop()
+		if(this.keyboard.space === LIFT) {
+
+			if(this.mediaStream) { // Note this can happen while they're typing into chatbox...weird scenario though.
+				// Release access so that the browser removes the recording icon
+				// this.mediaStream?.getTracks().forEach(track =>track.stop())
+				this.mediaStream.getTracks()[0].stop()
+				this.mediaStream.removeTrack(this.mediaStream?.getTracks()[0])
+				console.log('mediaStream to null', this.mediaStream.getTracks(), this.mediaRecorder)
+				this.mediaStream = null
+
+				this.chatboxSetContent(this.chatbox.textContent.replace('<<listening>>', ''))
+
+				if(this.mediaRecorder?.state == 'recording') {
+					this.mediaRecorder.stop() // This starts the blob+upload process via 'dataavailable' & state != 'recording'
+					// this.mediaRecorder = null // Do only after it generates a blob
+					console.log('mediaRecorder.stop()')
+				}
 			}
+			
 		}
 
 		// Decay some stuff down over time
@@ -1751,6 +1766,22 @@ export class InputSys {
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/cursors/cursor-aim.png) ${32/2} ${32/2}, auto`
 		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name}'s target?>`)
+	}
+
+
+	chatboxSetContent(text :string) {
+		// Remove trailing whitespaces (except one) if there are more than one
+		this.chatbox.textContent = text.replace(/\s{3,}/g, ' ')
+
+		if(this.chatbox.textContent.trim()) { // Not all whitespace
+			this.chatboxOpen = true
+			this.chatbox.style.display = 'block'
+		}
+		else {
+			this.chatboxOpen = false
+			this.chatbox.style.display = 'none'
+			this.chatbox.textContent = ''
+		}
 	}
 
 

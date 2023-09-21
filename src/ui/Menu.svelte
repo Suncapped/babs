@@ -241,7 +241,7 @@
 			</li>
 			<li id="menuVrArea" style="display:none; margin-top:10px;"></li>
 			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
-			<!-- <li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li> inputtodo -->
+			<li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li>
 			<li>&bull; Double click someone to name.</li>
 			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>

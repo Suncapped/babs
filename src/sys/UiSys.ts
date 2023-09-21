@@ -366,7 +366,7 @@ export class UiSys {
 		ttext.anchorY = 'bottom'
 
 		// How much time it will display for
-		const expiresInSeconds = Math.sqrt(content.length) //this.babs.debugMode ? 10 : 3
+		const expiresInSeconds = Math.sqrt(content.length) *2 //this.babs.debugMode ? 10 : 3
 		ttext.expires = Date.now() +(1000 *expiresInSeconds)
 
 		this.expiringText.push(ttext)
