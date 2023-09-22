@@ -459,14 +459,19 @@ export class WorldSys {
 		hour: 6, minute: 0, second: 0, millisecond: 0, // Note hours offset - is that time zone or?
 	})
 
+	phi :number // Preserve this so we can skip frames
+	theta :number
+
 	dtSum = 0
 	update(dt) {
 		if(!this.snapshotRealHourFraction) return // Time comes before Earth :)
-		// if(this.frameCount % this.DO_EVERY_FRAMES === 0) // No to this; makes shadows and sun too jerky.
-		////
 
 		this.dtSum += dt *1000
 		if(this.dtSum < 100) { // Only do this update() every 100ms!
+			if(this.dirLight) { // Ensure we move sun with player, to keep the appearance that it's far away
+				this.dirLight.position.setFromSphericalCoords(this.shadowDist, this.phi, this.theta)
+				this.dirLight.position.add(this.babs.inputSys.playerSelf.controller.playerRig.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
+			}
 			return
 		}
 		this.dtSum = 0
@@ -543,13 +548,13 @@ export class WorldSys {
 		const sunDate = new Date(gameDatetime.toISO())
 		// console.log(gameHourTimeofday, sunDate)
 		const sunCalcPos = SunCalc.getPosition(sunDate, 39.7392, -104.985)
-		const phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
-		const theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
+		this.phi = MathUtils.degToRad(90) -sunCalcPos.altitude // transform from axis-start to equator-start
+		this.theta = MathUtils.degToRad(90*3) -sunCalcPos.azimuth // transform to match experience
 
 		////
 
 		// Adjust fog lightness (white/black) to sun elevation
-		const noonness = 1 -(MathUtils.radToDeg(phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
+		const noonness = 1 -(MathUtils.radToDeg(this.phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
 		// log('time:', noonness)
 
 		this.effectController.rayleigh = Math.max(0.2, MathUtils.lerp(3, 0.2 -3.5, noonness))
@@ -580,7 +585,7 @@ export class WorldSys {
 		this.nightsky?.rotateY(-0.0015 *dt)
 		this.nightsky?.rotateX(-0.0015 *dt)
 
-		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(phi)) /90
+		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(this.phi)) /90
 		// log(noonness, 90 -MathUtils.radToDeg(phi))
 		this.babs.scene.fog?.color.setHSL(
 			34/360, // Which color
@@ -590,13 +595,13 @@ export class WorldSys {
 		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
 		// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
-		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, phi, theta)
+		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, this.phi, this.theta)
 		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
 
 
 		if(this.dirLight){
 			// Put directional light at sun position, but closer in!
-			this.dirLight.position.setFromSphericalCoords(this.shadowDist, phi, theta)
+			this.dirLight.position.setFromSphericalCoords(this.shadowDist, this.phi, this.theta)
 			this.dirLight.position.add(this.babs.inputSys.playerSelf.controller.playerRig.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
 
 			this.dirLightHelper.update()
