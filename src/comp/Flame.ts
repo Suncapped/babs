@@ -14,6 +14,7 @@ import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Wob } from '@/ent/Wob'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
+import { CameraSys } from '@/sys/CameraSys'
 
 
 let FireShader = {
@@ -306,7 +307,8 @@ export class Flame extends Comp {
 
 		// Init static singletons
 		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
-			const pointLight = new PointLight(0xff0000, 1, 1000, 4)
+			const pointLight = new PointLight(0xeb7b54, 400 *CameraSys.SCALE, 100 *CameraSys.SCALE, 1.5) // 1.5 is more fun casting light on nearby trees
+			// pointLight.castShadow = true // Complex?
 			pointLight.name = 'flamelight'
 			Flame.lightPool.push(pointLight)
 			babs.group.add(pointLight)

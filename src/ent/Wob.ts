@@ -297,7 +297,7 @@ export class Wob extends SharedWob {
 					let scale, yup
 					if(wob.name === 'campfire') {
 						scale = 3
-						yup = 2
+						yup = 1.8
 					}
 					else if(wob.name === 'torch') {
 						scale = 1.1

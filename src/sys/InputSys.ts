@@ -1063,6 +1063,7 @@ export class InputSys {
 		})
 
 		this.canvas.addEventListener('wheel', ev => {
+			// console.log('on wheel', ev.deltaX, ev.deltaY)
 			ev.preventDefault()
 			this.recheckMouseIntersects = true // So that laptop mouselook highlights wobs still
 
@@ -1073,7 +1074,7 @@ export class InputSys {
 				this.mouse.zoom -= ev.deltaY
 			} else {
 				if (ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
-				this.mouse.scrolldx -= ev.deltaX
+				this.mouse.scrolldx -= ev.deltaX /2 // Smoother / less sensitive
 
 				if (this.mouse.device !== 'mouse' && this.mouse.device !== 'undetermined') { // Do not move on wheel, if we know it's a mouse.
 					// this.mouse.scrolldy += ev.deltaY
@@ -1083,7 +1084,7 @@ export class InputSys {
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 					// Only increase offsetHeight if camera is above ground, or moving camera up
 					if(!this.topMenuVisibleLocal) {
-						this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight -(ev.deltaY * 0.05))
+						this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight -(ev.deltaY * 0.03))
 					}
 					// }
 

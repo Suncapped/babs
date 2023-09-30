@@ -560,10 +560,10 @@ export class SocketSys {
 			const addRealMinutes = 0
 			const proximaTime = payload.fetime.rlSecondsSinceHour
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
-			// this.babs.worldSys.rlSecondsSinceHour = 2400 // night
-			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *21) // dawn
-			// this.babs.worldSys.rlSecondsSinceHour = 2400 +(60 *30) // day
-			// this.babs.worldSys.rlSecondsSinceHour += +(60 *30) // Flip daytime&nighttime?
+			// this.babs.worldSys.snapshotRealHourFraction = 2400 // night?
+			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *21) // dawn
+			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *30) // day
+			// this.babs.worldSys.snapshotRealHourFraction += +(60 *30) // Flip daytime&nighttime?
 		}
 		else if('creatures' in payload) {
 			// log.info('creatures', payload.creatures)
