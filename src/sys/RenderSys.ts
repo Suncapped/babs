@@ -32,7 +32,7 @@ export class RenderSys {
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
-			// logarithmicDepthBuffer: true, // Causes shader problems, specifically with flame, and potentially MSAA? https://github.com/mrdoob/three.js/issues/22017
+			logarithmicDepthBuffer: true, // Can cause shader problems; fixed for flame (search 'logdepthbuf' ), MSAA may need fix too?  https://github.com/mrdoob/three.js/issues/22017
 			// On VR, that helps with far tree base z fighting, but doesn't help with wob antialiasing
 
 		})
