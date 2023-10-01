@@ -41,12 +41,12 @@ const ON = true
 const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
-type PickedType = 'wob' | 'player'
+type PickedType = 'wob' | 'player' | 'land'
 type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto this :-P
 	poid :string|object,
 	pickedType :PickedType,
-	feim :InstancedWobs,
-	instancedBpid :string,
+	feim? :InstancedWobs,
+	instancedBpid? :string,
 	instancedIndex? :number,
 	instancedPosition? :Vector3,
 	yardCoord? :YardCoord,
@@ -56,6 +56,8 @@ type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto t
 	savedEmissiveColor? :any,
 	poHoverTime? :number,
 	poMousedownTime? :number, // po prefix because these go onto a SkinnedMesh :S
+	landcoverString? :string,
+	landPoint? :Vector3,
 }
 
 export class InputSys {
@@ -797,7 +799,7 @@ export class InputSys {
 							if(this.pickedObject) {
 								this.mousedownPickedObject = this.pickedObject
 								this.mousedownPickedObject.poMousedownTime = Date.now()
-								this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown pickedObject ' + this.mousedownPickedObject.poid)
+								// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown pickedObject ' + this.mousedownPickedObject.poid)
 
 							}
 	
@@ -870,7 +872,7 @@ export class InputSys {
 				// Handle carry drop
 				if (this.liftedObject) { // set in update
 
-					log.info('carry drop', this.mouse.movetarget, this.liftedObject, this.mouse.landtarget, this.pickedObject)
+					log('carry drop', this.mouse.movetarget, this.liftedObject, this.pickedObject)
 					// if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
 					// 	&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
 					// ) { // UI main bag
@@ -892,22 +894,27 @@ export class InputSys {
 
 					// }
 					// else 
-					if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
-						log.info('landdrop', this.mouse.landtarget)
+					if (this.pickedObject.pickedType === 'land') {
+						
+						log.info('landdrop', this.pickedObject)
+						
 						const coordDest = YardCoord.Create({
-							position: this.mouse.landtarget.point,
+							position: this.pickedObject.landPoint,
 							babs: this.babs,
 						})
 						// Todo put distance limits, here and server
 						// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
 						// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
 						// const wob = wobContained || wobInstanced
-						const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
+
+						// const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
 
 						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						log.info('Found', wobSource?.id(), wobDest?.id(), this.liftedObject, coordDest)
+						// if(wobSource) { // todo catch if it has moved since pickup
+
+						log.info('Found', wobSource?.id(), this.liftedObject, coordDest)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -918,6 +925,7 @@ export class InputSys {
 								},
 							}
 						})
+
 					}
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
@@ -931,7 +939,9 @@ export class InputSys {
 				else { // Not carrying
 
 					// If you mouseup before an object is picked up, then it's considered a 'use'.
-					if(!this.mousedownPickedObject || Date.now() -this.mousedownPickedObject.poMousedownTime <400) { // mousedownPickedObject would be null after 400ms pickup time
+					const mouseupBeforePickup = !this.mousedownPickedObject || Date.now() -this.mousedownPickedObject.poMousedownTime <400
+					const pickedHasntChanged = this.mousedownPickedObject?.poid === this.pickedObject?.poid
+					if(mouseupBeforePickup && pickedHasntChanged) { // mousedownPickedObject would be null after 400ms pickup time
 
 						if (this.pickedObject?.pickedType === 'player') {
 							log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
@@ -939,7 +949,8 @@ export class InputSys {
 							this.nickTargetId = player.id
 							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
 						
-						} else if (this.pickedObject?.pickedType === 'wob'){
+						} 
+						else if (this.pickedObject?.pickedType === 'wob'){
 	
 							log('wobuse', this.mouse, this.pickedObject)
 	
@@ -956,12 +967,12 @@ export class InputSys {
 							}
 	
 						}
-						else if (this.mouse.landtarget && !this.mousedownPickedObject) {
-							log('landuse', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
+						else if (this.pickedObject?.pickedType === 'land') {
+							log('landuse', this.pickedObject)
 	
-							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+							const zone = this.babs.ents.get(this.pickedObject.yardCoord.zone.id) as Zone
 							const yardCoord = YardCoord.Create({
-								position: this.mouse.landtarget.point,
+								position: this.pickedObject.landPoint,
 								babs: this.babs,
 							})
 	
@@ -975,6 +986,10 @@ export class InputSys {
 									},
 								}
 							})
+
+							if(this.babs.debugMode) { // In debug, show details of land
+								this.babs.uiSys.landSaid({text: this.pickedObject.landcoverString, idzone: zone.id, point: this.pickedObject.landPoint})
+							}
 						}
 						else {
 							// Nothing picked, just a random mouseup
@@ -984,7 +999,7 @@ export class InputSys {
 				}
 
 				if(this.mousedownPickedObject) {
-					this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mouseup on this.mousedownPickedObject' + this.mousedownPickedObject.poid)
+					// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mouseup on this.mousedownPickedObject' + this.mousedownPickedObject.poid)
 					this.mousedownPickedObject = null
 				}
 
@@ -1094,9 +1109,11 @@ export class InputSys {
 
 
 		if(this.mousedownPickedObject?.poMousedownTime && Date.now() -this.mousedownPickedObject.poMousedownTime > this.doubleClickMs) {
-			this.liftedObject = this.mousedownPickedObject
-			this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
-			this.mousedownPickedObject = null
+			if(this.mousedownPickedObject.pickedType === 'wob') {
+				this.liftedObject = this.mousedownPickedObject
+				// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
+				this.mousedownPickedObject = null
+			}
 		}
 		if(this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
 			// log('hovering over', this.pickedObject)
@@ -1106,7 +1123,7 @@ export class InputSys {
 				// Long hover player, get their name or nick
 				const pl = this.pickedObject.parent.parent as FeObject3D
 				const player = this.babs.ents.get(pl.idplayer) as Player
-				// Display name about head when you click a player or yourself
+				// Display name about head when you hover a player or yourself
 				this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
 			}
 			else if (this.pickedObject.pickedType === 'wob') {
@@ -1124,8 +1141,8 @@ export class InputSys {
 
 				const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 
-				if(!wob) { // todo repro and handle this error better?
-					console.warn('no wob on hover', this.pickedObject, wob, yardCoord)
+				if(!wob) { // Maybe repro and handle this error better?  Happens on double click of wob that disappears (eg eaten)
+					log.info('No wob on hover', this.pickedObject, wob, yardCoord)
 				}
 				else {
 					log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
@@ -1133,23 +1150,21 @@ export class InputSys {
 				}
 				
 			}
-
-			if (this.mouse.landtarget) { // Long hover while mouse on a terrain intersect
-				if(this.babs.debugMode) { // If in debug, show land type
-					this.babs.uiSys.landSaid(this.mouse.landtarget)
-				}
-				else { // Otherwise, label the wob at the location!
-					const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-					const coord = YardCoord.Create({
-						position: this.mouse.landtarget.point,
-						babs: this.babs,
-					})
-					const wobAtCoord = zone.getWob(coord.x, coord.z)
-					if(wobAtCoord) {
-						this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
-					}
+			else if (this.pickedObject.pickedType === 'land') {
+				const idzone = this.pickedObject.yardCoord.zone.id
+				// Long hover ground
+				// Label the wob at the location!
+				const zone = this.babs.ents.get(idzone) as Zone
+				const coord = YardCoord.Create({
+					position: this.pickedObject.landPoint,
+					babs: this.babs,
+				})
+				const wobAtCoord = zone.getWob(coord.x, coord.z)
+				if(wobAtCoord) {
+					this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
 				}
 			}
+
 		}
 
 		// if (this.liftedObject) {
@@ -1529,11 +1544,7 @@ export class InputSys {
 			&& !this.mouse.right // And not when mouselooking
 		) {
 			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
-
-			if (this.mouse.landtarget) { // Reset landtarget simple
-				this.mouse.landtarget = undefined
-			}
-
+			
 			const raycaster = this.mouse.ray as Raycaster
 			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)		
 			
@@ -1585,7 +1596,7 @@ export class InputSys {
 					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
 					newPickedObject = {
 						pickedType: 'wob',
-						poid: wob.id(),
+						poid: JSON.stringify(wob.id()),
 						feim: feim,
 						instancedBpid: name,
 						instancedIndex: index,
@@ -1610,34 +1621,15 @@ export class InputSys {
 					if (objectMaybe?.name === 'ground') { // The Ground
 						const ground = objectMaybe as FeObject3D
 						const zone = ground.zone
-						const pos = this.mouseRayTargets[i].point
+						// const pos = this.mouseRayTargets[i].point
 						const yardCoord = YardCoord.Create({
-							position: pos,
+							position: this.mouseRayTargets[i].point,
 							babs: this.babs,
 						})
-
-						
-						const landcoverData = yardCoord.zone.landcoverData
-						// const newEngCoord = yardCoord.toEngineCoord()
-						// todo use actual PlotCoord
-						const plotCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
-						const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
-						
-						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
-
-						this.mouse.landtarget = {
-							text: lcString,
-							idzone: zone.id,
-							point: this.mouseRayTargets[i].point,
-						}
-
-						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
 
 						// Highlight and label wob at location
 						const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
 						if(wobAtCoord) {
-							// this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
-							
 							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
 							if(feim) {
 								// log('feim', feim.blueprint_id, yardCoord)
@@ -1647,7 +1639,7 @@ export class InputSys {
 									// log('index', index, position)
 									newPickedObject = {
 										pickedType: 'wob',
-										poid: wobAtCoord.id(),
+										poid: JSON.stringify(wobAtCoord.id()),
 										feim: feim,
 										instancedBpid: wobAtCoord.blueprint_id,
 										instancedIndex: index,
@@ -1657,6 +1649,27 @@ export class InputSys {
 									}
 								}
 							}
+						}
+						else {
+							// Land target
+							const landcoverData = yardCoord.zone.landcoverData
+							const plotCoord = new Vector3(Math.floor(yardCoord.x /10), this.mouseRayTargets[i].point.y, Math.floor(yardCoord.z /10))
+							const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
+							const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
+							// this.mouse.landtarget = {
+							// 	text: lcString,
+							// 	idzone: zone.id,
+							// 	point: this.mouseRayTargets[i].point,
+							// }
+							newPickedObject = {
+								pickedType: 'land',
+								poid: `land-${zone.id}:${yardCoord.x},${yardCoord.z}`,
+								yardCoord: yardCoord,
+								poHoverTime: Date.now(),
+								landcoverString: lcString,
+								landPoint: this.mouseRayTargets[i].point,
+							}
+							// log('Setting land target landPoint', this.mouseRayTargets[i].point.x.toFixed(0), this.mouseRayTargets[i].point.z.toFixed(0))
 						}
 
 
@@ -1712,12 +1725,15 @@ export class InputSys {
 					newPickedObject.savedEmissiveColor = (newPickedObject.material as MeshStandardMaterial).emissive.clone() 
 					;(newPickedObject.material as MeshStandardMaterial).emissive.setHSL(55 / 360, 100 / 100, 20 / 100).convertSRGBToLinear()
 				}
+				else if(newPickedObject.pickedType === 'land') {
+					// console.log('land', newPickedObject)
+				}
 
 			}
 
 			// Remove colors from old picked object if needed
-			const stringifiedPoidsEqual = JSON.stringify(this.pickedObject?.poid) === JSON.stringify(newPickedObject?.poid)
-			const newPickedChangedFromOld = this.pickedObject && newPickedObject && !stringifiedPoidsEqual
+			const poidsEqual = this.pickedObject?.poid === newPickedObject?.poid
+			const newPickedChangedFromOld = this.pickedObject && newPickedObject && !poidsEqual
 			const oldPickedAndNoLonger = this.pickedObject && !newPickedObject
 
 			// console.log('newPickedChangedFromOld', newPickedChangedFromOld, 'oldPickedAndNoLonger', oldPickedAndNoLonger)
@@ -1734,13 +1750,17 @@ export class InputSys {
 					// @ts-ignore
 					this.pickedObject.material.emissive.copy(this.pickedObject.savedEmissiveColor)
 				}
+				else if(this.pickedObject.pickedType === 'land') {
+					// Land type
+				} 
 				else {
 					console.warn('unknown pickedType', this.pickedObject)
 				}
 			}
 
-			const pickedAndChanged = !(this.pickedObject && newPickedObject && stringifiedPoidsEqual)
+			const pickedAndChanged = !(this.pickedObject && newPickedObject && poidsEqual)
 			if(pickedAndChanged) {
+				// log('pickedAndChanged', this.pickedObject, newPickedObject)
 				this.pickedObject = newPickedObject // Update it to new one or to null
 			}
 			// else, we keep the existing pickedObject (so we can time its hover/click length)
