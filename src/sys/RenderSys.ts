@@ -9,10 +9,6 @@ import { Wob } from '@/ent/Wob'
 import { Zone } from '@/ent/Zone'
 import { CameraSys } from './CameraSys'
 
-// Started from https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
-// Updated to https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_sky.html
-
-
 export class RenderSys {
 
 	babs :Babs

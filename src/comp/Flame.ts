@@ -16,6 +16,160 @@ import { Wob } from '@/ent/Wob'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
 import { CameraSys } from '@/sys/CameraSys'
 
+export class Flame extends Comp {
+
+	static player
+
+	static lightPool = []
+	static LIGHT_POOL_MAX = 4
+
+	static wantsLight = []
+
+	constructor(wob :SharedWob, babs) {
+		super(wob.id(), Flame, babs)
+	}
+
+	fire :ThreeFire
+
+	points
+	line
+
+	static settings = {
+		speed       : 5.0,//1
+		magnitude   : 1,//1.3,
+		lacunarity  : 2.0,
+		gain        : 0.5,
+		noiseScaleX : 1.5,//1.0,
+		noiseScaleY : 1.5,//2.0,
+		noiseScaleZ : 1.5,//1.0,
+	}
+
+	static fireTex :Texture
+	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
+		// log('Flame.Create, right before wantslight.push', wob.name)
+		const com = new Flame(wob, babs)
+
+		// Init static singletons
+		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
+			const pointLight = new PointLight(0xeb7b54, 400 *CameraSys.SCALE, 100 *CameraSys.SCALE, 1.5) // 1.5 is more fun casting light on nearby trees
+			// pointLight.castShadow = true // Complex?
+			pointLight.name = 'flamelight'
+			Flame.lightPool.push(pointLight)
+			babs.group.add(pointLight)
+		}
+		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
+
+		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
+		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
+
+		com.fire = new ThreeFire(Flame.fireTex)
+		com.fire.name = 'flame'
+		babs.group.add(com.fire)
+
+		com.fire.scale.set(scale,scale*1.33,scale)
+
+		const yardCoord = YardCoord.Create(wob)
+
+		// const rayPos = zone.rayHeightAt(yardCoord)
+		const engCoordCentered = yardCoord.toEngineCoordCentered()
+		const engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+
+		com.fire.position.setY(engPositionVector.y +yup)
+		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
+		com.fire.position.setZ(engPositionVector.z)// +2)
+
+		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
+		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
+		com.fire.material.uniforms.gain.value = Flame.settings.gain
+		com.fire.material.uniforms.noiseScale.value = new Vector4(
+			Flame.settings.noiseScaleX,
+			Flame.settings.noiseScaleY,
+			Flame.settings.noiseScaleZ,
+			0.3
+		)
+
+		// Add a glow of light
+		// console.log('Flame.wantsLight.push', com.fire.uuid)
+		Flame.wantsLight.push(com.fire)
+
+		// Debug flames not showing!
+		// const material = new LineBasicMaterial({ color: 0xff00ff })
+		// const geometry = new BufferGeometry
+		// com.points = [];
+		// com.points.push( babs.group.position )
+		// com.points.push( babs.group.position )
+		// geometry.setFromPoints(com.points)
+		// com.line = new Line( geometry, material )
+		// com.line.name = 'myline'
+		// babs.group.add( com.line )
+
+		return com
+	}
+
+
+	static async Delete(deletingWob :SharedWob, babs :Babs) {
+		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
+		// log('flameComps', flameComps, this.babs.compcats)
+		const flame = flameComps?.find(fc => {
+			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
+				&& (fc.idEnt as WobId).x === deletingWob.id().x
+				&& (fc.idEnt as WobId).z === deletingWob.id().z
+				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
+		})
+		if(flame) {
+			const oldlen = Flame.wantsLight.length
+			// log('flame to remove', flame, Flame.wantsLight.length)
+			Flame.wantsLight = Flame.wantsLight.filter(f => {
+				// console.log('fl', f.uuid, flame.fire.uuid)
+				return f.uuid !== flame.fire.uuid
+			})
+			babs.group.remove(flame.fire)
+
+			flame.fire.geometry.dispose()
+			flame.fire.visible = false
+			if(Array.isArray(flame.fire.material)) {
+				flame.fire.material[0].dispose()
+				flame.fire.material[0].visible = false
+			}
+			else {
+				flame.fire.material.dispose()
+				flame.fire.material.visible = false
+			}
+			
+			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
+		}
+	}
+
+	update(dt) {
+		this.fire?.update(dt *Flame.settings.speed)
+	}
+
+}
+
+
+/**
+ * The following section of the code is adapted from https://github.com/mattatz/THREE.Fire, under the MIT License.
+ * Copyright (c) 2015 mattatz
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 let FireShader = {
 
@@ -269,138 +423,3 @@ class ThreeFire extends Mesh {
 	}
 	
 }
-
-
-
-export class Flame extends Comp {
-
-	static player
-
-	static lightPool = []
-	static LIGHT_POOL_MAX = 4
-
-	static wantsLight = []
-
-	constructor(wob :SharedWob, babs) {
-		super(wob.id(), Flame, babs)
-	}
-
-	fire :ThreeFire
-
-	points
-	line
-
-	static settings = {
-		speed       : 5.0,//1
-		magnitude   : 1,//1.3,
-		lacunarity  : 2.0,
-		gain        : 0.5,
-		noiseScaleX : 1.5,//1.0,
-		noiseScaleY : 1.5,//2.0,
-		noiseScaleZ : 1.5,//1.0,
-	}
-
-	static fireTex :Texture
-	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
-		// log('Flame.Create, right before wantslight.push', wob.name)
-		const com = new Flame(wob, babs)
-
-		// Init static singletons
-		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
-			const pointLight = new PointLight(0xeb7b54, 400 *CameraSys.SCALE, 100 *CameraSys.SCALE, 1.5) // 1.5 is more fun casting light on nearby trees
-			// pointLight.castShadow = true // Complex?
-			pointLight.name = 'flamelight'
-			Flame.lightPool.push(pointLight)
-			babs.group.add(pointLight)
-		}
-		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
-
-		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
-		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
-
-		com.fire = new ThreeFire(Flame.fireTex)
-		com.fire.name = 'flame'
-		babs.group.add(com.fire)
-
-		com.fire.scale.set(scale,scale*1.33,scale)
-
-		const yardCoord = YardCoord.Create(wob)
-
-		// const rayPos = zone.rayHeightAt(yardCoord)
-		const engCoordCentered = yardCoord.toEngineCoordCentered()
-		const engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
-		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-
-		com.fire.position.setY(engPositionVector.y +yup)
-		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
-		com.fire.position.setZ(engPositionVector.z)// +2)
-
-		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
-		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
-		com.fire.material.uniforms.gain.value = Flame.settings.gain
-		com.fire.material.uniforms.noiseScale.value = new Vector4(
-			Flame.settings.noiseScaleX,
-			Flame.settings.noiseScaleY,
-			Flame.settings.noiseScaleZ,
-			0.3
-		)
-
-		// Add a glow of light
-		// console.log('Flame.wantsLight.push', com.fire.uuid)
-		Flame.wantsLight.push(com.fire)
-
-		// Debug flames not showing!
-		// const material = new LineBasicMaterial({ color: 0xff00ff })
-		// const geometry = new BufferGeometry
-		// com.points = [];
-		// com.points.push( babs.group.position )
-		// com.points.push( babs.group.position )
-		// geometry.setFromPoints(com.points)
-		// com.line = new Line( geometry, material )
-		// com.line.name = 'myline'
-		// babs.group.add( com.line )
-
-		return com
-	}
-
-
-	static async Delete(deletingWob :SharedWob, babs :Babs) {
-		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-		// log('flameComps', flameComps, this.babs.compcats)
-		const flame = flameComps?.find(fc => {
-			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
-				&& (fc.idEnt as WobId).x === deletingWob.id().x
-				&& (fc.idEnt as WobId).z === deletingWob.id().z
-				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
-		})
-		if(flame) {
-			const oldlen = Flame.wantsLight.length
-			// log('flame to remove', flame, Flame.wantsLight.length)
-			Flame.wantsLight = Flame.wantsLight.filter(f => {
-				// console.log('fl', f.uuid, flame.fire.uuid)
-				return f.uuid !== flame.fire.uuid
-			})
-			babs.group.remove(flame.fire)
-
-			flame.fire.geometry.dispose()
-			flame.fire.visible = false
-			if(Array.isArray(flame.fire.material)) {
-				flame.fire.material[0].dispose()
-				flame.fire.material[0].visible = false
-			}
-			else {
-				flame.fire.material.dispose()
-				flame.fire.material.visible = false
-			}
-			
-			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flame.fire.uuid)) // This was it.  This was what was needed
-		}
-	}
-
-	update(dt) {
-		this.fire?.update(dt *Flame.settings.speed)
-	}
-
-}
-
-

@@ -35,7 +35,6 @@ import {
 import { log } from './../Utils'
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
-// import { Sky } from 'three/addons/objects/Sky.js'
 import { Sky } from 'three/addons/objects/Sky.js'
 import { debugMode } from '../stores'
 
@@ -769,35 +768,6 @@ export class WorldSys {
 
 	}
 
-	// async loadObjects(urlFiles, zone) {
-	// 	const fet = await fetch(`${urlFiles}/zone/${zone.id}/cache`)
-	// 	// log('fet.status', fet.status)
-	// 	if(fet.status == 404) {// No such zone or zone with no objects cached yet
-	// 		return []
-	// 	}
-
-	// 	const dataBlob = await fet.blob()
-	// 	// log('fet.blob', dataBlob)
-	// 	if(dataBlob.size == 2) {  // hax on size (for `{}`)
-	// 		return []
-	// 	}
-
-	// 	let ds = new DecompressionStream('gzip')
-		
-	// 	// const stream = dataBlob.stream()
-	// 	// Hack patch from https://github.com/stardazed/sd-streams/issues/8
-	// 	const readableStream = new PatchableReadableStream(dataBlob.stream().getReader())
-
-	// 	let decompressedStream = readableStream.pipeThrough(ds) // Note: pipeThrough not FF compatible as of 2022-02-21 https://caniuse.com/streams // But, we have now polyfilled it (and Safari) using @stardazed/streams-polyfill
-
-	// 	const response = new Response(decompressedStream)
-	// 	const decompressedBlob = await response.blob()
-
-	// 	const text = await decompressedBlob.text()
-	// 	const wobs = JSON.parse(text)
-	// 	return wobs
-	// }
-
 	async loadWobLocations(urlFiles, zone) { // todo this is no longer used
 		const fet = await fetch(`${urlFiles}/zone/${zone.id}/locations.bin`)
 		if(fet.status == 404) {// No such zone or zone with no objects cached yet
@@ -1060,20 +1030,3 @@ export class WorldSys {
 
 }
 
-// Hack patch from https://github.com/stardazed/sd-streams/issues/8
-// @ts-ignore
-export class PatchableReadableStream extends ReadableStream { 
-	constructor(reader) {
-		super({
-			async start(controller) {
-				while (true) { // eslint-disable-line
-					const { done, value } = await reader.read()
-					if (done) break
-					controller.enqueue(value)
-				}
-				controller.close()
-				reader.releaseLock()
-			}
-		})
-	}
-}

@@ -5,8 +5,6 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 import { Controller } from '@/comp/Controller'
 import type { FeObject3D } from '@/ent/Wob'
 
-// Influenced by https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
-
 export class CameraSys {
 	static SCALE = 1//1/3.281 // Feet to meters
 	static DefaultOffsetHeight = 15

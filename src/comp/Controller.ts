@@ -2,7 +2,7 @@ import { log } from '@/Utils'
 import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4, Object3D } from 'three'
 import { Comp } from '@/comp/Comp'
 import { WorldSys } from '@/sys/WorldSys'
-import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState, State } from './ControllerState'
+import { DanceState, RunState, BackwardState, WalkState, IdleState, JumpState, State, CharacterFSM } from './ControllerState'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Player } from '@/ent/Player'
@@ -11,8 +11,6 @@ import type { PlayerArrive } from '@/shared/consts'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { SharedWob } from '@/shared/SharedWob'
 import { LoaderSys } from '@/sys/LoaderSys'
-
-// Begun from MIT licensed https://github.com/simondevyoutube/ThreeJS_Tutorial_ThirdPersonCamera/blob/main/main.js
 
 class BasicCharacterControllerProxy {
 	_animations
@@ -595,59 +593,6 @@ export class Controller extends Comp {
 			
 		}
 
-	}
-
-}
-
-
-class FiniteStateMachine {
-	_states
-	_currentState :State
-	constructor() {
-		this._states = {}
-		this._currentState = null
-	}
-
-	addState(name, type :State) {
-		this._states[name] = type
-	}
-
-	setState(name) {
-		const prevState = this._currentState
-
-		if (prevState) {
-			if (prevState.name == name) {
-				return
-			}
-			prevState.exit()
-		}
-
-		const state = new this._states[name](this)
-
-		this._currentState = state
-		state.enter(prevState)
-	}
-
-	update(timeElapsed) {
-		if (this._currentState) {
-			this._currentState.update(timeElapsed)
-		}
-	}
-}
-
-
-class CharacterFSM extends FiniteStateMachine {
-	_proxy
-	constructor(proxy) {
-		super()
-		this._proxy = proxy
-
-		this.addState('idle', IdleState)
-		this.addState('run', RunState)
-		this.addState('backward', BackwardState)
-		this.addState('walk', WalkState)
-		this.addState('jump', JumpState)
-		this.addState('dance', DanceState)
 	}
 
 }

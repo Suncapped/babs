@@ -1,6 +1,81 @@
 import { log } from './../Utils'
 import { LoopOnce } from 'three'
 
+/**
+ * The following section of the code is adapted from https://github.com/simondevyoutube/ThreeJS_Tutorial_CharacterController/blob/main/main.js, under the MIT License.
+ * Copyright (c) 2020 simondevyoutube
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+class FiniteStateMachine {
+	_states
+	_currentState :State
+	constructor() {
+		this._states = {}
+		this._currentState = null
+	}
+
+	addState(name, type :State) {
+		this._states[name] = type
+	}
+
+	setState(name) {
+		const prevState = this._currentState
+
+		if (prevState) {
+			if (prevState.name == name) {
+				return
+			}
+			prevState.exit()
+		}
+
+		const state = new this._states[name](this)
+
+		this._currentState = state
+		state.enter(prevState)
+	}
+
+	update(timeElapsed) {
+		if (this._currentState) {
+			this._currentState.update(timeElapsed)
+		}
+	}
+}
+
+
+export class CharacterFSM extends FiniteStateMachine {
+	_proxy
+	constructor(proxy) {
+		super()
+		this._proxy = proxy
+
+		this.addState('idle', IdleState)
+		this.addState('run', RunState)
+		this.addState('backward', BackwardState)
+		this.addState('walk', WalkState)
+		this.addState('jump', JumpState)
+		this.addState('dance', DanceState)
+	}
+
+}
+
 export class State {
 	
 	_finishedCallback
