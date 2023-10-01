@@ -86,19 +86,14 @@ export class InputSys {
 		zoom: 0,
 
 		// Finger handling
-		fingerlastx: 0,
-		fingerlasty: 0,
-		finger2downstart: 0,
+		// fingerlastx: 0,
+		// fingerlasty: 0,
+		// finger2downstart: 0,
 
 		ray: new Raycaster(new Vector3(), new Vector3(), 0, WorldSys.Acre),
 		xy: new Vector2(0, 0),
 
 		movetarget: undefined,
-		landtarget: {
-			text: '',
-			idzone: null,
-			point: new Vector3(0, 0, 0),
-		},
 
 	}
 	keyboard :{[key:string]:boolean|number} = {
@@ -468,104 +463,18 @@ export class InputSys {
 			this.keyboard.mright = LIFT
 		})
 
-		// No 'click' handling; we do it manually via mousedown/mouseup for more control
 		// document.addEventListener( 'click', mouseOnClick )
+		// No 'click' handling; we do it manually via mousedown/mouseup for more control
 
-		// This fails to detect window switches, and we don't want window switch auto-afk anyway
 		// document.addEventListener("visibilitychange", (ev) => {
 		// 	log('vis change', ev)
 		// })
+		// This fails to detect window switches, and we don't want window switch auto-afk anyway
 
-		const touchHandler = (event) => {
+		const touchHandler = (ev) => {
 			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
-
-			// Almost certainly mobile; show a keyboard thing
-			// Todo show a keyboard icon for this, and also, hide the real textbox.
-			// Need serious mobile/touch detection for this
-			// document.getElementById('hiddenMobileInput').focus()
-	
-			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touch '+event.target.id) // Don't worry, it is canvas!
-			if (event.target.id !== 'canvas') return
-			event.preventDefault()
-
-			// log(event)
-			// let touches = event.changedTouches
-
-			let finger1 = event.changedTouches[0]
-			let finger2 = event.changedTouches[1]
-			let type = ''
-			switch (event.type) {
-			case 'touchstart': type = 'mousedown'; break
-			case 'touchmove': type = 'pointermove'; break
-			case 'touchend': type = 'mouseup'; break
-			default: return
-			}
-			const newEvent = new MouseEvent(type, {
-				bubbles: true,
-				cancelable: true,
-				view: window,
-				detail: 1,
-				screenX: finger1?.screenX || this.mouse.fingerlastx,
-				screenY: finger1?.screenY || this.mouse.fingerlasty,
-
-				clientX: finger1?.clientX || this.mouse.fingerlastx,
-				clientY: finger1?.clientY || this.mouse.fingerlasty,
-				ctrlKey: false,
-				shiftKey: false,
-				metaKey: false,
-				altKey: false,
-				button: finger2 ? MOUSE_RIGHT_CODE : MOUSE_LEFT_CODE,
-				relatedTarget: null,
-
-			})
-
-			// One finger touch to look
-			// todo merge this into regular 'pointermove'?  Unless that adds too much conditional complexity there.
-			if (event.touches.length === 1 && !this.mousedownPickedObject) {
-				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
-				// Probably like touchpad.
-				if (event.type === 'touchstart' || event.type === 'touchend') {
-					this.mouse.fingerlastx = event.touches[0].clientX
-					this.mouse.fingerlasty = event.touches[0].clientY
-				}
-				// Oh dear, axes movement is flipped because it's a "drag" concept rather than a touchpad "direction" concept.
-				// But, since user should use fingers below character, like a record player, regular x axis should be ok!
-				// Actually, feels more intuitive if they drag in the direction of camera movement.
-				this.mouse.scrolldx += event.touches[0].clientX - this.mouse.fingerlastx
-				this.mouse.fingerlastx = event.touches[0].clientX
-
-				// If turning, don't move forward/back as easily
-				const sidewaysMovementLots = 5 // Tested on iPad
-				const moveMultiplierMax = 20
-				const moveLerp = MathUtils.lerp(moveMultiplierMax, 0, Math.min(1, Math.abs(this.mouse.scrolldx) / sidewaysMovementLots))
-				// log(`${this.mouse.scrolldx}, ${moveLerp}`)
-				this.mouse.scrolldy -= moveLerp * (event.touches[0].clientY - this.mouse.fingerlasty)
-				this.mouse.fingerlasty = event.touches[0].clientY
-			}
-
-			// Handle one finger double tap
-			// Removed doubleclick functionality elsewhere, but leaving on mobile for now.
-			if (event.type === 'touchstart' && event.touches.length === 1) {
-				if (Date.now() - this.mouse.finger1downstart < this.doubleClickMs) { // Quick down them up, autorun
-					// log('finger2 runmode')
-					this.movelock = !this.movelock
-					this.mouse.finger1downstart = Date.now() - this.doubleClickMs * 3 // Make made change impossible for a second
-				}
-				else {
-					this.mouse.finger1downstart = Date.now()
-				}
-			}
-			if (event.type === 'touchend' && event.touches.length === 1) { // Second finger removed, first finger remains
-				// log('touchend')
-			}
-			// todo zoom for jump etc, like .onwheel
-
-			// Or maybe treat like mouse?
-			// newEvent.movementX = finger1.clientX -this.mouse.x
-			// newEvent.movementY = finger1.clientY -this.mouse.y
-			// finger2?.target.dispatchEvent(newEvent)
-			event.target.dispatchEvent(newEvent)
+			ev.preventDefault() // Prevent text selection
 		}
 		document.addEventListener('touchstart', touchHandler, {passive:false})
 		document.addEventListener('touchmove', touchHandler, {passive:false})
@@ -584,6 +493,7 @@ export class InputSys {
 			mozOffsetY: number,
 			webkitOffsetX: number,
 			webkitOffsetY: number,
+			webkitForce?: number,
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
 			const ev = e as FePointerEvent
@@ -593,8 +503,12 @@ export class InputSys {
 			
 
 			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
-			// @ts-ignore
-			if(ev.webkitForce > 1) { // (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
+
+			if(ev.pointerType === 'touch') {
+				this.setMouseDevice('fingers')
+				// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'pmt ' + ev.movementX + ', '+this.mouse.right)
+			}
+			else if(ev.webkitForce > 1) { // (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
 				// console.log('pointermove ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
@@ -622,6 +536,18 @@ export class InputSys {
 				this.mouse.dx = ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
 				this.mouse.dy = ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
 			}
+			
+			// https://stackoverflow.com/questions/6073505/
+			// (most useful) client is visible part of the page
+			// offset is relative to parent container (useful if no weird parent offset)
+			// page is relative without considering scrolling
+			// (not useful) screen includes window position on monitor
+
+			// Mouse position (unchanging during pointer lock or gestures)
+			// 'offsetX' means offset from screen origin, not offset from last event/frame
+			this.mouse.x = ev.clientX// || ev.mozOffsetX || ev.webkitOffsetX || 0
+			this.mouse.y = ev.clientY// || ev.mozOffsetY || ev.webkitOffsetY || 0
+			// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
 
 			if(this.isPointerLocked && !this.mouse.right) {
 				const [xOldPos, yOldPos] = this.customcursor.style.transform.replace('translate(', '').split(', ').map(s => parseInt(s))
@@ -629,9 +555,6 @@ export class InputSys {
 
 				this.mouse.x = xOldPos +this.mouse.dx
 				this.mouse.y = yOldPos +this.mouse.dy
-				// Is all this really necessary?
-				this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
-				this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 
 				// Release mouse if it goes well outside the window
 				const margin = parseInt(this.canvas.style.width) *0.10
@@ -639,69 +562,16 @@ export class InputSys {
 					document.exitPointerLock()
 				}
 
-				// this.customcursor.style.left = `${this.mouse.x}px`
-				// this.customcursor.style.top = `${this.mouse.y}px`
-				// console.log('translate', this.customcursor.style.translate)
 				// Speedy update of fake cursor
 				// https://www.paulirish.com/2012/why-moving-elements-with-translate-is-better-than-posabs-topleft/
 				// https://stackoverflow.com/questions/16868122/mousemove-very-laggy
 				this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
-
-			}
-			else {
-				// https://stackoverflow.com/questions/6073505/
-				// (most useful) client is visible part of the page
-				// offset is relative to parent container (useful if no weird parent offset)
-				// page is relative without considering scrolling
-				// (not useful) screen includes window position on monitor
-
-				// Mouse position (unchanging during pointer lock or gestures)
-				// 'offsetX' means offset from screen origin, not offset from last event/frame
-				this.mouse.x = ev.clientX// || ev.mozOffsetX || ev.webkitOffsetX || 0
-				this.mouse.y = ev.clientY// || ev.mozOffsetY || ev.webkitOffsetY || 0
-				// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
-
-				// From threejs:
-				// calculate mouse position in normalized device coordinates
-				// (-1 to +1) for both components
-				// One use is during raycast
-				this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
-				this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 			}
 
-			// Determine if dragging a wobject
-			// if (!this.liftedObject) { // Not already carrying something
-			// 	if (this.mouse.left || ev.buttons === 1) {
-			// 		let isSameAsPrevious
-
-			// 		if (this.mouse.left) { // Holding down, in canvas (mouse.left doesn't get activated otherwise)
-			// 			isSameAsPrevious = this.lastMoveHoldPicked?.feim?.instancedMesh.uuid === this.pickedObject?.feim?.instancedMesh.uuid // Ensures it's comparable object
-			// 				&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
-			// 		}
-			// 		else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in pointermove), in UI
-			// 			isSameAsPrevious = this.lastMoveHoldPicked?.poid === this.pickedObject?.poid
-			// 			// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
-			// 		}
-
-			// 		if (this.pickedObject?.feim && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
-			// 			// Over a wob in the world, and if already over a wob, it must be the same wob
-			// 			this.lastMoveHoldPicked = this.pickedObject // Save that wob
-			// 		}
-			// 		else { // Holding down not over a wob, or over a different wob than the one previously saved
-			// 			// log('else')
-			// 			if (this.lastMoveHoldPicked) { // And there is one previously saved
-			// 				// Now we could lift that dragged wob
-			// 				this.liftedObject = this.lastMoveHoldPicked
-			// 				this.lastMoveHoldPicked = null
-			// 				// Now in update, we'll keep carrying on the mouse intersect to ground
-			// 			}
-			// 		}
-			// 	}
-			// }
-			// else {
-			// 	this.lastMoveHoldPicked = null
-			// }
-
+			// From threejs: calculate mouse position in normalized device coordinates.  (-1 to +1) for both components.  One use is during raycast.
+			// Is all this really necessary?
+			this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
+			this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 
 		})
 
@@ -709,20 +579,21 @@ export class InputSys {
 		// 	console.log('webkitmouseforcewillbegin', ev.webkitForce)
 		// 	this.setMouseDevice('touchpad')
 		// })
-		document.addEventListener('webkitmouseforcechanged', (ev) => { // Safari only
+		document.addEventListener('webkitmouseforcechanged', (e) => { // Safari only
+			const ev = e as FePointerEvent
 			// console.log('webkitmouseforcechanged', ev.webkitForce)
-			// @ts-ignore
 			if(ev.webkitForce > 1) { // Safari only 
 				// console.log('ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
 		})
-		document.addEventListener('mousedown', async ev => {
+		document.addEventListener('pointerdown', async e => {
+			const ev = e as FePointerEvent
 
-
-			const eventTargetId = (ev.target as HTMLElement)?.id
-			// @ts-ignore
-			if(ev.webkitForce > 1) { // Safari only
+			if(ev.pointerType === 'touch') {
+				this.setMouseDevice('fingers')
+			}
+			else if(ev.webkitForce > 1) { // Safari only
 				// console.log('ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
@@ -740,7 +611,7 @@ export class InputSys {
 			this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
 			this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 
-			if (eventTargetId === 'canvas' || ev.target === null || ev.target === document.body) {
+			if (ev.target.id === 'canvas' || ev.target === null || ev.target === document.body) {
 				this.characterControlMode = true
 
 				if (ev.button === MOUSE_LEFT_CODE) {
@@ -862,7 +733,7 @@ export class InputSys {
 
 		})
 
-		document.addEventListener('mouseup', ev => {
+		document.addEventListener('pointerup', ev => {
 			// this.recheckMouseIntersects = true // Especially needed for fingers.  Here too on up?
 			
 			// log.info('mouseOnUp', ev.button, ev.target.id)
@@ -1212,6 +1083,11 @@ export class InputSys {
 				const mouseSensitivityPercent = 30 // hmm isn't this the same as just changing this.mouseAccumThreshold?
 				this.mouse.accumx += this.mouse.dx * (0.5 * (mouseSensitivityPercent / 100)) //(mouseSensitivityPercent * )
 			}
+			else if(this.mouse.device === 'fingers') {
+				const mouseSensitivityPercent = 200
+				this.mouse.accumx += this.mouse.dx * mouseSensitivityPercent / 100
+				this.mouse.scrollaccumy -= this.mouse.dy
+			}
 			else {
 				// this.mouse.accumx = this.mouse.accumy = 0
 				// Let's actually not snap after release; more intuitive.
@@ -1219,7 +1095,6 @@ export class InputSys {
 
 			if (this.mouse.scrolldx) { // If getting a touchpad two-finger touch (not press) move event
 				this.mouse.accumx += this.mouse.scrolldx
-
 			}
 			if (this.mouse.scrolldy) {
 				this.mouse.scrollaccumy += this.mouse.scrolldy / 12

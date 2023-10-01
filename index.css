@@ -8,7 +8,7 @@ html, body {
 	overscroll-behavior-x: none;
 }
 
-body {
+html, body, canvas {
     touch-action: none;
 	user-select: none;
 }
