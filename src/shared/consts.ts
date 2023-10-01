@@ -96,7 +96,7 @@ export type SendWobsUpdate = {
 	wobsupdate :{
 		idzone :number,
 		locationData :Array<number>,
-		// blueprints? :BlueprintList, // fasttodo optimize rather than sending them all
+		// blueprints? :BlueprintList, // todo optimize rather than sending them all
 		shownames? :boolean,
 	},
 }

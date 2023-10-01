@@ -228,11 +228,11 @@ export class Wob extends SharedWob {
 			// todo buggy
 			// if(wob.idzone && (wobPrevious && !wobPrevious.idzone)) { 
 			// 	// It's been moved from container into zone
-			// 	// babs.uiSys.svContainers[0].delWob(wob.id) // fasttodo
+			// 	// babs.uiSys.svContainers[0].delWob(wob.id)
 			// }
 			// else if(wob.idzone === null && wobPrevious && wobPrevious.idzone === null) { 
 			// 	// It's been moved bagtobag, or is being initial loaded into bag
-			// 	// babs.uiSys.svContainers[0].delWob(wob.id) // fasttodo
+			// 	// babs.uiSys.svContainers[0].delWob(wob.id)
 			// }
 
 			if(wob.idzone) { // Place in zone (; is not a backpack item)

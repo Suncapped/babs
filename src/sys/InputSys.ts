@@ -42,18 +42,19 @@ const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
 type PickedType = 'wob' | 'player'
-type PickedObject = {
+type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto this :-P
+	poid :string|object,
 	pickedType :PickedType,
 	feim :InstancedWobs,
 	instancedBpid :string,
-	isIcon? :boolean,
 	instancedIndex? :number,
 	instancedPosition? :Vector3,
 	yardCoord? :YardCoord,
 	material? :Material|MeshStandardMaterial,
 	type? :string,
-	id? :string,
 	parent? :Object3D,
+	savedEmissiveColor? :any,
+	poHoverTime? :number,
 }
 
 export class InputSys {
@@ -662,67 +663,6 @@ export class InputSys {
 				this.mouse.xy.y = - (ev.clientY / parseInt(this.canvas.style.height)) * 2 + 1
 			}
 
-
-
-			// if (ev.target.classList.contains('container-body')) {
-
-			// 	// There's another problem: Transparent corner of one png will overlap another, preventing pointermove target!
-			// 	// What if I extract the coords within the parent, then check every child there for transparency, sorted by updated?
-			// 	// Alright, so 1. get all items under mouse by looking through the bag!
-			// 	for (const item of ev.target.childNodes) {
-			// 		const itemBox = new Box2(
-			// 			new Vector2(parseInt(item.style.left), parseInt(item.style.top)),
-			// 			new Vector2(parseInt(item.style.left) + parseInt(item.style.width), parseInt(item.style.top) + parseInt(item.style.height))
-			// 		)
-			// 		// log(ev.offsetX, ev.offsetY, itemBox)
-			// 		if (itemBox.containsPoint(new Vector2(ev.offsetX, ev.offsetY))) {
-			// 			// Mouse is within image bounds
-			// 			if (this.babs.debugMode) item.style.border = '1px solid white'
-			// 			// 2. Check whether over transparency 
-			// 			const wobId = parseInt(item.id.split('-')[2])
-			// 			const wob = this.babs.ents.get(wobId)
-			// 			const feim = Wob.InstancedWobs.get(wob.name)
-			// 			// log(wob,  Wob.InstancedMeshes, this.babs.ents)
-
-			// 			// if(instanced) {
-			// 			const pixels = (await feim.renderedIcon()).pixels
-			// 			const colorChannels = 4
-			// 			const mouseImageX = ev.offsetX - itemBox.min.x
-			// 			const mouseImageY = ev.offsetY - itemBox.min.y
-			// 			let index = Utils.coordToIndex(mouseImageX, mouseImageY, UiSys.ICON_SIZE, colorChannels)
-			// 			const alphaChannel = pixels[index + 3] // r,g,b,a, so +3 is alpha
-			// 			// log(alphaChannel) // Noramlly it's 255, but sometimes like 191 etc on the borders
-			// 			// }
-			// 			if (alphaChannel > 0) { // We are on top of non-transparency
-			// 				// log('solid!', wob.name, wobId)
-			// 				item.style.filter = 'brightness(200%)'
-
-			// 				// Instanced things like wobjects, water, trees, etc unless caught above
-			// 				// const instanced = Wob.InstancedMeshes.get(wob.name)
-			// 				// const index = this.mouseRayTargets[i].instanceId
-			// 				// const position = Wob.GetPositionFromIndex(instanced, index)
-
-			// 				// log('instanced?', wob)
-
-			// 				this.pickedObject = {
-			// 					feim: feim,
-			// 					instancedBpid: wob.name,
-			// 					isIcon: true,
-			// 				}
-			// 			}
-			// 			else {
-			// 				// log('notsolid', wob.name)
-			// 				item.style.filter = 'none'
-			// 				this.pickedObject = undefined
-			// 			}
-			// 		}
-			// 		else {
-			// 			if (this.babs.debugMode) item.style.border = 'none'
-			// 		}
-			// 	}
-			// }
-			// It is regretful this won't be used in new inventory :p
-
 			// Determine if dragging a wobject
 			if (!this.carrying) { // Not already carrying something
 				if (this.mouse.left || ev.buttons === 1) {
@@ -733,7 +673,7 @@ export class InputSys {
 							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
 					}
 					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in pointermove), in UI
-						isSameAsPrevious = this.lastMoveHoldPicked?.id === this.pickedObject?.id // fasttodo
+						isSameAsPrevious = this.lastMoveHoldPicked?.poid === this.pickedObject?.poid
 						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
 					}
 
@@ -831,49 +771,7 @@ export class InputSys {
 
 						}
 						else { // First click (and not in target selection mode)
-							if (this.pickedObject?.type === 'SkinnedMesh') {
-								// Single click player, get their name or nick
-								const pl = this.pickedObject.parent.parent as FeObject3D
-								const player = this.babs.ents.get(pl.idplayer) as Player
-								// Display name about head when you click a player or yourself
-								this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
-							}
-							else if (this.pickedObject?.feim) {
-								let debugStuff = ''
-								// Single click instanced
-								// const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
-								const yardCoord = this.pickedObject?.yardCoord
-
-
-								if(this.babs.debugMode) {
-									const pos = this.pickedObject?.instancedPosition
-									log('this.pickedObject', this.pickedObject, pos)
-									debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +14] +this.babs.worldSys.shiftiness.z)
-									// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
-								}
-
-								const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
-								
-								log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
-								this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
-							}
-	
-							if (this.mouse.landtarget.text) { // Clicked while mouse on a terrain intersect
-								if(this.babs.debugMode) { // If in debug, show land type
-									this.babs.uiSys.landSaid(this.mouse.landtarget)
-								}
-								else { // Otherwise, label the wob at the location!
-									const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-									const coord = YardCoord.Create({
-										position: this.mouse.landtarget.point,
-										babs: this.babs,
-									})
-									const wobAtCoord = zone.getWob(coord.x, coord.z)
-									if(wobAtCoord) {
-										this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
-									}
-								}
-							}
+							
 	
 	
 							this.mouse.ldouble = Date.now()
@@ -889,7 +787,7 @@ export class InputSys {
 							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
 							
 						}
-						else if (this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
+						else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground'
 							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
 
 							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
@@ -1072,6 +970,7 @@ export class InputSys {
 				// Doesn't actually require control keypress!  It's a hack that enables pinch zoom
 				this.setMouseDevice('touchpad') // Only a touchpad would use zoom.
 				this.mouse.zoom -= ev.deltaY
+				log('in a pinch')
 			} else {
 				if (ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
 				this.mouse.scrolldx -= ev.deltaX /2 // Smoother / less sensitive
@@ -1091,14 +990,14 @@ export class InputSys {
 				}
 			}
 
-			if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') {
-				if (ev.deltaY < 0) {
-					this.runmode = true
-				}
-				else if (ev.deltaY > 0) {
-					this.runmode = false
-				}
-			}
+			// if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') {
+			// 	if (ev.deltaY < 0) {
+			// 		this.runmode = true
+			// 	}
+			// 	else if (ev.deltaY > 0) {
+			// 		this.runmode = false
+			// 	}
+			// }
 
 		}, {passive: false})
 
@@ -1134,247 +1033,79 @@ export class InputSys {
 	displayDestinationMesh
 
 	pickedObject :PickedObject|null
-	pickedObjectSavedColor
-	pickedObjectSavedMaterial
+	
 	lastMoveHoldPicked :PickedObject|null
 	carrying :PickedObject|null
 
-	update(dt) { // Do NOT make update()s async!  It can result in outdated info while future updates() run.
+	update(dt) { // Do NOT make update()s async!  I learned it can result in outdated info while future updates() run.
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
 			this.isAfk = true
 			this.babs.uiSys.awayGame()
 		}
 
-		if (this.pickedObject
-			&& !this.pickedObject.isIcon
-			&& this.recheckMouseIntersects
-		) { // Don't unpick when it's dragged from bag icon
-			if (this.pickedObject.feim) { // InstancedMesh picks
-				this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
-				this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
-			}
-			else if (this.pickedObjectSavedMaterial) { // For everything else using mega color material
-				this.pickedObject.material = this.pickedObjectSavedMaterial
-				this.pickedObjectSavedMaterial = undefined
-			}
-			else { // non-mega color materials?  Should there even be any anymore? :)
-				// @ts-ignore
-				this.pickedObject.material.emissive.copy(this.pickedObjectSavedColor)
-			}
-			this.pickedObject = undefined
-		}
-		if (this.mouse.landtarget.text
-			&& this.recheckMouseIntersects
-		) {
-			this.mouse.landtarget = {
-				text: '',
-				idzone: null,
-				point: new Vector3(0,0,0),
-			}
+		if(this.recheckMouseIntersects) {
+			this.raycastSetPickedObject()
 		}
 
-		// log('mt', this.mouse.movetarget)
-		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body) // Only highlight things in canvas, not css ui
-			&& !this.mouse.right // And not when mouselooking
-			&& this.recheckMouseIntersects
-		) {
-			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
 
-			const raycaster = this.mouse.ray as Raycaster
-			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
+		if(this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
+			// log('hovering over', this.pickedObject)
+			this.pickedObject.poHoverTime = null // Unset so this only triggers once (a bit hax)
 
-			// Good arrow:
-			// this.babs.scene.add(new ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 100, Math.random() * 0xffffff ))
-
-			this.mouseRayTargets.length = 0
-			
-			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
-			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords']
-			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
-			// Well, filtering out 'tree twotris' does help a lot with framerate.
-
-			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
-			// So for anything contained by a Group (Object3D), we need to manually raise it to the top level?
-			let groups = this.babs.group.children.filter(c=>c.type=='Group')
-			groups.forEach(g=>filteredChildren.push(...g.children.filter(c=>!excluded.includes(c.name))))
-
-			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
-			const idsZonesNearby = currentZone.getZonesAround(Zone.loadedZones, 1).map(z=>z.id)
-			filteredChildren = filteredChildren.filter((c :FeObject3D) => {
-				// Filter out far away zones
-				if(c.name !== 'ground') return true
-				if(idsZonesNearby.includes(c.zone.id)) return true
-				return false
-			})
-			// console.log(filteredChildren)
-
-			// raycaster.firstHitOnly = true // BVH thing
-			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
-
-			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
-
-				const objectMaybe = this.mouseRayTargets[i].object
-				if (objectMaybe?.parent?.name === 'three-helper') { // Special case since it's parent name instead of name
-					continue // Skip
-				}
-				else if (objectMaybe instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
-					// Instanced things like wobjects, water, trees, etc unless caught above
-					const name = objectMaybe.name
-					const feim = Wob.InstancedWobs.get(name)
-					const index = this.mouseRayTargets[i].instanceId
-					const position = feim.engCoordFromIndex(index)
-					// console.log('im', this.mouseRayTargets[i], index, position)
-
-					const yard = YardCoord.Create({position: position, babs: this.babs})
-
-					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
-					this.pickedObject = {
-						pickedType: 'wob',
-						feim: feim,
-						instancedBpid: name,
-						instancedIndex: index,
-						instancedPosition: position,
-						yardCoord: yard,
-					}
-
-				}
-				else if(objectMaybe?.name === 'player_bbox') {
-					if(!objectMaybe?.clickable) {
-						continue
-					}
-					const temp = objectMaybe
-					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
-					this.pickedObject = temp.parent.children[0].children[0]  // gltf loaded
-					this.pickedObject.pickedType = 'player'
-				}
-				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
-					if (objectMaybe?.name === 'ground') { // The Ground
-						const ground = objectMaybe as FeObject3D
-						const zone = ground.zone
-						const pos = this.mouseRayTargets[i].point
-						const yardCoord = YardCoord.Create({
-							position: pos,
-							babs: this.babs,
-						})
-
-						
-						const landcoverData = yardCoord.zone.landcoverData
-						// const newEngCoord = yardCoord.toEngineCoord()
-						// todo use actual PlotCoord
-						const plotCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
-						const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
-						
-						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
-
-						this.mouse.landtarget = {
-							text: lcString,
-							idzone: zone.id,
-							point: this.mouseRayTargets[i].point,
-						}
-
-						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
-
-						// Highlight and label wob at location
-						const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
-						if(wobAtCoord) {
-							// this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
-							
-							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
-							if(feim) {
-								// log('feim', feim.blueprint_id, yardCoord)
-								const index = feim.indexFromYardCoord(yardCoord)
-								const position = feim.engCoordFromIndex(index)
-								if(position) { // Ensure feim and wobs have been loaded
-									// log('index', index, position)
-									this.pickedObject = {
-										pickedType: 'wob',
-										feim: feim,
-										instancedBpid: wobAtCoord.blueprint_id,
-										instancedIndex: index,
-										instancedPosition: position,
-										yardCoord: yardCoord,
-									}
-								}
-							}
-						}
-
-
-						// Also, maybe we should highlight this square or something?  By editing index color
-
-					}
-					else if (objectMaybe?.name === 'daysky') { // Sky
-						// log('ray to sky')
-					}
-					else if (objectMaybe?.name === 'nightsky') { // Sky
-						// log('ray to skybox')
-					}
-					else if (objectMaybe?.name === 'flame') { // Flame
-						// log('ray to flame')
-					}
-					else if (objectMaybe instanceof TroikaText) { // Troika text
-						console.warn('ray to troika text')
-						console.log(objectMaybe)
-					}
-					else { // All other meshes
-						console.warn('Uncaught Mesh mouseRayTarget', this.mouseRayTargets[i])
-						// this.pickedObject = objectMaybe
-					}
-				}
-				else { // Everything else
-
-					console.warn('ray to unknown:', objectMaybe)
-				}
-
-				if (this.pickedObject) { // We've set a picked object in ifs above
-					// console.log(scene.children)
-					// console.log(scene.children.find(c => c.children.length))
-
-					if (this.pickedObject.pickedType === 'wob') { // InstancedMesh 
-						let oldColor = new Color()
-						this.pickedObject.feim.instancedMesh.getColorAt(this.pickedObject.instancedIndex, oldColor)
-						let hsl = new Color() // This indirection prevents accumulation across frames
-						// @ts-ignore
-						oldColor.getHSL(hsl)
-						const highlight = hsl.multiplyScalar(3)
-
-						this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, highlight)
-						this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
-					}
-					else if(this.pickedObject.pickedType === 'player'){ // Player bbox
-						// console.log(this.pickedObject)
-						// Dang it.  I can't use material here for highlight, because everything shares one material!  lol
-						// We can clone the material temporarily?
-						if (this.pickedObject.material.name === 'megamaterial') {
-							this.pickedObjectSavedMaterial = this.pickedObject.material
-							this.pickedObject.material = this.pickedObject.material.clone()
-						}
-
-						// Save old color and set new one
-						if ((this.pickedObject.material as MeshStandardMaterial).emissive?.r) { // Handle uninit emissive color
-							(this.pickedObject.material as MeshStandardMaterial).emissive = new Color(0, 0, 0)
-						}
-						this.pickedObjectSavedColor = (this.pickedObject.material as MeshStandardMaterial).emissive.clone() // Unused for megamaterial above
-						;(this.pickedObject.material as MeshStandardMaterial).emissive.setHSL(55 / 360, 100 / 100, 20 / 100).convertSRGBToLinear()
-					}
-				}
-
-				break // Only run loop once (except for continues)
+			if (this.pickedObject.pickedType === 'player') {
+				// Long hover player, get their name or nick
+				const pl = this.pickedObject.parent.parent as FeObject3D
+				const player = this.babs.ents.get(pl.idplayer) as Player
+				// Display name about head when you click a player or yourself
+				this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
 			}
-		}
-		else {
-			// console.log('canvas')
-		}
+			else if (this.pickedObject.pickedType === 'wob') {
+				let debugStuff = ''
+				// Long hover instanced
+				// const wob = this.babs.ents.get(this.pickedObject?.id) as Wob
+				const yardCoord = this.pickedObject?.yardCoord
 
-		if (this.carrying) {
-			// log.info('update carrying')
-			if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
-				(async () => {
-					const riImage = (await this.carrying.feim.renderedIcon()).image
-					document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
-				})()
+				if(this.babs.debugMode) {
+					const pos = this.pickedObject?.instancedPosition
+					log('this.pickedObject', this.pickedObject, pos)
+					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +14] +this.babs.worldSys.shiftiness.z)
+					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
+				}
+
+				const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
+				
+				log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
+				this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
 			}
 
+			if (this.mouse.landtarget) { // Long hover while mouse on a terrain intersect
+				if(this.babs.debugMode) { // If in debug, show land type
+					this.babs.uiSys.landSaid(this.mouse.landtarget)
+				}
+				else { // Otherwise, label the wob at the location!
+					const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+					const coord = YardCoord.Create({
+						position: this.mouse.landtarget.point,
+						babs: this.babs,
+					})
+					const wobAtCoord = zone.getWob(coord.x, coord.z)
+					if(wobAtCoord) {
+						this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+					}
+				}
+			}
 		}
+
+		// if (this.carrying) {
+		// 	// log.info('update carrying')
+		// 	if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
+		// 		(async () => {
+		// 			const riImage = (await this.carrying.feim.renderedIcon()).image
+		// 			document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
+		// 		})()
+		// 	}
+
+		// }
 
 		if(this.mouse.right === PRESS) {
 			if(this.isPointerLocked) {
@@ -1392,19 +1123,19 @@ export class InputSys {
 		if (!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse
 			// Tested on Mac touchpads; not sure how it will do on PC
-			if (this.mouse.zoom > 40) {
-				this.mouse.zoom = -this.mouse.zoom / 4
-				if (!this.runmode) {
-					this.runmode = true
-				}
-				else { // If ready in runmode, jump!
-					this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
-				}
-			}
-			else if (this.mouse.zoom < -40) {
-				this.mouse.zoom = -this.mouse.zoom / 4
-				this.runmode = false
-			}
+			// if (this.mouse.zoom > 40) {
+			// 	this.mouse.zoom = -this.mouse.zoom / 4
+			// 	if (!this.runmode) {
+			// 		this.runmode = true
+			// 	}
+			// 	else { // If ready in runmode, jump!
+			// 		this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
+			// 	}
+			// }
+			// else if (this.mouse.zoom < -40) {
+			// 	this.mouse.zoom = -this.mouse.zoom / 4
+			// 	this.runmode = false
+			// }
 
 			if (this.mouse.right) {
 				const mouseSensitivityPercent = 30 // hmm isn't this the same as just changing this.mouseAccumThreshold?
@@ -1734,6 +1465,233 @@ export class InputSys {
 		}
 	}
 
+	raycastSetPickedObject() { // Raycast to set or unset this.pickedObject
+		let newPickedObject :PickedObject = null
+
+		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body) // Only highlight things in canvas, not css ui
+			&& !this.mouse.right // And not when mouselooking
+		) {
+			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
+
+			if (this.mouse.landtarget) { // Reset landtarget simple
+				this.mouse.landtarget = undefined
+			}
+
+			const raycaster = this.mouse.ray as Raycaster
+			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
+
+			// Good arrow:
+			// this.babs.scene.add(new ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 100, Math.random() * 0xffffff ))
+
+			this.mouseRayTargets.length = 0
+			
+			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords']
+			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
+			// Well, filtering out 'tree twotris' does help a lot with framerate.
+
+			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
+			// So for anything contained by a Group (Object3D), we need to manually raise it to the top level?
+			let groups = this.babs.group.children.filter(c=>c.type=='Group')
+			groups.forEach(g=>filteredChildren.push(...g.children.filter(c=>!excluded.includes(c.name))))
+
+			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+			const idsZonesNearby = currentZone.getZonesAround(Zone.loadedZones, 1).map(z=>z.id)
+			filteredChildren = filteredChildren.filter((c :FeObject3D) => {
+				// Filter out far away zones
+				if(c.name !== 'ground') return true
+				if(idsZonesNearby.includes(c.zone.id)) return true
+				return false
+			})
+			// console.log(filteredChildren)
+
+			// raycaster.firstHitOnly = true // BVH thing
+			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
+
+			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
+
+				const objectMaybe = this.mouseRayTargets[i].object
+				if (objectMaybe?.parent?.name === 'three-helper') { // Special case since it's parent name instead of name
+					continue // Skip
+				}
+				else if (objectMaybe instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
+					// Instanced things like wobjects, water, trees, etc unless caught above
+					const name = objectMaybe.name
+					const feim = Wob.InstancedWobs.get(name)
+					const index = this.mouseRayTargets[i].instanceId
+					const position = feim.engCoordFromIndex(index)
+					// console.log('im', this.mouseRayTargets[i], index, position)
+
+					const yard = YardCoord.Create({position: position, babs: this.babs})
+					const wob = yard.zone.getWob(yard.x, yard.z)
+
+					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
+					newPickedObject = {
+						pickedType: 'wob',
+						poid: wob.id(),
+						feim: feim,
+						instancedBpid: name,
+						instancedIndex: index,
+						instancedPosition: position,
+						yardCoord: yard,
+						poHoverTime: Date.now(),
+					}
+
+				}
+				else if(objectMaybe?.name === 'player_bbox') {
+					if(!objectMaybe?.clickable) {
+						continue
+					}
+					const temp = objectMaybe
+					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
+					newPickedObject = temp.parent.children[0].children[0]  // gltf loaded
+					newPickedObject.pickedType = 'player'
+					newPickedObject.poid = (newPickedObject as unknown as SkinnedMesh).uuid
+					newPickedObject.poHoverTime = Date.now()
+				}
+				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types
+					if (objectMaybe?.name === 'ground') { // The Ground
+						const ground = objectMaybe as FeObject3D
+						const zone = ground.zone
+						const pos = this.mouseRayTargets[i].point
+						const yardCoord = YardCoord.Create({
+							position: pos,
+							babs: this.babs,
+						})
+
+						
+						const landcoverData = yardCoord.zone.landcoverData
+						// const newEngCoord = yardCoord.toEngineCoord()
+						// todo use actual PlotCoord
+						const plotCoord = new Vector3(Math.floor(yardCoord.x /10), pos.y, Math.floor(yardCoord.z /10))
+						const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
+						
+						const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
+
+						this.mouse.landtarget = {
+							text: lcString,
+							idzone: zone.id,
+							point: this.mouseRayTargets[i].point,
+						}
+
+						// log('idzone', this.mouse.landtarget.idzone, this.mouse.landtarget.point.x, this.mouse.landtarget.point.z)
+
+						// Highlight and label wob at location
+						const wobAtCoord = zone.getWob(yardCoord.x, yardCoord.z)
+						if(wobAtCoord) {
+							// this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+							
+							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
+							if(feim) {
+								// log('feim', feim.blueprint_id, yardCoord)
+								const index = feim.indexFromYardCoord(yardCoord)
+								const position = feim.engCoordFromIndex(index)
+								if(position) { // Ensure feim and wobs have been loaded
+									// log('index', index, position)
+									newPickedObject = {
+										pickedType: 'wob',
+										poid: wobAtCoord.id(),
+										feim: feim,
+										instancedBpid: wobAtCoord.blueprint_id,
+										instancedIndex: index,
+										instancedPosition: position,
+										yardCoord: yardCoord,
+										poHoverTime: Date.now(),
+									}
+								}
+							}
+						}
+
+
+						// Also, maybe we should highlight this square or something?  By editing index color
+
+					}
+					else if (objectMaybe?.name === 'daysky') { // Sky
+						// log('ray to sky')
+					}
+					else if (objectMaybe?.name === 'nightsky') { // Sky
+						// log('ray to skybox')
+					}
+					else if (objectMaybe?.name === 'flame') { // Flame
+						// log('ray to flame')
+					}
+					else if (objectMaybe instanceof TroikaText) { // Troika text
+						console.warn('ray to troika text')
+						console.log(objectMaybe)
+					}
+					else { // All other meshes
+						console.warn('Uncaught Mesh mouseRayTarget', this.mouseRayTargets[i])
+					}
+				}
+				else { // Everything else
+
+					console.warn('ray to unknown:', objectMaybe)
+				}
+
+
+
+				break // Only run loop once (except for continues)
+			}
+
+
+			// Set colors
+			if (newPickedObject) { // We've set a picked object in ifs above, so set its colors
+				if (newPickedObject.pickedType === 'wob') { // InstancedMesh 
+					let oldColor = new Color()
+					newPickedObject.feim.instancedMesh.getColorAt(newPickedObject.instancedIndex, oldColor)
+					let hsl = new Color() // This indirection prevents accumulation across frames
+					// @ts-ignore
+					oldColor.getHSL(hsl)
+					const highlight = hsl.multiplyScalar(3)
+
+					newPickedObject.feim.instancedMesh.setColorAt(newPickedObject.instancedIndex, highlight)
+					newPickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
+				}
+				else if(newPickedObject.pickedType === 'player'){ // Player bbox
+					// Save old color and set new one
+					if ((newPickedObject.material as MeshStandardMaterial).emissive?.r) { // Handle uninit emissive color
+						(newPickedObject.material as MeshStandardMaterial).emissive = new Color(0, 0, 0)
+					}
+					newPickedObject.savedEmissiveColor = (newPickedObject.material as MeshStandardMaterial).emissive.clone() 
+					;(newPickedObject.material as MeshStandardMaterial).emissive.setHSL(55 / 360, 100 / 100, 20 / 100).convertSRGBToLinear()
+				}
+
+			}
+
+			// Remove colors from old picked object if needed
+			const stringifiedPoidsEqual = JSON.stringify(this.pickedObject?.poid) === JSON.stringify(newPickedObject?.poid)
+			const newPickedChangedFromOld = this.pickedObject && newPickedObject && !stringifiedPoidsEqual
+			const oldPickedAndNoLonger = this.pickedObject && !newPickedObject
+
+			// console.log('newPickedChangedFromOld', newPickedChangedFromOld, 'oldPickedAndNoLonger', oldPickedAndNoLonger)
+
+			const movedOutFromExistingPick = newPickedChangedFromOld || oldPickedAndNoLonger
+			if(movedOutFromExistingPick) {
+
+				// Reset colors on old pickedObject
+				if (this.pickedObject.pickedType === 'wob') { // InstancedMesh picks
+					this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
+					this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
+				}
+				else if(this.pickedObject.pickedType === 'player') { 
+					// @ts-ignore
+					this.pickedObject.material.emissive.copy(this.pickedObject.savedEmissiveColor)
+				}
+				else {
+					console.warn('unknown pickedType', this.pickedObject)
+				}
+			}
+
+			const pickedAndChanged = !(this.pickedObject && newPickedObject && stringifiedPoidsEqual)
+			if(pickedAndChanged) {
+				this.pickedObject = newPickedObject // Update it to new one or to null
+			}
+			// else, we keep the existing pickedObject (so we can time its hover/click length)
+
+
+
+		}
+	}
 
 	setMouseDevice(newDevice) {
 
