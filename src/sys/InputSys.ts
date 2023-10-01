@@ -55,6 +55,7 @@ type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto t
 	parent? :Object3D,
 	savedEmissiveColor? :any,
 	poHoverTime? :number,
+	poMousedownTime? :number, // po prefix because these go onto a SkinnedMesh :S
 }
 
 export class InputSys {
@@ -518,7 +519,8 @@ export class InputSys {
 			})
 
 			// One finger touch to look
-			if (event.touches.length === 1) {
+			// todo merge this into regular 'pointermove'?  Unless that adds too much conditional complexity there.
+			if (event.touches.length === 1 && !this.mousedownPickedObject) {
 				// Simulate delta like mouseevents?  Or use onwheel simulation like touchpad?  
 				// Probably like touchpad.
 				if (event.type === 'touchstart' || event.type === 'touchend') {
@@ -541,6 +543,7 @@ export class InputSys {
 			}
 
 			// Handle one finger double tap
+			// Removed doubleclick functionality elsewhere, but leaving on mobile for now.
 			if (event.type === 'touchstart' && event.touches.length === 1) {
 				if (Date.now() - this.mouse.finger1downstart < this.doubleClickMs) { // Quick down them up, autorun
 					// log('finger2 runmode')
@@ -567,8 +570,8 @@ export class InputSys {
 		document.addEventListener('touchend', touchHandler, {passive:false})
 		document.addEventListener('touchcancel', touchHandler, {passive:false})
 
-		this.lastMoveHoldPicked
-		this.carrying = null
+		// this.lastMoveHoldPicked
+		this.liftedObject = null
 		interface FePointerEvent extends PointerEvent { 
 			target: HTMLElement,
 			mozMovementX: number,
@@ -581,11 +584,12 @@ export class InputSys {
 			webkitOffsetY: number,
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
+			const ev = e as FePointerEvent
 			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
 
 			this.recheckMouseIntersects = true
 			
-			const ev = e as FePointerEvent
+
 			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
 			// @ts-ignore
 			if(ev.webkitForce > 1) { // (On Chrome, it's undefined.)  For a non-touchpad mouse click, it's exactly 1 for down, 0 for up/move.  Anything >1 indicates a force touchpad.
@@ -659,42 +663,42 @@ export class InputSys {
 				// calculate mouse position in normalized device coordinates
 				// (-1 to +1) for both components
 				// One use is during raycast
-				this.mouse.xy.x = (ev.clientX / parseInt(this.canvas.style.width)) * 2 - 1
-				this.mouse.xy.y = - (ev.clientY / parseInt(this.canvas.style.height)) * 2 + 1
+				this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
+				this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 			}
 
 			// Determine if dragging a wobject
-			if (!this.carrying) { // Not already carrying something
-				if (this.mouse.left || ev.buttons === 1) {
-					let isSameAsPrevious
+			// if (!this.liftedObject) { // Not already carrying something
+			// 	if (this.mouse.left || ev.buttons === 1) {
+			// 		let isSameAsPrevious
 
-					if (this.mouse.left) { // Holding down, in canvas (mouse.left doesn't get activated otherwise)
-						isSameAsPrevious = this.lastMoveHoldPicked?.feim?.instancedMesh.uuid === this.pickedObject?.feim?.instancedMesh.uuid // Ensures it's comparable object
-							&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
-					}
-					else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in pointermove), in UI
-						isSameAsPrevious = this.lastMoveHoldPicked?.poid === this.pickedObject?.poid
-						// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
-					}
+			// 		if (this.mouse.left) { // Holding down, in canvas (mouse.left doesn't get activated otherwise)
+			// 			isSameAsPrevious = this.lastMoveHoldPicked?.feim?.instancedMesh.uuid === this.pickedObject?.feim?.instancedMesh.uuid // Ensures it's comparable object
+			// 				&& this.lastMoveHoldPicked?.instancedPosition.equals(this.pickedObject?.instancedPosition)
+			// 		}
+			// 		else if (ev.buttons === 1) { // Holding down left mouse (buttonS because in pointermove), in UI
+			// 			isSameAsPrevious = this.lastMoveHoldPicked?.poid === this.pickedObject?.poid
+			// 			// log('isSameAsPrevious', isSameAsPrevious, !this.lastMoveHoldPicked, this.pickedObject)
+			// 		}
 
-					if (this.pickedObject?.feim && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
-						// Over a wob in the world, and if already over a wob, it must be the same wob
-						this.lastMoveHoldPicked = this.pickedObject // Save that wob
-					}
-					else { // Holding down not over a wob, or over a different wob than the one previously saved
-						// log('else')
-						if (this.lastMoveHoldPicked) { // And there is one previously saved
-							// Now we could lift that dragged wob
-							this.carrying = this.lastMoveHoldPicked
-							this.lastMoveHoldPicked = null
-							// Now in update, we'll keep carrying on the mouse intersect to ground
-						}
-					}
-				}
-			}
-			else {
-				this.lastMoveHoldPicked = null
-			}
+			// 		if (this.pickedObject?.feim && (isSameAsPrevious || !this.lastMoveHoldPicked)) {
+			// 			// Over a wob in the world, and if already over a wob, it must be the same wob
+			// 			this.lastMoveHoldPicked = this.pickedObject // Save that wob
+			// 		}
+			// 		else { // Holding down not over a wob, or over a different wob than the one previously saved
+			// 			// log('else')
+			// 			if (this.lastMoveHoldPicked) { // And there is one previously saved
+			// 				// Now we could lift that dragged wob
+			// 				this.liftedObject = this.lastMoveHoldPicked
+			// 				this.lastMoveHoldPicked = null
+			// 				// Now in update, we'll keep carrying on the mouse intersect to ground
+			// 			}
+			// 		}
+			// 	}
+			// }
+			// else {
+			// 	this.lastMoveHoldPicked = null
+			// }
 
 
 		})
@@ -712,6 +716,8 @@ export class InputSys {
 			}
 		})
 		document.addEventListener('mousedown', async ev => {
+
+
 			const eventTargetId = (ev.target as HTMLElement)?.id
 			// @ts-ignore
 			if(ev.webkitForce > 1) { // Safari only
@@ -719,7 +725,18 @@ export class InputSys {
 				this.setMouseDevice('touchpad')
 			}
 
-			// log('mouseOnDown', ev.button, eventTargetId, ev)
+			// Set mouse position; copied from 'pointermove':
+			if(this.isPointerLocked && !this.mouse.right) { // pointerlocked
+				const [xOldPos, yOldPos] = this.customcursor.style.transform.replace('translate(', '').split(', ').map(s => parseInt(s))
+				this.mouse.x = xOldPos +this.mouse.dx
+				this.mouse.y = yOldPos +this.mouse.dy
+			}
+			else { // Non pointerlocked
+				this.mouse.x = ev.clientX
+				this.mouse.y = ev.clientY
+			}
+			this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
+			this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
 
 			if (eventTargetId === 'canvas' || ev.target === null || ev.target === document.body) {
 				this.characterControlMode = true
@@ -727,8 +744,9 @@ export class InputSys {
 				if (ev.button === MOUSE_LEFT_CODE) {
 					this.mouse.left = PRESS
 
+
 					if (this.mouse.right) {
-						// Modern touchpads don't have both buttons to click at once; it's a mouse
+						// Modern touchpads don't have both buttons to click at once; so this must be a mouse
 						this.setMouseDevice('mouse')
 
 						// Turn off movelock if hitting left (while right) after a delay
@@ -738,7 +756,11 @@ export class InputSys {
 					}
 					else { // Normal left click on canvas
 						this.babs.uiSys.leftClickCanvas(ev)
+
+						this.raycastSetPickedObject() // Needed for fingers	on press
+						// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown '+ ev.button +', '+ ev.target.id +', '+ this.pickedObject?.poid)
 					}
+
 
 					// Single click
 					if (this.mouse.ldouble === false) { // First click
@@ -772,7 +794,12 @@ export class InputSys {
 						}
 						else { // First click (and not in target selection mode)
 							
-	
+							if(this.pickedObject) {
+								this.mousedownPickedObject = this.pickedObject
+								this.mousedownPickedObject.poMousedownTime = Date.now()
+								this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown pickedObject ' + this.mousedownPickedObject.poid)
+
+							}
 	
 							this.mouse.ldouble = Date.now()
 						}
@@ -780,50 +807,7 @@ export class InputSys {
 					} // Double click
 					else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 						this.mouse.ldouble = 0
-						if (this.pickedObject?.type === 'SkinnedMesh') {
-							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
-							this.nickTargetId = player.id
-
-							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
-							
-						}
-						else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground'
-							log.info('landclick', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
-
-							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
-							const yardCoord = YardCoord.Create({
-								position: this.mouse.landtarget.point,
-								babs: this.babs,
-							})
-
-							this.babs.socketSys.send({
-								action: {
-									verb: 'used',
-									noun: 'ground',
-									data: {
-										point: {x: yardCoord.x, z: yardCoord.z},
-										idzone: zone.id,
-									},
-								}
-							})
-
-						} else {//} if(this.mouse.landtarget.text) {  // && this.pickedObject?.name === 'ground'
-
-							log.info('wobclick', this.mouse, this.pickedObject)
-
-							if(this.pickedObject) {
-								const coord = this.pickedObject?.yardCoord
-								const wob = coord.zone.getWob(coord.x, coord.z)
-	
-								this.babs.socketSys.send({
-									action: {
-										verb: 'used',
-										noun: wob.id(),
-									}
-								})
-							}
-
-						}
+						
 					}
 
 				}
@@ -877,51 +861,53 @@ export class InputSys {
 		})
 
 		document.addEventListener('mouseup', ev => {
+			// this.recheckMouseIntersects = true // Especially needed for fingers.  Here too on up?
+			
 			// log.info('mouseOnUp', ev.button, ev.target.id)
 			if (ev.button === MOUSE_LEFT_CODE) {
 				this.mouse.left = LIFT
 
-				this.lastMoveHoldPicked = null
 				// Handle carry drop
-				if (this.carrying) {
+				if (this.liftedObject) { // set in update
 
-					log.info('carry drop', this.mouse.movetarget, this.carrying, this.mouse.landtarget, this.pickedObject)
-					if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
-						&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
-					) { // UI main bag
-						log('Main bag drop', this.mouse.movetarget)
-						const point = new Vector3(this.mouse.x, 0, this.mouse.y)
-						// @ts-ignore
-						const wob = this.babs.ents.get(this.carrying.id) || Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
-						log.info('Found', wob, this.carrying)
-						this.babs.socketSys.send({
-							action: {
-								verb: 'contained',
-								noun: wob.id,
-								data: {
-									point,
-									container: this.babs.idSelf,
-								},
-							}
-						})
+					log.info('carry drop', this.mouse.movetarget, this.liftedObject, this.mouse.landtarget, this.pickedObject)
+					// if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
+					// 	&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
+					// ) { // UI main bag
+					// 	log('Main bag drop', this.mouse.movetarget)
+					// 	const point = new Vector3(this.mouse.x, 0, this.mouse.y)
+					// 	// @ts-ignore
+					// 	const wob = this.babs.ents.get(this.liftedObject.id) || Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
+					// 	log.info('Found', wob, this.liftedObject)
+					// 	this.babs.socketSys.send({
+					// 		action: {
+					// 			verb: 'contained',
+					// 			noun: wob.id,
+					// 			data: {
+					// 				point,
+					// 				container: this.babs.idSelf,
+					// 			},
+					// 		}
+					// 	})
 
-					}
-					else if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
+					// }
+					// else 
+					if (this.mouse.landtarget?.text) {  // && this.pickedObject?.name === 'ground' // Land
 						log.info('landdrop', this.mouse.landtarget)
 						const coordDest = YardCoord.Create({
 							position: this.mouse.landtarget.point,
 							babs: this.babs,
 						})
 						// Todo put distance limits, here and server
-						// const wobContained = this.babs.ents.get(this.carrying.id) // bagtodo
-						// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.carrying.instancedIndex, this.carrying.instancedName)
+						// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
+						// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
 						// const wob = wobContained || wobInstanced
 						const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
 
-						const coordSource = this.carrying.yardCoord
+						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						log.info('Found', wobSource?.id(), wobDest?.id(), this.carrying, coordDest)
+						log.info('Found', wobSource?.id(), wobDest?.id(), this.liftedObject, coordDest)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -935,12 +921,71 @@ export class InputSys {
 					}
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
-						log.info('Other drop', this.carrying)
-						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.carrying.instancedBpid} there>`)
+						log.info('Other drop', this.liftedObject)
+						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
 					}
 
-					this.carrying = null
+					this.liftedObject = null
 					document.body.style.cursor = 'auto'
+				}
+				else { // Not carrying
+
+					// If you mouseup before an object is picked up, then it's considered a 'use'.
+					if(!this.mousedownPickedObject || Date.now() -this.mousedownPickedObject.poMousedownTime <400) { // mousedownPickedObject would be null after 400ms pickup time
+
+						if (this.pickedObject?.pickedType === 'player') {
+							log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
+							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
+							this.nickTargetId = player.id
+							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
+						
+						} else if (this.pickedObject?.pickedType === 'wob'){
+	
+							log('wobuse', this.mouse, this.pickedObject)
+	
+							if(this.pickedObject) {
+								const coord = this.pickedObject?.yardCoord
+								const wob = coord.zone.getWob(coord.x, coord.z)
+	
+								this.babs.socketSys.send({
+									action: {
+										verb: 'used',
+										noun: wob.id(),
+									}
+								})
+							}
+	
+						}
+						else if (this.mouse.landtarget && !this.mousedownPickedObject) {
+							log('landuse', this.mouse.landtarget, this.mouse.landtarget.text, this.mouse.landtarget.point)
+	
+							const zone = this.babs.ents.get(this.mouse.landtarget.idzone) as Zone
+							const yardCoord = YardCoord.Create({
+								position: this.mouse.landtarget.point,
+								babs: this.babs,
+							})
+	
+							this.babs.socketSys.send({
+								action: {
+									verb: 'used',
+									noun: 'ground',
+									data: {
+										point: {x: yardCoord.x, z: yardCoord.z},
+										idzone: zone.id,
+									},
+								}
+							})
+						}
+						else {
+							// Nothing picked, just a random mouseup
+						}
+					}
+
+				}
+
+				if(this.mousedownPickedObject) {
+					this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mouseup on this.mousedownPickedObject' + this.mousedownPickedObject.poid)
+					this.mousedownPickedObject = null
 				}
 
 
@@ -960,7 +1005,7 @@ export class InputSys {
 			}
 		})
 
-		this.canvas.addEventListener('wheel', ev => {
+		this.canvas.addEventListener('wheel', ev => { // Aka touchpad two finger scrolls
 			// console.log('on wheel', ev.deltaX, ev.deltaY)
 			ev.preventDefault()
 			this.recheckMouseIntersects = true // So that laptop mouselook highlights wobs still
@@ -970,9 +1015,10 @@ export class InputSys {
 				// Doesn't actually require control keypress!  It's a hack that enables pinch zoom
 				this.setMouseDevice('touchpad') // Only a touchpad would use zoom.
 				this.mouse.zoom -= ev.deltaY
-				log('in a pinch')
+				// log.info('in a pinch')
 			} else {
 				if (ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
+				
 				this.mouse.scrolldx -= ev.deltaX /2 // Smoother / less sensitive
 
 				if (this.mouse.device !== 'mouse' && this.mouse.device !== 'undetermined') { // Do not move on wheel, if we know it's a mouse.
@@ -1032,10 +1078,9 @@ export class InputSys {
 	mouseRayTargets = []
 	displayDestinationMesh
 
-	pickedObject :PickedObject|null
-	
-	lastMoveHoldPicked :PickedObject|null
-	carrying :PickedObject|null
+	pickedObject :PickedObject|null // An object that is at the mouse raycast; the player hasn't interacted with it yet beyond hovering.
+	mousedownPickedObject :PickedObject|null // The player has down a mousedown on a pickedObject.
+	liftedObject :PickedObject|null // An object that the player did a long mousedown on, and is now carrying around on their cursor.
 
 	update(dt) { // Do NOT make update()s async!  I learned it can result in outdated info while future updates() run.
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
@@ -1048,6 +1093,11 @@ export class InputSys {
 		}
 
 
+		if(this.mousedownPickedObject?.poMousedownTime && Date.now() -this.mousedownPickedObject.poMousedownTime > this.doubleClickMs) {
+			this.liftedObject = this.mousedownPickedObject
+			this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
+			this.mousedownPickedObject = null
+		}
 		if(this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
 			// log('hovering over', this.pickedObject)
 			this.pickedObject.poHoverTime = null // Unset so this only triggers once (a bit hax)
@@ -1073,9 +1123,15 @@ export class InputSys {
 				}
 
 				const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
+
+				if(!wob) { // todo repro and handle this error better?
+					console.warn('no wob on hover', this.pickedObject, wob, yardCoord)
+				}
+				else {
+					log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
+					this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
+				}
 				
-				log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
-				this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
 			}
 
 			if (this.mouse.landtarget) { // Long hover while mouse on a terrain intersect
@@ -1096,11 +1152,11 @@ export class InputSys {
 			}
 		}
 
-		// if (this.carrying) {
+		// if (this.liftedObject) {
 		// 	// log.info('update carrying')
 		// 	if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
 		// 		(async () => {
-		// 			const riImage = (await this.carrying.feim.renderedIcon()).image
+		// 			const riImage = (await this.liftedObject.feim.renderedIcon()).image
 		// 			document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
 		// 		})()
 		// 	}
@@ -1468,7 +1524,8 @@ export class InputSys {
 	raycastSetPickedObject() { // Raycast to set or unset this.pickedObject
 		let newPickedObject :PickedObject = null
 
-		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body) // Only highlight things in canvas, not css ui
+		// Only highlight things in canvas, not css ui
+		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body || this.mouse.left === PRESS) // mouse.left is for fingers
 			&& !this.mouse.right // And not when mouselooking
 		) {
 			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
@@ -1478,8 +1535,8 @@ export class InputSys {
 			}
 
 			const raycaster = this.mouse.ray as Raycaster
-			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)
-
+			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)		
+			
 			// Good arrow:
 			// this.babs.scene.add(new ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 100, Math.random() * 0xffffff ))
 

@@ -8,76 +8,6 @@
 
 	onMount(async () => {
 
-		// Divider panel things
-		let isResizing = false
-		let container = document.getElementById('container')
-		let left = document.getElementById('canvas')
-		// let right = document.getElementById('right_panel')
-		let handle = document.getElementById('drag')
-
-		// handle.addEventListener('mousedown', function (e) {
-		// 	isResizing = true;
-		// })
-		// document.addEventListener('mouseup', function (e) {
-		// 	isResizing = false
-		// })
-
-		// const doResize = (offsetRight) => {
-		// 	log.info('doResize', offsetRight, window.innerWidth)
-
-		// 	// if(offsetRight > window.innerWidth /2) {
-		// 	// 	dividerOffset.set(window.innerWidth /2)
-		// 	// 	return // Will get called again on update to continue with new width
-		// 	// }
-
-		// 	left.style.right = offsetRight+'px'
-		// 	// right.style.width = offsetRight+'px'
-		// 	left.style.width = (window.innerWidth -offsetRight) +'px'
-		// 	left.style.height = window.innerHeight+'px'
-		// }
-		// document.addEventListener('pointermove', function (ev) {
-		// 	if(!isResizing) return // we don't want to do anything if we aren't resizing.
-		// 	ev.preventDefault()
-
-		// 	const containerWidth = parseFloat(getComputedStyle(container, null).width)
-		// 	var offsetRight = containerWidth -(ev.clientX -container.getBoundingClientRect().left)
-
-		// 	offsetRight = MathUtils.clamp(offsetRight, 5, window.innerWidth /2)
-		// 	dividerOffset.set({save: offsetRight})
-		// })
-		// window.addEventListener('resize', (ev) => {
-		// 	doResize(0)//$dividerOffset)
-		// }, false)
-		// doResize(0)
-		// dividerOffset.subscribe(offsetOrObj => {
-		// 	log.info('subscribed offsetOrObj is', offsetOrObj)
-		// 	if(offsetOrObj === undefined) { // First time or too big
-		// 		dividerOffset.set(100)// (window.innerWidth /4) // default
-		// 	}
-		// 	else {
-		// 		const saveNumber = (typeof offsetOrObj === 'object' && 'save' in offsetOrObj && typeof offsetOrObj.save === 'number') ? offsetOrObj.save : null
-		// 		if(saveNumber) { // Actually resized by player, or received
-		// 			socketSend.set({
-		// 				'savedivider': saveNumber, // Sends to server on first set ugh
-		// 			})
-		// 			dividerOffset.set(saveNumber)
-		// 		}
-		// 	}
-		// 	// setTimeout(() => doResize(offsetOrObj), 1) // hax // no longer needed?
-		// 	doResize(offsetOrObj)
-		// })
-
-		// urlFiles.subscribe(urlFiles => {
-		// 	if(!urlFiles) return
-		// 	// console.log('svelte urlfiles', urlFiles)
-		// 	right.style.backgroundImage = `url(${urlFiles}/icon/knotlight.png)`
-		// 	right.style.backgroundRepeat = 'repeat-y'
-		// 	right.style.backgroundSize = '9px'
-		// 	right.style.backgroundPositionX = '0px'
-		// 	right.style.overflow = 'visible'
-		// })
-
-
 		let customcursor = document.getElementById('customcursor')
 		urlFiles.subscribe(urlFiles => {
 			if(!urlFiles) return
@@ -221,29 +151,6 @@
 	}
 
 	
-	/* Divider panel things */
-	:global #container {
-		width: 100%;
-		height: 100%;
-	}
-	/* :global #canvas {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		right: 100px;
-		background: grey;
-	} */
-
-	/* :global #right_panel {
-		position: absolute;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		color:#ddd;
-		background: black;
-		z-index: 20;
-	} */
 	:global #drag {
 		position: absolute;
 		left: -1px;
