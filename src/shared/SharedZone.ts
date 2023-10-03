@@ -91,10 +91,10 @@ export class SharedZone {
 		let wob = this.getWob(x, z)
 
 		if(isLocidBeingRemoved) {
-			this.wobIdRotGrid[x +(z *250)] = 0
 			if(wob) { // Is null on server
 				this.removeWobGraphicAt(wob.x, wob.z)
 			}
+			this.wobIdRotGrid[x +(z *250)] = 0
 			return [0, 0, wob?.x | x, wob?.z | z]
 		}
 

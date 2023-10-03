@@ -173,7 +173,7 @@ export class InstancedWobs {
 	}
 
 		
-	engCoordFromIndex(index) { 
+	matrixEngCoordFromIndex(index) { 
 		// Returns world coord; instanced are zero-oriented since they have to be shared across zones, and their 'getMatrixAt()' positions are all local, not world.  So we change them to world using shiftiness.
 		const matrix = new Matrix4()
 		this.instancedMesh.getMatrixAt(index, matrix)
@@ -190,7 +190,7 @@ export class InstancedWobs {
 		// 	const z = instanceMatrix.array[i +14]
 		// }
 	}
-	indexFromYardCoord(yardCoord :YardCoord) {
+	matrixIndexFromYardCoord(yardCoord :YardCoord) {
 		// Returns instanced index
 		const instanceMatrix = this.instancedMesh.instanceMatrix
 		const imLoadedCount = this.getLoadedCount()
@@ -240,5 +240,9 @@ export class InstancedWobs {
 		}
 
 
+	}
+
+	heightAdjust(engPositionVector :Vector3) {
+		return engPositionVector.clone().setY(engPositionVector.y +(this.boundingSize.y /2) -this.sink +this.lift)
 	}
 }

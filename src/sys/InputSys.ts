@@ -47,8 +47,8 @@ type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto t
 	pickedType :PickedType,
 	feim? :InstancedWobs,
 	instancedBpid? :string,
-	instancedIndex? :number,
-	instancedPosition? :Vector3,
+	// instancedIndex? :number,
+	// instancedPosition? :Vector3,
 	yardCoord? :YardCoord,
 	material? :Material|MeshStandardMaterial,
 	type? :string,
@@ -743,7 +743,7 @@ export class InputSys {
 				// Handle carry drop
 				if (this.liftedObject) { // set in update
 
-					log('carry drop', this.mouse.movetarget, this.liftedObject, this.pickedObject)
+					log.info('carry drop', this.mouse.movetarget, this.liftedObject, this.pickedObject)
 					// if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
 					// 	&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
 					// ) { // UI main bag
@@ -785,7 +785,7 @@ export class InputSys {
 
 						// if(wobSource) { // todo catch if it has moved since pickup
 
-						log.info('Found', wobSource?.id(), this.liftedObject, coordDest)
+						log.info('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
 						this.babs.socketSys.send({
 							action: {
 								verb: 'moved',
@@ -798,11 +798,34 @@ export class InputSys {
 						})
 
 					}
+					else if(this.pickedObject.pickedType === 'wob') {
+						log('wob Drop', this.pickedObject, this.liftedObject)
+						if(this.pickedObject.poid === this.liftedObject.poid) {
+							// How can we know whether it's the same?  Poid is based on id() so that doesn't tell us.
+							// The problem is we're putting it into the actual data rather than just visually... hmm.  
+							// This could be a problem with wobupdates too; if someone put something there, it could disallow it if we're just hovering.
+							// Okay so hovering needs to be separate; probably just visual.  
+							// Visual logic might need to be separated out.
+							// That will allow pickedObject to be real rather than self.
+							log('self drop')
+						}
+					}
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
-						log.info('Other drop', this.liftedObject)
+						log('Other drop', this.pickedObject, this.liftedObject)
 						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
 					}
+
+					// Revert it to its original position; successful drop will have the server update it soon, and failed drop needs it reverted anyway.
+					const liftedYardCoord = this.liftedObject.yardCoord
+					const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
+					let liftedEngPos = liftedYardCoord.toEngineCoordCentered('withCalcY')
+					liftedEngPos = this.liftedObject.feim.heightAdjust(liftedEngPos)
+					liftedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
+					const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
+
+					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
+					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 					this.liftedObject = null
 					document.body.style.cursor = 'auto'
@@ -839,7 +862,7 @@ export class InputSys {
 	
 						}
 						else if (this.pickedObject?.pickedType === 'land') {
-							log('landuse', this.pickedObject)
+							log.info('landuse', this.pickedObject)
 	
 							const zone = this.babs.ents.get(this.pickedObject.yardCoord.zone.id) as Zone
 							const yardCoord = YardCoord.Create({
@@ -1004,9 +1027,14 @@ export class InputSys {
 				const yardCoord = this.pickedObject?.yardCoord
 
 				if(this.babs.debugMode) {
-					const pos = this.pickedObject?.instancedPosition
+					const pos = yardCoord.toEngineCoordCentered()
+					// const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x, yardCoord.z]
+
+					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
+					const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x+','+yardCoord.z]
+
 					log('this.pickedObject', this.pickedObject, pos)
-					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+this.pickedObject?.instancedIndex+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(this.pickedObject?.instancedIndex *16) +14] +this.babs.worldSys.shiftiness.z)
+					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z)
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 				}
 
@@ -1016,8 +1044,10 @@ export class InputSys {
 					log.info('No wob on hover', this.pickedObject, wob, yardCoord)
 				}
 				else {
-					log.info('clicked wob, this.pickedObject', this.pickedObject, yardCoord)
-					this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
+					log.info('hovered wob, this.pickedObject', this.pickedObject, yardCoord)
+					if(!this.liftedObject) {
+						this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
+					}
 				}
 				
 			}
@@ -1031,23 +1061,12 @@ export class InputSys {
 					babs: this.babs,
 				})
 				const wobAtCoord = zone.getWob(coord.x, coord.z)
-				if(wobAtCoord) {
+				if(wobAtCoord && !this.liftedObject) {
 					this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
 				}
 			}
 
 		}
-
-		// if (this.liftedObject) {
-		// 	// log.info('update carrying')
-		// 	if (!document.body.style.cursor || document.body.style.cursor === 'auto') {
-		// 		(async () => {
-		// 			const riImage = (await this.liftedObject.feim.renderedIcon()).image
-		// 			document.body.style.cursor = `url(${riImage}) ${UiSys.ICON_SIZE / 2} ${UiSys.ICON_SIZE / 2}, auto`
-		// 		})()
-		// 	}
-
-		// }
 
 		if(this.mouse.right === PRESS) {
 			if(this.isPointerLocked) {
@@ -1457,26 +1476,31 @@ export class InputSys {
 				if (objectMaybe?.parent?.name === 'three-helper') { // Special case since it's parent name instead of name
 					continue // Skip
 				}
-				else if (objectMaybe instanceof InstancedMesh) { // couldn't use "?.type ===" because InstanceMesh.type is "Mesh"!
+				else if (objectMaybe instanceof InstancedMesh) {
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = objectMaybe.name
 					const feim = Wob.InstancedWobs.get(name)
 					const index = this.mouseRayTargets[i].instanceId
-					const position = feim.engCoordFromIndex(index)
-					// console.log('im', this.mouseRayTargets[i], index, position)
 
-					const yard = YardCoord.Create({position: position, babs: this.babs})
-					const wob = yard.zone.getWob(yard.x, yard.z)
+					// Wob currently lifted is excluded based on its index vs above index
+					if(this.liftedObject && this.liftedObject.pickedType === 'wob') {
+						const liftedIndex = this.liftedObject.yardCoord.zone.coordToInstanceIndex[this.liftedObject.yardCoord.x+','+this.liftedObject.yardCoord.z]
+						if(index === liftedIndex) {
+							continue
+						}
+					}
+
+					const position = feim.matrixEngCoordFromIndex(index)
+					const yardCoord = YardCoord.Create({position: position, babs: this.babs})
+					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 
 					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
-					newPickedObject = {
+					newPickedObject = { // wob
 						pickedType: 'wob',
 						poid: JSON.stringify(wob.id()),
 						feim: feim,
 						instancedBpid: name,
-						instancedIndex: index,
-						instancedPosition: position,
-						yardCoord: yard,
+						yardCoord: yardCoord,
 						poHoverTime: Date.now(),
 					}
 
@@ -1508,17 +1532,15 @@ export class InputSys {
 							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
 							if(feim) {
 								// log('feim', feim.blueprint_id, yardCoord)
-								const index = feim.indexFromYardCoord(yardCoord)
-								const position = feim.engCoordFromIndex(index)
+								const index = feim.matrixIndexFromYardCoord(yardCoord)
+								const position = feim.matrixEngCoordFromIndex(index)
 								if(position) { // Ensure feim and wobs have been loaded
 									// log('index', index, position)
-									newPickedObject = {
+									newPickedObject = { // wob on tile
 										pickedType: 'wob',
 										poid: JSON.stringify(wobAtCoord.id()),
 										feim: feim,
 										instancedBpid: wobAtCoord.blueprint_id,
-										instancedIndex: index,
-										instancedPosition: position,
 										yardCoord: yardCoord,
 										poHoverTime: Date.now(),
 									}
@@ -1536,7 +1558,7 @@ export class InputSys {
 							// 	idzone: zone.id,
 							// 	point: this.mouseRayTargets[i].point,
 							// }
-							newPickedObject = {
+							newPickedObject = { // land
 								pickedType: 'land',
 								poid: `land-${zone.id}:${yardCoord.x},${yardCoord.z}`,
 								yardCoord: yardCoord,
@@ -1582,14 +1604,16 @@ export class InputSys {
 			// Set colors
 			if (newPickedObject) { // We've set a picked object in ifs above, so set its colors
 				if (newPickedObject.pickedType === 'wob') { // InstancedMesh 
+					const index = newPickedObject.yardCoord.zone.coordToInstanceIndex[newPickedObject.yardCoord.x+','+newPickedObject.yardCoord.z]
+
 					let oldColor = new Color()
-					newPickedObject.feim.instancedMesh.getColorAt(newPickedObject.instancedIndex, oldColor)
+					newPickedObject.feim.instancedMesh.getColorAt(index, oldColor)
 					let hsl = new Color() // This indirection prevents accumulation across frames
 					// @ts-ignore
 					oldColor.getHSL(hsl)
 					const highlight = hsl.multiplyScalar(3)
 
-					newPickedObject.feim.instancedMesh.setColorAt(newPickedObject.instancedIndex, highlight)
+					newPickedObject.feim.instancedMesh.setColorAt(index, highlight)
 					newPickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 				}
 				else if(newPickedObject.pickedType === 'player'){ // Player bbox
@@ -1618,7 +1642,9 @@ export class InputSys {
 
 				// Reset colors on old pickedObject
 				if (this.pickedObject.pickedType === 'wob') { // InstancedMesh picks
-					this.pickedObject.feim.instancedMesh.setColorAt(this.pickedObject.instancedIndex, new Color(1, 1, 1))
+					const index = this.pickedObject.yardCoord.zone.coordToInstanceIndex[this.pickedObject.yardCoord.x+','+this.pickedObject.yardCoord.z]
+
+					this.pickedObject.feim.instancedMesh.setColorAt(index, new Color(1, 1, 1))
 					this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
 				}
 				else if(this.pickedObject.pickedType === 'player') { 
@@ -1637,10 +1663,33 @@ export class InputSys {
 			if(pickedAndChanged) {
 				// log('pickedAndChanged', this.pickedObject, newPickedObject)
 				this.pickedObject = newPickedObject // Update it to new one or to null
+
+
+				// Every time picked===land changes && lifted
+				if(this.liftedObject?.pickedType === 'wob' && this.pickedObject?.pickedType !== 'player') {
+					// log('pickedAndChanged land', this.pickedObject, this.liftedObject)
+
+					/* Try 3 */
+					// The bottom line is that we can setMatrixAt to change where the lifted wob appears visually, without affecting any other data.
+					// Here is the useful way to go from index->wobcoord: feim.instanceIndexToWob.get(index)
+					// Here is the useful way to from coord->index: wob.zone.coordToInstanceIndex[wob.x+','+wob.z]
+
+					const liftedYardCoord = this.liftedObject.yardCoord
+					const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
+
+					let pickedEngPos = this.pickedObject.yardCoord.toEngineCoordCentered('withCalcY')
+					pickedEngPos = this.liftedObject.feim.heightAdjust(pickedEngPos)
+					pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
+					
+					const matrixPickedEngPos = new Matrix4().setPosition(pickedEngPos)
+					log.info('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
+					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixPickedEngPos)
+					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
+
+				}
+
 			}
 			// else, we keep the existing pickedObject (so we can time its hover/click length)
-
-
 
 		}
 	}

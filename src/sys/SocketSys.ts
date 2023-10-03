@@ -482,7 +482,7 @@ export class SocketSys {
 			// 	const wobExisting = this.babs.ents.get(wobFresh.id)
 			// 	if(wobExisting && wobExisting.idzone) { // Wob in zone
 			// 		const instanced = Wob.InstancedMeshes.get(wobExisting.name)
-			// 		instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // todo change from just putting far away, to getting rid of
+			// 		instanced.setMatrixAt(wobExisting.instancedIndex, new Matrix4().setPosition(new Vector3(-100,-1000,-100))) // change from just putting far away, to getting rid of
 			// 		instanced.instanceMatrix.needsUpdate = true
 			// 	}
 			// }

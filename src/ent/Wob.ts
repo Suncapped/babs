@@ -166,10 +166,9 @@ export class Wob extends SharedWob {
 
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
 		const playerZone = playerSelf.controller.playerRig.zone
-		const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
+		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 		for(const wob of arrivalWobs) {
-
 			if(asFarWobs) {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
@@ -250,9 +249,8 @@ export class Wob extends SharedWob {
 				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
 
 				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-	
 				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-				engPositionVector.setY(engPositionVector.y +(feim.boundingSize.y /2) -feim.sink +feim.lift)
+				engPositionVector = feim.heightAdjust(engPositionVector)
 
 				let existingIindex
 				if(!asFarWobs) {

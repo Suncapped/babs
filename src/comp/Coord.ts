@@ -146,14 +146,14 @@ export class YardCoord extends Coord {
 		// shiftiness not needed; it's built into this.zone.ground.position
 		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4, 
-			withCalcY ? this.zone.engineHeightAt(this) : 0, 
+			withCalcY ? this.zone.engineHeightAt(this) : NaN, 
 			(this.zone.ground.position.z) +this.z *4,
 		)
 	}
 	toEngineCoordCentered(withCalcY :'withCalcY' = null) {
 		return new Vector3(
 			(this.zone.ground.position.x) +this.x *4 +2, 
-			withCalcY ? this.zone.engineHeightAt(this) : 0, 
+			withCalcY ? this.zone.engineHeightAt(this) : NaN, 
 			(this.zone.ground.position.z) +this.z *4 +2,
 		)
 	}
