@@ -256,7 +256,7 @@ export class SocketSys {
 							return
 						}
 						vrButton.style.position = 'relative'
-						vrButton.style.bottom = '10px'
+						vrButton.style.bottom = '0px'
 						menuVrArea.style.display = 'block'
 						// menuVrArea.style.textAlign = 'center'
 						menuVrArea.appendChild(vrButton)

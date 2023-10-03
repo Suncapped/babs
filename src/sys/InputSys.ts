@@ -475,6 +475,8 @@ export class InputSys {
 			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 			ev.preventDefault() // Prevent text selection
+
+			// Since we switched from pointerdown back to mousedown, these may be necessary?  No, instead we'll handle it using pointerdown since the event is more similar and easier to pass on.
 		}
 		document.addEventListener('touchstart', touchHandler, {passive:false})
 		document.addEventListener('touchmove', touchHandler, {passive:false})
@@ -587,13 +589,12 @@ export class InputSys {
 				this.setMouseDevice('touchpad')
 			}
 		})
-		document.addEventListener('pointerdown', async e => {
-			const ev = e as FePointerEvent
 
-			if(ev.pointerType === 'touch') {
-				this.setMouseDevice('fingers')
-			}
-			else if(ev.webkitForce > 1) { // Safari only
+		const buttonDownHandler = (e) => {
+			const ev = e as FePointerEvent
+			log.info('buttonDownHandler')
+
+			if(ev.webkitForce > 1) { // Safari only
 				// console.log('ev.webkitForce', ev.webkitForce)
 				this.setMouseDevice('touchpad')
 			}
@@ -731,9 +732,20 @@ export class InputSys {
 			}
 
 
+		}
+		document.addEventListener('pointerdown', (e) => { // Note, standard probably says this gets fired before mousedown :)
+			if(e.pointerType === 'touch') {
+				this.setMouseDevice('fingers')
+				buttonDownHandler(e)
+			}
 		})
+		// Well, pointerdown doesn't fire on multiple mouse buttons *rolleyes* so it's not really equivalent to mousedown.
+		// I see why they do it but I need those mouse buttons unless I want to track that all in the pointer event.
+		// How else can I know a second button is down, except by looking at mousedown itself?
+		document.addEventListener('mousedown', buttonDownHandler)
 
-		document.addEventListener('pointerup', ev => {
+		const buttonUpHandler = (ev) => {
+			log.info('buttonUpHandler')
 			// this.recheckMouseIntersects = true // Especially needed for fingers.  Here too on up?
 			
 			// log.info('mouseOnUp', ev.button, ev.target.id)
@@ -912,7 +924,14 @@ export class InputSys {
 			if (ev.button == 1) {
 				this.mouse.middle = LIFT
 			}
+		}
+		document.addEventListener('pointerup', (e) => {
+			if(e.pointerType === 'touch') {
+				this.setMouseDevice('fingers')
+				buttonUpHandler(e)
+			}
 		})
+		document.addEventListener('mouseup', buttonUpHandler)
 
 		this.canvas.addEventListener('wheel', ev => { // Aka touchpad two finger scrolls
 			// console.log('on wheel', ev.deltaX, ev.deltaY)
@@ -1100,7 +1119,7 @@ export class InputSys {
 
 			if (this.mouse.right) {
 				const mouseSensitivityPercent = 30 // hmm isn't this the same as just changing this.mouseAccumThreshold?
-				this.mouse.accumx += this.mouse.dx * (0.5 * (mouseSensitivityPercent / 100)) //(mouseSensitivityPercent * )
+				this.mouse.accumx += this.mouse.dx * (0.5 * (mouseSensitivityPercent / 100))
 			}
 			else if(this.mouse.device === 'fingers') {
 				const mouseSensitivityPercent = 200
@@ -1200,15 +1219,15 @@ export class InputSys {
 		}
 
 		// Runs every frame, selecting grid position for setDestination
-		if ((this.movelock || this.touchmove ||
-			(!this.topMenuVisibleLocal &&
-				((this.keyboard.w || this.keyboard.s || (this.mouse.right && this.mouse.left)) //  || this.keys.a || this.keys.d
+		if (this.movelock || this.touchmove
+			|| (!this.topMenuVisibleLocal
+				&& (
+					(this.keyboard.w || this.keyboard.s || (this.mouse.right && this.mouse.left)) //  || this.keys.a || this.keys.d
 					|| this.keyboard.up || this.keyboard.down
 					|| this.movelock
-
 				)
 			)
-		)) {
+		) {
 			
 			// log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
 
