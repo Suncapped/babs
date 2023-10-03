@@ -134,6 +134,7 @@ export class RenderSys {
 		for (let [key, value] of Wob.InstancedWobs) {
 			if (currentIndex === this.calcMapIndex) {
 				this.calcNearbyWobs(key)
+				// console.log('calc for ', value.instancedMesh.name)
 				break
 			}
 			currentIndex++
@@ -166,11 +167,11 @@ export class RenderSys {
 	calcMapIndex = 0
 	calcNearbyWobs(bpid :string) {
 		// console.log('calcShowOnlyNearbyWobs', bpid)
+		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
 
 		const playerpos = this.babs.inputSys?.playerSelf?.controller?.playerRig?.position
 		if(!playerpos) return
 
-		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
 		const feim = Wob.InstancedWobs.get(bpid)
 
 		// feim.instancedMesh.computeBoundingBox()
@@ -184,69 +185,35 @@ export class RenderSys {
 		const instanceMatrix = feim.instancedMesh.instanceMatrix
 		
 		// Rather than a cutoff at a number, cutoff based on dist.
-		const distCutoff = 1000// (feim.asFarWobs ? 1000 : 500)
+		const distCutoff = 1000 // (feim.asFarWobs ? 1000 : 500)
 
-		// let nearItems :Array<{dist: number, originalIndex: number}> = []
 		const imLoadedCount = feim.getLoadedCount()
 
 		let iNearby = 0
 		for(let i=0; i<imLoadedCount; i++) { // Each instance is a 4x4 matrix; 16 floats
-			// if(i/16 >= loadedCount) break
-			
 			// Each instance is a 4x4 matrix; 16 floats
 			const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
 			const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
 
-			if(!(x && z)) {
-				if(feim.blueprint_id == 'sneezeweed') {
-
-					// console.log('nox', x) // There's your problem.  It's all null.
-				}
-				continue
-			}
+			if(!(x && z)) continue
 
 			// Get distance from playerpos in 2 dimensions
 			const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 
-			/* Something like:
-			Search for() oldArray
-			When you find oldArray[i] where dist < 500:
-				if i===iNearby, iNearby++ and continue (already in right place)
-				Look at dist of oldArray[iNearby].  
-				If that dist itself is < 500: 
-					iNearby++ and while() until not < 500
-					Then, swap oldArray[i] into oldArray[iNearby]
-					Then iNearby++
-			*/
-
-			let tries = 10000
-			const distanceCondition = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
-			if(distanceCondition) {
-				if(i === iNearby) {
-					iNearby++
-					continue // Already in the right place; skip self
-				}
-				do {
-					// Find next nearby that's far
-					const xOld = instanceMatrix.array[iNearby*16 +12] +this.babs.worldSys.shiftiness.x
-					const zOld = instanceMatrix.array[iNearby*16 +14] +this.babs.worldSys.shiftiness.z
-					const distOld = Math.sqrt(Math.pow(playerpos.x -xOld, 2) +Math.pow(playerpos.z -zOld, 2))
-
-					const distanceCondition2 = feim.asFarWobs ? distOld >= distCutoff : distOld < distCutoff
-					if(distanceCondition2) {
-						iNearby++
-						continue
-					}
-				} while(tries < 10000) // Just in case
-
+			// iNearby finds how many wobs total are nearby, for setting .count.
+			// Swap anything nearby into incrementing iNearby, then set .count to that.
+			const isNearbyIsh = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
+			if(isNearbyIsh) {
 				// Swap far iNearby with this near i
-				Zone.swapWobsAtIndexes(iNearby, i, feim)
+				if(i !== iNearby) {
+					Zone.swapWobsAtIndexes(iNearby, i, feim)
+					// console.log('swapped: ', feim.instancedMesh.name, '('+imLoadedCount+')', iNearby, i)
+				}
 				iNearby++
 			}
 		}
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
-
 		feim.instancedMesh.count = iNearby 
 	}
 }

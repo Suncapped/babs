@@ -46,6 +46,7 @@ export class Zone extends SharedZone {
 	override removeWobGraphicAt(x :number, z :number) {
 		const existingWob = this.getWob(x, z)
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
+		// log('existing', existingWob)
 		return this.removeWobGraphic(existingWob)
 
 	}
@@ -97,6 +98,9 @@ export class Zone extends SharedZone {
 	}
 
 	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :InstancedWobs, doDeleteSource :'delete' = null) {
+		if(sourceIndex === targetIndex) { // No change
+			return
+		}
 		const sourceMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
 		const targetMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(targetIndex, targetMatrix)
 
