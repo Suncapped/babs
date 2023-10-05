@@ -54,7 +54,6 @@ export class Babs {
 
 	camera
 	scene :Scene
-	renderer
 
 	group :Group
 
@@ -65,9 +64,6 @@ export class Babs {
 	worldSys :WorldSys
 	socketSys :SocketSys
 	public renderSys :RenderSys
-
-	public inVr :boolean = false
-
 
 	ents = new Map<number, Ent>() // id key, value ent
 	compcats = new Map() // comType key, value is an array of those coms
@@ -118,15 +114,6 @@ export class Babs {
 		})(window.navigator.userAgent.toLowerCase())
 		log.info('Browser is', this.browser)
 
-		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
-			this.vrSupported = vrSupported
-
-			if(this.vrSupported) {
-				const vrButton = VRButton.createButton(this.renderer)
-				document.body.appendChild(vrButton)
-			}
-		})
-
 		this.socketSys = new SocketSys(this)
 
 		this.uiSys = new UiSys(this)
@@ -139,10 +126,19 @@ export class Babs {
 		this.scene = this.renderSys._scene
 		this.camera = this.renderSys._camera
 
+		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
+			this.vrSupported = vrSupported
+
+			if(this.vrSupported) {
+				const vrButton = VRButton.createButton(this.renderSys.renderer)
+				document.body.appendChild(vrButton)
+			}
+		})
+
 		this.group = new Group
 		this.group.name = 'fegroup'
 		this.scene.add(this.group)
-		this.group.scale.setScalar(CameraSys.SCALE)
+		this.group.scale.setScalar(CameraSys.CurrentScale)
 
 		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 

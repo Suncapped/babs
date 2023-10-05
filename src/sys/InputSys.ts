@@ -629,58 +629,64 @@ export class InputSys {
 						}
 					}
 					else { // Normal left click on canvas
+
+						if(!this.babs.uiSys.isGameAway) {
+							this.raycastSetPickedObject() // Needed for fingers	on press
+							// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown '+ ev.button +', '+ ev.target.id +', '+ this.pickedObject?.poid)
+	
+	
+							// Single click
+							if (this.mouse.ldouble === false) { // First click
+								if(this.isAskingTarget) { // In target selection mode
+									// todo make work for non-instanced things, and ground, players, etc.
+									const coord = this.pickedObject?.yardCoord
+									if(!coord) {
+										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no effect>')
+									}
+	
+									const zone = coord.zone
+									const wob = zone.getWob(coord.x, coord.z)
+									if(!wob) {
+										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
+									}
+									else {
+										this.babs.socketSys.send({
+											action: {
+												verb: 'used',
+												noun: this.askTargetSourceWob?.id(),
+												data: {
+													target: wob.id(),
+												},
+											}
+										})
+									}
+									document.body.style.cursor = 'auto'
+									this.isAskingTarget = false
+									this.askTargetSourceWob = null
+	
+								}
+								else { // First click (and not in target selection mode)
+									
+									if(this.pickedObject) {
+										this.mousedownPickedObject = this.pickedObject
+										this.mousedownPickedObject.poMousedownTime = Date.now()
+										// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown pickedObject ' + this.mousedownPickedObject.poid)
+	
+									}
+			
+									this.mouse.ldouble = Date.now()
+								}
+	
+							} // Double click
+							else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
+								this.mouse.ldouble = 0
+								
+							}
+						}
+						
 						this.babs.uiSys.leftClickCanvas(ev)
 
-						this.raycastSetPickedObject() // Needed for fingers	on press
-						// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown '+ ev.button +', '+ ev.target.id +', '+ this.pickedObject?.poid)
-					}
-
-
-					// Single click
-					if (this.mouse.ldouble === false) { // First click
-						if(this.isAskingTarget) { // In target selection mode
-							// todo make work for non-instanced things, and ground, players, etc.
-							const coord = this.pickedObject?.yardCoord
-							if(!coord) {
-								this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no effect>')
-							}
-
-							const zone = coord.zone
-							const wob = zone.getWob(coord.x, coord.z)
-							if(!wob) {
-								this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
-							}
-							else {
-								this.babs.socketSys.send({
-									action: {
-										verb: 'used',
-										noun: this.askTargetSourceWob?.id(),
-										data: {
-											target: wob.id(),
-										},
-									}
-								})
-							}
-							document.body.style.cursor = 'auto'
-							this.isAskingTarget = false
-							this.askTargetSourceWob = null
-
-						}
-						else { // First click (and not in target selection mode)
-							
-							if(this.pickedObject) {
-								this.mousedownPickedObject = this.pickedObject
-								this.mousedownPickedObject.poMousedownTime = Date.now()
-								// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'mousedown pickedObject ' + this.mousedownPickedObject.poid)
-
-							}
-	
-							this.mouse.ldouble = Date.now()
-						}
-
-					} // Double click
-					else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
-						this.mouse.ldouble = 0
+						
 						
 					}
 

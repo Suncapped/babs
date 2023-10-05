@@ -44,6 +44,9 @@ export class Flame extends Comp {
 		noiseScaleZ : 1.5,//1.0,
 	}
 
+	static PointLightIntensity = 400
+	static PointLightDistance = 100
+
 	static fireTex :Texture
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
 		// log('Flame.Create, right before wantslight.push', wob.name)
@@ -51,8 +54,10 @@ export class Flame extends Comp {
 
 		// Init static singletons
 		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
-			const pointLight = new PointLight(0xeb7b54, 400 *CameraSys.SCALE, 100 *CameraSys.SCALE, 1.5) // 1.5 is more fun casting light on nearby trees
+			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
 			// pointLight.castShadow = true // Complex?
+			pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
+			pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
 			pointLight.name = 'flamelight'
 			Flame.lightPool.push(pointLight)
 			babs.group.add(pointLight)

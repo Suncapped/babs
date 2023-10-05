@@ -6,7 +6,10 @@ import { Controller } from '@/comp/Controller'
 import type { FeObject3D } from '@/ent/Wob'
 
 export class CameraSys {
-	static SCALE = 1//1/3.281 // Feet to meters
+	static FT_SCALE = 1
+	static VR_SCALE = 1/3.281 // Feet to meters
+	static CurrentScale = CameraSys.FT_SCALE
+	
 	static DefaultOffsetHeight = 15
 
 	_target :Controller
@@ -30,7 +33,7 @@ export class CameraSys {
 		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
 		
-		this.babs.group.add(this.cameraGroup)
+		// this.babs.group.add(this.cameraGroup)
 	}
 
 	_CalculateIdealOffset() {
@@ -40,7 +43,7 @@ export class CameraSys {
 		// const distanceLerp = MathUtils.lerp(minDistance, maxDistance, Math.max(this.offsetHeight, limitDistance)/limitDistance)
 
 		let offsetDist = -40
-		if (this.offsetHeight < 30) {
+		if (this.offsetHeight < 30) { // When near the avatar, distance can change (approaches avatar)
 			offsetDist = offsetDist + (30 - this.offsetHeight)
 		}
 		// let mat = this._target.playerRig.children[0]?.children[1]?.material
@@ -54,16 +57,19 @@ export class CameraSys {
 			this._target.playerRig.visible = true
 			playerBbox.clickable = true
 		}
+
 		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
+		if(this.babs.renderSys.isVrActive) {
+			this.offsetHeight = 1
+		}
+
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera
-		
-		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist)
+		this.idealOffset = new Vector3(-0, this.offsetHeight, offsetDist).multiplyScalar(CameraSys.CurrentScale)
 
 		this.idealOffset.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		this.idealOffset.applyQuaternion(this._target.playerRig.quaternion)
 		// this.idealOffset.add(this._target.playerRig.position)
-		this.idealOffset.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.SCALE))
-		// this.idealOffset.multiplyScalar(1/CameraSys.SCALE)
+		this.idealOffset.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.CurrentScale))
 
 		// return idealOffset
 	}
@@ -71,13 +77,18 @@ export class CameraSys {
 	_CalculateIdealLookat() {
 		// const idealLookat = new Vector3(sideOffset, 10, 0)
 		
-		const idealLookat = new Vector3(0, 10, 0)
+		const idealLookatHeight = new Vector3(0, 10, 0)
+		if(this.babs.renderSys.isVrActive) {
+			idealLookatHeight.y = 1
+		}
+		const idealLookat = idealLookatHeight.multiplyScalar(CameraSys.CurrentScale)
+
 
 		idealLookat.applyAxisAngle(new Vector3(0, -1, 0), this._target.getHeadRotationX())
 		idealLookat.applyQuaternion(this._target.playerRig.quaternion)
 
 		// idealLookat.add(this._target.playerRig.position)
-		idealLookat.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.SCALE))//.multiplyScalar(CameraSys.SCALE) // Why .SCALE?
+		idealLookat.add(this._target.playerRig.position.clone().multiplyScalar(CameraSys.CurrentScale))
 		// TODO note: It's possible that all uses of playerRig.position could be similarly off?  Like with direcitonallight/helper.
 		
 		return idealLookat
@@ -116,22 +127,6 @@ export class CameraSys {
 				const renderer = this.babs.renderSys.renderer
 				this.xrCam = renderer.xr.getCamera()?.cameras[0]
 				if(this.xrCam) {
-	
-					// const renderer = this.babs.renderSys.renderer
-					// // console.log(xrCam)
-					// // this.babs.renderSys.vrSupported = false
-	
-					// const frame = renderer.xr.getFrame();
-					// const refSpace = renderer.xr.getReferenceSpace();
-					// const views = frame.getViewerPose(refSpace).views;
-					// let pos = views[0].transform.position;
-					// // const c = renderer.xr.getCamera().cameras[0].position;
-					
-					// Temporary hack to offset everything to where the camera seems to start.
-					// this.babs.group.children.forEach(child => {
-					// 	child.position.add(new Vector3(-100, -8360, -500))
-					// })
-	
 	
 					// Controllers
 					// Get the 1st controller

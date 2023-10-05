@@ -86,7 +86,7 @@ export class UiSys {
 	async gotWindowFocus(ev? :FocusEvent) {
 		log.info('gotWindowFocus', ev)
 
-		// if(ev && !this.babs.inVr && this.babs.inputSys.mouse.device == 'mouse') {
+		// if(ev && !this.babs.renderSys.isVrActive && this.babs.inputSys.mouse.device == 'mouse') {
 		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
 		// }
 
@@ -101,7 +101,7 @@ export class UiSys {
 
 	lostFocus() {
 		log.info('lostFocus')
-		if(!this.babs.inVr) {
+		if(!this.babs.renderSys.isVrActive) {
 			this.awayGame()
 		}
 
@@ -141,7 +141,7 @@ export class UiSys {
 	}
 
 	async tryPointerLock() {
-		if(!this.babs.inVr && this.babs.inputSys?.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
+		if(!this.babs.renderSys.isVrActive && this.babs.inputSys?.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
 			try {
 				const promise = await document.body.requestPointerLock()
 				return true

@@ -2,12 +2,18 @@ import { UiSys } from './UiSys'
 import { log } from './../Utils'
 import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace } from 'three'
 import { WorldSys } from './WorldSys'
-import { VRButton } from 'three/addons/webxr/VRButton.js'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
 import { Wob } from '@/ent/Wob'
 import { Zone } from '@/ent/Zone'
 import { CameraSys } from './CameraSys'
+// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+// import { TAARenderPass } from 'three/addons/postprocessing/TAARenderPass.js'
+// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+// import { SSGIEffect, TRAAEffect, MotionBlurEffect, VelocityDepthNormalPass } from 'realism-effects'
+// import { EffectComposer as PostproEffectComposer, EffectPass as PostproEffectPass, RenderPass as PostproRenderPass } from 'postprocessing'
+
 
 export class RenderSys {
 
@@ -17,22 +23,33 @@ export class RenderSys {
 	_scene :Scene
 	public documentHasFocus :boolean = true
 	public recalcImmediatelyBpids = new Set<string>()
+	public isVrActive = false
 
 	// Custom FPS counter
 	public frames = 0
 	public prevTime = performance.now()
 	public fpsDetected = 0
 
+	// // Postprocessing, eg for TAA in VR
+	// composer :EffectComposer
+	// taaRenderPass :TAARenderPass
+	// renderPass :RenderPass
+
+	// postproComposer :PostproEffectComposer
+
 	constructor(babs :Babs) {
 		this.babs = babs
 		this.renderer = new WebGLRenderer({ 
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
-			antialias: true,
+			antialias: true, // todo reenable for non-vr?
+			// stencil: false, // Hmm
+			// depth: false, // lol no!
 			// powerPreference: 'high-performance',
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
 			logarithmicDepthBuffer: true, // Can cause shader problems; fixed for flame (search 'logdepthbuf' ), MSAA may need fix too?  https://github.com/mrdoob/three.js/issues/22017
+			// also: "Note that this setting uses gl_FragDepth if available which disables the Early Fragment Test optimization and can cause a decrease in performance." // todo test this out?
 			// On VR, that helps with far tree base z fighting, but doesn't help with wob antialiasing
 
 		})
@@ -62,7 +79,7 @@ export class RenderSys {
 		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
-		const nearClip = 12 *(CameraSys.SCALE) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
+		const nearClip = 12 *(CameraSys.CurrentScale) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
 		this._camera = new PerspectiveCamera(fov, window.innerWidth / window.innerHeight, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
 		this._camera.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI)
 		// ^ eek "Camera’s look along the negative z-axis by default. You have to rotate the camera around the y-axis around 180 degrees so it looks along the positive z-axis like ordinary 3D objects."
@@ -113,6 +130,81 @@ export class RenderSys {
 					// Hmm I think there's a bug where some are getting double
 				}
 			}
+
+			
+			const xrSession = this.renderer.xr.getSession()
+			const isVrActiveNow = !!xrSession
+			if(!this.isVrActive && isVrActiveNow) { // Entering VR
+				CameraSys.CurrentScale = CameraSys.VR_SCALE
+				this._camera.near = 0.1
+				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
+
+				Flame.lightPool.forEach((pointLight) => {
+					pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
+					pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
+				})
+
+				// Determine from XRWebGLLayer whether antialias is supported
+				const antialias = xrSession.renderState.baseLayer.antialias
+				// I could try WebXRManager.setFramebufferScaleFactor
+
+				console.log('entering vr', antialias, this.babs.group.scale)
+				// setTimeout(() => {
+				// 	this.babs.uiSys.aboveHeadChat(this.babs.idSelf, 'VR antialias ability: ' + antialias)
+				// }, 5000)
+				// Activate another form of AA if one doesn't exist
+				if(!antialias) {
+					// this.composer = new EffectComposer(this.renderer)
+
+					// this.renderPass = new RenderPass(this._scene, this._camera)
+					// this.renderPass.enabled = true
+					// this.composer.addPass(this.renderPass)
+
+					// this.taaRenderPass = new TAARenderPass(this._scene, this._camera)
+					// this.taaRenderPass.unbiased = false
+					// this.taaRenderPass.sampleLevel = 4
+					// this.taaRenderPass.enabled = true
+					// this.taaRenderPass.accumulate = true
+					// this.composer.addPass(this.taaRenderPass)
+	
+					// const outputPass = new OutputPass()
+					// this.composer.addPass( outputPass )
+
+					// That doesn't support WebXR!  https://github.com/mrdoob/three.js/pull/18846
+					// (As of Oct 2023, Threejs isn't close to supporting any post processing for WebXR.
+					// So for antialiasing I'll have to use something else.
+					// Trying this other one from postprocessing.js and realism-effects:
+					
+					// Ah, also not easy!
+					// Waiting on https://github.com/mrdoob/three.js/pull/26160
+					// via https://github.com/search?q=repo%3Apmndrs%2Fpostprocessing+webxr&type=discussions 
+					// this.postproComposer = new PostproEffectComposer(this.renderer)
+
+					// const renderPass = new PostproRenderPass(this._scene, this._camera)
+					// this.postproComposer.addPass(renderPass)
+
+					// const velocityDepthNormalPass = new VelocityDepthNormalPass(this._scene, this._camera)
+					// this.postproComposer.addPass(velocityDepthNormalPass)
+
+					// const traaEffect = new TRAAEffect(this._scene, this._camera, velocityDepthNormalPass)
+					// const effectPass = new PostproEffectPass(this._camera, traaEffect)
+
+					// this.postproComposer.addPass(effectPass)
+					
+				}
+
+			}
+			else if(this.isVrActive && !isVrActiveNow) { // Leaving VR
+				CameraSys.CurrentScale = CameraSys.FT_SCALE
+				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
+				this._camera.near = 12 *CameraSys.CurrentScale
+
+				setTimeout(() => {
+					window.location.reload()
+				}, 1000)
+			}
+			this.isVrActive = isVrActiveNow
+
 		}, 1000)
 	}
 
@@ -120,12 +212,13 @@ export class RenderSys {
 		this._camera.aspect = window.innerWidth / window.innerHeight
 		this._camera.updateProjectionMatrix()
 		this.renderer.setSize(window.innerWidth, window.innerHeight)
+		// this.composer.setSize(window.innerWidth, window.innerHeight)
 	}
 
 	update(dt) {
 		if(this.recalcImmediatelyBpids.size > 0) {
 			// Run recalc for each item in the Set
-			this.recalcImmediatelyBpids.forEach(bpid => this.calcNearbyWobs(bpid))
+			this.recalcImmediatelyBpids.forEach((bpid) => this.calcNearbyWobs(bpid))
 			this.recalcImmediatelyBpids.clear()
 		}
 
@@ -144,24 +237,16 @@ export class RenderSys {
 			this.calcMapIndex = 0
 		}
 		
-		// Scaling attempt for VR
-		const scaleMatrix = new Matrix4().makeScale(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
-		// this._camera.matrixWorldInverse.multiply(scaleMatrix)
-		// this._camera.updateMatrixWorld()
-		// this._camera.updateMatrix()
-		// // Set camera group scale too?
-		// // this.babs.cameraSys.cameraGroup.scale.set(CameraSys.SCALE, CameraSys.SCALE, CameraSys.SCALE)
-
-		// Or like this?
-		// let cmw = this._camera.matrixWorld
-		// cmw = cmw.invert()
-		// this.babs.cameraSys.cameraGroup.matrixWorld.copy(cmw.multiply(scaleMatrix))
-		// this.babs.cameraSys.cameraGroup.updateMatrixWorld()
-		// this.babs.cameraSys.cameraGroup.updateMatrix()
-
-		// Or a full scale?
-
+		// if(this.postproComposer) {
+		// 	this.postproComposer.render(dt)
+		// }
+		// else if(this.composer) {
+		// 	this.composer.render(dt)
+		// 	console.log('this.composer render', dt *1000)
+		// }
+		// else {
 		this.renderer.render(this._scene, this._camera)
+		// }
 	}
 
 	calcMapIndex = 0
