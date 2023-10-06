@@ -22,6 +22,7 @@ import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
 import { get as svelteGet } from 'svelte/store'
 import type { Sendable } from '@/shared/consts'
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 export class SocketSys {
 	static pingSeconds = 30
@@ -246,23 +247,35 @@ export class SocketSys {
 
 			// Move button to menu
 			if(this.babs.vrSupported) {
-				const tryMoveVrButton = () => { 
-					setTimeout(() => {
-						// console.log('trying to move')
-						const vrButton = document.getElementById('VRButton')
-						const menuVrArea = document.getElementById('menuVrArea')
-						if(!vrButton || !menuVrArea) {
-							tryMoveVrButton()
-							return
-						}
-						vrButton.style.position = 'relative'
-						vrButton.style.bottom = '0px'
-						menuVrArea.style.display = 'block'
-						// menuVrArea.style.textAlign = 'center'
-						menuVrArea.appendChild(vrButton)
-					}, 200) 
+				const vrButton = VRButton.createButton(this.babs.renderSys.renderer)
+				document.body.appendChild(vrButton)
+				setTimeout(() => {
+					vrButton.style.left = 'unset'
+					vrButton.style.right = '20px'
+				}, 100)
+
+				if(!load.self.visitor) {
+					const tryMoveVrButton = () => { 
+						setTimeout(() => {
+							// console.log('trying to move')
+							const vrButton = document.getElementById('VRButton')
+							const menuVrArea = document.getElementById('menuVrArea')
+							if(!vrButton || !menuVrArea) {
+								tryMoveVrButton()
+								return
+							}
+							vrButton.style.left = 'unset'
+							vrButton.style.right = 'unset'
+							vrButton.style.position = 'relative'
+							vrButton.style.bottom = '0px'
+							menuVrArea.style.display = 'block'
+							menuVrArea.style.textAlign = 'center'
+							// menuVrArea.style.textAlign = 'center'
+							menuVrArea.appendChild(vrButton)
+						}, 300) 
+					}
+					tryMoveVrButton()
 				}
-				tryMoveVrButton()
 			}
 
 
@@ -562,7 +575,7 @@ export class SocketSys {
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
 			// this.babs.worldSys.snapshotRealHourFraction = 2400 // night?
 			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *21) // dawn
-			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *30) // day
+			// this.babs.worldSys.snapshotRealHourFraction = 60*20
 			// this.babs.worldSys.snapshotRealHourFraction += +(60 *30) // Flip daytime&nighttime?
 		}
 		else if('creatures' in payload) {

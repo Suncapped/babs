@@ -26,7 +26,6 @@ import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
 import type { Wob } from './ent/Wob'
 import type { Zone } from './ent/Zone'
-import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 declare global {
 	interface Window {
@@ -127,12 +126,10 @@ export class Babs {
 		this.camera = this.renderSys._camera
 
 		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
+			// console.log('VR supported', vrSupported)
 			this.vrSupported = vrSupported
-
-			if(this.vrSupported) {
-				const vrButton = VRButton.createButton(this.renderSys.renderer)
-				document.body.appendChild(vrButton)
-			}
+		}).catch((error) => {
+			console.error('Error checking for VR support:', error)
 		})
 
 		this.group = new Group
@@ -236,3 +233,7 @@ debugMode.subscribe(on => {
 })
 
 // export default babs
+
+/*
+credits_time
+*/

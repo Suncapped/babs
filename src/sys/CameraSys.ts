@@ -60,7 +60,7 @@ export class CameraSys {
 
 		this.offsetHeight = Math.max(this.offsetHeight, -5) // Don't go too far below ground
 		if(this.babs.renderSys.isVrActive) {
-			this.offsetHeight = 1
+			this.offsetHeight = 0
 		}
 
 		offsetDist = Math.min(offsetDist, 0) // Never go positive and flip camera
@@ -79,7 +79,7 @@ export class CameraSys {
 		
 		const idealLookatHeight = new Vector3(0, 10, 0)
 		if(this.babs.renderSys.isVrActive) {
-			idealLookatHeight.y = 1
+			idealLookatHeight.y = 0
 		}
 		const idealLookat = idealLookatHeight.multiplyScalar(CameraSys.CurrentScale)
 

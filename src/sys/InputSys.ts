@@ -474,7 +474,12 @@ export class InputSys {
 		const touchHandler = (ev) => {
 			log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
-			ev.preventDefault() // Prevent text selection
+
+			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touchHandler: ' + ev.target?.id + ', '+ev.type)
+			
+			if(ev.target?.id === 'canvas') { // Only on canvas, to allow clicking on html (this was done for the Quest 2 so you could tap login)
+				ev.preventDefault() // Prevent text selection over entire thing (iOS on long press)
+			}
 
 			// Since we switched from pointerdown back to mousedown, these may be necessary?  No, instead we'll handle it using pointerdown since the event is more similar and easier to pass on.
 		}
@@ -487,24 +492,18 @@ export class InputSys {
 		this.liftedObject = null
 		interface FePointerEvent extends PointerEvent { 
 			target: HTMLElement,
-			mozMovementX: number,
-			mozMovementY: number,
-			webkitMovementX: number,
-			webkitMovementY: number,
-			mozOffsetX: number,ht
-			mozOffsetY: number,
-			webkitOffsetX: number,
-			webkitOffsetY: number,
 			webkitForce?: number,
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
 			const ev = e as FePointerEvent
 			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
+			
+			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'pointermove: ' + ev.pointerType + ', '+this.mouse.device+', '+this.mouse.right+', '+this.mouse.left)
 
 			this.recheckMouseIntersects = true
 			
 
-			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor
+			e.stopPropagation() // Speed up event handling, especially around css fake cursor `customcursor`
 
 			if(ev.pointerType === 'touch') {
 				this.setMouseDevice('fingers')
@@ -531,12 +530,12 @@ export class InputSys {
 			// Touchpad instead uses .onwheel for gestures.
 			// Doing this solves the above multiple events issues for my uses:
 			if(this.mouse.right) {
-				this.mouse.dx += ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
-				this.mouse.dy += ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
+				this.mouse.dx += ev.movementX || 0
+				this.mouse.dy += ev.movementY || 0
 			}
 			else {
-				this.mouse.dx = ev.movementX || ev.mozMovementX || ev.webkitMovementX || 0
-				this.mouse.dy = ev.movementY || ev.mozMovementY || ev.webkitMovementY || 0
+				this.mouse.dx = ev.movementX || 0
+				this.mouse.dy = ev.movementY || 0
 			}
 			
 			// https://stackoverflow.com/questions/6073505/
@@ -592,7 +591,8 @@ export class InputSys {
 
 		const buttonDownHandler = (e) => {
 			const ev = e as FePointerEvent
-			log.info('buttonDownHandler')
+			log.info('buttonDownHandler', e.target?.id)
+			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'bdown ' + ev.button + ', '+ev.target?.id)
 
 			if(ev.webkitForce > 1) { // Safari only
 				// console.log('ev.webkitForce', ev.webkitForce)
@@ -1128,9 +1128,11 @@ export class InputSys {
 				this.mouse.accumx += this.mouse.dx * (0.5 * (mouseSensitivityPercent / 100))
 			}
 			else if(this.mouse.device === 'fingers') {
-				const mouseSensitivityPercent = 200
-				this.mouse.accumx += this.mouse.dx * mouseSensitivityPercent / 100
-				this.mouse.scrollaccumy -= this.mouse.dy
+				if(this.mouse.left) {
+					const mouseSensitivityPercent = 200
+					this.mouse.accumx += this.mouse.dx * mouseSensitivityPercent / 100
+					this.mouse.scrollaccumy -= this.mouse.dy
+				}
 			}
 			else {
 				// this.mouse.accumx = this.mouse.accumy = 0
@@ -1734,6 +1736,10 @@ export class InputSys {
 
 		log('Device detected: ', newDevice, `(was ${this.mouse.device})`)
 		// Device has changed.
+
+		if(newDevice === 'fingers') {
+			// this.babs.renderSys.renderer.shadowMap.enabled = false // todo quest vs mobile
+		}
 
 		if(this.mouse.device === undefined && newDevice === 'mouse') {
 			// Joined the game with saved mouse device; mouse gets set so we need them to click to pointerlock.

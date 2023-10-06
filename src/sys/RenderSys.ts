@@ -270,7 +270,8 @@ export class RenderSys {
 		const instanceMatrix = feim.instancedMesh.instanceMatrix
 		
 		// Rather than a cutoff at a number, cutoff based on dist.
-		const distCutoff = 1000 // (feim.asFarWobs ? 1000 : 500)
+		const distCutoff = this.babs.inputSys.mouse.device === 'fingers' ? 500 : 1000 // (feim.asFarWobs ? 1000 : 500)
+		// 'fingers' is currently phone and quest 2.
 
 		const imLoadedCount = feim.getLoadedCount()
 
