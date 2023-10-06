@@ -233,7 +233,3 @@ debugMode.subscribe(on => {
 })
 
 // export default babs
-
-/*
-credits_time
-*/
