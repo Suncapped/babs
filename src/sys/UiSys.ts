@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
-import { isAwayUiDisplayed, rightMouseDown, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
+import { isAwayUiDisplayed, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
 import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
 import { get as svelteGet } from 'svelte/store'
@@ -90,7 +90,7 @@ export class UiSys {
 		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
 		// }
 
-		const gotLock = await this.tryPointerLock()
+		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
@@ -122,7 +122,7 @@ export class UiSys {
 
 	async leftClickCanvas(ev :MouseEvent) {
 		log.info('leftClickCanvas', ev)
-		const gotLock = await this.tryPointerLock()
+		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
@@ -134,14 +134,17 @@ export class UiSys {
 	}
 	async rightClickCanvas(ev :MouseEvent) {
 		log.info('rightClickCanvas', ev)
-		const gotLock = await this.tryPointerLock()
+		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
 	}
 
-	async tryPointerLock() {
-		if(!this.babs.renderSys.isVrActive && this.babs.inputSys?.mouse.device == 'mouse' && !this.babs.inputSys.isPointerLocked) {
+	async tryPermanentPointerLock() {
+		if(this.babs.inputSys.usePermanentPointerLock 
+			&& !this.babs.renderSys.isVrActive 
+			&& this.babs.inputSys?.mouse.device == 'mouse' 
+			&& !this.babs.inputSys.isPointerLocked) {
 			try {
 				const promise = await document.body.requestPointerLock()
 				return true

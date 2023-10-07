@@ -124,7 +124,7 @@ export class InputSys {
 	mouseAccumThreshold = 80 // Degrees at which mouse left/right movement causes a character rotation
 	headTurnMaxDegrees = 45 // Determines at what point the view will snap turn
 	doubleClickMs = 400 // MS was 500ms
-	movelock = false // Autorun
+	autorun = false // Autorun
 	touchmove :boolean|number|'auto' = 0 // Touchpad movement gesture state. -1 (back), 0 (stop), 1 (forward), 'auto' (autorun)
 	runmode = true // Run mode, as opposed to walk mode
 	topMenuVisibleLocal
@@ -150,6 +150,7 @@ export class InputSys {
 	nickTargetId :number
 
 	isPointerLocked = false
+	usePermanentPointerLock = false
 
 	constructor(babs :Babs, player :Player, mousedevice) {
 		this.babs = babs
@@ -167,16 +168,17 @@ export class InputSys {
 			if (document.pointerLockElement) {
 				this.isPointerLocked = true
 				log.info('The pointer lock status is now locked')
-				this.customcursor.style.display = 'block'
-
-				// this.customcursor.style.left = `${this.mouse.x}px`
-				// this.customcursor.style.top = `${this.mouse.y}px`
-				this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
+				if(this.usePermanentPointerLock) {
+					this.customcursor.style.display = 'block'
+					this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
+				}
 			} else {
 				this.isPointerLocked = false
 				log.info('The pointer lock status is now unlocked')
-				this.customcursor.style.display = 'none'
-				this.babs.uiSys.awayGame() // We might not get esc key event?  Also makes it clearer they're out.
+				if(this.usePermanentPointerLock) {
+					this.customcursor.style.display = 'none'
+					this.babs.uiSys.awayGame() // We might not get esc key event?  Also makes it clearer they're out.
+				}
 			}
 		}, false)
 
@@ -337,10 +339,10 @@ export class InputSys {
 					// ev.stopImmediatePropagation() // Doesn't work to prevent Ctext.svelte chatbox from receiving this event
 				}
 
-				// If arrows are used for movement, it breaks out of movelock or touchmove
+				// If arrows are used for movement, it breaks out of autorun or touchmove
 				if (this.keyboard.up === PRESS || this.keyboard.down === PRESS
 					|| this.keyboard.w === PRESS || this.keyboard.s === PRESS) {
-					this.movelock = false
+					this.autorun = false
 					this.touchmove = false
 				}
 
@@ -550,7 +552,7 @@ export class InputSys {
 			this.mouse.y = ev.clientY// || ev.mozOffsetY || ev.webkitOffsetY || 0
 			// Actually, offsetX is based on current div!  So for canvas it applies to game, but for bag it applies to bag child!
 
-			if(this.isPointerLocked && !this.mouse.right) {
+			if(this.usePermanentPointerLock && this.isPointerLocked && !this.mouse.right) {
 				const [xOldPos, yOldPos] = this.customcursor.style.transform.replace('translate(', '').split(', ').map(s => parseInt(s))
 				// console.log('OldPos', xOldPos, yOldPos)
 
@@ -600,7 +602,7 @@ export class InputSys {
 			}
 
 			// Set mouse position; copied from 'pointermove':
-			if(this.isPointerLocked && !this.mouse.right) { // pointerlocked
+			if(this.usePermanentPointerLock && this.isPointerLocked && !this.mouse.right) { // pointerlocked
 				const [xOldPos, yOldPos] = this.customcursor.style.transform.replace('translate(', '').split(', ').map(s => parseInt(s))
 				this.mouse.x = xOldPos +this.mouse.dx
 				this.mouse.y = yOldPos +this.mouse.dy
@@ -623,9 +625,9 @@ export class InputSys {
 						// Modern touchpads don't have both buttons to click at once; so this must be a mouse
 						this.setMouseDevice('mouse')
 
-						// Turn off movelock if hitting left (while right) after a delay
-						if(this.movelock && Date.now() - this.mouse.ldouble > this.doubleClickMs) {
-							this.movelock = false
+						// Turn off autorun if hitting left (while right) after a delay
+						if(this.autorun && Date.now() - this.mouse.ldouble > this.doubleClickMs) {
+							this.autorun = false
 						}
 					}
 					else { // Normal left click on canvas
@@ -701,24 +703,34 @@ export class InputSys {
 						// Modern touchpads don't have both buttons to click at once; it's a mouse
 						this.setMouseDevice('mouse')
 						
-						// Right+left mouse during movelock, stops movement
-						if(this.movelock) {
-							this.movelock = false
+						// Right+left mouse during autorun, stops movement
+						if(this.autorun) {
+							this.autorun = false
 						}
 					}
 					else { // Normal right click on canvas
-						this.babs.uiSys.rightClickCanvas(ev)
+
+						if(this.babs.renderSys.documentHasFocus) { // Only counts if window has focus
+							this.babs.uiSys.rightClickCanvas(ev)
+						}
 					}
 
 
 					if (this.mouse.device === 'touchpad') {
-						// Two-finger click on touchpad toggles touchmove (similar to movelock)
+						// Two-finger click on touchpad toggles touchmove (similar to autorun)
 						if (this.touchmove === 0) {
 							this.touchmove = 'auto'
 						}
 						else {
 							this.touchmove = 0
 							this.mouse.scrollaccumy = 0
+						}
+					}
+
+					if(this.mouse.device === 'mouse') {
+						if(this.babs.renderSys.documentHasFocus) { // Only counts if window has focus
+							log.info('trying quick mouse lock')
+							document.body.requestPointerLock()
 						}
 					}
 				}
@@ -728,7 +740,7 @@ export class InputSys {
 					// PS it's a mouse
 					this.setMouseDevice('mouse')
 					this.mouse.middle = PRESS
-					this.movelock = !this.movelock
+					this.autorun = !this.autorun
 				}
 
 			}{
@@ -924,7 +936,7 @@ export class InputSys {
 
 				this.mouse.ldouble = 0
 
-				// document.exitPointerLock?.()
+				document.exitPointerLock()
 				this.canvas.style.cursor = 'inherit'
 			}
 			if (ev.button == 1) {
@@ -1094,13 +1106,13 @@ export class InputSys {
 		}
 
 		if(this.mouse.right === PRESS) {
-			if(this.isPointerLocked) {
+			if(this.usePermanentPointerLock && this.isPointerLocked) {
 				// Hide cursor while controlling character right rightmouse hold
 				this.babs.inputSys.customcursor.style.display = 'none'
 			}
 		}
 		if(this.mouse.right === LIFT) {
-			if(this.isPointerLocked) {
+			if(this.usePermanentPointerLock && this.isPointerLocked) {
 				// Show cursor while controlling character right rightmouse hold
 				this.babs.inputSys.customcursor.style.display = 'block'
 			}
@@ -1227,12 +1239,12 @@ export class InputSys {
 		}
 
 		// Runs every frame, selecting grid position for setDestination
-		if (this.movelock || this.touchmove
+		if (this.autorun || this.touchmove
 			|| (!this.topMenuVisibleLocal
 				&& (
 					(this.keyboard.w || this.keyboard.s || (this.mouse.right && this.mouse.left)) //  || this.keys.a || this.keys.d
 					|| this.keyboard.up || this.keyboard.down
-					|| this.movelock
+					|| this.autorun
 				)
 			)
 		) {
@@ -1243,13 +1255,13 @@ export class InputSys {
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
 			// log.info('vector!', tempMatrix, vector)
 
-			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.keyboard.s || this.keyboard.down || this.movelock || this.touchmove) {
+			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.keyboard.s || this.keyboard.down || this.autorun || this.touchmove) {
 				vector.crossVectors(this.playerSelf.controller.playerRig.up, vector) // camera.up
 			}
 
 			// Get direction
 			vector.round()
-			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.movelock || this.touchmove === 1 || this.touchmove === 'auto') {
+			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.autorun || this.touchmove === 1 || this.touchmove === 'auto') {
 				vector.negate() // Why is negate needed?
 			}
 
@@ -1748,7 +1760,7 @@ export class InputSys {
 
 
 		if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') { // Switching away from mouse
-			this.movelock = false // Stop mouse autorun
+			this.autorun = false // Stop mouse autorun
 
 		}
 		else if (this.mouse.device === 'touchpad') { // If switching away from touch

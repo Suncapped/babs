@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
-	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores"
+	import { socketSend, baseDomain, isProd, menuSelfData } from "../stores"
 	import { log } from '@/Utils'
 	import { draggable } from '@neodrag/svelte'
 	import { UiSys } from '@/sys/UiSys';
