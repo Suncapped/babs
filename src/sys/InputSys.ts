@@ -43,7 +43,7 @@ const MOUSE_RIGHT_CODE = 2
 
 type PickedType = 'wob' | 'player' | 'land'
 type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto this :-P
-	poid :string|object,
+	poid :string|object|number,
 	pickedType :PickedType,
 	feim? :InstancedWobs,
 	instancedBpid? :string,
@@ -795,9 +795,12 @@ export class InputSys {
 
 					// }
 					// else 
+
+					// todo catch if source has moved since pickup
+
 					if (this.pickedObject.pickedType === 'land') {
 						
-						log.info('landdrop', this.pickedObject)
+						log.info('dropped onto empty land', this.pickedObject)
 						
 						const coordDest = YardCoord.Create({
 							position: this.pickedObject.landPoint,
@@ -813,36 +816,57 @@ export class InputSys {
 						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						// if(wobSource) { // todo catch if it has moved since pickup
-
 						log.info('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
-						this.babs.socketSys.send({
+						this.babs.socketSys.send({  // Intention is to move it
 							action: {
 								verb: 'moved',
 								noun: wobSource.id(),
 								data: {
 									point: {x: coordDest.x, z: coordDest.z},
-									idzone:coordDest.zone.id,
+									idzone: coordDest.zone.id,
 								},
 							}
 						})
 
 					}
 					else if(this.pickedObject.pickedType === 'wob') {
-						log('wob Drop', this.pickedObject, this.liftedObject)
+						log.info('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject)
 						if(this.pickedObject.poid === this.liftedObject.poid) {
-							// How can we know whether it's the same?  Poid is based on id() so that doesn't tell us.
-							// The problem is we're putting it into the actual data rather than just visually... hmm.  
-							// This could be a problem with wobupdates too; if someone put something there, it could disallow it if we're just hovering.
-							// Okay so hovering needs to be separate; probably just visual.  
-							// Visual logic might need to be separated out.
-							// That will allow pickedObject to be real rather than self.
-							log('self drop')
+							log('dropped where it was lifted from')
+							// Nothing happens
+						}
+						else { // Intention is to merge it
+							
+
+							const coordSource = this.liftedObject.yardCoord
+							const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
+
+							const coordDest = this.pickedObject.yardCoord
+
+							this.babs.socketSys.send({
+								action: {
+									verb: 'merged',
+									noun: wobSource.id(),
+									data: {
+										point: {x: coordDest.x, z: coordDest.z},
+										idzone:coordDest.zone.id,
+									},
+								}
+							})
+						}
+					}
+					else if(this.pickedObject.pickedType === 'player') {
+						log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
+						if(this.pickedObject.poid === this.babs.idSelf) {
+							log.info('dropped onto self player', this.pickedObject, this.liftedObject)
+						}
+						else {
+							log.info('dropped onto other player', this.pickedObject, this.liftedObject)
 						}
 					}
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
-						log('Other drop', this.pickedObject, this.liftedObject)
+						log.info('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
 						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
 					}
 
@@ -1550,9 +1574,9 @@ export class InputSys {
 					}
 					const temp = objectMaybe
 					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
-					newPickedObject = temp.parent.children[0].children[0]  // gltf loaded
+					newPickedObject = temp.parent.children[0].children[0]  // player // gltf loaded
 					newPickedObject.pickedType = 'player'
-					newPickedObject.poid = (newPickedObject as unknown as SkinnedMesh).uuid
+					newPickedObject.poid = temp.parent.idplayer
 					newPickedObject.poHoverTime = Date.now()
 				}
 				else if (objectMaybe instanceof Mesh) { // Must go after more specific mesh types

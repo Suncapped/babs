@@ -88,7 +88,7 @@ export interface Ui {
 	other ?:Record<string, unknown>
 }
 
-// Socket sendables
+// Proxima sendables
 
 export type BlueprintList = Array<number|string>
 
@@ -256,12 +256,38 @@ export type SendFeTime = {
 	}
 }
 
-export type Sendable = SendLoad|SendVisitor|SendSession
+export type ProximaSendable = SendLoad|SendVisitor|SendSession
 	|SendAuth
 	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendReposition|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 
+
+// Babs Sendables
+
+export type SendMoved = {
+	action :{
+		verb :'moved',
+		noun :WobId,
+		data :{
+			point :{x :number, z :number},
+			idzone :number,
+		},
+	}
+}
+
+export type SendMerged = {
+	action :{
+		verb :'merged',
+		noun :WobId,
+		data :{
+			point :{x :number, z :number},
+			idzone :number,
+		},
+	}
+}
+
+export type BabsSendable = SendMoved|SendMerged
 
 
 export function toHexString(byteArray) {

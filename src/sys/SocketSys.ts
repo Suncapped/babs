@@ -16,7 +16,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
@@ -144,11 +144,11 @@ export class SocketSys {
 		})
 	}
 
-	async send(json) { // todo add :Sendable and set up client sendables
+	async send(json :BabsSendable) { // todo add :Sendable and set up client sendables
 		if(Object.keys(json).length === 0) return
 		if(!json.ping && !json.move) log.info('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
-			await this.ws.send(JSON.stringify(json))
+			this.ws.send(JSON.stringify(json))
 		}
 		else {
 			console.warn('Cannot send; WebSocket is in CLOSING or CLOSED state')
