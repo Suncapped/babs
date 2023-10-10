@@ -98,16 +98,7 @@ export class Flame extends Comp {
 		// console.log('Flame.wantsLight.push', com.fire.uuid)
 		Flame.wantsLight.push(com.fire)
 
-		// Debug flames not showing!
-		// const material = new LineBasicMaterial({ color: 0xff00ff })
-		// const geometry = new BufferGeometry
-		// com.points = [];
-		// com.points.push( babs.group.position )
-		// com.points.push( babs.group.position )
-		// geometry.setFromPoints(com.points)
-		// com.line = new Line( geometry, material )
-		// com.line.name = 'myline'
-		// babs.group.add( com.line )
+		babs.renderSys.moveLightsNearPlayer() // Move on creation so it makes light there fast :)
 
 		return com
 	}

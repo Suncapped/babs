@@ -116,20 +116,7 @@ export class RenderSys {
 		})
 
 		setInterval(() => {
-			if(Flame.player?.controller?.playerRig) {
-				const playerpos = Flame.player.controller.playerRig.position
-
-				const nearestWants = Flame.wantsLight.sort((a, b) => {
-					return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
-				})
-
-				for(let index=0; index<Flame.lightPool.length; index++) {
-					if(index > nearestWants.length -1) break
-					Flame.lightPool[index].position.copy(nearestWants[index].position)
-					Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
-					// Hmm I think there's a bug where some are getting double
-				}
-			}
+			this.moveLightsNearPlayer()
 
 			
 			const xrSession = this.renderer.xr.getSession()
@@ -258,6 +245,7 @@ export class RenderSys {
 		if(!playerpos) return
 
 		const feim = Wob.InstancedWobs.get(bpid)
+		// feim.instancedMesh.count = feim.maxCount; return // Disables calc
 
 		// feim.instancedMesh.computeBoundingBox()
 		feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
@@ -265,6 +253,7 @@ export class RenderSys {
 		// Note that sphere is used for depth sorting: https://github.com/mrdoob/three.js/pull/25974/files
 		// Also for frustum culling https://discourse.threejs.org/t/boundingsphere-and-boundingbox/17868
 		// "The bounding sphere is also computed automatically when doing raycasting. The bounding box is optional. If you define it, the raycasting logic will test it too"
+		// Also, this can't be moved to instancedMesh creation; may be needed either during calc updates in here, and/or after shiftiness.  Keeping it here.
 
 		// For each index in instancedMesh, get the position relative to the player
 		const instanceMatrix = feim.instancedMesh.instanceMatrix
@@ -301,5 +290,21 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby 
+	}
+
+	moveLightsNearPlayer() {
+		if(Flame.player?.controller?.playerRig) {
+			const playerpos = Flame.player.controller.playerRig.position
+
+			const nearestWants = Flame.wantsLight.sort((a, b) => {
+				return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
+			})
+
+			for(let index=0; index<Flame.lightPool.length; index++) {
+				if(index > nearestWants.length -1) break
+				Flame.lightPool[index].position.copy(nearestWants[index].position)
+				Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
+			}
+		}
 	}
 }

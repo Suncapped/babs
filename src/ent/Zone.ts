@@ -99,7 +99,7 @@ export class Zone extends SharedZone {
 
 	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :InstancedWobs, doDeleteSource :'delete' = null) {
 		if(sourceIndex === targetIndex) { // No change
-			return
+			// return // No, because 'doDeleteSource' may still need to run
 		}
 		const sourceMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
 		const targetMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(targetIndex, targetMatrix)

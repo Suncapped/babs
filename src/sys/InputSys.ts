@@ -491,7 +491,6 @@ export class InputSys {
 		document.addEventListener('touchcancel', touchHandler, {passive:false})
 
 		// this.lastMoveHoldPicked
-		this.liftedObject = null
 		interface FePointerEvent extends PointerEvent { 
 			target: HTMLElement,
 			webkitForce?: number,
@@ -879,6 +878,7 @@ export class InputSys {
 					const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
 
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
+					// log('setMatrixAt buttonup', liftedIndex)
 					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 					this.liftedObject = null
@@ -1050,7 +1050,7 @@ export class InputSys {
 
 	pickedObject :PickedObject|null // An object that is at the mouse raycast; the player hasn't interacted with it yet beyond hovering.
 	mousedownPickedObject :PickedObject|null // The player has down a mousedown on a pickedObject.
-	liftedObject :PickedObject|null // An object that the player did a long mousedown on, and is now carrying around on their cursor.
+	liftedObject :PickedObject|null = null // An object that the player did a long mousedown on, and is now carrying around on their cursor.
 
 	update(dt) { // Do NOT make update()s async!  I learned it can result in outdated info while future updates() run.
 		if (!this.isAfk && Date.now() - this.activityTimestamp > 1000 * 60 * 5) { // 5 min
@@ -1068,6 +1068,7 @@ export class InputSys {
 				this.liftedObject = this.mousedownPickedObject
 				// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
 				this.mousedownPickedObject = null
+				this.raycastSetPickedObject(true)
 			}
 		}
 		if(this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
@@ -1493,7 +1494,7 @@ export class InputSys {
 		}
 	}
 
-	raycastSetPickedObject() { // Raycast to set or unset this.pickedObject
+	raycastSetPickedObject(forcePickChanged = false) { // Raycast to set or unset this.pickedObject
 		let newPickedObject :PickedObject = null
 
 		// Only highlight things in canvas, not css ui
@@ -1533,6 +1534,10 @@ export class InputSys {
 			// raycaster.firstHitOnly = true // BVH thing
 			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
 
+			if(this.mouseRayTargets.length === 0) {
+				return // Can happen if they move outside of canvas, sometimes?
+			}
+
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 
 				const objectMaybe = this.mouseRayTargets[i].object
@@ -1556,16 +1561,17 @@ export class InputSys {
 					const position = feim.matrixEngCoordFromIndex(index)
 					const yardCoord = YardCoord.Create({position: position, babs: this.babs})
 					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
-
-					// log('mouse name', objectMaybe, name, instanced, index, position, yard)
-					newPickedObject = { // wob
-						pickedType: 'wob',
-						poid: JSON.stringify(wob.id()),
-						feim: feim,
-						instancedBpid: name,
-						yardCoord: yardCoord,
-						poHoverTime: Date.now(),
+					if(wob) { // False is like if it's been deleted from under the mouse
+						newPickedObject = { // wob
+							pickedType: 'wob',
+							poid: JSON.stringify(wob.id()),
+							feim: feim,
+							instancedBpid: name,
+							yardCoord: yardCoord,
+							poHoverTime: Date.now(),
+						}
 					}
+
 
 				}
 				else if(objectMaybe?.name === 'player_bbox') {
@@ -1723,7 +1729,7 @@ export class InputSys {
 			}
 
 			const pickedAndChanged = !(this.pickedObject && newPickedObject && poidsEqual)
-			if(pickedAndChanged) {
+			if(pickedAndChanged || forcePickChanged) {
 				// log('pickedAndChanged', this.pickedObject, newPickedObject)
 				this.pickedObject = newPickedObject // Update it to new one or to null
 
@@ -1747,6 +1753,7 @@ export class InputSys {
 					const matrixPickedEngPos = new Matrix4().setPosition(pickedEngPos)
 					log.info('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixPickedEngPos)
+					// log('setMatrixAt down/update', liftedIndex)
 					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 				}

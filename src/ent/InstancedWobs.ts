@@ -79,6 +79,9 @@ export class InstancedWobs {
 		this.instancedMesh.instanceColor = bufferAttr
 		this.instancedMesh.instanceColor.needsUpdate = true
 
+		// feim.instancedMesh.computeBoundingBox()
+		this.instancedMesh.computeBoundingSphere()
+
 		this.renderedIcon = async () => {
 			const {image, pixels} = await Wob.HiddenSceneRender(this.wobMesh)
 			this.renderedIcon = () => { // Overwrite self?!  lol amazing
@@ -160,6 +163,9 @@ export class InstancedWobs {
 		}
 		newInstancedMesh.instanceColor = new InstancedBufferAttribute(fullColors, 3)
 		newInstancedMesh.instanceColor.needsUpdate = true
+
+		// feim.instancedMesh.computeBoundingBox()
+		newInstancedMesh.computeBoundingSphere()
 
 		newInstancedMesh.position.x = this.instancedMesh.position.x
 		newInstancedMesh.position.z = this.instancedMesh.position.z

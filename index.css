@@ -70,3 +70,7 @@ a:hover{
 	width:0; 
 	overflow:hidden;
 }
+
+.card .card-body .card-link+.card-link, .card .card-body a+a {
+	margin-left: 0.5rem;
+}

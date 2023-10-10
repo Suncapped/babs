@@ -292,7 +292,7 @@
 
 			<!-- <li>{$menuSelfData.credits ? $menuSelfData.credits+' prepaid months' : 'Free Account'}</li> -->
 			<li style="text-align:center; margin-top:10px; margin-bottom: 10px;">
-				<a href="https://discord.gg/r4pdPTWbm5" target="_blank">Discord</a> <a href="https://github.com/Suncapped/babs" target="_blank">Github</a> <a href="https://suncapped.com/blog" target="_blank">Blog</a>
+				<a href="https://discord.gg/r4pdPTWbm5" target="_blank">Discord</a> <a href="https://suncapped.com/blog" target="_blank">Blog</a> <a href="https://github.com/Suncapped/babs" target="_blank">Github</a> <a href="https://github.com/Suncapped/babs/blob/prod/CREDITS.md" target="_blank">Credits</a>
 			</li>
 			<li style="text-align:center;">What are you excited to do in FE?</li>
 			<li style="text-align:center;">

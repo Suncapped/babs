@@ -180,7 +180,7 @@ export class Wob extends SharedWob {
 		log.info('meshesToLoad', nameCounts)
 		await Wob.ensureGltfsLoaded(meshesToLoad, babs) // Loads them into Wob.LoadedGltfs
 
-		log.info('LoadedGltfs', Wob.LoadedGltfs)
+		// log.info('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
 			const newWobsCount = nameCounts.get(blueprint_id)
@@ -276,6 +276,8 @@ export class Wob extends SharedWob {
 					}
 				}
 
+				const alreadyExistsAtSameSpot = JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id())
+
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
 				if(!asFarWobs) {
@@ -291,7 +293,9 @@ export class Wob extends SharedWob {
 					babs.uiSys.wobSaid(wob.name, wob)
 				}
 
-				if(wob.name === 'campfire' || wob.name === 'torch') {
+				if(!alreadyExistsAtSameSpot &&
+					(wob.name === 'campfire' || wob.name === 'torch')
+				) {
 					let scale, yup
 					if(wob.name === 'campfire') {
 						scale = 3

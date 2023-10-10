@@ -1024,7 +1024,7 @@ export class WorldSys {
 			}
 		})
 		this.shiftiness.add(shiftVector)
-
+		
 		// log.info('shifted', shiftingLog)
 	}
 
