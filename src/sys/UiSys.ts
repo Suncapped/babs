@@ -303,7 +303,7 @@ export class UiSys {
 				console.warn('feWords with no feim', wob.name, wob, words)
 				return
 			}
-			const boundingEngHeight = feim.boundingSize.y
+			const engHeightText = Math.max(feim.boundingSize.y, 2) // Make it at least high enough to not obscure small wobs
 			// console.log('engHeight', wob.name, feim.boundingSize, engHeight)
 
 			// Get the direction of the cameraGroup from pointCentered
@@ -311,7 +311,7 @@ export class UiSys {
 			this.babs.inputSys.playerSelf.controller.playerRig.getWorldDirection(moveDirection).negate()
 			// Move pointCentered toward the camera by 2 units
 			// Actually some things are quite offset, so move it 1.75 tiles toward us
-			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)).setY(boundingEngHeight))
+			pointCentered.add(moveDirection.multiply(new Vector3(2,0,2)).setY(engHeightText))
 
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
