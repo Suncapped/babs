@@ -9,6 +9,8 @@ export class CameraSys {
 	static FT_SCALE = 1
 	static VR_SCALE = 1/3.281 // Feet to meters
 	static CurrentScale = CameraSys.FT_SCALE
+
+	static OffsetHeightLimit = 10000
 	
 	static DefaultOffsetHeight = 15
 

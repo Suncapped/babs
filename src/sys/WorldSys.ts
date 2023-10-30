@@ -953,7 +953,7 @@ export class WorldSys {
 							const engPositionVector = new Vector3(engCoordCentered.x, entZone.engineHeightAt(yardCoord), engCoordCentered.z)
 							// engPositionVector.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
 
-							if(waterNearbyIndex[index] > 7) {
+							if(waterNearbyIndex[index] > 5) {
 								waterCubePositions.push(engPositionVector)
 
 								const riverBaseColor = this.colorFromLc.River.clone()

@@ -23,6 +23,7 @@ import type { WobId, SharedWob } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 import * as KeyCode from 'keycode-js'
+import { CameraSys } from './CameraSys'
 
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
@@ -999,7 +1000,7 @@ export class InputSys {
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 					// Only increase offsetHeight if camera is above ground, or moving camera up
 					if(!this.topMenuVisibleLocal) {
-						this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight -(ev.deltaY * 0.03))
+						this.babs.cameraSys.offsetHeight = Math.min(CameraSys.OffsetHeightLimit, this.babs.cameraSys.offsetHeight -(ev.deltaY * 0.03))
 					}
 					// }
 
@@ -1258,7 +1259,7 @@ export class InputSys {
 
 			// if (this.mouse.dy > 0 || !this.babs.cameraSys.gh || this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 			// Only increase offsetHeight if camera is above ground, or moving camera up
-			this.babs.cameraSys.offsetHeight = Math.min(100, this.babs.cameraSys.offsetHeight +(this.mouse.dy * 0.05))
+			this.babs.cameraSys.offsetHeight = Math.min(CameraSys.OffsetHeightLimit, this.babs.cameraSys.offsetHeight +(this.mouse.dy * 0.05))
 			// }
 			// Above is matched to touchpad similar code
 		}
