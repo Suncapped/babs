@@ -945,7 +945,7 @@ export class WorldSys {
 				return // zonetodo
 			}
 
-			const cubeSize = 4 // Must divide into 10
+			const cubeSize = 3 // Must divide into 10
 			const waterCubePositions = []
 			const waterCubeColors = []
 
@@ -958,11 +958,11 @@ export class WorldSys {
 				// Create cubes on all spots in between
 				if(this.WaterTypes.includes(lcString)) {
 					const spacing = 1
-					for(let z=0; z<5 /cubeSize /Math.round(spacing); z++) {
-						for(let x=0; x<5/cubeSize /Math.round(spacing); x++) {
+					for(let z=0; z<4 /cubeSize /Math.round(spacing); z++) {
+						for(let x=0; x<4/cubeSize /Math.round(spacing); x++) {
 
-							const xpos = coordOfVerticesIndex.x *5 +z*cubeSize *spacing -spacing*4 // Well that's opaque lol
-							const zpos = coordOfVerticesIndex.z *5 +x*cubeSize *spacing -spacing*4
+							const xpos = coordOfVerticesIndex.x *5 +z*cubeSize *spacing -spacing*4 +1// Well that's opaque lol
+							const zpos = coordOfVerticesIndex.z *5 +x*cubeSize *spacing -spacing*4 +1
 							
 							const yardCoord = YardCoord.Create({
 								x: clamp(xpos, 0, 249),
