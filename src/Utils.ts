@@ -5,6 +5,7 @@ import { debugMode } from './stores'
 import { get as svelteGet } from 'svelte/store'
 import type { Mesh } from 'three'
 import type { Zone } from './ent/Zone'
+import { WorldSys } from './sys/WorldSys'
 
 
 
@@ -148,34 +149,12 @@ export function degrees(radians) {
 export function coordToIndex(x :number, z :number, sideLength :number, dataLength = 1) {
 	return x*dataLength +(z *sideLength *dataLength)
 }
-export function indexToCoord(i :number, sideLength :number = 26) { // Don't currently have a need to remove dataLength
+export function indexToCoord(i :number, sideLength :number = WorldSys.ZONE_ARR_SIDE_LEN) { // Don't currently have a need to remove dataLength
 	return {
 		x: i %sideLength, 
 		z: Math.floor(i /sideLength),
 	}
 }
-
-
-// // export async function terrainGenerate(terrainData:Uint8Array, ground:Mesh) {
-//     // const terrainDataFloat = Array.from(terrainData).map((ele:number) => ele /ZONE.TR_MULT)
-//     // log.info(terrainDataFloat)
-//     // ground.position = new Vector3(World.ZoneLength/2, 0, World.ZoneLength/2)
-//     // let vertexData = CreateGroundFromArray(World.ZoneLength, World.ZoneLength, ZONE.ZONE_DATUMS, terrainDataFloat)
-//     // vertexData.applyToMesh(ground, true)
-
-//     // if(ground2) {
-//     //     ground2 = Mesh.CreateGround(`GROUNDGRID ${room.state.zone.terrainFile}`, 1, 1, 1)
-//     //     ground2.position = new Vector3(World.ZoneLength/2, -9000 +1, World.ZoneLength/2)
-//     //     vertexData.applyToMesh(ground2, true)
-//     //     gridmaterial.alpha = 0.5
-//     //     ground2.material = gridmaterial
-//     //     gridmaterial.majorUnitFrequency = 4
-//     //     ground2.visibility = 0
-//     // }
-
-//     // return ground
-// // }
-
 
 export function storageSet(key, value, ms) {
 	const now = new Date()

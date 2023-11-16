@@ -170,18 +170,18 @@ export class Zone extends SharedZone {
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
 		const nCoordsComponents = 3 // x,y,z
 
-		const ten = 10
+		const centerPointInPlot = WorldSys.ZONE_DATUM_SIZE /WorldSys.Yard
 
-		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /10), Math.floor((coord.z +0) /10), 26, nCoordsComponents)
+		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
 		const height00 = verticesRef[index00 +1]  // +1 is to get y
 
-		const index10 = Utils.coordToIndex(Math.floor((coord.x +ten) /10), Math.floor((coord.z +0) /10), 26, nCoordsComponents)
+		const index10 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
 		const height10 = verticesRef[index10 +1]
 
-		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /10), Math.floor((coord.z +ten) /10), 26, nCoordsComponents)
+		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
 		const height01 = verticesRef[index01 +1]
 
-		const index11 = Utils.coordToIndex(Math.floor((coord.x +ten) /10), Math.floor((coord.z +ten) /10), 26, nCoordsComponents)
+		const index11 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
 		const height11 = verticesRef[index11 +1]
 
 		/* 
@@ -192,14 +192,14 @@ export class Zone extends SharedZone {
 		// But ^that average is the center of the 40x40 piece, NOT the center of a 4x4 tile.
 
 		// Next attempt was naive proportions:
-		const towardX = (coord.x % 10) +(doCenter ? 0.5 : 0)
-		const towardZ = (coord.z % 10) +(doCenter ? 0.5 : 0)
+		const towardX = (coord.x % 5) +(doCenter ? 0.5 : 0)
+		const towardZ = (coord.z % 5) +(doCenter ? 0.5 : 0)
 		const xHeightDiff = height10 -height00
 		const zHeightDiff = height11 -height01
 		// ^ Bug: Only compares diff of 2 vertices. 
 		// Might need real math here?  Because as X increases it can increase the influence of Z height changes.
-		const weightedX = (xHeightDiff *(towardX /10))
-		const weightedZ = (zHeightDiff *(towardZ /10))
+		const weightedX = (xHeightDiff *(towardX /5))
+		const weightedZ = (zHeightDiff *(towardZ /5))
 		const finalHeight = height00 +(weightedX +weightedZ)
 		return finalHeight
 		
@@ -212,26 +212,26 @@ export class Zone extends SharedZone {
 		//   z →
 		*/
 
-		const xPiece = Math.floor(coord.x /10) *10
-		const zPiece = Math.floor(coord.z /10) *10
+		const xPiece = Math.floor(coord.x /centerPointInPlot) *centerPointInPlot
+		const zPiece = Math.floor(coord.z /centerPointInPlot) *centerPointInPlot
 		let xInnerCoord = coord.x -xPiece
 		let zInnerCoord = coord.z -zPiece
 
-		const isFirstHalf = xInnerCoord +zInnerCoord < 9
+		const isFirstHalf = xInnerCoord +zInnerCoord < WorldSys.Yard
 
 		let triangle
 		if(isFirstHalf){ // First triangle (less than halfway across, diagonally)
 			triangle = new Triangle(
 				new Vector3(0, 	0, 0), // z0, x0
-				new Vector3(0 +10, 0, 0), // x1
-				new Vector3(0, 	0, 0 +10), // z1
+				new Vector3(0 +centerPointInPlot, 0, 0), // x1
+				new Vector3(0, 	0, 0 +centerPointInPlot), // z1
 			)
 		}
 		else { // Second triangle (more than halfway across)
 			triangle = new Triangle(
-				new Vector3(0, 		0, 0 +10), // z1
-				new Vector3(0 +10, 	0, 0	), // x1
-				new Vector3(0 +10, 	0, 0 +10), // z1, x1
+				new Vector3(0, 		0, 0 +centerPointInPlot), // z1
+				new Vector3(0 +centerPointInPlot, 	0, 0	), // x1
+				new Vector3(0 +centerPointInPlot, 	0, 0 +centerPointInPlot), // z1, x1
 			)
 		}
 

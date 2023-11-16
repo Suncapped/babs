@@ -359,6 +359,8 @@ export class InputSys {
 
 					})
 
+					console.log(this.babs.renderSys.renderer.info.render.triangles.toLocaleString())
+
 				}
 
 				if (this.keyboard.l === PRESS) {
@@ -1618,10 +1620,12 @@ export class InputSys {
 							}
 						}
 						else {
+							const centerPointInPlot = WorldSys.ZONE_DATUM_SIZE /WorldSys.Yard
+
 							// Land target
 							const landcoverData = yardCoord.zone.landcoverData
-							const plotCoord = new Vector3(Math.floor(yardCoord.x /10), this.mouseRayTargets[i].point.y, Math.floor(yardCoord.z /10))
-							const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, 26)
+							const plotCoord = new Vector3(Math.floor(yardCoord.x /centerPointInPlot), this.mouseRayTargets[i].point.y, Math.floor(yardCoord.z /centerPointInPlot))
+							const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, WorldSys.ZONE_ARR_SIDE_LEN)
 							const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
 							// this.mouse.landtarget = {
 							// 	text: lcString,

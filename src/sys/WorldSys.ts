@@ -55,20 +55,22 @@ import { GUI } from 'lil-gui'
 
 export class WorldSys {
 
-	static ZoneLength = 1000
-	
+	public static ZONE_LENGTH_FEET = 1000
+	public static ZONE_DATUM_SIZE = 20 // was 40
+	public static ZONE_DATUMS = WorldSys.ZONE_LENGTH_FEET/WorldSys.ZONE_DATUM_SIZE // was 25, now 50
+	public static ZONE_ARR_SIDE_LEN = WorldSys.ZONE_DATUMS +1 // For 40ft was 26; now for 20ft it's 51.
+	public static ZONE_MOVEMENT_EXTENT = 249
+
 	static Yard = 4
-	static Plot = WorldSys.Yard *10 // 40; 10 tiles
-	static Acre = WorldSys.Plot *5 // 200; 5 plots
+	static Plot = WorldSys.Yard *5 // 20; 5 tiles
+	static Acre = WorldSys.Plot *10 // 200; 10 plots
 	
 	static MAX_VIEW_DISTANCE = 1_000_000 // ~200 miles
 	static DAYSKY_SCALE = 450_000
 	static NIGHTSKY_SIZE = 800_000
 
-	static ZoneSegments = 25
-
 	static ZoneTerrainMin = new Vector3(0,0,0)
-	static ZoneTerrainMax = new Vector3(1000,5_000,1000)
+	static ZoneTerrainMax = new Vector3(WorldSys.ZONE_LENGTH_FEET, 5_000, WorldSys.ZONE_LENGTH_FEET)
 
 	static FogDefaultDensity = 0.0000012
 
@@ -696,13 +698,13 @@ export class WorldSys {
 	currentGround
 	groundMaterial
 	async loadStatics(urlFiles, zone, isLoadinZone = false) {
-		let geometry = new PlaneGeometry(WorldSys.ZoneLength, WorldSys.ZoneLength, WorldSys.ZoneSegments, WorldSys.ZoneSegments)
+		let geometry = new PlaneGeometry(WorldSys.ZONE_LENGTH_FEET, WorldSys.ZONE_LENGTH_FEET, WorldSys.ZONE_DATUMS, WorldSys.ZONE_DATUMS)
 		// geometry = geometry.toNonIndexed()
 		geometry.rotateX( -Math.PI / 2 ) // Make the plane horizontal
 		geometry.translate( // Uncenter it, align at corner
-			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.x, 
+			WorldSys.ZONE_LENGTH_FEET /2,// +WorldSys.ZONE_LENGTH_FEET *zone.x, 
 			zone.y,//zone.y -8000,
-			WorldSys.ZoneLength /2,// +WorldSys.ZoneLength *zone.z,
+			WorldSys.ZONE_LENGTH_FEET /2,// +WorldSys.ZONE_LENGTH_FEET *zone.z,
 		)
 			
 		// const material = new MeshPhongMaterial({
@@ -727,10 +729,12 @@ export class WorldSys {
 			// depthFunc: NeverDepth,
 			dithering: true,
 			// toneMapped: false, // oohhh lets me avoid renderer's tonemapping settings!
+			vertexColors: true,
 		} )
 		// const material = new MeshStandardMaterial({vertexColors: true})
 		// this.groundMaterial.color.setHSL( 0.095, 0.5, 0.20 )
-		this.groundMaterial.vertexColors = true
+
+		// this.groundMaterial.flatShading = true
 
 		// console.time('ele')
 		await this.genElevation(urlFiles, geometry, zone)
@@ -746,8 +750,8 @@ export class WorldSys {
 		newGround.castShadow = true
 		newGround.receiveShadow = true
 		newGround.zone = zone
-		newGround.position.setX(WorldSys.ZoneLength *zone.x)
-		newGround.position.setZ(WorldSys.ZoneLength *zone.z)
+		newGround.position.setX(WorldSys.ZONE_LENGTH_FEET *zone.x)
+		newGround.position.setZ(WorldSys.ZONE_LENGTH_FEET *zone.z)
 		zone.ground = newGround
 		this.babs.group.add(newGround)
 
@@ -759,8 +763,8 @@ export class WorldSys {
 		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
 		groundGrid.name = 'groundgrid'
 		;(groundGrid.material as any).color.setHex(0x333333).convertSRGBToLinear()
-		groundGrid.position.setX(WorldSys.ZoneLength *zone.x)
-		groundGrid.position.setZ(WorldSys.ZoneLength *zone.z)
+		groundGrid.position.setX(WorldSys.ZONE_LENGTH_FEET *zone.x)
+		groundGrid.position.setZ(WorldSys.ZONE_LENGTH_FEET *zone.z)
 		this.babs.group.add(groundGrid)
 		debugMode.subscribe(on => {
 			groundGrid.visible = on
@@ -834,19 +838,19 @@ export class WorldSys {
 				// Stitch terrain elevations together
 				if(thisx === 0 && thisz === 0) { // angled one, not a side
 					if(zoneMinusBoth) {
-						const indexOnOtherZone = coordToIndex(25, 25, 26, 3)
+						const indexOnOtherZone = coordToIndex(WorldSys.ZONE_DATUMS, WorldSys.ZONE_DATUMS, WorldSys.ZONE_ARR_SIDE_LEN, 3)
 						verticesRef[j +1] = zoneMinusBothVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
 				else if(thisz === 0) { // rearward edge on z
 					if(zoneMinusZ) {
-						const indexOnOtherZone = coordToIndex(thisx, 25, 26, 3)
+						const indexOnOtherZone = coordToIndex(thisx, WorldSys.ZONE_DATUMS, WorldSys.ZONE_ARR_SIDE_LEN, 3)
 						verticesRef[j +1] = zoneMinusZVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
 				else if(thisx === 0) {
 					if(zoneMinusX) {
-						const indexOnOtherZone = coordToIndex(25, thisz, 26, 3)
+						const indexOnOtherZone = coordToIndex(WorldSys.ZONE_DATUMS, thisz, WorldSys.ZONE_ARR_SIDE_LEN, 3)
 						verticesRef[j +1] = zoneMinusXVerts[indexOnOtherZone +1] //hrmrm
 					}
 				}
@@ -861,7 +865,7 @@ export class WorldSys {
 		// Vertex colors on BufferGeometry using a non-indexed array
 		const verticesRef = geometry.getAttribute('position').array
 		const nColorComponents = 3 // r,g,b
-		// const nFaces = WorldSys.ZoneSegments *WorldSys.ZoneSegments *2; // e.g. 6 for a pyramid (?)
+		// const nFaces = WorldSys.ZONE_DATUMS *WorldSys.ZONE_DATUMS *2; // e.g. 6 for a pyramid (?)
 		// const nVerticesPerFace = 3; // 3 for Triangle faces
 		
 		// Add color attribute to geometry, so that I can use vertex colors
@@ -869,45 +873,64 @@ export class WorldSys {
 		geometry.setAttribute('color', new Float32BufferAttribute(colorArr, nColorComponents))
 		const colorsRef = geometry.getAttribute('color').array as Float32Array
 	
+		// console.log(verticesRef.length, colorArr.length, colorsRef.length, geometry)
 
-		let waterNearbyIndex = new Array(26*26).fill(0)
+		let waterNearbyIndex = new Array(WorldSys.ZONE_ARR_SIDE_LEN **2).fill(0)
 		let colorNotFound = ''
 
 		for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 			let color = this.colorFromLc[lcString]
 
-			// Spread color from this vertex as well as to its +1 forward vertices (ie over the plot, the 40x40ft)
-			const coordOfVerticesIndex = indexToCoord(index, 26) // i abstracts away color index
-			for(let z=0; z<=1; z++) {
-				for(let x=0; x<=1; x++) {
-					const colorsIndexOfGridPoint = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26, 3)
-					if(!color) {
-						colorNotFound = zone.landcoverData[index] + lcString
-						color = this.colorFromLc.Grassland // todo add colors?
-					}
-					colorsRef[colorsIndexOfGridPoint +0] = color.r
-					colorsRef[colorsIndexOfGridPoint +1] = color.g
-					colorsRef[colorsIndexOfGridPoint +2] = color.b
-				}
-			}
-
+			const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
+			let waterHere = false
 
 			// Find water nearby
 			for(let z=-1; z<=1; z++) {
 				for(let x=-1; x<=1; x++) {
-					const offsetIndex = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, 26)
+					const offsetIndex = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, WorldSys.ZONE_ARR_SIDE_LEN)
 					if(
 						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'River'
 						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Lake'
+						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamsmall'
+						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streammedium'
+						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamlarge'
 					
 					) {
-
+						waterHere = true
 						waterNearbyIndex[index]++
 					}
 
 				}
 			}
+
+			// Spread color from this vertex as well as to its +1 forward vertices (ie over the plot, the 20x20ft)
+			// LateR: Well, it doesn't work because they get overwritten by their fellows; so instead just do on single point with x<=0,z<=0.
+			for(let z=0; z<=0; z++) {
+				for(let x=0; x<=0; x++) {
+					const colorsIndexOfGridPoint = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, WorldSys.ZONE_ARR_SIDE_LEN, 3)
+					if(!color) {
+						colorNotFound = zone.landcoverData[index] + lcString
+						color = this.colorFromLc.Grassland // todo add colors?
+					}
+
+					// if(x==1 && z==1) continue
+					// We don't want to overwrite points already written forward; so skip any already written.
+					// if(!(colorsRef[colorsIndexOfGridPoint +0] == 0 
+					// 	&& colorsRef[colorsIndexOfGridPoint +1] == 0
+					// 	&& colorsRef[colorsIndexOfGridPoint +2] == 0
+					// )) continue
+					// {
+					// Not yet set
+					colorsRef[colorsIndexOfGridPoint +0] = color.r
+					colorsRef[colorsIndexOfGridPoint +1] = color.g
+					colorsRef[colorsIndexOfGridPoint +2] = color.b
+						
+					// }
+				}
+			}
+
+
 		}
 
 		if(colorNotFound) console.warn('Color not found!', colorNotFound)
@@ -930,16 +953,16 @@ export class WorldSys {
 
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
-				const coordOfVerticesIndex = indexToCoord(index, 26) // i abstracts away color index
+				const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
 				// log('gridPointofVerticesIndex', coordOfVerticesIndex)
 				// Create cubes on all spots in between
 				if(this.WaterTypes.includes(lcString)) {
 					const spacing = 1
-					for(let z=0; z<10 /cubeSize /Math.round(spacing); z++) {
-						for(let x=0; x<10/cubeSize /Math.round(spacing); x++) {
+					for(let z=0; z<5 /cubeSize /Math.round(spacing); z++) {
+						for(let x=0; x<5/cubeSize /Math.round(spacing); x++) {
 
-							const xpos = coordOfVerticesIndex.x *10 +z*cubeSize *spacing -spacing*4 // Well that's opaque lol
-							const zpos = coordOfVerticesIndex.z *10 +x*cubeSize *spacing -spacing*4
+							const xpos = coordOfVerticesIndex.x *5 +z*cubeSize *spacing -spacing*4 // Well that's opaque lol
+							const zpos = coordOfVerticesIndex.z *5 +x*cubeSize *spacing -spacing*4
 							
 							const yardCoord = YardCoord.Create({
 								x: clamp(xpos, 0, 249),

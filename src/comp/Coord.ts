@@ -7,6 +7,7 @@ import { InstancedMesh, RedIntegerFormat, Vector2, Vector3 } from 'three'
 import { type UintRange } from '@/shared/TypeUtils'
 import { Zone } from '@/ent/Zone'
 import type { YardRange } from '@/shared/SharedWob'
+import { WorldSys } from '@/sys/WorldSys'
 
 /*
 April '22: "Pllllease let's create types for engine vs yard vs plot, so I stop messing it up.  Start on Proxima, plot vs yard.  Maybe this is integrated into types, I dunno.  Or at least declare it, with size limits etc.  Or just named consts."
@@ -128,7 +129,7 @@ export class YardCoord extends Coord {
 		// But its .zone.x will be correct!
 		// also note above that this.zone.ground <- position of this will always be relative to currentGround?
 		
-		// const zoneTheoreticalX = this.zone.x *1000
+		// const zoneTheoreticalX = this.zone.x *WorldSys.ZONE_LENGTH_FEET
 		// const zoneGroundX = this.zone.ground.position.x
 		// const zoneGroundZ = this.zone.ground.position.z
 		// log('zonx', 
@@ -198,7 +199,7 @@ export class ZoneCoord extends Coord {
 	}
 
 	toEngineCoord() {
-		return new Vector3(this.x *1000, 0, this.z *1000)
+		return new Vector3(this.x *WorldSys.ZONE_LENGTH_FEET, 0, this.z *WorldSys.ZONE_LENGTH_FEET)
 	}
 }
 

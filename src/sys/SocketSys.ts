@@ -379,7 +379,7 @@ export class SocketSys {
 			}
 
 			// Shift before zoning; on load exclude self
-			this.babs.worldSys.shiftEverything(-enterZone.x *1000, -enterZone.z *1000, true) 
+			this.babs.worldSys.shiftEverything(-enterZone.x *WorldSys.ZONE_LENGTH_FEET, -enterZone.z *WorldSys.ZONE_LENGTH_FEET, true) 
 
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
 
@@ -573,10 +573,10 @@ export class SocketSys {
 			const addRealMinutes = 0
 			const proximaTime = payload.fetime.rlSecondsSinceHour
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
-			// this.babs.worldSys.snapshotRealHourFraction = 2400 // night?
+			// this.babs.worldSys.snapshotRealHourFraction = 100000 // night?
 			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *21) // dawn
 			// this.babs.worldSys.snapshotRealHourFraction = 60*20
-			// this.babs.worldSys.snapshotRealHourFraction += +(60 *30) // Flip daytime&nighttime?
+			// this.babs.worldSys.snapshotRealHourFraction += +(60 *40) // Flip daytime&nighttime?
 		}
 		else if('creatures' in payload) {
 			// log.info('creatures', payload.creatures)
