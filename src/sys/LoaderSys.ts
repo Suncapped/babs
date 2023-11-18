@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
+import { AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
@@ -31,7 +31,7 @@ export class LoaderSys {
 	urlFiles
 	objectTexture :Texture
 
-	constructor(babs :Babs) {
+	constructor(public babs :Babs) {
 		// log('LoaderSys', urlFiles)
 		this.urlFiles = babs.urlFiles
 
@@ -92,7 +92,7 @@ export class LoaderSys {
 		})
 
 		// Prefetch Color Textures
-		LoaderSys.MegaColorAtlas = this.loadTexture(`/environment/mega-color-atlas.png`).then((texture) => {
+		LoaderSys.MegaColorAtlas = this.loadTexture(`/texture/mega-color-atlas.png`).then((texture) => {
 			this.objectTexture = texture
 			texture.colorSpace = SRGBColorSpace
 			this.objectTexture.flipY = false 
@@ -197,15 +197,20 @@ export class LoaderSys {
 				log.info('File not in archive:', nameInArchive, file)
 			}
 		}
-					
+
 		return new Promise((resolve, reject) => {
 			let url = `${this.urlFiles}${path}`
 
 			const success = (gltf) => {
-				// log.info('Loaded GLTF:', gltf)
-	
+
+				log.info('Loaded GLTF:', gltf)
+
+				if(name == 'butterfly' || name == 'noname' || name == 'bedroll') {
+					console.log('loading '+name, gltf)
+				}
+
 				gltf.scene.traverse(child => {
-					if (child instanceof Mesh) {
+					if (child instanceof Mesh || child instanceof SkinnedMesh) {
 						child.material = this.megaMaterial
 					}
 				})
@@ -222,6 +227,24 @@ export class LoaderSys {
 				}
 				else {
 					console.warn('Arrival wob has no scene: ', name)
+				}
+
+				if(gltf.animations.length > 0) { // It's a rigged thing, SkinnedMesh etc
+
+					const clip = gltf.animations[0]
+					if(name == 'butterfly') {
+
+						// const mixer = new AnimationMixer(gltf.scene.children[0].children[0])
+						// const action = mixer.clipAction(clip)
+						// action.play()
+
+						// // Use setInterval() to update it
+						// setInterval(() => {
+						// 	// console.log('update')
+						// 	mixer.update(1/30)
+						// }, 1000/30)
+					}
+
 				}
 	
 				gltf.name = name
