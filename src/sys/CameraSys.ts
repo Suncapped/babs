@@ -5,9 +5,11 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 import { Controller } from '@/comp/Controller'
 import type { FeObject3D } from '@/ent/Wob'
 
+const FEET_IN_A_METER = 3.281
+
 export class CameraSys {
 	static FT_SCALE = 1
-	static VR_SCALE = 1/3.281 // Feet to meters
+	static VR_SCALE = 1 /FEET_IN_A_METER // Feet to meters
 	static CurrentScale = CameraSys.FT_SCALE
 
 	static OffsetHeightLimit = 10000

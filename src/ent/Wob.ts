@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh } from 'three'
 import { UiSys } from '@/sys/UiSys'
 import { log } from '@/Utils'
 import { Flame } from '@/comp/Flame'
@@ -9,6 +9,8 @@ import { Blueprint, SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs, type IconData } from './InstancedWobs'
 import { LoaderSys } from '@/sys/LoaderSys'
+
+const FEET_IN_A_METER = 3.281
 
 export class Wob extends SharedWob {
 	constructor(
@@ -340,15 +342,62 @@ export class Wob extends SharedWob {
 		const finishedLoads = await Promise.all(loads)
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const gltf of finishedLoads) {
-			let wobMesh :Mesh
+			let wobMesh :Mesh|SkinnedMesh|any
 			try {
-				wobMesh = gltf.scene.children[0]
+				wobMesh = gltf.scene.children[0] // Probably a Mesh, not SkinnedMesh?  Or a Blender export, not fbx2gltf export.  Not sure.
+
+				const isSomeKindOfMesh = (object :any) => {
+					return object instanceof Mesh || object instanceof SkinnedMesh
+				}
+
+				// If wobMesh if not of type Mesh, go deeper; FBX2glTF exporter and/or animated, I guess.
+				if(!isSomeKindOfMesh(wobMesh)) {
+					gltf.scene.children[0].children.forEach((child) => {
+						if(isSomeKindOfMesh(child)) {
+							wobMesh = child
+						}
+					})
+				}
+				if(!isSomeKindOfMesh(wobMesh)) {
+					throw new Error('wobMesh is still not a Mesh')
+				}
+
+				wobMesh.name = gltf.name
+
+				if(gltf.name === 'bedroll') {
+					console.log('bedroll gltf', wobMesh)
+				}
+				if(gltf.name === 'butterfly') {
+					console.log(gltf.name+' gltf', wobMesh)
+				}
+
+				// Reset scale
+				let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
+				scaling = scaling.multiplyScalar(FEET_IN_A_METER)
+				wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
+				wobMesh.scale.set(1,1,1)
+
+				// Reset position - position seems to be fine already, even when it's off in export.  But juust in case!
+				// Perhaps the reason this isn't necessary, is that it's done in the InstancedMesh?  Not sure.
+				wobMesh.position.set(0,0,0)
+
+				// Reset rotation
+				wobMesh.updateMatrix()
+				wobMesh.geometry.applyMatrix4(wobMesh.matrix)
+				wobMesh.rotation.set(0,0,0)
+				wobMesh.updateMatrix()
+
+				// Not sure if necessary
+				wobMesh.geometry.computeVertexNormals()
+				wobMesh.geometry.computeBoundingBox()
+				wobMesh.geometry.computeBoundingSphere()
+
 			}
-			catch(e) {
-				console.warn('Error loading gltf:', gltf.name)
+			catch(e :any) {
+				console.warn('Error loading gltf:', gltf.name, e.message)
 			}
 			
-			Wob.LoadedGltfs.set(gltf.name, wobMesh)
+			Wob.LoadedGltfs.set(gltf.name, wobMesh as Mesh) // It's already been forced into Mesh above
 		}
 
 	}
