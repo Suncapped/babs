@@ -33,6 +33,12 @@ let config = {
 	build: {
 		sourcemap: true,
 		minify: false,
+		target: 'esnext',
+	},
+	optimizeDeps: {
+		esbuildOptions: {
+			target: 'esnext',
+		},
 	},
 	resolve: {
 		alias: {

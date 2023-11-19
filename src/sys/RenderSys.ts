@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace } from 'three'
+import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments } from 'three'
 import { WorldSys } from './WorldSys'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
@@ -14,11 +14,14 @@ import { CameraSys } from './CameraSys'
 // import { SSGIEffect, TRAAEffect, MotionBlurEffect, VelocityDepthNormalPass } from 'realism-effects'
 // import { EffectComposer as PostproEffectComposer, EffectPass as PostproEffectPass, RenderPass as PostproRenderPass } from 'postprocessing'
 
+// import WebGPU from 'three/addons/capabilities/WebGPU.js'
+import WebGL from 'three/addons/capabilities/WebGL.js'
+// import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
 
 	babs :Babs
-	renderer :WebGLRenderer
+	renderer :WebGLRenderer// | WebGPURenderer
 	_camera :PerspectiveCamera
 	_scene :Scene
 	public documentHasFocus :boolean = true
@@ -39,7 +42,9 @@ export class RenderSys {
 
 	constructor(babs :Babs) {
 		this.babs = babs
+
 		this.renderer = new WebGLRenderer({ 
+		// this.renderer = new WebGPURenderer({ 
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
 			antialias: true, // todo reenable for non-vr?
 			// stencil: false, // Hmm
@@ -117,9 +122,8 @@ export class RenderSys {
 
 		setInterval(() => {
 			this.moveLightsNearPlayer()
-
 			
-			const xrSession = this.renderer.xr.getSession()
+			const xrSession = (this.renderer instanceof WebGLRenderer) && this.renderer.xr.getSession()
 			const isVrActiveNow = !!xrSession
 			if(!this.isVrActive && isVrActiveNow) { // Entering VR
 				CameraSys.CurrentScale = CameraSys.VR_SCALE
@@ -224,16 +228,24 @@ export class RenderSys {
 			this.calcMapIndex = 0
 		}
 		
-		// if(this.postproComposer) {
-		// 	this.postproComposer.render(dt)
-		// }
-		// else if(this.composer) {
-		// 	this.composer.render(dt)
-		// 	console.log('this.composer render', dt *1000)
-		// }
-		// else {
+		// List all materials in scene
+		// const materials = new Set()
+		// const scene = this.babs.scene
+		// scene.traverse( function( object :any ) {
+		// 	if ( object.material ) materials.add( object.material );
+		// })
+		// console.log(materials)
+
+		// List all InstancedMesh in scene
+		// const ims = new Set()
+		// const scene = this.babs.scene
+		// scene.traverse( function( object :any ) {
+		// 	if ( object instanceof InstancedMesh ) ims.add( object )
+		// })
+		// console.log(ims)
+
 		this.renderer.render(this._scene, this._camera)
-		// }
+
 	}
 
 	calcMapIndex = 0
@@ -289,7 +301,7 @@ export class RenderSys {
 		}
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
-		feim.instancedMesh.count = iNearby 
+		feim.instancedMesh.count = iNearby
 	}
 
 	moveLightsNearPlayer() {

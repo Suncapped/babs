@@ -40,7 +40,7 @@ export class InstancedWobs {
 		Wob.SphereMesh.geometry.computeBoundingBox()
 
 		if(asFarWobs) {
-			wobMesh.geometry.scale(4, 1, 4)
+			this.wobMesh.geometry.scale(4, 1, 4)
 		}
 
 		this.maxCount += Math.floor(this.maxCount *0.10) // Add 10% to maxCount for preallocation margin; prevents needing immediate reallocation

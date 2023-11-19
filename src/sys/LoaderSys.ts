@@ -1,4 +1,4 @@
-import { AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, RawShaderMaterial, Scene, ShaderMaterial, SkinnedMesh, SRGBColorSpace, sRGBEncoding, Texture, Vector2 } from 'three'
+import { AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'

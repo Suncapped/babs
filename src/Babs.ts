@@ -1,13 +1,5 @@
 import {
-	Vector3,
 	Scene,
-	BoxGeometry,
-	WebGLRenderer,
-	PerspectiveCamera,
-	Mesh,
-	sRGBEncoding,
-	MeshPhongMaterial,
-	AxesHelper,
 	Cache,
 	Group,
 } from 'three'

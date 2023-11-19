@@ -6,18 +6,16 @@ import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { isAwayUiDisplayed, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
-import { Color, ColorManagement, DoubleSide, LinearSRGBColorSpace, MathUtils, MeshBasicMaterial, MeshPhongMaterial, MeshStandardMaterial, type Mesh, Vector3, Material } from 'three'
+import {type Mesh, Vector3, Material, Object3D, DoubleSide, Color } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { YardCoord } from '@/comp/Coord'
 import { Zone } from '@/ent/Zone'
 import { Wob } from '@/ent/Wob'
-import { InputSys } from './InputSys'
 import { Babs } from '@/Babs'
 import type { SharedWob } from '@/shared/SharedWob'
 import type { Player } from '@/ent/Player'
 import { Text as TroikaText } from 'troika-three-text'
 import type { FeWords } from '@/shared/consts'
-import { WorldSys } from './WorldSys'
 
 interface TroikaText extends Mesh {
 	[key: string]: any
@@ -550,7 +548,7 @@ export class UiSys {
 
 		const oldPos = selfRig?.position
 		if(this.babs.debugMode) {
-			const newLogText = `zone: ${selfRig?.zone.id} (${selfRig?.zone.x}, ${selfRig?.zone.z}), y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info.programs.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render.calls} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
+			const newLogText = `zone: ${selfRig?.zone.id} (${selfRig?.zone.x}, ${selfRig?.zone.z}), y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info['programs']?.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render['calls']} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
 				this.logText = newLogText
 				window.document.getElementById('log').innerText = this.logText

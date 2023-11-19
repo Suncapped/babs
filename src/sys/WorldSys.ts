@@ -106,7 +106,7 @@ export class WorldSys {
 
 	updateSkyValues
 
-	daysky :Sky
+	daysky :Sky 
 	nightsky :Mesh & {material: Material[]}
 
 	cameraHelper :CameraHelper
@@ -192,36 +192,13 @@ export class WorldSys {
 		Object.keys(this.colorFromLc).forEach(key => this.colorFromLc[key].convertSRGBToLinear())
 
 
-		// Old sky
-		// this.babs.scene.background = new Color().setHSL( 0.6, 0, 1 )
-		// const vertexShader = document.getElementById( 'vertexShader' ).textContent
-		// const fragmentShader = document.getElementById( 'fragmentShader' ).textContent
-		// const uniforms = {
-		//     "topColor": { value: new Color( 0x0077ff ) },
-		//     "bottomColor": { value: new Color( 0xffffff ) },
-		//     "offset": { value: 33 },
-		//     "exponent": { value: 0.6 }
-		// }
-		// uniforms.topColor.value.copy( hemiLight.color )
-		// this.babs.scene.fog.color.copy( uniforms[ "bottomColor" ].value )
-		// const skyGeo = new SphereGeometry( 4000, 32, 15 )
-		// const skyMat = new ShaderMaterial( {
-		//     uniforms: uniforms,
-		//     vertexShader: vertexShader,
-		//     fragmentShader: fragmentShader,
-		//     side: BackSide
-		// } )
-		// const sky = new Mesh( skyGeo, skyMat )
-		// this.babs.group.add( sky )
-
+		this.sunPosition = new Vector3()
 
 		// New sky (not lighting)
 		this.daysky = new Sky()
 		this.daysky.name = 'daysky'
 		this.daysky.scale.setScalar(WorldSys.DAYSKY_SCALE)
 		this.babs.group.add(this.daysky)
-		
-		this.sunPosition = new Vector3()
 
 		// this.effectController.exposure = renderer.toneMappingExposure
 		this.updateSkyValues = () => {

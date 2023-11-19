@@ -167,7 +167,7 @@ export class Wob extends SharedWob {
 		const nameCounts = new Map<string, number>()
 
 		const playerSelf = babs.ents.get(babs.idSelf) as Player
-		const playerZone = playerSelf.controller.playerRig.zone
+		// const playerZone = playerSelf.controller.playerRig.zone
 		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 		for(const wob of arrivalWobs) {
@@ -218,12 +218,6 @@ export class Wob extends SharedWob {
 				comps: fwob.comps,
 			})
 
-
-			// Helps with finding naughty blueprints
-			// if(wob.blueprint_id === 'butterfly') {
-			// 	console.log('butterfly', wob.x, wob.z, wob.zone.x, wob.zone.z)
-			// }
-			
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI
 			// todo buggy

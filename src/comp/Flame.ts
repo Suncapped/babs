@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { log } from '@/Utils'
-import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, PointLight, Quaternion, Raycaster, ShaderMaterial, sRGBEncoding, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, Object3D, PointLight, Quaternion, ShaderMaterial, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -68,6 +68,16 @@ export class Flame extends Comp {
 		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
 
 		com.fire = new ThreeFire(Flame.fireTex)
+		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
+		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
+		com.fire.material.uniforms.gain.value = Flame.settings.gain
+		com.fire.material.uniforms.noiseScale.value = new Vector4(
+			Flame.settings.noiseScaleX,
+			Flame.settings.noiseScaleY,
+			Flame.settings.noiseScaleZ,
+			0.3
+		)
+
 		com.fire.name = 'flame'
 		babs.group.add(com.fire)
 
@@ -83,16 +93,6 @@ export class Flame extends Comp {
 		com.fire.position.setY(engPositionVector.y +yup)
 		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(engPositionVector.z)// +2)
-
-		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
-		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
-		com.fire.material.uniforms.gain.value = Flame.settings.gain
-		com.fire.material.uniforms.noiseScale.value = new Vector4(
-			Flame.settings.noiseScaleX,
-			Flame.settings.noiseScaleY,
-			Flame.settings.noiseScaleZ,
-			0.3
-		)
 
 		// Add a glow of light
 		// console.log('Flame.wantsLight.push', com.fire.uuid)
