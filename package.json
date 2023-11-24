@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.3.0",
   "engines": {
-    "node": "v20"
+    "node": "v21"
   },
   "volta": {
-    "node": "20.8.0"
+    "node": "21.2.0"
   },
   "scripts": {
     "playerdev": "cross-env FE_ENV=playerdev vite --mode playerdev",
@@ -28,27 +28,27 @@
   },
   "devDependencies": {
     "@suncapped/eslint-plugin": "file:eslint",
-    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@tsconfig/svelte": "^5.0.2",
     "@types/dat.gui": "^0.7.12",
     "@types/js-cookie": "^3.0.6",
-    "@types/luxon": "^3.3.4",
-    "@types/node": "^20.9.2",
+    "@types/luxon": "^3.3.5",
+    "@types/node": "^20.9.3",
     "@types/suncalc": "^1.9.2",
-    "@types/three": "^0.158.2",
-    "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "@typescript-eslint/parser": "^6.11.0",
+    "@types/three": "^0.158.3",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
     "@vitejs/plugin-basic-ssl": "^1.0.2",
     "bicubic-interpolate": "^1.0.4",
     "cross-env": "^7.0.3",
     "eslint": "^8.54.0",
     "lil-gui": "^0.19.1",
-    "svelte": "^4.2.5",
+    "svelte": "^4.2.7",
     "svelte-check": "^3.6.0",
-    "svelte-preprocess": "^5.1.0",
+    "svelte-preprocess": "^5.1.1",
     "tslib": "^2.6.2",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0",
+    "typescript": "^5.3.2",
+    "vite": "^5.0.2",
     "webhook-discord": "^3.7.8"
   },
   "dependencies": {

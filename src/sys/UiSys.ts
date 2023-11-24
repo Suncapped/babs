@@ -2,7 +2,6 @@ import Stats from 'three/addons/libs/stats.module.js'
 import Overlay from '../ui/Overlay.svelte'
 import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
-import Container from '../ui/Container.svelte'
 import Menu from '../ui/Menu.svelte'
 import { isAwayUiDisplayed, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
 import { log, v3out } from './../Utils'
@@ -33,8 +32,6 @@ export class UiSys {
 	svContainers = []
 	nicklist = new Map()
 	isFullscreen = false
-
-	static ICON_SIZE = 50
 
 	constructor(babs) {
 		this.babs = babs

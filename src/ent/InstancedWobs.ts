@@ -4,8 +4,6 @@ import { Wob } from './Wob'
 import { log } from '@/Utils'
 import { YardCoord } from '@/comp/Coord'
 
-export type IconData = {image :string, pixels :Uint8Array}
-
 // InstancedWobs will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
 export class InstancedWobs {
 	instancedMesh :InstancedMesh
@@ -17,7 +15,6 @@ export class InstancedWobs {
 	public wobIsSmall :boolean
 	public wobIsTall :boolean
 	public wobIsFar :boolean
-	renderedIcon :() => Promise<IconData>|IconData
 
 	private loadedCount :number = 0 // Number that are considered loaded, after which they are deleted or unallocated
 
@@ -81,14 +78,6 @@ export class InstancedWobs {
 
 		// feim.instancedMesh.computeBoundingBox()
 		this.instancedMesh.computeBoundingSphere()
-
-		this.renderedIcon = async () => {
-			const {image, pixels} = await Wob.HiddenSceneRender(this.wobMesh)
-			this.renderedIcon = () => { // Overwrite self?!  lol amazing
-				return {image, pixels}
-			}
-			return this.renderedIcon()
-		}
 
 		this.instancedMesh.position.setX(babs.worldSys.shiftiness.x)
 		this.instancedMesh.position.setZ(babs.worldSys.shiftiness.z)

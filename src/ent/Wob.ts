@@ -7,7 +7,7 @@ import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
-import { InstancedWobs, type IconData } from './InstancedWobs'
+import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys } from '@/sys/LoaderSys'
 
 const FEET_IN_A_METER = 3.281
@@ -30,125 +30,6 @@ export class Wob extends SharedWob {
 
 	color
 	attachments
-
-	static HiddenScene = null
-	static HiddenSceneRender(mesh) :Promise<IconData> {
-		if(!Wob.HiddenScene) {
-			const container = document.getElementById('HiddenRenderFrame')
-
-			// create your renderer
-			const renderer = new WebGLRenderer({ antialias: true, alpha: true, }) //  preserveDrawingBuffer: true, // why?
-			// renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( UiSys.ICON_SIZE, UiSys.ICON_SIZE )
-
-			// apply the internal canvas of the renderer to the DOM
-			container.appendChild( renderer.domElement )
-
-
-			// Scene?
-			const scene = new Scene()
-	
-			const fov = 45
-			const aspect = 1  // the canvas default
-			const near = 0.1
-			const far = 1000
-			// const camera = new PerspectiveCamera(fov, aspect, near, far)
-			const d = 2
-			const camera = new OrthographicCamera( - d * aspect, d * aspect, d, - d, near, far)
-			// camera.position.set(0,0,0)
-			// camera.position.set(0,0,0)
-			// camera.lookAt(1, 0, 1)
-			// camera.lookAt( new Vector3(20,20,20) ); // or the origin
-
-			camera.position.set( 20, 20, 20 )
-			// camera.rotation.order = 'YXZ';
-			// camera.rotation.y = - Math.PI / 4;
-			// camera.rotation.x = Math.atan( - 1 / Math.sqrt( 2 ) );
-
-			camera.lookAt(scene.position)
-		
-			const color = 0xFFFFFF
-			const intensity = 1
-			const light = new DirectionalLight(color, intensity)
-			// light.position.set(0,2,0)
-			light.position.set( 10,20,15 )
-			
-			
-			scene.add(light)
-			
-			Wob.HiddenScene = {scene, renderer, camera}
-
-
-
-
-			// const geometry = new BoxGeometry(1,1,1)
-			// const material = new MeshPhongMaterial
-			// ambient: 0x555555
-			// color: 0x555555
-			// specular: 0xffffff
-			// shininess: 50
-			// shading: SmoothShading // was deprecated?
-
-			// const cube = new Mesh(geometry, material)
-			// scene.add(cube)
-
-			// scene.add( new AmbientLight(0x4000ff) )
-
-		}
-		
-		for(let child of Wob.HiddenScene.scene.children){ 
-			if(child instanceof Mesh) {
-				Wob.HiddenScene.scene.remove(child) 
-			}
-		}
-
-		// if(mesh.name) {
-		const localMesh = mesh.clone()
-		localMesh.geometry = mesh.geometry.clone()
-		Wob.HiddenScene.scene.add(localMesh)
-		// localMesh.position.set(1,1,1)
-		localMesh.position.set(0,-1.5,-0.5)
-		// localMesh.geometry.rotateX(-Math.PI /2)
-
-		Wob.HiddenScene.renderer.render(Wob.HiddenScene.scene, Wob.HiddenScene.camera) // Hmm what does it do? lol
-		// Wob.HiddenScene.renderer.domElement.toDataURL()
-		// }
-
-
-		// let pickingTexture = new WebGLRenderTarget( 50, 50);
-		// // log('imageData!',Wob.HiddenScene.renderer.domElement.getImage)
-		// Wob.HiddenScene.renderer.setRenderTarget(pickingTexture)
-		// Wob.HiddenScene.renderer.render( Wob.HiddenScene.scene, Wob.HiddenScene.camera );
-		// const pixelBuffer = new Uint8Array( 4 *50*50 );
-		// Wob.HiddenScene.renderer.readRenderTargetPixels( pickingTexture, 0, 0, 50, 50, pixelBuffer );
-		// // log('rtpx', pixelBuffer)
-		// log('rtpx', Wob.HiddenScene.renderer.context)
-
-		const dataurl :string = Wob.HiddenScene.renderer.domElement.toDataURL()//('image/png')
-
-		return new Promise((resolve, reject) => {
-			let img = new Image()
-			img.src = dataurl
-			img.onload = () => {
-				let canvas = document.createElement('canvas')
-				canvas.width = UiSys.ICON_SIZE
-				canvas.height = UiSys.ICON_SIZE
-				let ctx = canvas.getContext('2d')
-				ctx.drawImage(img, 0, 0)
-				let imageData = ctx.getImageData(0, 0, UiSys.ICON_SIZE, UiSys.ICON_SIZE)
-				let pixels = new Uint8Array(imageData.data.buffer)
-				canvas.remove()
-				img.remove()
-		
-				resolve({image: dataurl, pixels: pixels} as IconData)
-			}
-			img.onerror = reject
-		})
-
-
-
-	}
-
 
 	static SphereGeometry = new SphereGeometry(1, 12, 12)
 	static SphereMaterial = new MeshLambertMaterial({ color: 0xcccc00 })
@@ -309,7 +190,6 @@ export class Wob extends SharedWob {
 			}
 			else {	// Send to bag
 				const instanced = Wob.InstancedWobs.get(wob.name)
-				babs.uiSys.svContainers[0].addWob(wob, await instanced.renderedIcon())
 			}
 
 		}
