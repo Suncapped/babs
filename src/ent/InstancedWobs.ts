@@ -7,6 +7,8 @@ import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import type { Gltf } from '@/sys/LoaderSys'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 
+const INSTANCED_MAXCOUNT_EXTRA_MIN = 2 // Minimum number of extra instances to add when reallocating a larger buffer
+
 // InstancedWobs will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
 export class InstancedWobs {
 	instancedMesh :InstancedMesh|InstancedSkinnedMesh
@@ -47,20 +49,19 @@ export class InstancedWobs {
 			wobMesh.geometry.scale(4, 1, 4)
 		}
 
+		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT to maxCount for preallocation margin; prevents needing immediate reallocation.
+
 		if(this.gltf.animations?.length == 0) {
 			this.isAnimated = false
-			this.maxCount += Math.floor(this.maxCount *0.10) // Add 10% to maxCount for preallocation margin; prevents needing immediate reallocation
-			
 			this.instancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
 		}
 		else if((wobMesh instanceof SkinnedMesh)){ // Type narrowing
 			this.isAnimated = true
-			this.maxCount += 200 // Allocate a lot of extras // Workaround instead of reallocating InstancedSkinnedMesh // todo
 
 			this.silly = wobMesh
 			this.instancedMesh = new InstancedSkinnedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
-			// this.instancedMesh.copy(wobMesh) // Seems not necessary in my case
 			this.instancedMesh.bind(wobMesh.skeleton, wobMesh.bindMatrix)
+			// this.instancedMesh.copy(wobMesh) // Seems not necessary in my case
 			// this.instancedMesh.isMesh = true // Not necessary, seems to already be true
 
 			this.animMixer = new AnimationMixer(this.gltf.scene)
@@ -90,7 +91,7 @@ export class InstancedWobs {
 		this.lift = (this.boundingSize.y < 0.01 ? 0.066 : 0)
 		// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 
-		this.instancedMesh._count = 0 // Actual rendered count; will be increased when wobs are added
+		this.instancedMesh.count = 0 // Actual rendered count; will be increased when wobs are added
 		this.instancedMesh.name = this.blueprint_id
 		this.instancedMesh.frustumCulled = false // todo?
 		this.instancedMesh.instanceMatrix.setUsage(this.isAnimated ? StreamDrawUsage : DynamicDrawUsage) // todo optimize?
@@ -140,10 +141,10 @@ export class InstancedWobs {
 	}
 
 	reallocateLargerBuffer(maxCount :number) {
-		log('Reallocate', this.blueprint_id)
+		log('Reallocate:', this.blueprint_id, this.maxCount, '->', maxCount)
 		// Expand InstancedMesh to a larger buffer
 		this.maxCount = maxCount 
-		this.maxCount += Math.floor(this.maxCount *0.10) // Add 10%
+		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT
 
 		const wobMesh = this.gltf.scene.children[0].children[0] as Mesh|SkinnedMesh
 
@@ -152,31 +153,32 @@ export class InstancedWobs {
 			newInstancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount) // this.MAXcount ...ow.  Because, we want this one new to be even bigger, of course.  That's the point of reallocate...so yes.  
 		}
 		else if((wobMesh instanceof SkinnedMesh)){ // Type narrowing
-			log('Reallocating?  No: Workaround for InstancedSkinnedMesh') 
-			// Workaround instead of reallocating InstancedSkinnedMesh // todo
-			// https://chat.openai.com/share/64abacbd-7d1e-47e3-8761-2634ffd19183
-			window.location.reload()
+			// // Workaround instead of reallocating InstancedSkinnedMesh
+			// // https://chat.openai.com/share/64abacbd-7d1e-47e3-8761-2634ffd19183
+			// window.location.reload()
 
-			/*
-			newInstancedMesh = new InstancedSkinnedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
-			// newInstancedMesh.copy(wobMesh)
-			newInstancedMesh.bind(wobMesh.skeleton, wobMesh.bindMatrix)
+			const clonedScene = SkeletonUtils.clone(this.gltf.scene)
+			const clonedMesh = clonedScene.children[0].children[0] as SkinnedMesh
+
+
+			newInstancedMesh = new InstancedSkinnedMesh(clonedMesh.geometry, clonedMesh.material, this.maxCount)
+			// newInstancedMesh.copy(this.instancedMesh)
+			newInstancedMesh.bind(clonedMesh.skeleton, clonedMesh.bindMatrix)
 
 			// let transferMatrix = new Matrix4()
 			// for(let i=0; i<this.loadedCount; i++) {
-			// 	this.instancedMesh.getBonesAt(i, transferMatrix)
+			// 	newInstancedMesh.getBonesAt(i, transferMatrix)
 			// 	newInstancedMesh.setBonesAt(i, transferMatrix)
 			// }
 			
-			// this.silly = wobMesh
-			// this.animMixer = new AnimationMixer(this.gltf.scene)
-			// this.animMixer.clipAction(this.gltf.animations[0]).play()
-			*/
+			this.silly = clonedMesh
+			this.animMixer = new AnimationMixer(clonedScene)
+			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
 
 		// Here we only need to copy over InstancedMesh properties, not feim (which remains the same one).
 		newInstancedMesh.frustumCulled = this.instancedMesh.frustumCulled
-		newInstancedMesh._count = this.instancedMesh._count // Preserve old count (will be recalced later)
+		newInstancedMesh.count = this.instancedMesh.count // Preserve old count (will be recalced later)
 		newInstancedMesh.name = this.blueprint_id
 		newInstancedMesh.instanceMatrix.setUsage(this.isAnimated ? StreamDrawUsage : DynamicDrawUsage)
 
@@ -209,9 +211,11 @@ export class InstancedWobs {
 
 		this.babs.group.remove(this.instancedMesh)
 		this.instancedMesh.dispose()
+		this.instancedMesh.visible = false
 
 		this.instancedMesh = newInstancedMesh
 		this.babs.group.add(this.instancedMesh)
+		Wob.InstancedWobs.set(this.blueprint_id, this)
 	}
 
 		

@@ -228,17 +228,9 @@ export class RenderSys {
 			this.calcMapIndex = 0
 		}
 
-		const duration = 3.25
 		const secondsElapsed = performance.now() * 0.001
-		const t = secondsElapsed % duration
 		for (let [name, instancedWobs] of Wob.InstancedWobs) {
 			if(instancedWobs.isAnimated && instancedWobs.instancedMesh instanceof InstancedSkinnedMesh) {
-
-				
-				if(instancedWobs.blueprint_id == 'butterfly') {
-					log('loaded', instancedWobs.getLoadedCount())
-				}
-
 				for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) {
 					// Copy from instance to silly
 					let instanceMatrix = new Matrix4()
@@ -250,7 +242,10 @@ export class RenderSys {
 					instancedWobs.silly.position.copy(instancePosition)
 					instancedWobs.silly.updateMatrix()
 					
-					instancedWobs.animMixer.setTime(t)
+					const duration = instancedWobs.gltf.animations[0].duration
+					const animTime = secondsElapsed % duration
+
+					instancedWobs.animMixer.setTime(animTime)
 					instancedWobs.silly.skeleton.bones.forEach((b) => {
 						b.updateMatrixWorld()
 					})
@@ -264,7 +259,6 @@ export class RenderSys {
 				if (instancedWobs.instancedMesh.skeleton?.boneTexture) {
 					instancedWobs.instancedMesh.skeleton.boneTexture.needsUpdate = true
 				}
-
 			}
 		}
 		
@@ -340,19 +334,6 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby
-		feim.instancedMesh.instanceMatrix.needsUpdate = true
-		feim.instancedMesh.matrixWorldNeedsUpdate = true
-		feim.instancedMesh.updateMatrix()
-		feim.instancedMesh.updateMatrixWorld(true)
-		feim.instancedMesh.instanceColor.needsUpdate = true
-		
-		if(feim.instancedMesh.name === 'butterfly' && feim.instancedMesh instanceof InstancedSkinnedMesh) {
-			console.log('setting count', feim.instancedMesh.count, '(max ' +feim.maxCount +')', 'for', feim.instancedMesh)
-			
-			const wobMesh = feim.gltf.scene.children[0].children[0] as SkinnedMesh
-			// feim.instancedMesh.bind(wobMesh.skeleton, wobMesh.bindMatrix)
-		}
-		// feim.instancedMesh.	 = feim.isAnimated ? feim.maxCount : iNearby // todo anim, this wasn't originally necessary, problem with anim counts?
 	}
 
 	moveLightsNearPlayer() {

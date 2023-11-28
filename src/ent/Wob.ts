@@ -132,9 +132,6 @@ export class Wob extends SharedWob {
 						existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
 						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
 						feim.increaseLoadedCount()
-						if(feim.blueprint_id === 'butterfly' && feim.instancedMesh instanceof InstancedSkinnedMesh) {
-							log('adding wob, increaseLoadedCount() done')
-						}
 					}
 					else {
 						log('Index does exist?', existingIindex)

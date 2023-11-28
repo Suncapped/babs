@@ -18,10 +18,10 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 	maxCount :number// It shall differ from InstancedMesh because I'm going to use maxCount, since some of the funs below happen after wobs are added, which is when increaseLoadedCount() is called.  We want the max to be preserved for setting bones and data texture.
 	count :number // This actually gets read by the js engine like this: getInstanceCount( renderObject ) { [...] return geometry.isInstancedBufferGeometry ? geometry.instanceCount : ( object.isInstancedMesh ? object.count : 1 ) } // So this .count will thereby determine the number of instances displayed.
 
-	constructor(geometry :BufferGeometry, material :Material, maxCount :number) {
+	constructor(geometry :BufferGeometry, material :Material|Material[], maxCount :number) {
 		super(geometry, material)
 
-		console.log('---- Initing count', maxCount)
+		// console.log('---- Initing count', maxCount)
 		this.maxCount = maxCount
 		this.count = maxCount // We can init to this, and app can decide whether to lower it
 
@@ -61,7 +61,7 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 
 			// @ts-ignore
 			this.skeleton.computeBoneTexture = this.skeleton.computeInstancedBoneTexture = () => {
-				console.log('--- Running (count) bind set texture', this.maxCount)
+				// console.log('--- Running (count) bind set texture', this.maxCount)
 				this.skeleton.boneTexture = new DataTexture(
 					this.instanceBones,
 					this.skeleton.bones.length * 4,
@@ -74,7 +74,7 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 		}
 
 		if (!patchedChunks) {
-			console.log('---patching---')
+			// console.log('---patching---')
 			patchedChunks = true
 
 			ShaderChunk.skinning_pars_vertex = /* glsl */ `
@@ -200,7 +200,7 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 		const size = skeleton.bones.length *16
 
 		if (this.instanceBones === null) {
-			console.log('--- Bones setting instanceBones (count)', this.maxCount)
+			// console.log('--- Bones setting instanceBones (count)', this.maxCount)
 			this.instanceBones = new Float32Array(size * this.maxCount)
 		}
 

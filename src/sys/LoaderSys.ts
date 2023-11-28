@@ -212,10 +212,6 @@ export class LoaderSys {
 
 				log.info('Loaded GLTF:', gltf)
 
-				if(name == 'butterfly' || name == 'noname' || name == 'bedroll') {
-					console.log('loading '+name, gltf)
-				}
-
 				gltf.scene.traverse(child => {
 					if (child instanceof Mesh || child instanceof SkinnedMesh) {
 						child.material = this.megaMaterial

@@ -24,6 +24,7 @@ import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 import * as KeyCode from 'keycode-js'
 import { CameraSys } from './CameraSys'
+import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
 
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
@@ -647,26 +648,27 @@ export class InputSys {
 									if(!coord) {
 										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no effect>')
 									}
-	
-									const zone = coord.zone
-									const wob = zone.getWob(coord.x, coord.z)
-									if(!wob) {
-										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
-									}
 									else {
-										this.babs.socketSys.send({
-											action: {
-												verb: 'used',
-												noun: this.askTargetSourceWob?.id(),
-												data: {
-													target: wob.id(),
-												},
-											}
-										})
+										const wob = coord.zone.getWob(coord.x, coord.z)
+										if(!wob) {
+											this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
+										}
+										else {
+											this.babs.socketSys.send({
+												action: {
+													verb: 'used',
+													noun: this.askTargetSourceWob?.id(),
+													data: {
+														target: wob.id(),
+													},
+												}
+											})
+										}
+										document.body.style.cursor = 'auto'
+										this.isAskingTarget = false
+										this.askTargetSourceWob = null
 									}
-									document.body.style.cursor = 'auto'
-									this.isAskingTarget = false
-									this.askTargetSourceWob = null
+	
 	
 								}
 								else { // First click (and not in target selection mode)
@@ -903,7 +905,7 @@ export class InputSys {
 						} 
 						else if (this.pickedObject?.pickedType === 'wob'){
 	
-							log('wobuse', this.mouse, this.pickedObject)
+							log.info('wobuse', this.mouse, this.pickedObject)
 	
 							if(this.pickedObject) {
 								const coord = this.pickedObject?.yardCoord
@@ -1547,7 +1549,7 @@ export class InputSys {
 				if (objectMaybe?.parent?.name === 'three-helper') { // Special case since it's parent name instead of name
 					continue // Skip
 				}
-				else if (objectMaybe instanceof InstancedMesh) {
+				else if (objectMaybe instanceof InstancedMesh || objectMaybe instanceof InstancedSkinnedMesh) {
 					// Instanced things like wobjects, water, trees, etc unless caught above
 					const name = objectMaybe.name
 					const feim = Wob.InstancedWobs.get(name)
