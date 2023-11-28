@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments } from 'three'
+import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh } from 'three'
 import { WorldSys } from './WorldSys'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
@@ -15,7 +15,7 @@ import { CameraSys } from './CameraSys'
 // import { EffectComposer as PostproEffectComposer, EffectPass as PostproEffectPass, RenderPass as PostproRenderPass } from 'postprocessing'
 
 // import WebGPU from 'three/addons/capabilities/WebGPU.js'
-import WebGL from 'three/addons/capabilities/WebGL.js'
+import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -227,6 +227,46 @@ export class RenderSys {
 		if(this.calcMapIndex >= Wob.InstancedWobs.size) {
 			this.calcMapIndex = 0
 		}
+
+		const duration = 3.25
+		const secondsElapsed = performance.now() * 0.001
+		const t = secondsElapsed % duration
+		for (let [name, instancedWobs] of Wob.InstancedWobs) {
+			if(instancedWobs.isAnimated && instancedWobs.instancedMesh instanceof InstancedSkinnedMesh) {
+
+				
+				if(instancedWobs.blueprint_id == 'butterfly') {
+					log('loaded', instancedWobs.getLoadedCount())
+				}
+
+				for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) {
+					// Copy from instance to silly
+					let instanceMatrix = new Matrix4()
+					instancedWobs.instancedMesh.getMatrixAt(i, instanceMatrix)
+					instancedWobs.silly.matrix.copy(instanceMatrix)
+
+					let instancePosition = new Vector3()
+					instancePosition.setFromMatrixPosition(instanceMatrix)
+					instancedWobs.silly.position.copy(instancePosition)
+					instancedWobs.silly.updateMatrix()
+					
+					instancedWobs.animMixer.setTime(t)
+					instancedWobs.silly.skeleton.bones.forEach((b) => {
+						b.updateMatrixWorld()
+					})
+
+					instancedWobs.silly.updateMatrix()
+					instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix)
+					instancedWobs.instancedMesh.setBonesAt(i, instancedWobs.silly.skeleton)
+				}
+
+				instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true
+				if (instancedWobs.instancedMesh.skeleton?.boneTexture) {
+					instancedWobs.instancedMesh.skeleton.boneTexture.needsUpdate = true
+				}
+
+			}
+		}
 		
 		// List all materials in scene
 		// const materials = new Set()
@@ -274,10 +314,8 @@ export class RenderSys {
 		const distCutoff = this.babs.inputSys.mouse.device === 'fingers' ? 500 : 1000 // (feim.asFarWobs ? 1000 : 500)
 		// 'fingers' is currently phone and quest 2.
 
-		const imLoadedCount = feim.getLoadedCount()
-
 		let iNearby = 0
-		for(let i=0; i<imLoadedCount; i++) { // Each instance is a 4x4 matrix; 16 floats
+		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats
 			// Each instance is a 4x4 matrix; 16 floats
 			const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
 			const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
@@ -302,6 +340,19 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby
+		feim.instancedMesh.instanceMatrix.needsUpdate = true
+		feim.instancedMesh.matrixWorldNeedsUpdate = true
+		feim.instancedMesh.updateMatrix()
+		feim.instancedMesh.updateMatrixWorld(true)
+		feim.instancedMesh.instanceColor.needsUpdate = true
+		
+		if(feim.instancedMesh.name === 'butterfly' && feim.instancedMesh instanceof InstancedSkinnedMesh) {
+			console.log('setting count', feim.instancedMesh.count, '(max ' +feim.maxCount +')', 'for', feim.instancedMesh)
+			
+			const wobMesh = feim.gltf.scene.children[0].children[0] as SkinnedMesh
+			// feim.instancedMesh.bind(wobMesh.skeleton, wobMesh.bindMatrix)
+		}
+		// feim.instancedMesh.	 = feim.isAnimated ? feim.maxCount : iNearby // todo anim, this wasn't originally necessary, problem with anim counts?
 	}
 
 	moveLightsNearPlayer() {

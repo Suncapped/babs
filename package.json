@@ -41,6 +41,7 @@
     "@vitejs/plugin-basic-ssl": "^1.0.2",
     "bicubic-interpolate": "^1.0.4",
     "cross-env": "^7.0.3",
+    "deep-object-diff": "^1.1.9",
     "eslint": "^8.54.0",
     "lil-gui": "^0.19.1",
     "svelte": "^4.2.7",

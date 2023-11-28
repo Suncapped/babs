@@ -58,6 +58,7 @@ module.exports = {
 		'no-inner-declarations': 'off',
 		'prefer-rest-params': 'off',
 		'no-irregular-whitespace': 'warn',
+		'no-prototype-builtins': 'off',
 
 		
 	},

@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh } from 'three'
+import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip } from 'three'
 import { UiSys } from '@/sys/UiSys'
 import { log } from '@/Utils'
 import { Flame } from '@/comp/Flame'
@@ -8,7 +8,8 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob, type Rotation } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
-import { LoaderSys } from '@/sys/LoaderSys'
+import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
+import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 
 const FEET_IN_A_METER = 3.281
 
@@ -40,7 +41,7 @@ export class Wob extends SharedWob {
 
 	static totalArrivedWobs = 0
 
-	static LoadedGltfs = new Map<string, Mesh|true>()
+	static LoadedGltfs = new Map<string, true|Gltf>()
 	static InstancedWobs = new Map<string, InstancedWobs>()
 	static async LoadInstancedWobs(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean, asFarWobs :'asFarWobs' = null) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
@@ -59,19 +60,19 @@ export class Wob extends SharedWob {
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 		}
 
-		const meshesToLoad = arrivalWobs.map(w=>w.name)
+		const wobsToLoad = arrivalWobs.map(w=>w.name)
 		log.info('meshesToLoad', nameCounts)
-		await Wob.ensureGltfsLoaded(meshesToLoad, babs) // Loads them into Wob.LoadedGltfs
+		await Wob.ensureGltfsLoaded(wobsToLoad, babs) // Loads them into Wob.LoadedGltfs
 
 		// log.info('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
-		for(const [blueprint_id, wobMesh] of Wob.LoadedGltfs) {
+		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
 			const newWobsCount = nameCounts.get(blueprint_id)
 			let instanced = Wob.InstancedWobs.get(blueprint_id)
 			// log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
 			if(!instanced) {
 				// log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
-				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, wobMesh as Mesh, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
+				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, gltf as Gltf, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
 				// log.info('Created instanced for blueprint_id', blueprint_id)
 				// instanced.instancedMesh.geometry.computeBoundsTree() // bvh
 			}
@@ -113,13 +114,7 @@ export class Wob extends SharedWob {
 
 			if(wob.idzone) { // Place in zone (; is not a backpack item)
 				zone = babs.ents.get(wob.idzone) as Zone
-
 				const feim = Wob.InstancedWobs.get(wob.name)
-				// console.log('feim for', wob.name, feim)
-				// const wobFromData = zone.getWob(wob.x, wob.z) // Get real data so we can see real height of objects that have been converted to far trees
-				// const feimFromData = Wob.InstancedMeshes.get(wobFromData.blueprint_id)
-
-				// Hide small objects that are far by moving them downward; no better way without an additional instancedmesh buffer!
 
 				yardCoord = YardCoord.Create(wob)
 				const engCoordCentered = yardCoord.toEngineCoordCentered()
@@ -137,6 +132,12 @@ export class Wob extends SharedWob {
 						existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
 						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
 						feim.increaseLoadedCount()
+						if(feim.blueprint_id === 'butterfly' && feim.instancedMesh instanceof InstancedSkinnedMesh) {
+							log('adding wob, increaseLoadedCount() done')
+						}
+					}
+					else {
+						log('Index does exist?', existingIindex)
 					}
 
 					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
@@ -157,6 +158,7 @@ export class Wob extends SharedWob {
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
+				// matrix = new Matrix4() // not needed I guess?
 				if(!asFarWobs) {
 					// console.log(wob.r)
 					matrix.makeRotationY(MathUtils.degToRad(wob.r *90))
@@ -189,7 +191,7 @@ export class Wob extends SharedWob {
 
 			}
 			else {	// Send to bag
-				const instanced = Wob.InstancedWobs.get(wob.name)
+				// const instanced = Wob.InstancedWobs.get(wob.name)
 			}
 
 		}
@@ -209,7 +211,7 @@ export class Wob extends SharedWob {
 			if(!Wob.LoadedGltfs.get(wobName)){
 				// log.info('Loading gltf:', wobName)
 				const load = babs.loaderSys.loadGltf(`/environment/${wobName}.glb`, wobName, await LoaderSys.CachedGlbFiles)
-				Wob.LoadedGltfs.set(wobName, true) // Gets set right after this
+				Wob.LoadedGltfs.set(wobName, true) // Hold its spot in case there are more loads.  Gets set right after this
 				loads.push(load)
 			}
 		}
@@ -217,33 +219,19 @@ export class Wob extends SharedWob {
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const gltf of finishedLoads) {
 			let wobMesh :Mesh|SkinnedMesh|any
+			// let animations :Array<AnimationClip>
 			try {
-				wobMesh = gltf.scene.children[0] // Probably a Mesh, not SkinnedMesh?  Or a Blender export, not fbx2gltf export.  Not sure.
+				wobMesh = gltf.scene.children[0].children[0] // Counting on this, comes via FBX2GLTF script
 
 				const isSomeKindOfMesh = (object :any) => {
 					return object instanceof Mesh || object instanceof SkinnedMesh
 				}
 
-				// If wobMesh if not of type Mesh, go deeper; FBX2glTF exporter and/or animated, I guess.
 				if(!isSomeKindOfMesh(wobMesh)) {
-					gltf.scene.children[0].children.forEach((child) => {
-						if(isSomeKindOfMesh(child)) {
-							wobMesh = child
-						}
-					})
-				}
-				if(!isSomeKindOfMesh(wobMesh)) {
-					throw new Error('wobMesh is still not a Mesh')
+					throw new Error('wobMesh is not a Mesh in, gltf:', gltf)
 				}
 
 				wobMesh.name = gltf.name
-
-				if(gltf.name === 'bedroll') {
-					console.log('bedroll gltf', wobMesh)
-				}
-				if(gltf.name === 'butterfly') {
-					console.log(gltf.name+' gltf', wobMesh)
-				}
 
 				// Reset scale
 				let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
@@ -271,7 +259,7 @@ export class Wob extends SharedWob {
 				console.warn('Error loading gltf:', gltf.name, e.message)
 			}
 			
-			Wob.LoadedGltfs.set(gltf.name, wobMesh as Mesh) // It's already been forced into Mesh above
+			Wob.LoadedGltfs.set(gltf.name, gltf)
 		}
 
 	}

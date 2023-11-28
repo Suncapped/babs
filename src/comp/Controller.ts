@@ -351,7 +351,7 @@ export class Controller extends Comp {
 
 		const acc = this.acceleration.clone()
 		if (this.run) {
-			acc.multiplyScalar(2.0)
+			acc.multiplyScalar(12.0)
 		}
 
 		// Move toward destination

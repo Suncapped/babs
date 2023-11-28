@@ -1,4 +1,4 @@
-import { AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
+import { AnimationClip, AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
@@ -11,6 +11,13 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import JSZip, { type files } from 'jszip'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { Babs } from '@/Babs'
+
+
+export type Gltf = {
+	animations: Array<AnimationClip>,
+	scene: Scene,
+	name: string,
+}
 
 export class LoaderSys {
 
@@ -228,24 +235,8 @@ export class LoaderSys {
 				else {
 					console.warn('Arrival wob has no scene: ', name)
 				}
-
-				if(gltf.animations.length > 0) { // It's a rigged thing, SkinnedMesh etc
-
-					const clip = gltf.animations[0]
-					if(name == 'butterfly') {
-
-						// const mixer = new AnimationMixer(gltf.scene.children[0].children[0])
-						// const action = mixer.clipAction(clip)
-						// action.play()
-
-						// // Use setInterval() to update it
-						// setInterval(() => {
-						// 	// console.log('update')
-						// 	mixer.update(1/30)
-						// }, 1000/30)
-					}
-
-				}
+				
+				// if(gltf.animations.length > 0) log(`${name} is animated!`, gltf.animations)
 	
 				gltf.name = name
 
