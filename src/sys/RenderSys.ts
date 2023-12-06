@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 import { log } from './../Utils'
-import { ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh } from 'three'
+import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion } from 'three'
 import { WorldSys } from './WorldSys'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
@@ -121,7 +121,7 @@ export class RenderSys {
 		})
 
 		setInterval(() => {
-			this.moveLightsNearPlayer()
+			this.moveLightsToNearPlayer()
 			
 			const xrSession = (this.renderer instanceof WebGLRenderer) && this.renderer.xr.getSession()
 			const isVrActiveNow = !!xrSession
@@ -231,19 +231,10 @@ export class RenderSys {
 		const secondsElapsed = performance.now() * 0.001
 		for (let [name, instancedWobs] of Wob.InstancedWobs) {
 			if(instancedWobs.isAnimated && instancedWobs.instancedMesh instanceof InstancedSkinnedMesh) {
-				for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) {
-					// Copy from instance to silly
-					let instanceMatrix = new Matrix4()
-					instancedWobs.instancedMesh.getMatrixAt(i, instanceMatrix)
-					instancedWobs.silly.matrix.copy(instanceMatrix)
-
-					let instancePosition = new Vector3()
-					instancePosition.setFromMatrixPosition(instanceMatrix)
-					instancedWobs.silly.position.copy(instancePosition)
-					instancedWobs.silly.updateMatrix()
-					
+				for(let i=0, lc=instancedWobs.instancedMesh.count; i<lc; i++) { // todo anim use .getLoadedCount()
 					const duration = instancedWobs.gltf.animations[0].duration
-					const animTime = secondsElapsed % duration
+					const timeOffset = instancedWobs.animTimeOffsets[i]
+					const animTime = (secondsElapsed +timeOffset) % duration
 
 					instancedWobs.animMixer.setTime(animTime)
 					instancedWobs.silly.skeleton.bones.forEach((b) => {
@@ -251,8 +242,10 @@ export class RenderSys {
 					})
 
 					instancedWobs.silly.updateMatrix()
-					instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix)
+					instancedWobs.instancedMesh.updateMatrix() // todo anim remove?
+					// instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix) // not needed since I'm not translating etc it?
 					instancedWobs.instancedMesh.setBonesAt(i, instancedWobs.silly.skeleton)
+					instancedWobs.instancedMesh.updateMatrix() // todo anim remove?
 				}
 
 				instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true
@@ -260,26 +253,10 @@ export class RenderSys {
 					instancedWobs.instancedMesh.skeleton.boneTexture.needsUpdate = true
 				}
 			}
-		}
-		
-		// List all materials in scene
-		// const materials = new Set()
-		// const scene = this.babs.scene
-		// scene.traverse( function( object :any ) {
-		// 	if ( object.material ) materials.add( object.material );
-		// })
-		// console.log(materials)
 
-		// List all InstancedMesh in scene
-		// const ims = new Set()
-		// const scene = this.babs.scene
-		// scene.traverse( function( object :any ) {
-		// 	if ( object instanceof InstancedMesh ) ims.add( object )
-		// })
-		// console.log(ims)
+		}
 
 		this.renderer.render(this._scene, this._camera)
-
 	}
 
 	calcMapIndex = 0
@@ -325,7 +302,7 @@ export class RenderSys {
 			if(isNearbyIsh) {
 				// Swap far iNearby with this near i
 				if(i !== iNearby) {
-					Zone.swapWobsAtIndexes(iNearby, i, feim)
+					Zone.swapWobsAtIndexes(iNearby, i, feim) // todo anim
 					// console.log('swapped: ', feim.instancedMesh.name, '('+imLoadedCount+')', iNearby, i)
 				}
 				iNearby++
@@ -334,9 +311,38 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby
+		// feim.instancedMesh.count = feim.maxCount // todo anim
+
+		// if(feim.blueprint_id === 'butterfly') {
+		// if(feim.blueprint_id === 'dandelion') {
+		// 	// Update ALL matrices
+		// 	feim.instancedMesh.instanceMatrix.needsUpdate = true
+		// 	feim.imGroup.matrixWorldNeedsUpdate = true
+		// 	feim.gltf.scene.updateMatrix()
+		// 	feim.gltf.scene.updateMatrixWorld(true)
+		// 	feim.gltf.scene.children[0].updateMatrix()
+		// 	feim.gltf.scene.children[0].updateMatrixWorld(true)
+		// 	feim.gltf.scene.children[0].children[0].updateMatrix()
+		// 	feim.gltf.scene.children[0].children[0].updateMatrixWorld(true)
+		// 	this.babs.group.updateMatrix()
+		// 	this.babs.group.updateMatrixWorld(true)
+
+		// 	let matrix = new Matrix4()
+		// 	feim.instancedMesh.getMatrixAt(1, matrix)
+		// 	const pos = new Vector3()
+		// 	matrix.decompose(pos, new Quaternion(), new Vector3())	
+		// 	console.log('imGroup im ins scene im:', 
+		// 		feim.imGroup.position.z, 
+		// 		feim.instancedMesh.position.z, 
+		// 		pos.z, // Seems to be world?
+		// 		feim.imGroup.children[0].position.z, 
+		// 		feim.imGroup.children[1].position.z,
+		// 	)
+
+		// }
 	}
 
-	moveLightsNearPlayer() {
+	moveLightsToNearPlayer() {
 		if(Flame.player?.controller?.playerRig) {
 			const playerpos = Flame.player.controller.playerRig.position
 

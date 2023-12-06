@@ -121,7 +121,7 @@ export class Wob extends SharedWob {
 				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
 
 				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-				engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
+				// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 				engPositionVector = feim.heightAdjust(engPositionVector)
 
 				let existingIindex
@@ -132,6 +132,10 @@ export class Wob extends SharedWob {
 						existingIindex = feim.getLoadedCount() // Not -1, because we're about the increase the count, then this index will be count -1
 						wob.zone.coordToInstanceIndex[wob.x +','+ wob.z] = existingIindex
 						feim.increaseLoadedCount()
+
+						if(feim.instancedMesh instanceof InstancedSkinnedMesh) {
+							feim.animTimeOffsets[existingIindex] = Math.random() *feim.gltf.animations[0].duration // todo anim, works with rearrangements?  Maybe doesn't matter too much.
+						}
 					}
 					else {
 						log('Index does exist?', existingIindex)
@@ -215,10 +219,10 @@ export class Wob extends SharedWob {
 		const finishedLoads = await Promise.all(loads)
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const gltf of finishedLoads) {
-			let wobMesh :Mesh|SkinnedMesh|any
+			let wobMesh :Mesh|SkinnedMesh
 			// let animations :Array<AnimationClip>
 			try {
-				wobMesh = gltf.scene.children[0].children[0] // Counting on this, comes via FBX2GLTF script
+				wobMesh = gltf.scene.children[0].children[0] as Mesh|SkinnedMesh// Counting on this, comes via FBX2GLTF script
 
 				const isSomeKindOfMesh = (object :any) => {
 					return object instanceof Mesh || object instanceof SkinnedMesh
@@ -230,20 +234,48 @@ export class Wob extends SharedWob {
 
 				wobMesh.name = gltf.name
 
-				// Reset scale
+				// // Reset scale
+				// let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
+				// scaling = scaling.multiplyScalar(FEET_IN_A_METER)
+				// wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
+				// wobMesh.scale.set(1,1,1)
+
+				// // Reset position - position seems to be fine already, even when it's off in export.  But juust in case!
+				// // Perhaps the reason this isn't necessary, is that it's done in the InstancedMesh?  Not sure.
+				// wobMesh.position.set(0,0,0)
+
+				// // Reset rotation
+				// wobMesh.updateMatrix()
+				// wobMesh.geometry.applyMatrix4(wobMesh.matrix)
+				// wobMesh.rotation.set(0,0,0)
+				// wobMesh.updateMatrix()
+
+				// Bake / reset transformation (position, rotation, scale) 
+				// https://stackoverflow.com/questions/27022160/three-js-can-i-apply-position-rotation-and-scale-to-the-geometry/27023024#27023024
+				// wobMesh.updateMatrix()
+				// wobMesh.geometry.applyMatrix4(wobMesh.matrix)
+
+				// Bake original scale (before rotating)
 				let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
 				scaling = scaling.multiplyScalar(FEET_IN_A_METER)
 				wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
-				wobMesh.scale.set(1,1,1)
+				wobMesh.scale.set(1, 1, 1)
 
-				// Reset position - position seems to be fine already, even when it's off in export.  But juust in case!
-				// Perhaps the reason this isn't necessary, is that it's done in the InstancedMesh?  Not sure.
-				wobMesh.position.set(0,0,0)
-
-				// Reset rotation
+				// Bake original rotation
 				wobMesh.updateMatrix()
-				wobMesh.geometry.applyMatrix4(wobMesh.matrix)
+				if(!(wobMesh instanceof SkinnedMesh)) wobMesh.geometry.applyMatrix4(wobMesh.matrix) // hax // todo anim
 				wobMesh.rotation.set(0,0,0)
+
+				// let rotation = wobMesh.rotation.clone()
+				// console.log('rotation', wobMesh.name, rotation.x, rotation.y, rotation.z)
+				// wobMesh.geometry.rotateX(rotation.x)
+				// wobMesh.geometry.rotateY(rotation.y)
+				// wobMesh.geometry.rotateZ(rotation.z)
+				// wobMesh.rotation.set(0, 0, 0)
+				
+				// Bake original position
+				wobMesh.position.set(0, 0, 0) // Does it do anything?  Where is center?  And other such questions :p
+
 				wobMesh.updateMatrix()
 
 				// Not sure if necessary

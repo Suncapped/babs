@@ -98,7 +98,7 @@ export class Flame extends Comp {
 		// console.log('Flame.wantsLight.push', com.fire.uuid)
 		Flame.wantsLight.push(com.fire)
 
-		babs.renderSys.moveLightsNearPlayer() // Move on creation so it makes light there fast :)
+		babs.renderSys.moveLightsToNearPlayer() // Move on creation so it makes light there fast :)
 
 		return com
 	}

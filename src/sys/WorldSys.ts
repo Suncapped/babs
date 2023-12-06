@@ -1005,6 +1005,7 @@ export class WorldSys {
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
 			'cameraGroup', 'camera', // Doesn't really matter since they're set per frame anyway, but might as well.
+			// 'butterfly',
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
@@ -1022,10 +1023,12 @@ export class WorldSys {
 				// const shiftYards = shiftVector.clone().divideScalar(4).floor()
 				// player.controller.gDestination.add(shiftYards)
 			}
+			// child.updateMatrixWorld(true)
+			// child.updateMatrix()
 		})
 		this.shiftiness.add(shiftVector)
 		
-		// log.info('shifted', shiftingLog)
+		log('shiftEverything includes (minus ground)', xShift, zShift, 'shifted', shiftingLog.join(', '))
 	}
 
 }

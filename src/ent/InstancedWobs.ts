@@ -1,5 +1,5 @@
 import type { Babs } from '@/Babs'
-import { InstancedMesh, Vector3, Matrix4, Mesh, SkinnedMesh, DynamicDrawUsage, AnimationMixer, InstancedBufferAttribute, StreamDrawUsage } from 'three'
+import { Group, InstancedMesh, Vector3, Matrix4, Mesh, SkinnedMesh, DynamicDrawUsage, AnimationMixer, InstancedBufferAttribute, StreamDrawUsage } from 'three'
 import { Wob } from './Wob'
 import { log } from '@/Utils'
 import { YardCoord } from '@/comp/Coord'
@@ -7,14 +7,17 @@ import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import type { Gltf } from '@/sys/LoaderSys'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 
-const INSTANCED_MAXCOUNT_EXTRA_MIN = 2 // Minimum number of extra instances to add when reallocating a larger buffer
+const INSTANCED_MAXCOUNT_EXTRA_MIN = 1000 // Minimum number of extra instances to add when reallocating a larger buffer // todo anim
 
 // InstancedWobs will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
 export class InstancedWobs {
-	instancedMesh :InstancedMesh|InstancedSkinnedMesh
+	instancedMesh :InstancedMesh|InstancedSkinnedMesh // Note that visually/hierarchically, this is added to a Group.
+	imGroup :Group
 	isAnimated :boolean = false
 	animMixer :AnimationMixer
+	animTimeOffsets :number[] = []
 	public silly :SkinnedMesh
+
 	boundingSize = new Vector3()
 	public lift :number
 	public sink :number
@@ -33,7 +36,7 @@ export class InstancedWobs {
 		public gltf :Gltf,
 		public asFarWobs :'asFarWobs' = null,
 	) {
-		let wobMesh = gltf.scene.children[0].children[0] as Mesh|SkinnedMesh
+		let wobMesh = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
 		// - Set up wobMesh into InstancedMesh
 		if(!wobMesh) {
 			console.warn('No wobMesh for:', this.blueprint_id)
@@ -51,7 +54,7 @@ export class InstancedWobs {
 
 		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT to maxCount for preallocation margin; prevents needing immediate reallocation.
 
-		if(this.gltf.animations?.length == 0) {
+		if(true || this.gltf.animations?.length == 0) {
 			this.isAnimated = false
 			this.instancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
 		}
@@ -67,6 +70,7 @@ export class InstancedWobs {
 			this.animMixer = new AnimationMixer(this.gltf.scene)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
+		wobMesh.visible = false // Hide the original mesh // todo anim
 
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)
@@ -93,7 +97,7 @@ export class InstancedWobs {
 
 		this.instancedMesh.count = 0 // Actual rendered count; will be increased when wobs are added
 		this.instancedMesh.name = this.blueprint_id
-		this.instancedMesh.frustumCulled = false // todo?
+		this.instancedMesh.frustumCulled = false // todo optimize?
 		this.instancedMesh.instanceMatrix.setUsage(this.isAnimated ? StreamDrawUsage : DynamicDrawUsage) // todo optimize?
 		// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 		// instanced.instanceMatrix.needsUpdate = true
@@ -102,16 +106,25 @@ export class InstancedWobs {
 		this.instancedMesh.receiveShadow = true
 
 		this.instancedMesh.computeBoundingSphere()
-
-		this.instancedMesh.position.setX(babs.worldSys.shiftiness.x)
-		this.instancedMesh.position.setZ(babs.worldSys.shiftiness.z)
-
 		this.instancedMesh.geometry.center()
 		// ^ Fixes offset pivot point
 		// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 		
+		// // Add instancedMesh and gltf.scene to a group
+		this.imGroup = new Group()
+		this.imGroup.name = this.blueprint_id
+
+		this.imGroup.add(gltf.scene) // Necessary for InstancedSkinnedMesh at least, so that translation doesn't...affect bones separately?  This when the butterflies would go in all directions when translating their instancedMesh on purely z axis.
+		this.imGroup.add(this.instancedMesh)
+		this.babs.group.add(this.imGroup)
+
+		// Will not need re-setting during reallocate
+		this.imGroup.position.setX(babs.worldSys.shiftiness.x)
+		this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
+		this.imGroup.updateMatrix()
+		this.imGroup.updateMatrixWorld()
+
 		Wob.InstancedWobs.set(this.blueprint_id, this)
-		this.babs.group.add(this.instancedMesh)
 	}
 
 	getLoadedCount() {
@@ -153,13 +166,8 @@ export class InstancedWobs {
 			newInstancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount) // this.MAXcount ...ow.  Because, we want this one new to be even bigger, of course.  That's the point of reallocate...so yes.  
 		}
 		else if((wobMesh instanceof SkinnedMesh)){ // Type narrowing
-			// // Workaround instead of reallocating InstancedSkinnedMesh
-			// // https://chat.openai.com/share/64abacbd-7d1e-47e3-8761-2634ffd19183
-			// window.location.reload()
-
 			const clonedScene = SkeletonUtils.clone(this.gltf.scene)
 			const clonedMesh = clonedScene.children[0].children[0] as SkinnedMesh
-
 
 			newInstancedMesh = new InstancedSkinnedMesh(clonedMesh.geometry, clonedMesh.material, this.maxCount)
 			// newInstancedMesh.copy(this.instancedMesh)
@@ -175,6 +183,7 @@ export class InstancedWobs {
 			this.animMixer = new AnimationMixer(clonedScene)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
+		wobMesh.visible = false // Hide the original mesh // todo anim
 
 		// Here we only need to copy over InstancedMesh properties, not feim (which remains the same one).
 		newInstancedMesh.frustumCulled = this.instancedMesh.frustumCulled
@@ -189,6 +198,7 @@ export class InstancedWobs {
 		}
 		// this.instanceIndexToWob.set( // No need to set, because index will be the same and only InstancedMesh is being remade here, not InstancedWobs.
 		// zone.coordToInstanceIndex[ // Same thing
+		// this.instancedMesh.instanceMatrix.needsUpdate = true // todo anim
 
 		newInstancedMesh.castShadow = this.instancedMesh.castShadow
 		newInstancedMesh.receiveShadow = this.instancedMesh.receiveShadow
@@ -204,17 +214,18 @@ export class InstancedWobs {
 
 		// feim.instancedMesh.computeBoundingBox()
 		newInstancedMesh.computeBoundingSphere()
-
-		newInstancedMesh.position.x = this.instancedMesh.position.x
-		newInstancedMesh.position.z = this.instancedMesh.position.z
 		// newInstancedMesh.geometry.center() // Not needed a second time, since the geometry doesn't change or get disposed.
 
-		this.babs.group.remove(this.instancedMesh)
+		// Remove and dispose
+		this.imGroup.remove(this.instancedMesh)
 		this.instancedMesh.dispose()
 		this.instancedMesh.visible = false
 
+		// Reassign to new one and add
 		this.instancedMesh = newInstancedMesh
-		this.babs.group.add(this.instancedMesh)
+		this.imGroup.add(this.instancedMesh)
+
+
 		Wob.InstancedWobs.set(this.blueprint_id, this)
 	}
 

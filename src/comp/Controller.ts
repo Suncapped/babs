@@ -578,13 +578,14 @@ export class Controller extends Comp {
 				await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
 				log.info('farwobs to add', farWobsToAdd.length)
 				await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
+				log.info('done adding LoadInstancedWobs')
 
 				
 				player.controller.selfWaitZoningExitZone = null
 
 			}
 			// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
-			pullWobsData() // NOT awaited!
+			await pullWobsData()
 
 		}
 		else { // Others

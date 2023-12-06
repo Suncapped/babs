@@ -50,8 +50,7 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 					const matrix = bones[i] ? bones[i].matrixWorld :_identityMatrix
 
 					_offsetMatrix.multiplyMatrices(matrix, boneInverses[i])
-					_offsetMatrix.toArray(boneMatrices, (i +instanceId *bones.length) *16,
-					)
+					_offsetMatrix.toArray(boneMatrices, (i +instanceId *bones.length) *16)
 				}
 
 				if (boneTexture !== null) {
@@ -228,5 +227,6 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 	// 	this._count = value
 	// 	this.instanceMatrix.needsUpdate = true
 	// }
+
 
 }

@@ -444,6 +444,25 @@ export class InputSys {
 
 				}
 
+				{
+					// List all materials in scene
+					// const materials = new Set()
+					// const scene = this.babs.scene
+					// scene.traverse( function( object :any ) {
+					// 	if ( object.material ) materials.add( object.material );
+					// })
+					// console.log(materials)
+
+					// List all InstancedMesh in scene
+					// const ims = new Set()
+					// const scene = this.babs.scene
+					// scene.traverse( function( object :any ) {
+					// 	if ( object instanceof InstancedMesh ) ims.add( object )
+					// })
+					// console.log(ims)
+
+				}
+
 
 
 			}
@@ -1823,7 +1842,7 @@ export class InputSys {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/cursors/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name}'s target?>`)
+		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name || 'action'}'s target?>`)
 	}
 
 

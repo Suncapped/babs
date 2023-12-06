@@ -378,12 +378,9 @@ export class SocketSys {
 				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible comp info
 			}
 
-			// Shift before zoning; on load exclude self
-			this.babs.worldSys.shiftEverything(-enterZone.x *WorldSys.ZONE_LENGTH_FEET, -enterZone.z *WorldSys.ZONE_LENGTH_FEET, true) 
-
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
-
-			player.controller.zoneIn(player, enterZone, null)
+			await player.controller.zoneIn(player, enterZone, null) // Load zones
+			this.babs.worldSys.shiftEverything(-enterZone.x *WorldSys.ZONE_LENGTH_FEET, -enterZone.z *WorldSys.ZONE_LENGTH_FEET)//, true) // Set offset
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 

@@ -224,7 +224,7 @@ export class LoaderSys {
 					}
 					else {
 						if(gltf.scene.children.length > 1) {
-							console.warn(`Loaded object with more than one child.`, name)
+							console.warn(`Loaded gltf scene with more than one child.`, name)
 						}
 					}
 				}
@@ -302,10 +302,6 @@ export class LoaderSys {
 		// scene.traverse(c => c.receiveShadow = true)
 		// scene.children.traverse(c => c.receiveShadow = true)
 		// scene.children.traverse(c => c.traverse(d => d.receiveShadow = true))
-
-		// Okay let's try this https://stackoverflow.com/questions/27022160/three-js-can-i-apply-position-rotation-and-scale-to-the-geometry/27023024#27023024
-		// Well, couldn't figure that one out :p  (deleted pages of code) Better to scale it before import.
-		// Conclusion: Baking scaling this way is not easy to say the least, do it in Blender, not here.
 
 		rigGroupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
 		
