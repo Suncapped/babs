@@ -123,7 +123,10 @@ export class Controller extends Comp {
 		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.playerRig)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.playerRig.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
-		this.playerRig.position.add(this.playerRig.zone.ground.position)
+
+		// if(!this.isSelf) { // Todo shiftiness, reinstate this conditional once we move to relative zones :)
+			this.playerRig.position.add(this.playerRig.zone.ground.position)
+		// }
 
 		// Set rotation
 		const degrees = Controller.ROTATION_ANGLE_MAP[this.arrival.r] -45 // Why -45?  Who knows! :p
@@ -155,8 +158,7 @@ export class Controller extends Comp {
 		this.gDestination = gDestVector3.clone()
 		// log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
 		
-		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 ||
-		gDestVector3.x > 249 || gDestVector3.z > 249
+		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > 249 || gDestVector3.z > 249
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
@@ -172,7 +174,7 @@ export class Controller extends Comp {
 				// console.log('targetYardCoord.zone', targetYardCoord.zone)
 
 				const nextZoneExists = targetYardCoord.zone // I can stop us from running off the edge here!
-				if(this.selfWaitZoningExitZone || !nextZoneExists) { // TODO 
+				if(this.selfWaitZoningExitZone || !nextZoneExists) {
 					// Do not initiate shift/zoning while already zoning.
 					// Do not even update this.gDestination; reset it to to old.
 					this.gDestination = gDestOld
@@ -181,24 +183,56 @@ export class Controller extends Comp {
 				}
 
 				// Zone exists, let's go there!
-
-				enterzone_id = targetYardCoord.zone.id
-
 				this.gDestination.x = targetYardCoord.x
 				this.gDestination.z = targetYardCoord.z
 
-				const zonecurrent = this.playerRig.zone
-				const zonetarget = targetYardCoord.zone
-				const zoneDiff = new Vector3(zonetarget.x -zonecurrent.x, 0, zonetarget.z -zonecurrent.z)
+				const exitZone = this.playerRig.zone
+				const enterZone = targetYardCoord.zone
+				enterzone_id = enterZone.id
+				const vZoneDiff = new Vector3(enterZone.x -exitZone.x, 0, enterZone.z -exitZone.z)
 
-				log('Initiating Zoning', zonecurrent.id, '->', zonetarget.id)
+				const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
+				const newZonesNear = enterZone.getZonesAround(Zone.loadedZones, 1)
+				const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
+				const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
 
-				this.selfWaitZoningExitZone = zonecurrent
-				this.playerRig.zone = zonetarget
-				this.babs.worldSys.currentGround = zonetarget.ground
+				log.info('Initiating Zoning', exitZone.id, '->', enterZone.id)
+
+				this.selfWaitZoningExitZone = exitZone
+				this.playerRig.zone = enterZone
+				this.babs.worldSys.currentGround = enterZone.ground
 				log.info('setDestination', this.playerRig, this.babs.worldSys.currentGround)
 
-				this.babs.worldSys.shiftEverything(-zoneDiff.x *1000, -zoneDiff.z *1000)
+				// 1. Player has been moved.  1b. Remove wobs from exit zones.  2. **Shift all existing wobs relative to delta.**  3. ShiftEverything().  4. Then load new wobs (network return), which will load relative.
+
+				// Remove and decrease count for exiting zones
+				for(const removedZone of removedZonesNearby) {
+					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
+					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
+						removedZone.removeWobGraphic(zoneFwob)
+					}
+					removedZone.coordToInstanceIndex = {} // In future, need similar for farCoordToInstanceIndex?
+				}
+
+				let totalCount = 0
+				console.time('Shift remaining instance items')
+				{ // Shift all existing wobs relative to delta.
+					Wob.InstancedWobs.forEach(instancedWobs => {
+						const instanceMatrix = instancedWobs.instancedMesh.instanceMatrix
+						for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) { // Replicated in calcNearbyWobs()
+							instanceMatrix.array[i*16 +12] += -vZoneDiff.x *WorldSys.ZONE_LENGTH_FEET
+							instanceMatrix.array[i*16 +14] += -vZoneDiff.z *WorldSys.ZONE_LENGTH_FEET
+							totalCount++
+						}
+
+						instanceMatrix.needsUpdate = true
+					})
+				}
+				console.timeEnd('Shift remaining instance items') // 2.3ms on desktop - not too bad!
+				log.info('shift total count', totalCount)
+
+				this.babs.worldSys.shiftEverything(-vZoneDiff.x *WorldSys.ZONE_LENGTH_FEET, -vZoneDiff.z *WorldSys.ZONE_LENGTH_FEET)
 
 				// this.playerRig.updateMatrixWorld(true)
 				// this.playerRig.updateMatrix()
@@ -208,9 +242,9 @@ export class Controller extends Comp {
 				// zonetarget.ground.updateMatrix()
 				
 				// Seems this is all that's necessary for zoning:
-				zonecurrent.geometry.computeBoundingSphere()
-				zonecurrent.ground.updateMatrixWorld(true)
-				zonecurrent.ground.updateMatrix()
+				exitZone.geometry.computeBoundingSphere()
+				exitZone.ground.updateMatrixWorld(true)
+				exitZone.ground.updateMatrix()
 			}
 
 			this.babs.socketSys.send({
@@ -351,7 +385,7 @@ export class Controller extends Comp {
 
 		const acc = this.acceleration.clone()
 		if (this.run) {
-			acc.multiplyScalar(12.0)
+			acc.multiplyScalar(2.0)
 		}
 
 		// Move toward destination
@@ -479,7 +513,7 @@ export class Controller extends Comp {
 	}
 
 	setPlayerGroundY() {
-		const zone = this.playerRig?.zone // This gets set well before zoneIn(), so it's current (ie doesn't wait for network)
+		const zone = this.playerRig?.zone // This gets set well before loadZoneWobs, so it's current (ie doesn't wait for network)
 
 		if(zone){// && this.raycaster) {
 			const yardCoord = YardCoord.Create(this.playerRig)
@@ -496,12 +530,10 @@ export class Controller extends Comp {
 		return null
 	}
 
-	async zoneIn(player :Player, enterZone :Zone, exitZone :Zone|null) {
-		// console.log('zonein()')
-		log.info('zonein player zone', player.id, enterZone.id, )
-		log.info('this.gDestination', this.gDestination)
-
-		this.playerRig.zone = enterZone // This re-applies to self, but for others, this is the only place it's set
+	async loadZoneWobs(player :Player, enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
+		// console.log('loadZoneWobs')
+		log.info('loadZoneWobs zonein player zone', player.id, enterZone.id, )
+		log.info('loadZoneWobs this.gDestination', this.gDestination)
 
 		// Calculate the zones we're exiting and the zones we're entering
 		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
@@ -513,88 +545,76 @@ export class Controller extends Comp {
 		const newZonesFar = enterZone.getZonesAround(Zone.loadedZones, 22)
 		const removedZonesFar = oldZonesFar.filter(zone => !newZonesFar.includes(zone))
 		const addedZonesFar = newZonesFar.filter(zone => !oldZonesFar.includes(zone))
-
 		// console.log('addedZonesFar', Zone.loadedZones, addedZonesFar.map(z => z.id).sort((a,b) => a-b), addedZonesNearby.map(z => z.id).sort((a,b) => a-b))
 
 		log.info('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
+		
+		// this.babs.worldSys.currentGround = enterZone.ground // Now happens before network
 
-		if(this.isSelf) {
-			// this.babs.worldSys.currentGround = enterZone.ground // Now happens before network
+		// Removed; wob removal from exiting zones happens on setDestination(), before here.
+		
+		// Pull detailed wobs for entered zones, so we can load them.  
+		// This could later be moved to preload on approaching zone border, rathern than during zonein.
 
-			for(const removedZone of removedZonesNearby) {
-				const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-				log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
-				for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
-					removedZone.removeWobGraphic(zoneFwob)
-				}
-				removedZone.coordToInstanceIndex = {} // In future, need similar for farCoordToInstanceIndex?
+		const pullWobsData = async () => {
+			let detailedWobsToAdd :SharedWob[] = []
+			let farWobsToAdd :SharedWob[] = []
+
+			// Here we actually fetch() the near wobs, but the far wobs have been prefetched (dekazones etc)
+
+			const fetches = []
+			for(let zone of addedZonesNearby) {
+				zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+				fetches.push(zone.locationData)
 			}
+
+			await Promise.all(fetches)
+
+			for(let zone of addedZonesNearby) {
+				const fet4 = await zone.locationData
+				const data4 = await fet4.blob()
+				if (data4.size == 2) {  // hax on size (for `{}`)
+					zone.locationData = new Uint8Array()
+				}
+				else {
+					const buff4 = await data4.arrayBuffer()
+					zone.locationData = new Uint8Array(buff4)
+				}
+			}
+
+			for(let zone of addedZonesNearby) {
+				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+				detailedWobsToAdd.push(...fWobs)
+			}
+
+			// Far wobs, using prefetched data
+			await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
+			for(let zone of addedZonesFar) {
+				// Data was prefetched, so just access it in zone.farLocationData
+				const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
+				farWobsToAdd.push(...fWobs)
+			}
+
+			// return [detailedWobsToAdd, farWobsToAdd] // These loads don't [later: didn't] need to await for zonein to complete~!
+			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) 
+			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
+
+			/* todo zoning
+				We may need to do something with zoneIn to return it to not-awaited, 
+					or preloading assets so there's no network request, 
+					or queuing up network/player commands until wobs are all loaded.
+				Maybe after rolling zones.
+			*/
 			
-			// Pull detailed wobs for entered zones, so we can load them.  
-			// This could later be moved to preload on approaching zone border, rathern than during zonein.
-
-			const pullWobsData = async () => {
-				let detailedWobsToAdd :SharedWob[] = []
-				let farWobsToAdd :SharedWob[] = []
-
-				// Here we actually fetch() the near wobs, but the far wobs have been prefetched (dekazones etc)
-
-				const fetches = []
-				for(let zone of addedZonesNearby) {
-					zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
-					fetches.push(zone.locationData)
-				}
-
-				await Promise.all(fetches)
-
-				for(let zone of addedZonesNearby) {
-					const fet4 = await zone.locationData
-					const data4 = await fet4.blob()
-					if (data4.size == 2) {  // hax on size (for `{}`)
-						zone.locationData = new Uint8Array()
-					}
-					else {
-						const buff4 = await data4.arrayBuffer()
-						zone.locationData = new Uint8Array(buff4)
-					}
-				}
-
-				for(let zone of addedZonesNearby) {
-					const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-					detailedWobsToAdd.push(...fWobs)
-				}
-
-				// Far wobs, using prefetched data
-				await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
-				for(let zone of addedZonesFar) {
-					// Data was prefetched, so just access it in zone.farLocationData
-					const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
-					farWobsToAdd.push(...fWobs)
-				}
-
-				// return [detailedWobsToAdd, farWobsToAdd]
-				// These loads don't need to await for zonein to complete~!
-				log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-				await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) // Then add real ones
-				log.info('farwobs to add', farWobsToAdd.length)
-				await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
-				log.info('done adding LoadInstancedWobs')
-
-				
-				player.controller.selfWaitZoningExitZone = null
-
-			}
-			// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
-			await pullWobsData()
+			player.controller.selfWaitZoningExitZone = null
 
 		}
-		else { // Others
-			// Translate other players to a new zone
-
-			
-		}
+		// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
+		await pullWobsData()
 
 	}
+
 
 }
 

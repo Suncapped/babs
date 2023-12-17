@@ -210,7 +210,7 @@ export class LoaderSys {
 
 			const success = (gltf) => {
 
-				log.info('Loaded GLTF:', gltf)
+				// log('Loaded GLTF:', gltf)
 
 				gltf.scene.traverse(child => {
 					if (child instanceof Mesh || child instanceof SkinnedMesh) {
@@ -353,11 +353,11 @@ export class LoaderSys {
 		
 		const cached = this.mapPathAnimCache.get(path)
 		if(cached) {
-			log.info('cached anim', path)
+			// log('cached anim', path)
 			return cached // With animations, we don't need to clone, can just use the same ones!
 		}
 		else {
-			log.info('download anim', path)
+			// log('download anim', path)
 			let group = LoaderSys.CachedKidAnims[anim]
 			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
 			return group

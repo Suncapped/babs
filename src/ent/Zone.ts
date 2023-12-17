@@ -156,7 +156,7 @@ export class Zone extends SharedZone {
 			// instancedMesh.instanceMatrix.needsUpdate = true 
 		}
 
-		feim.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone)
+		feim.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone) // todo optimize, necessary?
 		feim.babs.ents.set(targetWobAnyZone.zone.id, targetWobAnyZone.zone)
 
 	}

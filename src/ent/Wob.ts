@@ -1,4 +1,4 @@
-import { BufferGeometryLoader, Color, DoubleSide, Group, Mesh, MeshPhongMaterial, FrontSide, Vector3, InstancedMesh, StreamDrawUsage, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshBasicMaterial, Scene, PerspectiveCamera, DirectionalLight, WebGLRenderer, OrthographicCamera, BoxGeometry, AmbientLight, Quaternion, WebGLRenderTarget, MeshLambertMaterial, BoxHelper, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip } from 'three'
+import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2 } from 'three'
 import { UiSys } from '@/sys/UiSys'
 import { log } from '@/Utils'
 import { Flame } from '@/comp/Flame'
@@ -34,7 +34,7 @@ export class Wob extends SharedWob {
 
 	static SphereGeometry = new SphereGeometry(1, 12, 12)
 	static SphereMaterial = new MeshLambertMaterial({ color: 0xcccc00 })
-	static SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
+	static SphereMesh :Mesh
 	static FullColor = new Color(1,1,1)
 	static FarwobName = 'tree twotris'
 	static WobIsTallnessMinimum = 12
@@ -48,7 +48,7 @@ export class Wob extends SharedWob {
 		log.info('arrivalWobs', arrivalWobs.length)
 		const nameCounts = new Map<string, number>()
 
-		const playerSelf = babs.ents.get(babs.idSelf) as Player
+		// const playerSelf = babs.ents.get(babs.idSelf) as Player
 		// const playerZone = playerSelf.controller.playerRig.zone
 		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
@@ -117,12 +117,9 @@ export class Wob extends SharedWob {
 				const feim = Wob.InstancedWobs.get(wob.name)
 
 				yardCoord = YardCoord.Create(wob)
-				const engCoordCentered = yardCoord.toEngineCoordCentered()
-				engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+				engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
+				engPositionVector = feim.heightTweak(engPositionVector)
 
-				// Instanced is a unique case of shiftiness.  We want to shift it during zoning instead of individually shifting all things on it.  But it's global, since we don't want separate instances per zone.  So things coming in need to be position shifted against the instance's own shiftiness.
-				// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
-				engPositionVector = feim.heightAdjust(engPositionVector)
 
 				let existingIindex
 				if(!asFarWobs) {

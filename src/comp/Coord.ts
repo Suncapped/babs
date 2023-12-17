@@ -116,7 +116,7 @@ export class YardCoord extends Coord {
 		return this
 	}
 
-	toEngineCoord(withCalcY :boolean = false) {
+	toEngineCoord(withCalcY :'withCalcY' = null) {
 		/* Its engine coordinate is not: this.zone.x *1000 +this.x *4
 		Because that is just its theoretical coordinate if the player were at 0,0.
 		Rather, its engine coordinate would be relative. ?? maybe?
@@ -145,18 +145,26 @@ export class YardCoord extends Coord {
 
 		// const shiftiness = this.zone.babs.worldSys.shiftiness
 		// shiftiness not needed; it's built into this.zone.ground.position
+
+		// this.zone.ground.position is currently wrong, because those are loading in a global x/z grid.  They are not player relative. // todo zoning
+
+		// Get player zone
+		const playerZone = this.zone.babs.inputSys.playerSelf.controller.playerRig.zone as Zone
+		// Get delta between player zone and this zone
+		const deltaZoneX = this.zone.x -playerZone.x
+		const deltaZoneZ = this.zone.z -playerZone.z
+		// Multiply by zone length
+		const deltaEngineX = deltaZoneX *WorldSys.ZONE_LENGTH_FEET
+		const deltaEngineZ = deltaZoneZ *WorldSys.ZONE_LENGTH_FEET
+
 		return new Vector3(
-			(this.zone.ground.position.x) +this.x *4, 
+			deltaEngineX +(this.x *4), 
 			withCalcY ? this.zone.engineHeightAt(this) : NaN, 
-			(this.zone.ground.position.z) +this.z *4,
+			deltaEngineZ +(this.z *4),
 		)
 	}
 	toEngineCoordCentered(withCalcY :'withCalcY' = null) {
-		return new Vector3(
-			(this.zone.ground.position.x) +this.x *4 +2, 
-			withCalcY ? this.zone.engineHeightAt(this) : NaN, 
-			(this.zone.ground.position.z) +this.z *4 +2,
-		)
+		return this.toEngineCoord(withCalcY).add(new Vector3(WorldSys.Yard /2, 0, WorldSys.Yard /2))
 	}
 
 	toString(){

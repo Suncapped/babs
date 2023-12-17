@@ -7,7 +7,7 @@ import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import type { Gltf } from '@/sys/LoaderSys'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 
-const INSTANCED_MAXCOUNT_EXTRA_MIN = 1000 // Minimum number of extra instances to add when reallocating a larger buffer // todo anim
+const INSTANCED_MAXCOUNT_EXTRA_MIN = 10 // Minimum number of extra instances to add when reallocating a larger buffer
 
 // InstancedWobs will need to manage InstancedMesh rather than extend it, mainly to manage re-creating an InstancedMesh when needing a larger count on it, but also to help manage `count` when reducing it for optimized wob rendering and wob removal.
 export class InstancedWobs {
@@ -38,6 +38,12 @@ export class InstancedWobs {
 	) {
 		let wobMesh = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
 		// - Set up wobMesh into InstancedMesh
+		if(!Wob.SphereMesh) { // Init it once
+			Wob.SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
+			Wob.SphereMesh.geometry.computeVertexNormals()
+			Wob.SphereMesh.geometry.computeBoundingBox()
+			Wob.SphereMesh.geometry.computeBoundingSphere()
+		}
 		if(!wobMesh) {
 			console.warn('No wobMesh for:', this.blueprint_id)
 			wobMesh = Wob.SphereMesh // Object wasn't loaded.  Make a sphere
@@ -46,7 +52,6 @@ export class InstancedWobs {
 			console.warn('No boundingBox for:', this.blueprint_id)
 			wobMesh = Wob.SphereMesh // Messed up object; display as a sphere
 		}
-		Wob.SphereMesh.geometry.computeBoundingBox()
 
 		if(asFarWobs) {
 			wobMesh.geometry.scale(4, 1, 4)
@@ -54,11 +59,10 @@ export class InstancedWobs {
 
 		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT to maxCount for preallocation margin; prevents needing immediate reallocation.
 
-		if(true || this.gltf.animations?.length == 0) {
-			this.isAnimated = false
-			this.instancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
+		if(this.gltf.animations?.length !== 0 && !(wobMesh instanceof SkinnedMesh)) { // Eg animated but not loading as a SkinnedMesh due to hierarchy
+			console.warn('Weird animation / SkinnedMesh mismatch for '+blueprint_id+':', this.gltf, wobMesh)
 		}
-		else if((wobMesh instanceof SkinnedMesh)){ // Type narrowing
+		if(wobMesh instanceof SkinnedMesh){ // Type narrowing
 			this.isAnimated = true
 
 			this.silly = wobMesh
@@ -70,7 +74,21 @@ export class InstancedWobs {
 			this.animMixer = new AnimationMixer(this.gltf.scene)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
+		else {
+			this.isAnimated = false
+			this.instancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
+		}
+
 		wobMesh.visible = false // Hide the original mesh // todo anim
+		wobMesh.geometry.boundingBox.getSize(this.boundingSize) // sets into vector
+		this.wobIsSmall = this.boundingSize.y < Wob.WobIsTallnessMinimum
+		this.wobIsTall = this.boundingSize.y >= Wob.WobIsTallnessMinimum
+		this.wobIsFar = this.boundingSize.y >= Wob.WobIsTallnessMinimum
+
+		this.sink = Math.min(this.boundingSize.y *0.05, 0.2)
+		// ^ Sink by a percent but with a max for things like trees.
+		this.lift = (this.boundingSize.y < 0.01 ? 0.066 : 0)
+		// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)
@@ -82,18 +100,6 @@ export class InstancedWobs {
 		const bufferAttr = new InstancedBufferAttribute(fullColors, 3)
 		this.instancedMesh.instanceColor = bufferAttr
 		this.instancedMesh.instanceColor.needsUpdate = true
-
-		// - Calculate things
-		wobMesh.geometry.boundingBox.getSize(this.boundingSize) // sets into vector
-
-		this.wobIsSmall = this.boundingSize.y < Wob.WobIsTallnessMinimum
-		this.wobIsTall = this.boundingSize.y >= Wob.WobIsTallnessMinimum
-		this.wobIsFar = this.boundingSize.y >= Wob.WobIsTallnessMinimum
-
-		this.sink = Math.min(this.boundingSize.y *0.05, 0.2)
-		// ^ Sink by a percent but with a max for things like trees.
-		this.lift = (this.boundingSize.y < 0.01 ? 0.066 : 0)
-		// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
 
 		this.instancedMesh.count = 0 // Actual rendered count; will be increased when wobs are added
 		this.instancedMesh.name = this.blueprint_id
@@ -110,19 +116,30 @@ export class InstancedWobs {
 		// ^ Fixes offset pivot point
 		// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 		
-		// // Add instancedMesh and gltf.scene to a group
+		// Add instancedMesh and gltf.scene to a group
+		//* IMGroup version // todo animzoning
 		this.imGroup = new Group()
 		this.imGroup.name = this.blueprint_id
-
-		this.imGroup.add(gltf.scene) // Necessary for InstancedSkinnedMesh at least, so that translation doesn't...affect bones separately?  This when the butterflies would go in all directions when translating their instancedMesh on purely z axis.
+		// @ts-ignore
+		this.imGroup.noShiftiness = true
+		// if(!asFarWobs && this.isAnimated) { // todo anim
+		// 	this.imGroup.add(gltf.scene) // Necessary for InstancedSkinnedMesh at least, so that translation doesn't...affect bones separately?  This when the butterflies would go in all directions when translating their instancedMesh on purely z axis.
+		// }
 		this.imGroup.add(this.instancedMesh)
 		this.babs.group.add(this.imGroup)
 
 		// Will not need re-setting during reallocate
-		this.imGroup.position.setX(babs.worldSys.shiftiness.x)
-		this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
+		// this.imGroup.position.setX(babs.worldSys.shiftiness.x)
+		// this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
 		this.imGroup.updateMatrix()
 		this.imGroup.updateMatrixWorld()
+		//*/
+		/* IM version
+		this.babs.group.add(this.instancedMesh)
+		this.babs.group.updateMatrix()
+		this.instancedMesh.updateMatrix()
+		this.instancedMesh.updateMatrixWorld()
+		//*/
 
 		Wob.InstancedWobs.set(this.blueprint_id, this)
 	}
@@ -198,7 +215,7 @@ export class InstancedWobs {
 		}
 		// this.instanceIndexToWob.set( // No need to set, because index will be the same and only InstancedMesh is being remade here, not InstancedWobs.
 		// zone.coordToInstanceIndex[ // Same thing
-		// this.instancedMesh.instanceMatrix.needsUpdate = true // todo anim
+		this.instancedMesh.instanceMatrix.needsUpdate = true // todo anim, needed?
 
 		newInstancedMesh.castShadow = this.instancedMesh.castShadow
 		newInstancedMesh.receiveShadow = this.instancedMesh.receiveShadow
@@ -236,10 +253,8 @@ export class InstancedWobs {
 		this.instancedMesh.getMatrixAt(index, matrix)
 		const position = new Vector3()
 		position.setFromMatrixPosition(matrix)
-		// const quat = new Quaternion()
-		// quat.setFromRotationMatrix(matrix)
-		const engWorldCoord = position.add(this.babs.worldSys.shiftiness)
-		return engWorldCoord
+		// const engWorldCoord = position.add(this.babs.worldSys.shiftiness) // todo shiftiness
+		return position
 
 		// // Um that might all be overkill!  Works just as well.  Wait no - only works in-zone.
 		// for(let i=0; i<this.instanceMatrix.count *16; i+=16) { // Each instance is a 4x4 matrix; 16 floats
@@ -249,8 +264,6 @@ export class InstancedWobs {
 	}
 	matrixIndexFromYardCoord(yardCoord :YardCoord) {
 		// Returns instanced index
-		const instanceMatrix = this.instancedMesh.instanceMatrix
-		const imLoadedCount = this.getLoadedCount()
 		
 		// console.log(this.instancedMesh.count, 'vs', instanceMatrix.count)
 		// for(let i=0; i<imLoadedCount; i++) {
@@ -286,10 +299,10 @@ export class InstancedWobs {
 
 		// It's simpler than all that!  Using toEngineCoordCentered
 		const engCoord = yardCoord.toEngineCoordCentered()
-		engCoord.sub(this.babs.worldSys.shiftiness)
-		for(let i=0; i<imLoadedCount; i++) {
-			const x = instanceMatrix.array[i *16 +12]// +this.babs.worldSys.shiftiness.x
-			const z = instanceMatrix.array[i *16 +14]// +this.babs.worldSys.shiftiness.z
+		// engCoord.sub(this.babs.worldSys.shiftiness) // todo shiftiness
+		for(let i=0; i<this.getLoadedCount(); i++) {
+			const x = this.instancedMesh.instanceMatrix.array[i *16 +12]// +this.babs.worldSys.shiftiness.x
+			const z = this.instancedMesh.instanceMatrix.array[i *16 +14]// +this.babs.worldSys.shiftiness.z
 			// console.log((x-2)/4, (z-2)/4, 'vs', yardCoord.x, yardCoord.z)
 			if(x === engCoord.x && z === engCoord.z) {
 				return i
@@ -299,7 +312,7 @@ export class InstancedWobs {
 
 	}
 
-	heightAdjust(engPositionVector :Vector3) {
+	heightTweak(engPositionVector :Vector3) {
 		return engPositionVector.clone().setY(engPositionVector.y +(this.boundingSize.y /2) -this.sink +this.lift)
 	}
 }

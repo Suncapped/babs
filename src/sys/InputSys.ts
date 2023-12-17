@@ -97,6 +97,8 @@ export class InputSys {
 
 		movetarget: undefined,
 
+		insidewindow: null,
+
 	}
 	keyboard :{[key:string]:boolean|number} = {
 		w: OFF,
@@ -183,6 +185,16 @@ export class InputSys {
 				}
 			}
 		}, false)
+		document.documentElement.addEventListener('mouseleave', (ev) => {
+			log.info('mouseleave')
+			this.mouse.insidewindow = false
+			this.raycastSetPickedObject(false, 'forceUnpick') // Force to unpick object, so it doesn't stay highlighted and tag
+			this.pickedObject.poHoverTime = null // A bit hax; prevents long hover tag on mouse exiting screen above picked
+		})
+		document.documentElement.addEventListener('mouseenter', (ev) => {
+			log.info('mouseenter')
+			this.mouse.insidewindow = true
+		})
 
 		// Map JS key codes to my InputSys keys state array
 		const inputCodeMap = {
@@ -212,8 +224,11 @@ export class InputSys {
 		this.chatbox = document.getElementById('chatbox')
 		
 		// start/open chatbox on everything except lower alpha keys or space
-		const chatboxStartValues = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./'.split('') 
-		const chatableValues = chatboxStartValues.concat(' abcdefghijklmnopqrstuvwxyz'.split('')) // ASCII ev.key values
+		// const chatboxStartValues = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./'.split('') 
+		// const chatableValues = chatboxStartValues.concat(' abcdefghijklmnopqrstuvwxyz'.split('')) // ASCII ev.key values
+		// start/open chatbox on everything except wasd or space
+		const chatboxStartValues = 'ABCDEFGHIJKLMNOPQRSTUVWXYZbcefghijklmnopqrtuvxyz1234567890!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./'.split('') 
+		const chatableValues = chatboxStartValues.concat(' wasd'.split('')) // ASCII ev.key values
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
@@ -397,7 +412,7 @@ export class InputSys {
 					log('Created '+count+' client side items')
 
 					console.time('all')
-					const res = await Wob.LoadInstancedWobs(wobTrees, this.babs, false)
+					const res = await Wob.LoadInstancedWobs (wobTrees, this.babs, false)
 					console.timeEnd('all')
 					console.log('res', res)
 
@@ -752,7 +767,7 @@ export class InputSys {
 
 					if(this.mouse.device === 'mouse') {
 						if(this.babs.renderSys.documentHasFocus) { // Only counts if window has focus
-							log.info('trying quick mouse lock')
+							// log('trying quick mouse lock')
 							document.body.requestPointerLock()
 						}
 					}
@@ -897,8 +912,8 @@ export class InputSys {
 					const liftedYardCoord = this.liftedObject.yardCoord
 					const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
 					let liftedEngPos = liftedYardCoord.toEngineCoordCentered('withCalcY')
-					liftedEngPos = this.liftedObject.feim.heightAdjust(liftedEngPos)
-					liftedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
+					liftedEngPos = this.liftedObject.feim.heightTweak(liftedEngPos)
+					// liftedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
 					const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
 
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
@@ -1082,7 +1097,7 @@ export class InputSys {
 			this.babs.uiSys.awayGame()
 		}
 
-		if(this.recheckMouseIntersects) {
+		if(!this.babs.uiSys.isGameAway && this.recheckMouseIntersects) {
 			this.raycastSetPickedObject()
 		}
 
@@ -1095,7 +1110,7 @@ export class InputSys {
 				this.raycastSetPickedObject(true)
 			}
 		}
-		if(this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
+		if(!this.babs.uiSys.isGameAway && this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
 			// log('hovering over', this.pickedObject)
 			this.pickedObject.poHoverTime = null // Unset so this only triggers once (a bit hax)
 
@@ -1120,7 +1135,8 @@ export class InputSys {
 					const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x+','+yardCoord.z]
 
 					log('this.pickedObject', this.pickedObject, pos)
-					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z)
+					// debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z) // todo shiftiness
+					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14])
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 				}
 
@@ -1337,7 +1353,7 @@ export class InputSys {
 					const material = new MeshBasicMaterial({ color: 0xffaaaa, side: DoubleSide })
 					geometry.rotateX(- Math.PI / 2) // Make the plane horizontal
 					this.displayDestinationMesh = new Mesh(geometry, material)
-					this.displayDestinationMesh.name = 'destinationmesh'
+					this.displayDestinationMesh.name = 'debugdestinationmesh'
 					this.babs.group.add(this.displayDestinationMesh)
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
@@ -1518,15 +1534,16 @@ export class InputSys {
 		}
 	}
 
-	raycastSetPickedObject(forcePickChanged = false) { // Raycast to set or unset this.pickedObject
+	raycastSetPickedObject(forcePickChanged = false, forceUnpick :'forceUnpick' = null) { // Raycast to set or unset this.pickedObject
 		let newPickedObject :PickedObject = null
 
 		// Only highlight things in canvas, not css ui
-		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body || this.mouse.left === PRESS) // mouse.left is for fingers
+		if ((this.mouse.movetarget?.id === 'canvas' || this.mouse.movetarget === document.body || this.mouse.left === PRESS // mouse.left is for fingers
+				|| forceUnpick) // Allow running when outside window, to clear picked on mouseleave event
 			&& !this.mouse.right // And not when mouselooking
 		) {
 			this.recheckMouseIntersects = false // Unset; we only re-raycast below when this gets explicity set, eg on pointermove.
-			
+
 			const raycaster = this.mouse.ray as Raycaster
 			raycaster.setFromCamera(this.mouse.xy, this.babs.cameraSys.camera)		
 			
@@ -1534,16 +1551,31 @@ export class InputSys {
 			// this.babs.scene.add(new ArrowHelper( raycaster.ray.direction, raycaster.ray.origin, 100, Math.random() * 0xffffff ))
 
 			this.mouseRayTargets.length = 0
+
+			const logTime = false
 			
+			if(logTime) console.time('intersectObjects')
+			if(logTime) console.timeLog('intersectObjects', this.babs.group.children.length)
 			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
-			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'destinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords']
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'debugdestinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords', 'nightsky', 'daysky', 'dirlight', 'flamelight', 'hemilight', ]
 			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
 			// Well, filtering out 'tree twotris' does help a lot with framerate.
+			if(logTime) console.timeLog('intersectObjects', 'filteredChildren', filteredChildren.length)
 
 			// It can't intersect a group (without a recursive raycast) because a group doesn't have geometry!
 			// So for anything contained by a Group (Object3D), we need to manually raise it to the top level?
 			let groups = this.babs.group.children.filter(c=>c.type=='Group')
-			groups.forEach(g=>filteredChildren.push(...g.children.filter(c=>!excluded.includes(c.name))))
+			groups.forEach(g => {
+				const childrenInGroup = g.children.filter(c=>!excluded.includes(c.name))
+				filteredChildren.push(...childrenInGroup)
+			})
+			if(logTime) console.timeLog('intersectObjects', 'filteredChildren', filteredChildren.length)
+
+			// Then remove the groups themselves
+			filteredChildren = filteredChildren.filter(c=>c.type!=='Group')
+
+			// Filter InstancedSkinnedMesh // Didn't help with speed
+			// filteredChildren = filteredChildren.filter(c=>!(c instanceof InstancedSkinnedMesh))
 
 			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
 			const idsZonesNearby = currentZone.getZonesAround(Zone.loadedZones, 1).map(z=>z.id)
@@ -1553,14 +1585,14 @@ export class InputSys {
 				if(idsZonesNearby.includes(c.zone.id)) return true
 				return false
 			})
-			// console.log(filteredChildren)
+
+			// console.log(filteredChildren.filter(c=>(c instanceof InstancedMesh || c instanceof InstancedSkinnedMesh) && (c.count > 1000 )).map(c=>c.count))
 
 			// raycaster.firstHitOnly = true // BVH thing
 			raycaster.intersectObjects(filteredChildren, false, this.mouseRayTargets)
+			if(logTime) console.timeEnd('intersectObjects')
 
-			if(this.mouseRayTargets.length === 0) {
-				return // Can happen if they move outside of canvas, sometimes?
-			}
+			// console.log('mouseRayTargets', this.mouseRayTargets.length, filteredChildren)
 
 			for (let i = 0, l = this.mouseRayTargets.length; i < l; i++) { // Nearest object last
 
@@ -1728,7 +1760,7 @@ export class InputSys {
 			// Remove colors from old picked object if needed
 			const poidsEqual = this.pickedObject?.poid === newPickedObject?.poid
 			const newPickedChangedFromOld = this.pickedObject && newPickedObject && !poidsEqual
-			const oldPickedAndNoLonger = this.pickedObject && !newPickedObject
+			const oldPickedAndNoLonger = (this.pickedObject && !newPickedObject) || (this.pickedObject && forceUnpick)
 
 			// console.log('newPickedChangedFromOld', newPickedChangedFromOld, 'oldPickedAndNoLonger', oldPickedAndNoLonger)
 
@@ -1754,6 +1786,7 @@ export class InputSys {
 				}
 			}
 
+
 			const pickedAndChanged = !(this.pickedObject && newPickedObject && poidsEqual)
 			if(pickedAndChanged || forcePickChanged) {
 				// log('pickedAndChanged', this.pickedObject, newPickedObject)
@@ -1773,8 +1806,8 @@ export class InputSys {
 					const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
 
 					let pickedEngPos = this.pickedObject.yardCoord.toEngineCoordCentered('withCalcY')
-					pickedEngPos = this.liftedObject.feim.heightAdjust(pickedEngPos)
-					pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z))
+					pickedEngPos = this.liftedObject.feim.heightTweak(pickedEngPos)
+					// pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
 					
 					const matrixPickedEngPos = new Matrix4().setPosition(pickedEngPos)
 					log.info('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
@@ -1795,10 +1828,10 @@ export class InputSys {
 		if (this.mouse.device === newDevice) return // Only detect new device if device is changing
 
 		// Hax, show more screen on mobile devices when they first load
-		if (window.innerWidth < 1000) { // Small screen, like a phone, smaller than ipad
-			document.getElementById('Journal').style.display = 'none'
-			document.getElementById('Menu').style.display = 'none'
-			document.getElementById('topleft').style.display = 'none'
+		if (window.innerWidth < 800) { // Small screen, like a phone, smaller than ipad
+			// this.babs.uiSys.svJournal.toggleFurl(false) // Done at default
+			// document.getElementById('Menu').style.display = 'none'
+			document.getElementById('topleft').style.display = 'none' // todo ui, make this more dynamic or something
 			document.getElementById('topright').style.paddingBottom = '12px'
 			// dividerOffset.set(0)
 		}

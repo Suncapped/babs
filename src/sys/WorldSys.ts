@@ -62,8 +62,8 @@ export class WorldSys {
 	public static ZONE_MOVEMENT_EXTENT = 249
 
 	static Yard = 4
-	static Plot = WorldSys.Yard *5 // 20; 5 tiles
-	static Acre = WorldSys.Plot *10 // 200; 10 plots
+	static Plot = WorldSys.Yard *5 // 20 ft; 5 tiles
+	static Acre = WorldSys.Plot *10 // 200 ft; 50 tiles, 10 plots
 	
 	static MAX_VIEW_DISTANCE = 1_000_000 // ~200 miles
 	static DAYSKY_SCALE = 450_000
@@ -576,6 +576,7 @@ export class WorldSys {
 		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, this.phi, this.theta)
 		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
 
+		if(this.cameraHelper) this.cameraHelper.update()
 
 		if(this.dirLight){
 			// Put directional light at sun position, but closer in!
@@ -990,7 +991,7 @@ export class WorldSys {
 				this.waterInstancedRands[i] = Math.random() - 0.5
 			}
 
-		}, 1) // todo race condition here
+		}, 2000) // todo race condition here; will get fixed when water moves to wobs
 
 	}
 
@@ -1005,13 +1006,17 @@ export class WorldSys {
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
 			'cameraGroup', 'camera', // Doesn't really matter since they're set per frame anyway, but might as well.
-			// 'butterfly',
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
 		let shiftingLog = []
 		this.babs.group.children.forEach(child => {
 			if(excludeFromShift.includes(child.name)) return
+			// @ts-ignore
+			if(child.noShiftiness) {
+				// console.log('noShiftiness') // todo shiftiness
+				return // Having done this, now the shift is just: ground, flame, flamelight, and self (sometimes).
+			}
 
 			child.position.setX(child.position.x +shiftVector.x)
 			child.position.setZ(child.position.z +shiftVector.z)
@@ -1025,8 +1030,11 @@ export class WorldSys {
 			}
 			// child.updateMatrixWorld(true)
 			// child.updateMatrix()
+			// child.matrixWorldNeedsUpdate = true
 		})
+
 		this.shiftiness.add(shiftVector)
+		// return shiftVector
 		
 		log('shiftEverything includes (minus ground)', xShift, zShift, 'shifted', shiftingLog.join(', '))
 	}

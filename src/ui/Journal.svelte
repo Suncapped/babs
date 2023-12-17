@@ -14,7 +14,7 @@
 	ui.h ||= 250
 	ui.x ||= window.innerWidth
 	ui.y ||= window.innerHeight
-	ui.unfurled = ui.unfurled === undefined ? true : ui.unfurled
+	ui.unfurled = ui.unfurled === undefined ? false : ui.unfurled // false means default furled (new player, which will then get written)
 
 	ui.virtx = ui.x // Virtual x, for use here
 	ui.virty = ui.y 
@@ -72,11 +72,12 @@
 		}, 1)
 	}
 
-	export function toggleFurl() {
-		if(dragDistance > DRAG_THRESHOLD) {
+	export function toggleFurl(force = undefined) {
+		const beingForced = force !== undefined
+		if(!beingForced && dragDistance > DRAG_THRESHOLD) {
 			return // Don't toggle if they were just dragging
 		}
-		ui.unfurled = !ui.unfurled
+		ui.unfurled = beingForced ? force : !ui.unfurled
 		socketSend.set({
 			'saveui': ui,
 		})

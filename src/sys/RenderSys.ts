@@ -231,7 +231,7 @@ export class RenderSys {
 		const secondsElapsed = performance.now() * 0.001
 		for (let [name, instancedWobs] of Wob.InstancedWobs) {
 			if(instancedWobs.isAnimated && instancedWobs.instancedMesh instanceof InstancedSkinnedMesh) {
-				for(let i=0, lc=instancedWobs.instancedMesh.count; i<lc; i++) { // todo anim use .getLoadedCount()
+				for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) {
 					const duration = instancedWobs.gltf.animations[0].duration
 					const timeOffset = instancedWobs.animTimeOffsets[i]
 					const animTime = (secondsElapsed +timeOffset) % duration
@@ -242,10 +242,10 @@ export class RenderSys {
 					})
 
 					instancedWobs.silly.updateMatrix()
-					instancedWobs.instancedMesh.updateMatrix() // todo anim remove?
+					// instancedWobs.instancedMesh.updateMatrix()
 					// instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix) // not needed since I'm not translating etc it?
 					instancedWobs.instancedMesh.setBonesAt(i, instancedWobs.silly.skeleton)
-					instancedWobs.instancedMesh.updateMatrix() // todo anim remove?
+					// instancedWobs.instancedMesh.updateMatrix()
 				}
 
 				instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true
@@ -261,14 +261,28 @@ export class RenderSys {
 
 	calcMapIndex = 0
 	calcNearbyWobs(bpid :string) {
+		
+		/* Disable calc
+		const feimTemp = Wob.InstancedWobs.get(bpid)
+		feimTemp.instancedMesh.count = feimTemp.maxCount
+		return
+		//*/
+
 		// console.log('calcShowOnlyNearbyWobs', bpid)
 		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
 
-		const playerpos = this.babs.inputSys?.playerSelf?.controller?.playerRig?.position
-		if(!playerpos) return
+		const controller = this.babs.inputSys?.playerSelf?.controller
+		const playerpos = controller?.playerRig?.position
+		if(!playerpos) {
+			return
+		}
+
+		const isZoning = controller.selfWaitZoningExitZone
+		if(isZoning) { // Skip while zoning to prevent mid-shift resorting
+			return
+		}
 
 		const feim = Wob.InstancedWobs.get(bpid)
-		// feim.instancedMesh.count = feim.maxCount; return // Disables calc
 
 		// feim.instancedMesh.computeBoundingBox()
 		feim.instancedMesh.computeBoundingSphere() // THIS IS IT.  OMG LOL.  Fixes bug where you couldn't click something facing one direction after zoning for a while in that direction.
@@ -286,14 +300,14 @@ export class RenderSys {
 		// 'fingers' is currently phone and quest 2.
 
 		let iNearby = 0
-		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats
+		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats // Replicated in setDestination()
 			// Each instance is a 4x4 matrix; 16 floats
-			const x = instanceMatrix.array[i*16 +12] +this.babs.worldSys.shiftiness.x
-			const z = instanceMatrix.array[i*16 +14] +this.babs.worldSys.shiftiness.z
-
+			const x = instanceMatrix.array[i*16 +12]// +this.babs.worldSys.shiftiness.x // todo shiftiness
+			const z = instanceMatrix.array[i*16 +14]// +this.babs.worldSys.shiftiness.z
 			if(!(x && z)) continue
 
 			// Get distance from playerpos in 2 dimensions
+			// const shiftedPlayerPos = playerpos.clone().add(this.babs.worldSys.shiftiness)
 			const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 
 			// iNearby finds how many wobs total are nearby, for setting .count.
@@ -311,35 +325,8 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby
-		// feim.instancedMesh.count = feim.maxCount // todo anim
-
-		// if(feim.blueprint_id === 'butterfly') {
-		// if(feim.blueprint_id === 'dandelion') {
-		// 	// Update ALL matrices
-		// 	feim.instancedMesh.instanceMatrix.needsUpdate = true
-		// 	feim.imGroup.matrixWorldNeedsUpdate = true
-		// 	feim.gltf.scene.updateMatrix()
-		// 	feim.gltf.scene.updateMatrixWorld(true)
-		// 	feim.gltf.scene.children[0].updateMatrix()
-		// 	feim.gltf.scene.children[0].updateMatrixWorld(true)
-		// 	feim.gltf.scene.children[0].children[0].updateMatrix()
-		// 	feim.gltf.scene.children[0].children[0].updateMatrixWorld(true)
-		// 	this.babs.group.updateMatrix()
-		// 	this.babs.group.updateMatrixWorld(true)
-
-		// 	let matrix = new Matrix4()
-		// 	feim.instancedMesh.getMatrixAt(1, matrix)
-		// 	const pos = new Vector3()
-		// 	matrix.decompose(pos, new Quaternion(), new Vector3())	
-		// 	console.log('imGroup im ins scene im:', 
-		// 		feim.imGroup.position.z, 
-		// 		feim.instancedMesh.position.z, 
-		// 		pos.z, // Seems to be world?
-		// 		feim.imGroup.children[0].position.z, 
-		// 		feim.imGroup.children[1].position.z,
-		// 	)
-
-		// }
+		// feim.instancedMesh.count = feim.maxCount > 1000 ? 1000 : 2//iNearby
+		// feim.instancedMesh.count = feim.maxCount
 	}
 
 	moveLightsToNearPlayer() {

@@ -86,8 +86,7 @@ export class Flame extends Comp {
 		const yardCoord = YardCoord.Create(wob)
 
 		// const rayPos = zone.rayHeightAt(yardCoord)
-		const engCoordCentered = yardCoord.toEngineCoordCentered()
-		const engPositionVector = new Vector3(engCoordCentered.x, zone.engineHeightAt(yardCoord), engCoordCentered.z)
+		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 
 		com.fire.position.setY(engPositionVector.y +yup)

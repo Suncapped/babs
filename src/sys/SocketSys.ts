@@ -379,8 +379,8 @@ export class SocketSys {
 			}
 
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
-			await player.controller.zoneIn(player, enterZone, null) // Load zones
 			this.babs.worldSys.shiftEverything(-enterZone.x *WorldSys.ZONE_LENGTH_FEET, -enterZone.z *WorldSys.ZONE_LENGTH_FEET)//, true) // Set offset
+			await player.controller.loadZoneWobs(player, enterZone, null) // Load zones
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
@@ -426,10 +426,13 @@ export class SocketSys {
 			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
 			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
 			const exitZone = player.controller.selfWaitZoningExitZone || player.controller.playerRig.zone
-
 			// console.log('exitZone', player.controller.waitZoningExitZone, player.controller.playerRig.zone, exitZone.id)
 
-			await player.controller.zoneIn(player, enterZone, exitZone)
+			if(player.id === this.babs.idSelf) {
+				await player.controller.loadZoneWobs(player, enterZone, exitZone) // Only for self
+			}
+				
+			player.controller.playerRig.zone = enterZone // This re-applies to self, but for others, this is the only place it's set
 		}
 		else if('said' in payload) {
 			const said = payload.said
@@ -498,7 +501,7 @@ export class SocketSys {
 			// }
 				
 			// if(payload.contains.id === this.babs.idSelf) { // Is your own inventory
-			// 	await Wob.LoadInstancedWobs(payload.contains.wobs, this.babs, false)
+			// 	await Wob.LoadInstancedWobs (payload.contains.wobs, this.babs, false)
 			// }
 		}
 		else if('fewords' in payload) {
@@ -525,7 +528,7 @@ export class SocketSys {
 			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 		}
 		else if('energy' in payload) {
-			log.info('energy', payload.energy)
+			// log.info('energy', payload.energy)
 
 		}
 		else if('craftable' in payload) {
