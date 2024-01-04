@@ -1,7 +1,7 @@
 
 import { YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
-import { log } from '@/Utils'
+
 import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
@@ -46,7 +46,7 @@ export class Zone extends SharedZone {
 	override removeWobGraphicAt(x :number, z :number) {
 		const existingWob = this.getWob(x, z)
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
-		// log('existing', existingWob)
+		// console.log('existing', existingWob)
 		return this.removeWobGraphic(existingWob)
 
 	}
@@ -268,7 +268,7 @@ export class Zone extends SharedZone {
 
 	// 	let [intersect] = raycaster.intersectObject(this.ground, true)
 	// 	if(!intersect) {
-	// 		log.info('rayHeightAt: no ground intersect!', coord, raycaster)
+	// 		console.debug('rayHeightAt: no ground intersect!', coord, raycaster)
 	// 		intersect = {
 	// 			point: new Vector3(0,0,0),
 	// 			distance: null,

@@ -124,7 +124,6 @@ export type SendLoad = {
 			credits :number,
 			roles :string,
 			reason :string,
-			debugmode :boolean,
 			divider :number,
 			
 			// movestate: player.movestate, // Happens within tick loop

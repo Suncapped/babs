@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
 	import { socketSend, baseDomain, isProd, menuSelfData, isAwayUiDisplayed } from "../stores"
-	import { log } from '@/Utils'
+	
 	import { draggable } from '@neodrag/svelte'
 
 	const DRAG_THRESHOLD = 2
@@ -25,7 +25,7 @@
 		bounds: 'parent',
 		axis: 'none', // Disable drag
 	}
-	log.info('init, options, ui:', options, ui)
+	console.debug('init, options, ui:', options, ui)
 
 	let dragDistance = 0
 	let dragOffsetX

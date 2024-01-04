@@ -31,8 +31,10 @@ import {
 	NearestFilter,
 	IcosahedronGeometry,
 	SRGBColorSpace,
+	PCFSoftShadowMap,
+	BasicShadowMap,
 } from 'three'
-import { log } from './../Utils'
+
 import { WireframeGeometry } from 'three'
 import { LineSegments } from 'three'
 import { Sky } from 'three/addons/objects/Sky.js'
@@ -265,7 +267,7 @@ export class WorldSys {
 				setTimeout(delayLoadNightsky, dayCheckInterval)
 				return
 			}
-			log.info('loading stars')
+			console.debug('loading stars')
 			
 			const sides = ['north', 'south', 'top', 'bottom', 'west', 'east'] // +y as north
 
@@ -332,7 +334,7 @@ export class WorldSys {
 		setTimeout(delayLoadNightsky, dayCheckInterval)
 	}
 
-	shadowDist = 150
+	shadowDist = WorldSys.Acre
 	Event(type, data) {
 		if(type === 'controller-ready') {
 			if(!data.isSelf) return // Only add lights for self
@@ -352,13 +354,16 @@ export class WorldSys {
 			
 			this.dirLight.color.setHSL(45/360, 1, 1).convertSRGBToLinear()
 			
+			// https://web3dsurvey.com/webgl/parameters/MAX_TEXTURE_SIZE // this.renderer.capabilities.maxTextureSize
+			const shadowTextureSize = this.babs.graphicsQuality ? 4096*4 : 4096
+			this.shadowDist = this.babs.graphicsQuality ? WorldSys.ZONE_LENGTH_FEET : WorldSys.Acre
 			// Shadow
 			this.dirLight.castShadow = true
 			this.dirLight.shadow.bias = -0.0001
 			this.dirLight.shadow.normalBias = 0.1
-			this.dirLight.shadow.mapSize.width = 4096
-			this.dirLight.shadow.mapSize.height = 4096
-			this.dirLight.shadow.camera.near = 0
+			this.dirLight.shadow.mapSize.width = shadowTextureSize
+			this.dirLight.shadow.mapSize.height = shadowTextureSize
+			this.dirLight.shadow.camera.near = 0.5
 			this.dirLight.shadow.camera.far = this.shadowDist *2
 			this.dirLight.shadow.camera.left = this.shadowDist
 			this.dirLight.shadow.camera.right = -this.shadowDist
@@ -373,12 +378,12 @@ export class WorldSys {
 
 			this.renderer.shadowMap.enabled = true
 
-			// this.renderer.shadowMap.type = BasicShadowMap
-			this.renderer.shadowMap.type = PCFShadowMap
-			// this.renderer.shadowMap.type = PCFSoftShadowMap
-			// this.renderer.shadowMap.type = VSMShadowMap
+			// this.renderer.shadowMap.type = PCFShadowMap
+			this.renderer.shadowMap.type = PCFSoftShadowMap
+			// this.renderer.shadowMap.type = BasicShadowMap // No
+			// this.renderer.shadowMap.type = VSMShadowMap // No
 
-			this.renderer.shadowMap.autoUpdate = true 
+			this.renderer.shadowMap.autoUpdate = true
 
 			debugMode.subscribe(on => {
 				this.cameraHelper.visible = on
@@ -443,16 +448,6 @@ export class WorldSys {
 	dtSum = 0
 	update(dt) {
 		if(!this.snapshotRealHourFraction) return // Time comes before Earth :)
-
-		this.dtSum += dt *1000
-		if(this.dtSum < 100) { // Only do this update() every 100ms!
-			if(this.dirLight) { // Ensure we move sun with player, to keep the appearance that it's far away
-				this.dirLight.position.setFromSphericalCoords(this.shadowDist, this.phi, this.theta)
-				this.dirLight.position.add(this.babs.inputSys.playerSelf.controller.playerRig.position.clone()) // move within zone (sky uses 0,0?) to match sun origin
-			}
-			return
-		}
-		this.dtSum = 0
 
 		// Update sun position over time!
 
@@ -533,7 +528,7 @@ export class WorldSys {
 
 		// Adjust fog lightness (white/black) to sun elevation
 		const noonness = 1 -(MathUtils.radToDeg(this.phi) /90) // 0-1, 0 and negative after sunset, positive up to 90 (at equator) toward noon!
-		// log('time:', noonness)
+		// console.log('time:', noonness)
 
 		this.effectController.rayleigh = Math.max(0.2, MathUtils.lerp(3, 0.2 -3.5, noonness))
 		this.daysky.material.uniforms['rayleigh'].value = this.effectController.rayleigh
@@ -564,7 +559,7 @@ export class WorldSys {
 		this.nightsky?.rotateX(-0.0015 *dt)
 
 		const elevationRatioCapped = Math.min(50, 90 -MathUtils.radToDeg(this.phi)) /90
-		// log(noonness, 90 -MathUtils.radToDeg(phi))
+		// console.log(noonness, 90 -MathUtils.radToDeg(phi))
 		this.babs.scene.fog?.color.setHSL(
 			34/360, // Which color
 			0.1, // How much color
@@ -572,7 +567,7 @@ export class WorldSys {
 		)
 		// this.babs.scene.fog.far = ((this.effectController.elevation /elevationMax)  // Decrease fog at night // Not needed with better ratio
 
-		// log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
+		// console.log('time', timeOfDay, MathUtils.radToDeg(sunCalcPos.altitude), MathUtils.radToDeg(pos.azimuth))
 		this.sunPosition.setFromSphericalCoords(WorldSys.DAYSKY_SCALE, this.phi, this.theta)
 		this.daysky.material.uniforms['sunPosition'].value.copy(this.sunPosition)
 
@@ -734,7 +729,7 @@ export class WorldSys {
 		this.babs.group.add(newGround)
 
 		if(isLoadinZone) {
-			log.info('playerStartingZone', newGround)
+			console.debug('playerStartingZone', newGround)
 			this.currentGround = newGround
 		}
 
@@ -932,7 +927,7 @@ export class WorldSys {
 			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
 				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 				const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
-				// log('gridPointofVerticesIndex', coordOfVerticesIndex)
+				// console.log('gridPointofVerticesIndex', coordOfVerticesIndex)
 				// Create cubes on all spots in between
 				if(this.WaterTypes.includes(lcString)) {
 					const spacing = 1
@@ -997,7 +992,7 @@ export class WorldSys {
 
 	shiftiness = new Vector3()
 	shiftEverything(xShift :number, zShift :number, initialLoadExcludeSelf = false) {
-		log.info('shiftEverything', xShift, zShift, initialLoadExcludeSelf ? 'initialLoadExcludeSelf=truthy' : 'initialLoadExcludeSelf=falsy')
+		console.debug('shiftEverything', xShift, zShift, initialLoadExcludeSelf ? 'initialLoadExcludeSelf=truthy' : 'initialLoadExcludeSelf=falsy')
 		const shiftVector = new Vector3(xShift, 0, zShift)
 
 		const excludeFromShift = [
@@ -1036,7 +1031,7 @@ export class WorldSys {
 		this.shiftiness.add(shiftVector)
 		// return shiftVector
 		
-		log('shiftEverything includes (minus ground)', xShift, zShift, 'shifted', shiftingLog.join(', '))
+		console.debug('shiftEverything includes (minus ground)', xShift, zShift, 'shifted', shiftingLog.join(', '))
 	}
 
 }

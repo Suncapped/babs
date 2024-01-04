@@ -3,7 +3,7 @@ import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
 import { MeshPhongMaterial } from 'three'
-import { log } from './../Utils'
+
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { Controller } from '@/comp/Controller'
@@ -39,7 +39,7 @@ export class LoaderSys {
 	objectTexture :Texture
 
 	constructor(public babs :Babs) {
-		// log('LoaderSys', urlFiles)
+		// console.log('LoaderSys', urlFiles)
 		this.urlFiles = babs.urlFiles
 
 		this.loader = new GLTFLoader()
@@ -152,11 +152,11 @@ export class LoaderSys {
 			fbxLoader.load(
 				`${this.urlFiles}${path}`, // resource URL
 				(group) => { // onLoad callback
-					log.info('Loaded FBX:', path, group)
+					console.debug('Loaded FBX:', path, group)
 
 					group.traverse(child => {
 						if (child instanceof Mesh) {
-							// log('FBX COLOR is', child.material.color)
+							// console.log('FBX COLOR is', child.material.color)
 							child.material.color = new Color(1,1,1) // Unset any weird import colors beyond texture painting
 						}
 					})
@@ -164,7 +164,7 @@ export class LoaderSys {
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback
-					log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
+					console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
 					console.error( 'An error happened', err )
@@ -201,7 +201,7 @@ export class LoaderSys {
 				}
 			}
 			else {
-				log.info('File not in archive:', nameInArchive, file)
+				console.debug('File not in archive:', nameInArchive, file)
 			}
 		}
 
@@ -210,7 +210,7 @@ export class LoaderSys {
 
 			const success = (gltf) => {
 
-				// log('Loaded GLTF:', gltf)
+				// console.log('Loaded GLTF:', gltf)
 
 				gltf.scene.traverse(child => {
 					if (child instanceof Mesh || child instanceof SkinnedMesh) {
@@ -232,14 +232,14 @@ export class LoaderSys {
 					console.warn('Arrival wob has no scene: ', name)
 				}
 				
-				// if(gltf.animations.length > 0) log(`${name} is animated!`, gltf.animations)
+				// if(gltf.animations.length > 0) console.log(`${name} is animated!`, gltf.animations)
 	
 				gltf.name = name
 
 				resolve(gltf)
 			}
 			const progress = (xhr) => { // onProgress callback
-				log.info( (xhr.loaded / xhr.total * 100) + '% loaded' )
+				console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
 			}
 			const error = (err) => { // onError callback
 				console.error('loadGltf error:', err.message) // info because can just be missing model
@@ -283,11 +283,11 @@ export class LoaderSys {
 		const cached = this.mapPathRigCache.get(path)
 		let rigGroupScene :Object3D
 		if(cached) {
-			log.info('cached rig', path)
+			console.debug('cached rig', path)
 			rigGroupScene = SkeletonUtils.clone(cached)
 		}
 		else {
-			log.info('download rig', path)
+			console.debug('download rig', path)
 			let group = await LoaderSys.CachedKidRig
 			this.mapPathRigCache.set(path, group.scene)
 			rigGroupScene = SkeletonUtils.clone(group.scene)
@@ -353,11 +353,11 @@ export class LoaderSys {
 		
 		const cached = this.mapPathAnimCache.get(path)
 		if(cached) {
-			// log('cached anim', path)
+			// console.log('cached anim', path)
 			return cached // With animations, we don't need to clone, can just use the same ones!
 		}
 		else {
-			// log('download anim', path)
+			// console.log('download anim', path)
 			let group = LoaderSys.CachedKidAnims[anim]
 			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
 			return group

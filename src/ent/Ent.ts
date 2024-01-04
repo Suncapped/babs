@@ -1,6 +1,6 @@
 
 import { type Babs } from '@/Babs'
-import { log } from '@/Utils'
+
 export class Ent {
 	id :number
 	babs :Babs

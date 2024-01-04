@@ -1,6 +1,6 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
-import { log } from '@/Utils'
+
 import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, Object3D, PointLight, Quaternion, ShaderMaterial, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
@@ -21,7 +21,7 @@ export class Flame extends Comp {
 	static player
 
 	static lightPool = []
-	static LIGHT_POOL_MAX = 4
+	static LIGHT_POOL_MAX
 
 	static wantsLight = []
 
@@ -49,9 +49,10 @@ export class Flame extends Comp {
 
 	static fireTex :Texture
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
-		// log('Flame.Create, right before wantslight.push', wob.name)
+		// console.log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Flame(wob, babs)
 
+		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
 		// Init static singletons
 		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
 			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
@@ -105,7 +106,7 @@ export class Flame extends Comp {
 
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-		// log('flameComps', flameComps, this.babs.compcats)
+		// console.log('flameComps', flameComps, this.babs.compcats)
 		const flame = flameComps?.find(fc => {
 			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
 				&& (fc.idEnt as WobId).x === deletingWob.id().x
@@ -114,7 +115,7 @@ export class Flame extends Comp {
 		})
 		if(flame) {
 			const oldlen = Flame.wantsLight.length
-			// log('flame to remove', flame, Flame.wantsLight.length)
+			// console.log('flame to remove', flame, Flame.wantsLight.length)
 			Flame.wantsLight = Flame.wantsLight.filter(f => {
 				// console.log('fl', f.uuid, flame.fire.uuid)
 				return f.uuid !== flame.fire.uuid
@@ -411,7 +412,7 @@ class ThreeFire extends Mesh {
 	}
 
 	update(dt) {
-		const time = performance.now() /1000 *Flame.settings.speed // todo
+		const time = performance.now() /1000 *Flame.settings.speed
 		let invModelMatrix = this.material.uniforms.invModelMatrix.value
 
 		// this.updateMatrix()

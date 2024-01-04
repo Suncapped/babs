@@ -4,7 +4,7 @@ import { UiSys } from '@/sys/UiSys'
 import { EventSys } from './EventSys'
 import { WorldSys } from './WorldSys'
 import { LoaderSys } from './LoaderSys'
-import { log, randIntInclusive, sleep } from './../Utils'
+import { randIntInclusive, sleep } from './../Utils'
 import { AnimationMixer, Int8BufferAttribute, Loader, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
 import { Controller } from '@/comp/Controller'
 import { Player } from '@/ent/Player'
@@ -79,7 +79,7 @@ export class SocketSys {
 		})
 
 		this.ws.onmessage = (event) => {
-			// log('finishSocketSetup socket rec:', event.data)
+			// console.log('finishSocketSetup socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
 				const payload = JSON.parse(event.data) as Sendable
 				this.processEnqueue(payload)
@@ -120,16 +120,16 @@ export class SocketSys {
 			}
 		}
 		this.ws.onerror = (event) => {
-			log.info('Socket error', event)
+			console.debug('Socket error', event)
 			this.babs.uiSys.offerReconnect('Connection error.')
 		}
 		this.ws.onclose = (event) => {
-			log.info('Socket closed', event)
+			console.debug('Socket closed', event)
 			this.babs.uiSys.offerReconnect('Server connection closed.')
 		}
 
 		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
-			// log('got socketSend.set', data)
+			// console.log('got socketSend.set', data)
 			this.send(data)
 		})
 	}
@@ -146,7 +146,7 @@ export class SocketSys {
 
 	async send(json :BabsSendable) { // todo add :Sendable and set up client sendables
 		if(Object.keys(json).length === 0) return
-		if(!json.ping && !json.move) log.info('Send:', json)
+		if(!json.ping && !json.move) console.debug('Send:', json)
 		if(this.ws.readyState === this.ws.OPEN) {
 			this.ws.send(JSON.stringify(json))
 		}
@@ -215,7 +215,7 @@ export class SocketSys {
 			window.location.reload() // Simpler than continuous flow for now
 		}
 		else if('session' in payload) {
-			log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
+			console.log('setting cookie, session', this.babs.baseDomain, this.babs.isProd)
 			this.session = payload.session
 			const result = Cookies.set('session', this.session, { 
 				expires: 365,
@@ -223,7 +223,7 @@ export class SocketSys {
 				secure: this.babs.isProd,
 				sameSite: 'strict',
 			})
-			log.info('cookie set', result)
+			console.debug('cookie set', result)
 			toprightText.set('Entering...')
 			window.location.reload() // Simpler than continuous flow for now // context.auth(context.session)
 		}
@@ -236,12 +236,12 @@ export class SocketSys {
 			this.babs.loaderSys = new LoaderSys(this.babs)
 
 			const load = payload.load
-			log.info('socket: load', payload.load)
+			console.debug('socket: load', payload.load)
 			window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
 				this.send({ping:'ping'})
 			}, SocketSys.pingSeconds * 1000)
 
-			log.info('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
+			console.debug('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
 			toprightText.set(this.babs.uiSys.toprightTextDefault)
 			document.getElementById('topleft').style.visibility = 'visible'
 
@@ -280,6 +280,7 @@ export class SocketSys {
 
 
 
+			debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
 			debugMode.set(load.self.meta.debugmode === undefined ? false : load.self.meta.debugmode) // Handle meta value creation
 			// dividerOffset.set(load.self.divider)
 
@@ -364,7 +365,7 @@ export class SocketSys {
 			// console.time('stitch')
 			await Promise.all(pStatics)
 
-			log.info('Statics loaded:', farZones.length)
+			console.debug('Statics loaded:', farZones.length)
 			// console.timeEnd('stitch') // 182ms for 81 zones
 
 			Zone.loadedZones = farZones
@@ -389,11 +390,12 @@ export class SocketSys {
 			this.babsRunUpdate = true // Starts update()s
 		}
 		else if('playersarrive' in payload) {
-			log.info('playersarrive', payload.playersarrive)
+			console.debug('playersarrive', payload.playersarrive)
 
+			let strangerColors = []
 			for(let arrival of payload.playersarrive) {
 				const existingPlayer = this.babs.ents.get(arrival.id) as Player
-				log.info('existing player', existingPlayer)
+				console.debug('existing player', existingPlayer)
 				if(existingPlayer) {
 					// If we already have that player, such as self, be sure to update it.
 					// This is primarily for getting .idzip, which server delays to set during tick.
@@ -408,14 +410,25 @@ export class SocketSys {
 					const bSelf = false
 					const player = await Player.Arrive(arrival, bSelf, this.babs)
 
-					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(player.nick || 'a stranger')+' is nearby>', 'copy', player.colorHex)
+					if(player.nick) {
+						this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${player.nick} is around>`, 'copy', player.colorHex)
+					}
+					else {
+						strangerColors.push(player.colorHex)
+					}
 				}
 
 			}
+			
+			if(strangerColors.length) {
+				const strangersText = strangerColors.length === 1 ? 'a stranger is around' : `${strangerColors.length} strangers are around`
+				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${strangersText}>`, 'copy', strangerColors[0])
+			}
+
 		}
 		else if('playerdepart' in payload) {
 			const departPlayer = this.babs.ents.get(payload.playerdepart) as Player
-			log.info('departPlayer', payload.playerdepart, departPlayer, this.babs.scene)
+			console.debug('departPlayer', payload.playerdepart, departPlayer, this.babs.scene)
 
 			if(departPlayer && departPlayer.id !== this.babs.idSelf) {
 				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(departPlayer.nick || 'a stranger')+' departs>', 'copy', departPlayer.colorHex)
@@ -437,7 +450,7 @@ export class SocketSys {
 		else if('said' in payload) {
 			const said = payload.said
 			const chattyPlayer = this.babs.ents.get(said.id) as Player
-			log.info('said by chattyPlayer', chattyPlayer?.id, said.name, said.text)
+			console.debug('said by chattyPlayer', chattyPlayer?.id, said.name, said.text)
 			// chattyPlayer can be undefined (if they've signed off but this is a recent chat being sent).  
 			// In that case, data.name is set to their name.
 			// this.babs.uiSys.playerSaid(chattyPlayer?.id, said.text, {color: said.color, show: said.show !== false, name: said.name})
@@ -451,7 +464,7 @@ export class SocketSys {
 			this.babs.uiSys.aboveHeadChat(chattyPlayer?.id, said.text, `${chattyPlayer?.nick || 'Stranger'}: ${said.text}`, said.color)
 		}
 		else if('nicklist' in payload) {
-			log.info('nicklist', payload.nicklist)
+			console.debug('nicklist', payload.nicklist)
 			for(let pair of payload.nicklist) {
 				this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
 
@@ -471,7 +484,7 @@ export class SocketSys {
 			}
 		}
 		else if('wobsupdate' in payload) {
-			log.info('wobsupdate', payload.wobsupdate)
+			console.debug('wobsupdate', payload.wobsupdate)
 
 			/*
 			Currently we are:
@@ -482,13 +495,13 @@ export class SocketSys {
 			So the purpose of LoadInstancedWobs is to load the graphics, pretty much.
 			*/
 			const zone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
-			log.info('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
+			console.debug('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
 			const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), true)
 
 			await Wob.LoadInstancedWobs(sharedWobs, this.babs, payload.wobsupdate.shownames)
 		}
 		else if('contains' in payload) {
-			// log.info('contains', payload.contains)
+			// console.debug('contains', payload.contains)
 			// // Whether someone else bagged it or you bagged it, it's time to disappear the item from 3d.
 			// // 	Unless, of course, it was already bagged, and this is a bagtobag transfer!
 			// for(let wobFresh of payload.contains.wobs) {
@@ -506,7 +519,7 @@ export class SocketSys {
 		}
 		else if('fewords' in payload) {
 			const fewords = payload.fewords
-			log('server fewords', fewords)
+			console.log('server fewords', fewords)
 
 			if(fewords.idTargetPlayer) {
 				this.babs.uiSys.aboveHeadChat(fewords.idTargetPlayer, fewords.content, fewords.journalContent, fewords.colorHex)
@@ -516,7 +529,7 @@ export class SocketSys {
 			}
 		}
 		else if('serverrestart' in payload) {
-			log('serverrestart', payload.serverrestart)
+			console.log('serverrestart', payload.serverrestart)
 			const babs = this.babs
 			if(babs.isProd) {
 				setTimeout(() => {
@@ -528,7 +541,7 @@ export class SocketSys {
 			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
 		}
 		else if('energy' in payload) {
-			// log.info('energy', payload.energy)
+			// console.debug('energy', payload.energy)
 
 		}
 		else if('craftable' in payload) {
@@ -552,7 +565,7 @@ export class SocketSys {
 			// })
 		}
 		else if('asktarget' in payload) {
-			log.info('asktarget', payload.asktarget, document.body.style.cursor)
+			console.debug('asktarget', payload.asktarget, document.body.style.cursor)
 
 			const wobId = payload.asktarget.sourceWobId as WobId
 
@@ -567,19 +580,19 @@ export class SocketSys {
 			}
 		}
 		else if('fetime' in payload) {
-			log.info('fetime', payload.fetime)
+			console.debug('fetime', payload.fetime)
 
 			this.babs.worldSys.snapshotTimestamp = DateTime.utc()
-			const addRealMinutes = 0
+			const addRealMinutes = 12
 			const proximaTime = payload.fetime.rlSecondsSinceHour
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
 			// this.babs.worldSys.snapshotRealHourFraction = 100000 // night?
-			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *21) // dawn
+			// this.babs.worldSys.snapshotRealHourFraction = 2400 +(60 *21) // dawnx
 			// this.babs.worldSys.snapshotRealHourFraction = 60*20
 			// this.babs.worldSys.snapshotRealHourFraction += +(60 *40) // Flip daytime&nighttime?
 		}
 		else if('creatures' in payload) {
-			// log.info('creatures', payload.creatures)
+			// console.debug('creatures', payload.creatures)
 
 			// const creatures = data as SendCreatures['creatures']
 			// const {idzone, type, x, z, created_at} = creatures[0]
@@ -606,18 +619,18 @@ export class SocketSys {
 			// }
 		}
 		else {
-			log('unknown command: ', payload)
+			console.log('unknown command: ', payload)
 		}
 	}
 
 	movePlayer = (idzip, movestate, a, b, attempts = 0) => {
-		// log.info('movePlayer', idzip, a, b)
-		// log('attemping to move player, attempt', attempts)
+		// console.debug('movePlayer', idzip, a, b)
+		// console.log('attemping to move player, attempt', attempts)
 		const idPlayer = this.babs.zips.get(idzip)
 		const player = this.babs.ents.get(idPlayer)	as Player
 		if(player) {
 			if(player.id !== this.babs.idSelf) { // Skip self movements
-				// log('finally actually moving player after attept', attempts, idzip)
+				// console.log('finally actually moving player after attept', attempts, idzip)
 				const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
 				if(movestateName === 'run' || movestateName == 'walk') {
 					player.controller.setDestination(new Vector3(a, 0, b), movestateName)

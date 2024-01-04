@@ -1,4 +1,4 @@
-import { log } from '@/Utils'
+
 import { MathUtils, Quaternion, Raycaster, Scene, Vector3, AnimationMixer, Matrix4, Object3D } from 'three'
 import { Comp } from '@/comp/Comp'
 import { WorldSys } from '@/sys/WorldSys'
@@ -83,14 +83,14 @@ export class Controller extends Comp {
 
 
 	async init(arrival :PlayerArrive, playerRig :Object3D) {
-		log.info('Controller.init()', arrival)
+		console.debug('Controller.init()', arrival)
 		this.arrival = arrival
 		this.isSelf = this.idEnt === this.babs.idSelf
 
 		this.playerRig = playerRig
 		this.playerRig.zone = this.babs.ents.get(this.arrival.idzone) as Zone
 
-		// log.info('controller got', this.arrival.idzone, this.playerRig.zone)
+		// console.debug('controller got', this.arrival.idzone, this.playerRig.zone)
 
 		this._stateMachine = new CharacterFSM(
 			new BasicCharacterControllerProxy(this._animations)
@@ -120,7 +120,7 @@ export class Controller extends Comp {
 		this.raycaster = new Raycaster( new Vector3(), new Vector3( 0, -1, 0 ), 0, WorldSys.ZoneTerrainMax.y *2 )
 
 		// Set position warped
-		log.info('controller init done, warp player to', this.arrival.x, this.arrival.z, this.playerRig)
+		console.debug('controller init done, warp player to', this.arrival.x, this.arrival.z, this.playerRig)
 		this.gDestination = new Vector3(this.arrival.x, 0, this.arrival.z)
 		this.playerRig.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
 
@@ -142,7 +142,7 @@ export class Controller extends Comp {
 	headRotationX = 0
 	setHeadRotationX(eulerX) {
 		this.headRotationX = eulerX
-		// log(this.modelHead.rotation)
+		// console.log(this.modelHead.rotation)
 	}
 
 	getHeadRotationX() {
@@ -154,9 +154,11 @@ export class Controller extends Comp {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
+		this.babs.renderSys.calcPositionChanged = true
+
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
-		// log.info('setDestination changing', this.gDestination, movestate, this.isSelf)
+		// console.debug('setDestination changing', this.gDestination, movestate, this.isSelf)
 		
 		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > 249 || gDestVector3.z > 249
 
@@ -196,19 +198,19 @@ export class Controller extends Comp {
 				const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
 				const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
 
-				log.info('Initiating Zoning', exitZone.id, '->', enterZone.id)
+				console.debug('Initiating Zoning', exitZone.id, '->', enterZone.id)
 
 				this.selfWaitZoningExitZone = exitZone
 				this.playerRig.zone = enterZone
 				this.babs.worldSys.currentGround = enterZone.ground
-				log.info('setDestination', this.playerRig, this.babs.worldSys.currentGround)
+				console.debug('setDestination', this.playerRig, this.babs.worldSys.currentGround)
 
 				// 1. Player has been moved.  1b. Remove wobs from exit zones.  2. **Shift all existing wobs relative to delta.**  3. ShiftEverything().  4. Then load new wobs (network return), which will load relative.
 
 				// Remove and decrease count for exiting zones
 				for(const removedZone of removedZonesNearby) {
 					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
-					log.info('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
+					console.debug('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
 					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
 						removedZone.removeWobGraphic(zoneFwob)
 					}
@@ -230,7 +232,7 @@ export class Controller extends Comp {
 					})
 				}
 				console.timeEnd('Shift remaining instance items') // 2.3ms on desktop - not too bad!
-				log.info('shift total count', totalCount)
+				console.debug('shift total count', totalCount)
 
 				this.babs.worldSys.shiftEverything(-vZoneDiff.x *WorldSys.ZONE_LENGTH_FEET, -vZoneDiff.z *WorldSys.ZONE_LENGTH_FEET)
 
@@ -312,7 +314,7 @@ export class Controller extends Comp {
 			let theta = Math.atan2(dir.x, dir.z)
 			const angle = MathUtils.radToDeg(theta)
 			const round = Math.round(angle)
-			// log('angle', dir, theta, round)
+			// console.log('angle', dir, theta, round)
 
 			// Not sure what I'm doing here...but mapping what I've got
 			// -180 can be 180, so that's item 3...
@@ -331,7 +333,7 @@ export class Controller extends Comp {
 	}
 
 	jump(height :number) {
-		log('jump!', this.groundDistance, this.velocity.y)
+		console.log('jump!', this.groundDistance, this.velocity.y)
 		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
 			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
 			this.groundDistance = this.groundDistance || 1 // Get off the ground at least
@@ -385,7 +387,7 @@ export class Controller extends Comp {
 
 		const acc = this.acceleration.clone()
 		if (this.run) {
-			acc.multiplyScalar(2.0)
+			acc.multiplyScalar(2.0 *this.babs.inputSys.runmult)
 		}
 
 		// Move toward destination
@@ -532,8 +534,8 @@ export class Controller extends Comp {
 
 	async loadZoneWobs(player :Player, enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
 		// console.log('loadZoneWobs')
-		log.info('loadZoneWobs zonein player zone', player.id, enterZone.id, )
-		log.info('loadZoneWobs this.gDestination', this.gDestination)
+		console.debug('loadZoneWobs zonein player zone', player.id, enterZone.id, )
+		console.debug('loadZoneWobs this.gDestination', this.gDestination)
 
 		// Calculate the zones we're exiting and the zones we're entering
 		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
@@ -547,7 +549,7 @@ export class Controller extends Comp {
 		const addedZonesFar = newZonesFar.filter(zone => !oldZonesFar.includes(zone))
 		// console.log('addedZonesFar', Zone.loadedZones, addedZonesFar.map(z => z.id).sort((a,b) => a-b), addedZonesNearby.map(z => z.id).sort((a,b) => a-b))
 
-		log.info('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
+		console.debug('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
 		
 		// this.babs.worldSys.currentGround = enterZone.ground // Now happens before network
 
@@ -596,7 +598,7 @@ export class Controller extends Comp {
 			}
 
 			// return [detailedWobsToAdd, farWobsToAdd] // These loads don't [later: didn't] need to await for zonein to complete~!
-			log.info('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+			console.debug('entered zones: detailed wobs to add', detailedWobsToAdd.length)
 			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) 
 			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
 

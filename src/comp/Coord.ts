@@ -1,5 +1,5 @@
 
-import { log } from '@/Utils'
+
 import { Comp } from '@/comp/Comp'
 import { type Ent } from '@/ent/Ent'
 import { Babs } from '@/Babs'
@@ -69,7 +69,7 @@ export class YardCoord extends Coord {
 			// First let's find the target zone x,z relative to us.  (The engine position is already relative)
 			// Actually, crosszoneCoord does this.
 			const crossEngineCoord = crosszoneCoord({x: coord.position.x, z: coord.position.z, zone: zoneSelf}, 1000)
-			// log('crossEngineCoord', crossEngineCoord)
+			// console.log('crossEngineCoord', crossEngineCoord)
 			crossEngineCoord.x = Math.floor(crossEngineCoord.x /4)
 			crossEngineCoord.z = Math.floor(crossEngineCoord.z /4)
 
@@ -132,7 +132,7 @@ export class YardCoord extends Coord {
 		// const zoneTheoreticalX = this.zone.x *WorldSys.ZONE_LENGTH_FEET
 		// const zoneGroundX = this.zone.ground.position.x
 		// const zoneGroundZ = this.zone.ground.position.z
-		// log('zonx', 
+		// console.log('zonx', 
 		// 	this.x + ','+this.z, 
 		// 	this.zone.x + ','+this.zone.z, 
 		// 	this.zone.ground.position.x + ','+this.zone.ground.position.z, 
@@ -257,7 +257,7 @@ export class ZoneCoord extends Coord {
 // 		// eg: x: 1017.9435729436972
 // 		// /4 =254.25, floor() = 254
 
-// 		// log('toYardCoord', fromPerspectiveOf.id, fromPerspectiveOf.x, this.x)
+// 		// console.log('toYardCoord', fromPerspectiveOf.id, fromPerspectiveOf.x, this.x)
 
 // 		return YardCoord.Create({
 // 			x: Math.floor((this.x) /4), 
@@ -306,7 +306,7 @@ function crosszoneCoord(startingCoord :XZandZone, perZone :number) {
 		console.warn('crosszoneCoord: No target zone at', absTargetZoneCoord, 'for startingCoord', startingCoord, 'from delta', deltaZoneX, deltaZoneZ)
 	}
 	else {
-		// log('FOUND ZONE?!?!', startingCoord, absTargetZoneCoord.zone)
+		// console.log('FOUND ZONE?!?!', startingCoord, absTargetZoneCoord.zone)
 	}
 
 	// Find remainder/overflow YardCoord (YardCoord within the potentially new zone)

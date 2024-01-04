@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
 	import { toprightText, toprightReconnect, socketSend, baseDomain, isProd, debugMode, urlFiles, uiWindows } from "../stores"
-	import { log } from '@/Utils'
+	
 	import { MathUtils } from 'three';
 
 

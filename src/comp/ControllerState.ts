@@ -1,4 +1,4 @@
-import { log } from './../Utils'
+
 import { LoopOnce } from 'three'
 
 /**
@@ -358,12 +358,12 @@ export class IdleState extends State {
 
 	enter(prevState) {
 		const idleAction = this._parent._proxy._animations['idle'].action
-		// log.info('idleenter', prevState, idleAction)
+		// console.debug('idleenter', prevState, idleAction)
 
 
 		const mixer = idleAction.getMixer()
 		mixer.addEventListener('finished', (stuff) => {
-			log.info('finished?', stuff)
+			console.debug('finished?', stuff)
 		})
 
 		idleAction.getClip().duration = 5 // via diagnose below
@@ -378,16 +378,16 @@ export class IdleState extends State {
 			// const clip = idleAction.getClip()
 			// let count = 0
 			// clip.tracks.map(track => {
-			// 	log.info('track', count)
+			// 	console.debug('track', count)
 			// 	count++
 			// 	const maxValueObject = track.times.filter(time => {
 			// 		return time > 8 // Too long for this anim
 			// 	})
-			// 	log.info('max', maxValueObject)
+			// 	console.debug('max', maxValueObject)
 			// })
-			// log.info('duration', idleAction.getClip().duration)
+			// console.debug('duration', idleAction.getClip().duration)
 			// idleAction.getClip().resetDuration()
-			// log.info('after', idleAction.getClip().duration)
+			// console.debug('after', idleAction.getClip().duration)
 
 			idleAction.setEffectiveTimeScale(1.0)
 			idleAction.setEffectiveWeight(1.0)
@@ -402,7 +402,7 @@ export class IdleState extends State {
 	}
 
 	update(_) {
-		// log.info('idleup', _)
+		// console.debug('idleup', _)
 		// if (input._keys.forward) {
 		// 	this._parent.setState('run')
 		// } else if (input._keys.backward) {

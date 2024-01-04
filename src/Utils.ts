@@ -22,62 +22,18 @@ const waitDebugMode = () => {
 }
 waitDebugMode()
 
-
-// ;(async () => {
-// 	let { debugMode } = await import('./stores')
-// 	console.log('what dbm', debugMode)
-// 	debugMode.subscribe(on => {
-// 		console.log('setdbm')
-// 		showInfoLogs = on
-// 	})
-// })()
-
-// showInfoLogs = true
-
-
 // export const log = (function() {
-//     function log(...params) { 
-//         console.log(...params)
-//     }
-// 	log.info = (...params) => {
+// 	// Get real line numbers with log() calls https://news.ycombinator.com/item?id=5540716
+// 	const log = Function.prototype.bind.call(console.log, console)
+
+// 	// Can't figure out how to get line numbers for sub-objects
+// 	log.info = (...params) => { 
 // 		if(showInfoLogs) {
-// 			params[0] = '{info} '+params[0]
-// 			console.log(...params)
+// 			console.info(...params)
 // 		}
 // 	}
-// 	console.warn = (...params) => {
-// 		console.warn(...params)
-// 	}
-// 	console.error = (...params) => {
-// 		console.error(...params)
-// 	}
-
 // 	return log
 // })() // IIFE
-
-export const log = (function() {
-	// Get real line numbers with log() calls https://news.ycombinator.com/item?id=5540716
-	const log = Function.prototype.bind.call(console.log, console)
-
-	// Can't figure out how to get line numbers for sub-objects
-	log.info = (...params) => { 
-		if(showInfoLogs) {
-			console.info(...params)
-		}
-	}
-	return log
-})() // IIFE
-
-// Console props
-/*
-  var methods = [
-      'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
-      'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-      'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
-      'timeStamp', 'trace', 'warn'
-  ];
-*/
-
 
 export function clamp(n, min, max){
 	return Math.max(Math.min(n, max), min)

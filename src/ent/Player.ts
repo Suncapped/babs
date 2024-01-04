@@ -2,13 +2,15 @@
 import { CameraSys } from '@/sys/CameraSys'
 import { InputSys } from '@/sys/InputSys'
 import { Controller } from '@/comp/Controller'
-import { log } from '@/Utils'
+
 import { Ent } from './Ent'
 import { EventSys } from '@/sys/EventSys'
 import { Object3D, Scene } from 'three'
 import { Babs } from '@/Babs'
 import type { PlayerArrive } from '@/shared/consts'
 import type { FeObject3D } from './Wob'
+import { get as svelteGet } from 'svelte/store'
+import { settings } from '../stores'
 
 // Player Character
 export class Player extends Ent {
@@ -46,7 +48,7 @@ export class Player extends Ent {
 		
 		plr.self = bSelf
 
-		log.info('New Player:', plr)
+		console.debug('New Player:', plr)
 
 		const [playerRig] = await Promise.all([ 
 			babs.loaderSys.loadRig(plr.char.gender), 
@@ -108,7 +110,7 @@ export class Player extends Ent {
 			this.babs.compcats.set(Controller.name, this.babs.compcats.get(Controller.name)?.filter((c :Controller) => c.playerRig.id !== this.controller.playerRig.id))
 			delete this.controller
 
-			log.info('comp cats after Player.remove()', this.babs.compcats)
+			console.debug('comp cats after Player.remove()', this.babs.compcats)
 
 			// todo dispose eg https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
 		}
@@ -118,7 +120,7 @@ export class Player extends Ent {
 		}
 		else {
 			let waitForMesh = setInterval(() => {
-				log('waiting for remove')
+				console.log('waiting for remove')
 				if(this.controller.playerRig) {
 					doRemove()
 					clearInterval(waitForMesh)

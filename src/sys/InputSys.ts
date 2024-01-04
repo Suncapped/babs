@@ -3,7 +3,7 @@ import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMate
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import { isAwayUiDisplayed, rightMouseDown, debugMode, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
-import { log } from './../Utils'
+
 import { MathUtils } from 'three'
 import { PlaneGeometry } from 'three'
 import { MeshBasicMaterial } from 'three'
@@ -133,6 +133,7 @@ export class InputSys {
 	runmode = true // Run mode, as opposed to walk mode
 	topMenuVisibleLocal
 	recheckMouseIntersects = false
+	runmult = 1
 
 	isAfk = false
 	babs :Babs
@@ -168,17 +169,17 @@ export class InputSys {
 
 		document.addEventListener('pointerlockchange', (ev) => {
 			this.recheckMouseIntersects = true
-			log.info('pointerlockchange', ev)
+			console.debug('pointerlockchange', ev)
 			if (document.pointerLockElement) {
 				this.isPointerLocked = true
-				log.info('The pointer lock status is now locked')
+				console.debug('The pointer lock status is now locked')
 				if(this.usePermanentPointerLock) {
 					this.customcursor.style.display = 'block'
 					this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
 				}
 			} else {
 				this.isPointerLocked = false
-				log.info('The pointer lock status is now unlocked')
+				console.debug('The pointer lock status is now unlocked')
 				if(this.usePermanentPointerLock) {
 					this.customcursor.style.display = 'none'
 					this.babs.uiSys.awayGame() // We might not get esc key event?  Also makes it clearer they're out.
@@ -186,13 +187,15 @@ export class InputSys {
 			}
 		}, false)
 		document.documentElement.addEventListener('mouseleave', (ev) => {
-			log.info('mouseleave')
+			console.debug('mouseleave')
 			this.mouse.insidewindow = false
 			this.raycastSetPickedObject(false, 'forceUnpick') // Force to unpick object, so it doesn't stay highlighted and tag
-			this.pickedObject.poHoverTime = null // A bit hax; prevents long hover tag on mouse exiting screen above picked
+			if(this.pickedObject) {
+				this.pickedObject.poHoverTime = null // A bit hax; prevents long hover tag on mouse exiting screen above picked
+			}
 		})
 		document.documentElement.addEventListener('mouseenter', (ev) => {
-			log.info('mouseenter')
+			console.debug('mouseenter')
 			this.mouse.insidewindow = true
 		})
 
@@ -232,12 +235,12 @@ export class InputSys {
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
-			log.info('keydown:', ev.key, ev.code, ev.repeat)
+			console.debug('keydown:', ev.key, ev.code, ev.repeat)
 			// OS-level key repeat keeps sending down events; 
 			if (!this.chatboxOpen && !ev.repeat) { // stop that from turning into presses
 				this.keyboard[inputCodeMap[ev.code]] = PRESS
 			}
-			// log('keyboard codes', Object.entries(this.keyboard).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`))
+			// console.log('keyboard codes', Object.entries(this.keyboard).filter(([k, v]) => v).map(([k, v]) => `${k}: ${v}`))
 
 			// We probably need to use a mixture of ev.code (keyboard-key/OS based) and ev.key (output/browser based)
 			// For .key: https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
@@ -335,8 +338,13 @@ export class InputSys {
 				}
 			}
 			else { // !this.chatboxOpen
-				if(ev.key === 'j') {
+				if(ev.ctrlKey && ev.key === 'j') {
 					this.babs.uiSys.svJournal.toggleFurl()
+					ev.preventDefault()
+				}
+				if(ev.ctrlKey && ev.key === 'g') {
+					this.runmult = this.runmult === 1 ? 6 : 1
+					ev.preventDefault()
 				}
 				if(ev.key === KeyCode.VALUE_ESCAPE) {
 					if(!this.babs.uiSys.isGameAway) {
@@ -366,8 +374,7 @@ export class InputSys {
 			}
 
 			// Commands, for testing
-			if (this.keyboard.cleft) {
-
+			if (this.keyboard.cleft || this.keyboard.cright) {
 
 				if (this.keyboard.f === PRESS) {
 					Wob.InstancedWobs.forEach((feim, bpid) => {
@@ -409,7 +416,7 @@ export class InputSys {
 							})
 						}
 					}
-					log('Created '+count+' client side items')
+					console.log('Created '+count+' client side items')
 
 					console.time('all')
 					const res = await Wob.LoadInstancedWobs (wobTrees, this.babs, false)
@@ -417,7 +424,7 @@ export class InputSys {
 					console.log('res', res)
 
 				}
-				if (this.keyboard.t === PRESS) {
+				if (this.keyboard.y === PRESS) {
 
 					function countTrianglesInGeometry(geometry) {
 						if (geometry.index) {
@@ -507,12 +514,12 @@ export class InputSys {
 		// No 'click' handling; we do it manually via mousedown/mouseup for more control
 
 		// document.addEventListener("visibilitychange", (ev) => {
-		// 	log('vis change', ev)
+		// 	console.log('vis change', ev)
 		// })
 		// This fails to detect window switches, and we don't want window switch auto-afk anyway
 
 		const touchHandler = (ev) => {
-			log('touchhandler')
+			console.log('touchhandler')
 			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
 
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touchHandler: ' + ev.target?.id + ', '+ev.type)
@@ -535,7 +542,7 @@ export class InputSys {
 		}
 		document.addEventListener('pointermove', async (e :PointerEvent) => {
 			const ev = e as FePointerEvent
-			// log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
+			// console.log('pointermove', ev.pointerId, ev.pointerType, ev.target.id, ev.clientX, ev.movementX, this.mouse.dx)
 			
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'pointermove: ' + ev.pointerType + ', '+this.mouse.device+', '+this.mouse.right+', '+this.mouse.left)
 
@@ -630,7 +637,7 @@ export class InputSys {
 
 		const buttonDownHandler = (e) => {
 			const ev = e as FePointerEvent
-			log.info('buttonDownHandler', e.target?.id)
+			console.debug('buttonDownHandler', e.target?.id)
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'bdown ' + ev.button + ', '+ev.target?.id)
 
 			if(ev.webkitForce > 1) { // Safari only
@@ -767,7 +774,7 @@ export class InputSys {
 
 					if(this.mouse.device === 'mouse') {
 						if(this.babs.renderSys.documentHasFocus) { // Only counts if window has focus
-							// log('trying quick mouse lock')
+							// console.log('trying quick mouse lock')
 							document.body.requestPointerLock()
 						}
 					}
@@ -801,25 +808,25 @@ export class InputSys {
 		document.addEventListener('mousedown', buttonDownHandler)
 
 		const buttonUpHandler = (ev) => {
-			log.info('buttonUpHandler')
+			console.debug('buttonUpHandler')
 			// this.recheckMouseIntersects = true // Especially needed for fingers.  Here too on up?
 			
-			// log.info('mouseOnUp', ev.button, ev.target.id)
+			// console.debug('mouseOnUp', ev.button, ev.target.id)
 			if (ev.button === MOUSE_LEFT_CODE) {
 				this.mouse.left = LIFT
 
 				// Handle carry drop
 				if (this.liftedObject) { // set in update
 
-					log.info('carry drop', this.mouse.movetarget, this.liftedObject, this.pickedObject)
+					console.debug('carry drop', this.mouse.movetarget, this.liftedObject, this.pickedObject)
 					// if (this.mouse.movetarget?.parentElement?.id === `container-for-${this.babs.idSelf}`
 					// 	&& this.mouse.movetarget.classList.contains('container-body') // Is body of bag, not title etc
 					// ) { // UI main bag
-					// 	log('Main bag drop', this.mouse.movetarget)
+					// 	console.log('Main bag drop', this.mouse.movetarget)
 					// 	const point = new Vector3(this.mouse.x, 0, this.mouse.y)
 					// 	// @ts-ignore
 					// 	const wob = this.babs.ents.get(this.liftedObject.id) || Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
-					// 	log.info('Found', wob, this.liftedObject)
+					// 	console.debug('Found', wob, this.liftedObject)
 					// 	this.babs.socketSys.send({
 					// 		action: {
 					// 			verb: 'contained',
@@ -838,7 +845,7 @@ export class InputSys {
 
 					if (this.pickedObject.pickedType === 'land') {
 						
-						log.info('dropped onto empty land', this.pickedObject)
+						console.debug('dropped onto empty land', this.pickedObject)
 						
 						const coordDest = YardCoord.Create({
 							position: this.pickedObject.landPoint,
@@ -854,7 +861,7 @@ export class InputSys {
 						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						log.info('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
+						console.debug('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
 						this.babs.socketSys.send({  // Intention is to move it
 							action: {
 								verb: 'moved',
@@ -868,9 +875,9 @@ export class InputSys {
 
 					}
 					else if(this.pickedObject.pickedType === 'wob') {
-						log.info('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject)
+						console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject)
 						if(this.pickedObject.poid === this.liftedObject.poid) {
-							log('dropped where it was lifted from')
+							console.log('dropped where it was lifted from')
 							// Nothing happens
 						}
 						else { // Intention is to merge it
@@ -894,17 +901,17 @@ export class InputSys {
 						}
 					}
 					else if(this.pickedObject.pickedType === 'player') {
-						log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
+						console.log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
 						if(this.pickedObject.poid === this.babs.idSelf) {
-							log.info('dropped onto self player', this.pickedObject, this.liftedObject)
+							console.debug('dropped onto self player', this.pickedObject, this.liftedObject)
 						}
 						else {
-							log.info('dropped onto other player', this.pickedObject, this.liftedObject)
+							console.debug('dropped onto other player', this.pickedObject, this.liftedObject)
 						}
 					}
 					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
-						log.info('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
+						console.debug('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
 						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
 					}
 
@@ -917,7 +924,7 @@ export class InputSys {
 					const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
 
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
-					// log('setMatrixAt buttonup', liftedIndex)
+					// console.log('setMatrixAt buttonup', liftedIndex)
 					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 					this.liftedObject = null
@@ -931,7 +938,7 @@ export class InputSys {
 					if(mouseupBeforePickup && pickedHasntChanged) { // mousedownPickedObject would be null after 400ms pickup time
 
 						if (this.pickedObject?.pickedType === 'player') {
-							log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
+							console.log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
 							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
 							this.nickTargetId = player.id
 							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
@@ -939,7 +946,7 @@ export class InputSys {
 						} 
 						else if (this.pickedObject?.pickedType === 'wob'){
 	
-							log.info('wobuse', this.mouse, this.pickedObject)
+							console.debug('wobuse', this.mouse, this.pickedObject)
 	
 							if(this.pickedObject) {
 								const coord = this.pickedObject?.yardCoord
@@ -955,7 +962,7 @@ export class InputSys {
 	
 						}
 						else if (this.pickedObject?.pickedType === 'land') {
-							log.info('landuse', this.pickedObject)
+							console.debug('landuse', this.pickedObject)
 	
 							const zone = this.babs.ents.get(this.pickedObject.yardCoord.zone.id) as Zone
 							const yardCoord = YardCoord.Create({
@@ -1024,7 +1031,7 @@ export class InputSys {
 				// Doesn't actually require control keypress!  It's a hack that enables pinch zoom
 				this.setMouseDevice('touchpad') // Only a touchpad would use zoom.
 				this.mouse.zoom -= ev.deltaY
-				// log.info('in a pinch')
+				// console.debug('in a pinch')
 			} else {
 				if (ev.deltaX) this.setMouseDevice('touchpad') // Only a touchpad would use x scrolling.
 				
@@ -1034,7 +1041,7 @@ export class InputSys {
 					// this.mouse.scrolldy += ev.deltaY
 					// Disabling touchpad vertical scroll to move.  Instead, use code similar to mouse
 
-					// log(this.mouse.scrolldy)
+					// console.log(this.mouse.scrolldy)
 					// if (ev.deltaY < 0 || !this.babs.cameraSys.gh ||this.babs.cameraSys.idealOffset?.y > this.babs.cameraSys.gh?.y + 4) {
 					// Only increase offsetHeight if camera is above ground, or moving camera up
 					if(!this.topMenuVisibleLocal) {
@@ -1111,7 +1118,7 @@ export class InputSys {
 			}
 		}
 		if(!this.babs.uiSys.isGameAway && this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
-			// log('hovering over', this.pickedObject)
+			// console.log('hovering over', this.pickedObject)
 			this.pickedObject.poHoverTime = null // Unset so this only triggers once (a bit hax)
 
 			if (this.pickedObject.pickedType === 'player') {
@@ -1134,7 +1141,7 @@ export class InputSys {
 					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 					const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x+','+yardCoord.z]
 
-					log('this.pickedObject', this.pickedObject, pos)
+					console.log('this.pickedObject', this.pickedObject, pos)
 					// debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z) // todo shiftiness
 					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14])
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
@@ -1143,10 +1150,10 @@ export class InputSys {
 				const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 
 				if(!wob) { // Maybe repro and handle this error better?  Happens on double click of wob that disappears (eg eaten)
-					log.info('No wob on hover', this.pickedObject, wob, yardCoord)
+					console.debug('No wob on hover', this.pickedObject, wob, yardCoord)
 				}
 				else {
-					log.info('hovered wob, this.pickedObject', this.pickedObject, yardCoord)
+					console.debug('hovered wob, this.pickedObject', this.pickedObject, yardCoord)
 					if(!this.liftedObject) {
 						this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
 					}
@@ -1253,7 +1260,7 @@ export class InputSys {
 				_R.multiply(_Q)
 				this.playerSelf.controller.setRotation(_R)
 
-				log.info('InputSys: call controller.setRotation')
+				console.debug('InputSys: call controller.setRotation')
 
 				// After character snap rotate, bring head (camera) back to roughly where it was before (2.2 magic number)
 				this.mouse.accumx = -this.mouseAccumThreshold * (2.2 / 3) * Math.sign(this.mouse.accumx)
@@ -1267,7 +1274,7 @@ export class InputSys {
 
 		// Vertical mouse look
 		if (!this.topMenuVisibleLocal && this.mouse.right) {
-			// log('dz', this.mouse.dy)
+			// console.log('dz', this.mouse.dy)
 
 			// const _Q = new Quaternion()
 			// const _A = new Vector3()
@@ -1314,11 +1321,11 @@ export class InputSys {
 			)
 		) {
 			
-			// log.info(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
+			// console.debug(this.keys.w ? 'w' : '-', this.keys.s ? 's' : '-', this.keys.a ? 'a' : '-', this.keys.d ? 'd' : '-')
 
 			let tempMatrix = new Matrix4().makeRotationFromQuaternion(this.playerSelf.controller.idealTargetQuaternion)
 			let vector = new Vector3().setFromMatrixColumn(tempMatrix, 0)  // get X column of matrix
-			// log.info('vector!', tempMatrix, vector)
+			// console.debug('vector!', tempMatrix, vector)
 
 			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.keyboard.s || this.keyboard.down || this.autorun || this.touchmove) {
 				vector.crossVectors(this.playerSelf.controller.playerRig.up, vector) // camera.up
@@ -1334,7 +1341,7 @@ export class InputSys {
 			let gCurrentPos = this.playerSelf.controller.playerRig.position.clone()
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
-			// log.info('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
+			// console.debug('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
 
 			gCurrentPos = gCurrentPosFloored
 			gCurrentPos.setY(0) // Y needs a lot of work in this area...(8 months later: or does it? :D)
@@ -1343,7 +1350,7 @@ export class InputSys {
 			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 
 			// Send to controller
-			// log.info('InputSys: call controller.setDestination()', dest)
+			// console.debug('InputSys: call controller.setDestination()', dest)
 			this.playerSelf.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
 
 			// Let's show a square in front of the player?  Their destination target square :)
@@ -1377,7 +1384,7 @@ export class InputSys {
 			if(!this.mediaRecorder) { // Note this is less throttled by this and more by not being able to press space while <<>> messages are up in chatbox.
 				(async () => {
 					try {
-						log.info('getUserMedia()')
+						console.debug('getUserMedia()')
 						this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 						this.mediaStreamStartTime = Date.now()
 
@@ -1392,7 +1399,7 @@ export class InputSys {
 					let isSafari = false
 					this.mediaMimeType = 'audio/webm;codecs=opus'
 					if (!MediaRecorder.isTypeSupported(this.mediaMimeType)) {
-						log('this.mediaMimeType NOT supported 1:', this.mediaMimeType)
+						console.log('this.mediaMimeType NOT supported 1:', this.mediaMimeType)
 						// Try for Safari
 						isSafari = true
 						this.mediaMimeType = 'audio/mp4;codecs=mp4a'
@@ -1405,7 +1412,7 @@ export class InputSys {
 					this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType: this.mediaMimeType })
 					// Collect recorded chunks
 					this.mediaRecorder.addEventListener('dataavailable', (event) => {
-						log.info('dataavailable', event, event.data.size, this.mediaRecorder?.state)
+						console.debug('dataavailable', event, event.data.size, this.mediaRecorder?.state)
 						if (event.data.size > 0) {
 							this.recordedChunks.push(event.data)
 						}
@@ -1423,7 +1430,7 @@ export class InputSys {
 							if(!isSafari) {
 								this.mediaStream.getTracks()[0].stop()
 								this.mediaStream.removeTrack(this.mediaStream?.getTracks()[0])
-								log.info('Not Safari; mediaStream to null', this.mediaStream.getTracks(), this.mediaRecorder)
+								console.debug('Not Safari; mediaStream to null', this.mediaStream.getTracks(), this.mediaRecorder)
 								this.mediaStream = null
 							}
 
@@ -1447,7 +1454,7 @@ export class InputSys {
 
 							const timeElapsed = Date.now() - this.mediaStreamStartTime
 							this.mediaStreamStartTime = null
-							log.info('mediaStreamStartTime timeElapsed', timeElapsed, 'ms')
+							console.debug('mediaStreamStartTime timeElapsed', timeElapsed, 'ms')
 							const minMsToGetGoodAnswer = 300
 
 							if(timeElapsed >= minMsToGetGoodAnswer) { 
@@ -1469,7 +1476,7 @@ export class InputSys {
 									
 										const data = await response.json()
 										const text = data.text
-										log.info('Audio converted successfully:', data.text)
+										console.debug('Audio converted successfully:', data.text)
 
 										this.babs.socketSys.send({
 											chat: {
@@ -1500,7 +1507,7 @@ export class InputSys {
 				this.chatboxSetContent(this.chatbox.textContent.replace('<<listening>>', ''))
 
 				if(this.mediaRecorder?.state == 'recording') {
-					log.info('mediaRecorder.stop()')
+					console.debug('mediaRecorder.stop()')
 					this.mediaRecorder.stop() // This starts the blob+upload process via 'dataavailable' & state != 'recording'
 					// this.mediaRecorder = null // Do only after it generates a blob
 				}
@@ -1656,11 +1663,11 @@ export class InputSys {
 						if(wobAtCoord) {
 							const feim = Wob.InstancedWobs.get(wobAtCoord.blueprint_id)
 							if(feim) {
-								// log('feim', feim.blueprint_id, yardCoord)
+								// console.log('feim', feim.blueprint_id, yardCoord)
 								const index = feim.matrixIndexFromYardCoord(yardCoord)
 								const position = feim.matrixEngCoordFromIndex(index)
 								if(position) { // Ensure feim and wobs have been loaded
-									// log('index', index, position)
+									// console.log('index', index, position)
 									newPickedObject = { // wob on tile
 										pickedType: 'wob',
 										poid: JSON.stringify(wobAtCoord.id()),
@@ -1693,7 +1700,7 @@ export class InputSys {
 								landcoverString: lcString,
 								landPoint: this.mouseRayTargets[i].point,
 							}
-							// log('Setting land target landPoint', this.mouseRayTargets[i].point.x.toFixed(0), this.mouseRayTargets[i].point.z.toFixed(0))
+							// console.log('Setting land target landPoint', this.mouseRayTargets[i].point.x.toFixed(0), this.mouseRayTargets[i].point.z.toFixed(0))
 						}
 
 
@@ -1701,13 +1708,13 @@ export class InputSys {
 
 					}
 					else if (objectMaybe?.name === 'daysky') { // Sky
-						// log('ray to sky')
+						// console.log('ray to sky')
 					}
 					else if (objectMaybe?.name === 'nightsky') { // Sky
-						// log('ray to skybox')
+						// console.log('ray to skybox')
 					}
 					else if (objectMaybe?.name === 'flame') { // Flame
-						// log('ray to flame')
+						// console.log('ray to flame')
 					}
 					else if (objectMaybe instanceof TroikaText) { // Troika text
 						console.warn('ray to troika text')
@@ -1789,13 +1796,13 @@ export class InputSys {
 
 			const pickedAndChanged = !(this.pickedObject && newPickedObject && poidsEqual)
 			if(pickedAndChanged || forcePickChanged) {
-				// log('pickedAndChanged', this.pickedObject, newPickedObject)
+				// console.log('pickedAndChanged', this.pickedObject, newPickedObject)
 				this.pickedObject = newPickedObject // Update it to new one or to null
 
 
 				// Every time picked===land changes && lifted
 				if(this.liftedObject?.pickedType === 'wob' && this.pickedObject?.pickedType !== 'player') {
-					// log('pickedAndChanged land', this.pickedObject, this.liftedObject)
+					// console.log('pickedAndChanged land', this.pickedObject, this.liftedObject)
 
 					/* Try 3 */
 					// The bottom line is that we can setMatrixAt to change where the lifted wob appears visually, without affecting any other data.
@@ -1810,9 +1817,9 @@ export class InputSys {
 					// pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
 					
 					const matrixPickedEngPos = new Matrix4().setPosition(pickedEngPos)
-					log.info('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
+					console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixPickedEngPos)
-					// log('setMatrixAt down/update', liftedIndex)
+					// console.log('setMatrixAt down/update', liftedIndex)
 					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
 
 				}
@@ -1836,7 +1843,7 @@ export class InputSys {
 			// dividerOffset.set(0)
 		}
 
-		log('Device detected: ', newDevice, `(was ${this.mouse.device})`)
+		console.log('Device detected: ', newDevice, `(was ${this.mouse.device})`)
 		// Device has changed.
 
 		if(newDevice === 'fingers') {

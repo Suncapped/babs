@@ -2,7 +2,7 @@
 	import { onMount, afterUpdate } from 'svelte'
 	import { socketSend, baseDomain, isProd, rightMouseDown, menuSelfData } from "../stores"
 	import Cookies from 'js-cookie'
-	import { log } from '@/Utils'
+	
 	import { InputSys } from '@/sys/InputSys'
 
 	let chatbox
@@ -44,7 +44,7 @@
 		chatbox.textContent = ''
 	}
 	function chatKeydown(ev) {
-		// log('chatKeydown', $rightMouseDown, ev)
+		// console.log('chatKeydown', $rightMouseDown, ev)
 
 		// if($rightMouseDown) return
 
@@ -90,7 +90,7 @@
 			}
 		}
 
-		// log('chatbox.textContent', chatbox.textContent)
+		// console.log('chatbox.textContent', chatbox.textContent)
 		chatbox.style.display = chatbox.textContent ? 'block' : 'none'
 
 		// document.getElementById('info').style.display = chatbox.style.display === 'block' ? 'none' : 'block' // Hide debug stuff

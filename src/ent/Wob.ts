@@ -1,6 +1,6 @@
 import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2 } from 'three'
 import { UiSys } from '@/sys/UiSys'
-import { log } from '@/Utils'
+
 import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
@@ -45,7 +45,7 @@ export class Wob extends SharedWob {
 	static InstancedWobs = new Map<string, InstancedWobs>()
 	static async LoadInstancedWobs(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean, asFarWobs :'asFarWobs' = null) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
-		log.info('arrivalWobs', arrivalWobs.length)
+		console.debug('arrivalWobs', arrivalWobs.length)
 		const nameCounts = new Map<string, number>()
 
 		// const playerSelf = babs.ents.get(babs.idSelf) as Player
@@ -53,6 +53,15 @@ export class Wob extends SharedWob {
 		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
 		for(const wob of arrivalWobs) {
+			// if(wob.blueprint_id == 'campfire') {
+			// 	wob.blueprint_id = 'feather grass'
+			// 	wob.name = 'feather grass'
+			// }
+			// // if(wob.blueprint_id != 'campfire') {
+			// 	wob.blueprint_id = 'feather grass'
+			// 	wob.name = 'feather grass'
+			// // }
+
 			if(asFarWobs) {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
@@ -61,19 +70,19 @@ export class Wob extends SharedWob {
 		}
 
 		const wobsToLoad = arrivalWobs.map(w=>w.name)
-		log.info('meshesToLoad', nameCounts)
+		console.debug('meshesToLoad', nameCounts)
 		await Wob.ensureGltfsLoaded(wobsToLoad, babs) // Loads them into Wob.LoadedGltfs
 
-		// log.info('LoadedGltfs', Wob.LoadedGltfs)
+		// console.debug('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
 			const newWobsCount = nameCounts.get(blueprint_id)
 			let instanced = Wob.InstancedWobs.get(blueprint_id)
-			// log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
+			// console.log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
 			if(!instanced) {
-				// log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
+				// console.log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
 				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, gltf as Gltf, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
-				// log.info('Created instanced for blueprint_id', blueprint_id)
+				// console.debug('Created instanced for blueprint_id', blueprint_id)
 				// instanced.instancedMesh.geometry.computeBoundsTree() // bvh
 			}
 			else {
@@ -93,7 +102,7 @@ export class Wob extends SharedWob {
 		// This is for SETting instance items.  UNSET happens in Zone.removeWobGraphic.
 		// Why separately?  Because this happens en-masse
 		for(const fwob of arrivalWobs) {
-			// log('arrival of', fwob.name, fwob.blueprint_id)
+			// console.log('arrival of', fwob.name, fwob.blueprint_id)
 			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
 				blueprint_id: fwob.blueprint_id, 
 				locid: fwob.locid,
@@ -135,7 +144,7 @@ export class Wob extends SharedWob {
 						}
 					}
 					else {
-						log('Index does exist?', existingIindex)
+						console.log('Index does exist?', existingIindex)
 					}
 
 					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
@@ -207,7 +216,7 @@ export class Wob extends SharedWob {
 
 		for(const wobName of arrivalWobsNames) {
 			if(!Wob.LoadedGltfs.get(wobName)){
-				// log.info('Loading gltf:', wobName)
+				// console.debug('Loading gltf:', wobName)
 				const load = babs.loaderSys.loadGltf(`/environment/${wobName}.glb`, wobName, await LoaderSys.CachedGlbFiles)
 				Wob.LoadedGltfs.set(wobName, true) // Hold its spot in case there are more loads.  Gets set right after this
 				loads.push(load)

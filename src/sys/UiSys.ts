@@ -4,7 +4,7 @@ import Ctext from '../ui/Ctext.svelte'
 import Journal from '../ui/Journal.svelte'
 import Menu from '../ui/Menu.svelte'
 import { isAwayUiDisplayed, debugMode, settings, uiWindows, toprightReconnect, isFullscreen } from '../stores'
-import { log, v3out } from './../Utils'
+import { v3out } from './../Utils'
 import {type Mesh, Vector3, Material, Object3D, DoubleSide, Color } from 'three'
 import { get as svelteGet } from 'svelte/store'
 import { YardCoord } from '@/comp/Coord'
@@ -79,7 +79,7 @@ export class UiSys {
 	
 
 	async gotWindowFocus(ev? :FocusEvent) {
-		log.info('gotWindowFocus', ev)
+		console.debug('gotWindowFocus', ev)
 
 		// if(ev && !this.babs.renderSys.isVrActive && this.babs.inputSys.mouse.device == 'mouse') {
 		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
@@ -95,7 +95,7 @@ export class UiSys {
 	}
 
 	lostFocus() {
-		log.info('lostFocus')
+		console.debug('lostFocus')
 		if(!this.babs.renderSys.isVrActive) {
 			this.awayGame()
 		}
@@ -104,31 +104,31 @@ export class UiSys {
 
 	isGameAway = false
 	awayGame() {
-		log.info('awayGame')
+		console.debug('awayGame')
 		this.isGameAway = true
 		isAwayUiDisplayed.set(true)
 	}
 
 	resumeGame() {
-		log.info('resumeGame')
+		console.debug('resumeGame')
 		this.isGameAway = false
 		isAwayUiDisplayed.set(false)
 	}
 
 	async leftClickCanvas(ev :MouseEvent) {
-		log.info('leftClickCanvas', ev)
+		console.debug('leftClickCanvas', ev)
 		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
 	}
 	leftClickHtml(ev :MouseEvent) {
-		log.info('leftClickHtml', ev)
+		console.debug('leftClickHtml', ev)
 		// if((ev.target as HTMLElement).id == 'ResumeButton') { // No longer needed; it doesn't receive pointer events
 		// And clicking HTML won't in any other circumstance be a resume.
 	}
 	async rightClickCanvas(ev :MouseEvent) {
-		log.info('rightClickCanvas', ev)
+		console.debug('rightClickCanvas', ev)
 		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
@@ -157,7 +157,7 @@ export class UiSys {
 	
 
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
-		log.info('landSaid', landtarget)
+		console.debug('landSaid', landtarget)
 		const yardCoord = YardCoord.Create({
 			position: landtarget.point,
 			babs: this.babs,
@@ -175,7 +175,7 @@ export class UiSys {
 		})
 	}
 	wobSaid(content :string, wob :SharedWob) {
-		log.info('wobSaid', content, wob)
+		console.debug('wobSaid', content, wob)
 		this.feWords({
 			content: content,
 			idZone: wob.idzone,
@@ -188,7 +188,7 @@ export class UiSys {
 		const player = this.babs.ents.get(idPlayer) as Player
 
 		if(player) {
-			log.info('aboveHeadChat', idPlayer, content, colorHex, player)
+			console.debug('aboveHeadChat', idPlayer, content, colorHex, player)
 			
 			const ttext = this.feWords({
 				content: content,
@@ -202,7 +202,7 @@ export class UiSys {
 			// console.log('setting ttext.isAboveHead', ttext.isAboveHead, ttext)
 		}
 		else {
-			log.info('No player found for aboveHeadChat', idPlayer, content, colorHex) 
+			console.debug('No player found for aboveHeadChat', idPlayer, content, colorHex) 
 		}
 		
 	}
@@ -241,8 +241,8 @@ export class UiSys {
 		// })	
 		
 		// const updateWOB = (opt :string) => {
-		// 	log('User selected: ' + opt + ' wobID: ' + wob.id())
-		// 	log('parent', chatLabel.parent)
+		// 	console.log('User selected: ' + opt + ' wobID: ' + wob.id())
+		// 	console.log('parent', chatLabel.parent)
 		// 	this.babs.group.remove(chatLabel)
 
 		// 	// Need a way to send an update to the server, will circle back to this
@@ -311,7 +311,7 @@ export class UiSys {
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
-			log.info('words.idTargetPlayer', words.idTargetPlayer, words.content)
+			console.debug('words.idTargetPlayer', words.idTargetPlayer, words.content)
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
 
@@ -349,7 +349,7 @@ export class UiSys {
 	}
 
 	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') :TroikaText {
-		log.info('makeTextAt', name, content)
+		console.debug('makeTextAt', name, content)
 			
 		// Setup
 		const ttext = new TroikaText() as TroikaText

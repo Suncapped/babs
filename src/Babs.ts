@@ -7,7 +7,6 @@ import { WorldSys } from '@/sys/WorldSys'
 import { SocketSys } from '@/sys/SocketSys'
 import { UiSys } from '@/sys/UiSys'
 import { InputSys } from '@/sys/InputSys'
-import { sleep, log } from '@/Utils'
 import { LoaderSys } from '@/sys/LoaderSys'
 import { CameraSys } from '@/sys/CameraSys'
 import { RenderSys } from '@/sys/RenderSys'
@@ -18,6 +17,7 @@ import { baseDomain, isProd, debugMode, urlFiles } from './stores'
 import { type Ent } from './ent/Ent'
 import type { Wob } from './ent/Wob'
 import type { Zone } from './ent/Zone'
+import Cookies from 'js-cookie'
 
 declare global {
 	interface Window {
@@ -42,6 +42,7 @@ export class Babs {
 	vrSupported :boolean = false
 
 	browser
+	graphicsQuality :boolean
 
 	camera
 	scene :Scene
@@ -103,7 +104,9 @@ export class Babs {
 			default: return 'other'
 			}
 		})(window.navigator.userAgent.toLowerCase())
-		log.info('Browser is', this.browser)
+		console.debug('Browser is', this.browser)
+
+		this.graphicsQuality = Cookies.get('graphics') === 'quality'
 
 		this.socketSys = new SocketSys(this)
 

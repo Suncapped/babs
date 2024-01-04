@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
 	import { isAwayUiDisplayed, socketSend, isProd, menuSelfData, baseDomain, topmenuAvailable, debugMode, settings, isFullscreen } from "../stores"
-	import { log } from '@/Utils'
+	
 	import { draggable } from '@neodrag/svelte'
 	import Cookies from 'js-cookie'
 	import iro from '@jaames/iro'
@@ -26,7 +26,7 @@
 		handle: '#Menu > .handle',
 		bounds: 'parent',
 	}
-	log.info('init, options, ui:', options, ui)
+	console.debug('init, options, ui:', options, ui)
 
 	let dragDistance = 0
 	let dragOffsetX
@@ -124,7 +124,7 @@
 
 		let excitedReason
 		menuSelfData.subscribe((val) => {
-			log.info('menuSelfData change', val)
+			console.debug('menuSelfData change', val)
 			joinDate = new Date(Date.parse($menuSelfData.created_at))
 			joinMonth = joinDate.toLocaleString('default', { month: 'long' })
 			joinYear = joinDate.toLocaleString('default', { year: '2-digit' })
@@ -138,7 +138,7 @@
 			const tempReason = val.reason
 			setTimeout(() => {
 				if($menuSelfData.reason === tempReason) {
-					// log('going to send savereason', ) // todo this still gets run at launch!
+					// console.log('going to send savereason', ) // todo this still gets run at launch!
 					socketSend.set({
 						'savereason': $menuSelfData.reason,
 					})
@@ -153,7 +153,7 @@
 
 		// Watch debugMode
 		debugMode.subscribe(on => {
-			log.info('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
+			console.debug('OverlaydebugMode.subscribe.svelte debugMode setting', dmCallsCount, on)
 
 			// Don't send on init, or on receive first update
 			if(on !== undefined && dmCallsCount > 0) { 
@@ -166,7 +166,7 @@
 	})
 
 	function logout(ev) {
-		log.info('logging out', $baseDomain, $isProd)
+		console.debug('logging out', $baseDomain, $isProd)
 		Cookies.remove('session', { 
 			domain: $baseDomain,
 			secure: $isProd,
@@ -214,6 +214,25 @@
 		}
 	}
 
+
+	let graphicsChecked = Cookies.get('graphics') === 'quality'
+	function graphicsChange(ev) {
+		const graphics = ev.target.checked ? 'quality' : 'performance'
+
+		Cookies.set('graphics', graphics, { 
+			domain: $baseDomain,
+			secure: $isProd,
+			sameSite: 'strict',
+		})
+
+		setTimeout(() => {
+			// this.babs.renderSys.renderer.antialias = true // Can't set here
+			// Reload and RenderSys etc will get data from babs, which sets from cookie in babs.graphics.Quality
+			window.location.reload()
+		}, 100)
+
+	}
+
 	function toggleFullscreen(ev) {
 		if(document.fullscreenElement) {
 			document.exitFullscreen()
@@ -237,53 +256,68 @@
 		<ul style="text-align:left;">			
 			<li style="text-align:center;">Welcome to First Earth!</li>
 			<li style="text-align:center;">
-				{$menuSelfData.email} <a id="logout" href on:click|preventDefault={logout}>Logout</a>
+				{$menuSelfData.email || ''} <a id="logout" href on:click|preventDefault={logout}>Logout</a>
 			</li>
 			<li id="menuVrArea" style="display:none; margin-top:10px;"></li>
 			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
 			<li>&bull; Type a capital letter to chat, <br/>or hold space for voice->text.</li>
 			<li>&bull; Double click someone to name.</li>
+			<li>&bull; Ctrl + j to keep journal open.</li>
 			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
 			</li>
 			<li style="text-align:right;">
 				<fieldset class="form-group">
-					<label for="paperSwitch6" class="paper-switch-label">
-						Fullscreen
-					</label>
-					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={toggleFullscreen} bind:checked={$isFullscreen} />
-						<span class="paper-switch-slider round"></span>
-					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
-						Windowed
-					</label>
-				</fieldset>
-			</li>
-			<li style="text-align:right;">
-				<fieldset class="form-group">
-					<label for="paperSwitch6" class="paper-switch-label">
+					<label for="paperSwitch2" class="paper-switch-label">
 						Touchpad
 					</label>
 					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" on:change={inputDeviceChange} bind:checked={inputChecked} />
+						<input id="paperSwitch2" name="paperSwitch2" type="checkbox" on:change={inputDeviceChange} bind:checked={inputChecked} />
 						<span class="paper-switch-slider round"></span>
 					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
+					<label for="paperSwitch2" class="paper-switch-label">
 						Mouse
 					</label>
 				</fieldset>
 			</li>
 			<li style="text-align:right;">
 				<fieldset class="form-group">
-					<label for="paperSwitch6" class="paper-switch-label">
+					<label for="paperSwitch1" class="paper-switch-label">
+						Fullscreen
+					</label>
+					<label class="paper-switch">
+						<input id="paperSwitch1" name="paperSwitch1" type="checkbox" on:change={toggleFullscreen} bind:checked={$isFullscreen} />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch1" class="paper-switch-label">
+						Windowed
+					</label>
+				</fieldset>
+			</li>
+			<li style="text-align:right;">
+				<fieldset class="form-group">
+					<label for="paperSwitch3" class="paper-switch-label">
+						Quality
+					</label>
+					<label class="paper-switch">
+						<input id="paperSwitch3" name="paperSwitch3" type="checkbox" on:change={graphicsChange} bind:checked={graphicsChecked} />
+						<span class="paper-switch-slider round"></span>
+					</label>
+					<label for="paperSwitch3" class="paper-switch-label">
+						Performance
+					</label>
+				</fieldset>
+			</li>
+			<li style="text-align:right;">
+				<fieldset class="form-group">
+					<label for="paperSwitch5" class="paper-switch-label">
 						Debug
 					</label>
 					<label class="paper-switch">
-						<input id="paperSwitch6" name="paperSwitch6" type="checkbox" bind:checked={$debugMode} />
+						<input id="paperSwitch5" name="paperSwitch5" type="checkbox" bind:checked={$debugMode} />
 						<span class="paper-switch-slider round"></span>
 					</label>
-					<label for="paperSwitch6" class="paper-switch-label">
+					<label for="paperSwitch5" class="paper-switch-label">
 						Normal
 					</label>
 				</fieldset>

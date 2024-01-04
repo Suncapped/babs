@@ -1,7 +1,7 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte'
 	import Cookies from 'js-cookie'
-	import { log } from '@/Utils'
+	
 	import { InputSys } from '@/sys/InputSys'
 	import { SocketSys } from '@/sys/SocketSys'
 
@@ -16,7 +16,7 @@
 	// function updateWOB(opt) {
 	// 	const craftingMenu = document.getElementById('Crafting')
 	// 		document.body.removeChild(craftingMenu)
-	// 		log("User selected: " + opt + " wobID: " + wobId)
+	// 		console.log("User selected: " + opt + " wobID: " + wobId)
 
 	// 	// Need a way to send an update to the server, will circle back to this
 	// 	socketSend.set({

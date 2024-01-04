@@ -1,5 +1,5 @@
 import { UiSys } from './UiSys'
-import { log } from './../Utils'
+
 import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion } from 'three'
 import { WorldSys } from './WorldSys'
 import { Flame } from '@/comp/Flame'
@@ -16,6 +16,8 @@ import { CameraSys } from './CameraSys'
 
 // import WebGPU from 'three/addons/capabilities/WebGPU.js'
 import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
+import { YardCoord } from '@/comp/Coord'
+import Cookies from 'js-cookie'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -46,7 +48,7 @@ export class RenderSys {
 		this.renderer = new WebGLRenderer({ 
 		// this.renderer = new WebGPURenderer({ 
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
-			antialias: true, // todo reenable for non-vr?
+			antialias: babs.graphicsQuality, // todo, see stuff below about WebXR anyway.
 			// stencil: false, // Hmm
 			// depth: false, // lol no!
 			// powerPreference: 'high-performance',
@@ -60,6 +62,7 @@ export class RenderSys {
 		})
 		this.renderer.xr.enabled = true
 		this.renderer.outputColorSpace = SRGBColorSpace
+		console.debug('Graphics support:', 'maxTextureSize', this.renderer.capabilities.maxTextureSize)
 
 		// https://github.com/mrdoob/three.js/pull/24698#issuecomment-1258870071
 		// this.renderer.physicallyCorrectLights = false
@@ -80,8 +83,8 @@ export class RenderSys {
 		this.renderer.setSize(window.innerWidth, window.innerHeight)
 
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
-		log.info('isWebGL2', this.renderer.capabilities.isWebGL2)
-		log.info('aniso', this.renderer.capabilities.getMaxAnisotropy())
+		console.debug('isWebGL2', this.renderer.capabilities.isWebGL2)
+		console.debug('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
 		const nearClip = 12 *(CameraSys.CurrentScale) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
@@ -115,7 +118,7 @@ export class RenderSys {
 			}
 		}, 200)
 		window.addEventListener('focus', (ev) => {
-			log.info('window focus event')
+			console.debug('window focus event')
 			this.documentHasFocus = true
 			this.babs.uiSys.gotWindowFocus(ev)
 		})
@@ -206,7 +209,36 @@ export class RenderSys {
 		// this.composer.setSize(window.innerWidth, window.innerHeight)
 	}
 
+	maxFrameRate = 30
+	framedropSeconds = 0
 	update(dt) {
+		this.maxFrameRate = Math.max(this.maxFrameRate, this.fpsDetected) // calcNearbyWobs will start with a short distance so framerate should start out high.
+
+		if(this.babs.graphicsQuality) {
+			if(this.fpsDetected < this.maxFrameRate -(this.maxFrameRate *0.10)) { // More than a 20% framedrop
+				this.framedropSeconds += dt
+				if(this.framedropSeconds > 10) { // 5 seconds of framedrop
+					this.babs.graphicsQuality = false // Stop coming into this loop
+					// Switch to performance mode
+					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<low framerate, switching graphics to performance>')
+					Cookies.set('graphics', 'performance', { 
+						domain: this.babs.baseDomain,
+						secure: this.babs.isProd,
+						sameSite: 'strict',
+					})
+					setTimeout(() => {
+						window.location.reload()
+					}, 2000)
+				}
+			}
+			else {
+				this.framedropSeconds -= dt
+				this.framedropSeconds = Math.max(this.framedropSeconds, 0)
+			}
+		}
+		// console.log('this.framedropSeconds', this.fpsDetected, this.maxFrameRate, this.framedropSeconds)
+
+		// Calc one wob type each update
 		if(this.recalcImmediatelyBpids.size > 0) {
 			// Run recalc for each item in the Set
 			this.recalcImmediatelyBpids.forEach((bpid) => this.calcNearbyWobs(bpid))
@@ -260,16 +292,22 @@ export class RenderSys {
 	}
 
 	calcMapIndex = 0
+	calcPositionChanged = false // May want to use with calcDistanceModifier
+	calcDistanceModifier = 1
 	calcNearbyWobs(bpid :string) {
-		
 		/* Disable calc
 		const feimTemp = Wob.InstancedWobs.get(bpid)
-		feimTemp.instancedMesh.count = feimTemp.maxCount
+		// feimTemp.maxCount
+		feimTemp.instancedMesh.count = Math.min(1, Math.round(feimTemp.maxCount /100))
 		return
 		//*/
-
 		// console.log('calcShowOnlyNearbyWobs', bpid)
-		// Let's sort the detailed wobs (eg Goblin Blanketflowers) instancedmeshes by distance from player
+		// const start = window.performance.now()
+
+		// // Only do this once every x frames
+		// if(this.frames % 60 !== 0) {
+		// 	return
+		// }
 
 		const controller = this.babs.inputSys?.playerSelf?.controller
 		const playerpos = controller?.playerRig?.position
@@ -296,10 +334,38 @@ export class RenderSys {
 		const instanceMatrix = feim.instancedMesh.instanceMatrix
 		
 		// Rather than a cutoff at a number, cutoff based on dist.
-		const distCutoff = this.babs.inputSys.mouse.device === 'fingers' ? 500 : 1000 // (feim.asFarWobs ? 1000 : 500)
-		// 'fingers' is currently phone and quest 2.
+		// And let's have that distance vary by wob height, so that eg grasses don't display way far away.
+		const distPerFoot = 100
+		const extraLoadingDistMult = 1.5
+		let distCutoff = MathUtils.clamp(feim.boundingSize.y *distPerFoot, WorldSys.Acre *extraLoadingDistMult, WorldSys.ZONE_LENGTH_FEET) // Min-max = 200-1000.  Latter needs to be <=1000 or there are zoning artifacts
+		if(this.babs.graphicsQuality) distCutoff = WorldSys.ZONE_LENGTH_FEET
+
+		/*{ // Removed because we want all players to see the same thing!
+			// Cap distance each frame to a max
+			const isAtMaxFps = this.fpsDetected >= this.maxFrameRate -(this.maxFrameRate *0.10) // More than a 10% framedrop
+			const slowdown = 5
+			if(isAtMaxFps) {
+				this.calcDistanceModifier += 0.01 /slowdown
+			}
+			else {
+				this.calcDistanceModifier -= 0.01 /slowdown
+			}
+
+			const minDistanceFactorLowPerf = 0.2
+			const extraDistanceFactorHighPerf = 2
+			this.calcDistanceModifier = MathUtils.clamp(this.calcDistanceModifier, minDistanceFactorLowPerf, extraDistanceFactorHighPerf) // Up to 2, because it can go to 200%, making close grasses appear farther on fast clients
+
+
+			distCutoff = distCutoff *this.calcDistanceModifier
+			distCutoff = Math.min(distCutoff, 1000) // Cap at 1000ft
+
+			// console.log(this.calcDistanceModifier)
+		}*/
+
+
 
 		let iNearby = 0
+		const gDestRef = this.babs.inputSys.playerSelf.controller.gDestination // Careful, it's a ref
 		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats // Replicated in setDestination()
 			// Each instance is a 4x4 matrix; 16 floats
 			const x = instanceMatrix.array[i*16 +12]// +this.babs.worldSys.shiftiness.x // todo shiftiness
@@ -307,9 +373,13 @@ export class RenderSys {
 			if(!(x && z)) continue
 
 			// Get distance from playerpos in 2 dimensions
-			// const shiftedPlayerPos = playerpos.clone().add(this.babs.worldSys.shiftiness)
-			const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
-
+			const targetYardCoord = YardCoord.Create({ // From Controller
+				...gDestRef, // Use this so that calcFrameMod doesn't change as often as movement momentum
+				zone: this.babs.worldSys.currentGround.zone, // Hmm will this work cross zone?
+			})
+			const engPos = targetYardCoord.toEngineCoordCentered()
+			const dist = Math.sqrt(Math.pow(engPos.x -x, 2) +Math.pow(engPos.z -z, 2))
+			
 			// iNearby finds how many wobs total are nearby, for setting .count.
 			// Swap anything nearby into incrementing iNearby, then set .count to that.
 			const isNearbyIsh = feim.asFarWobs ? dist >= distCutoff : dist < distCutoff
@@ -325,16 +395,19 @@ export class RenderSys {
 
 		feim.instancedMesh.instanceMatrix.needsUpdate = true
 		feim.instancedMesh.count = iNearby
-		// feim.instancedMesh.count = feim.maxCount > 1000 ? 1000 : 2//iNearby
-		// feim.instancedMesh.count = feim.maxCount
+
+		// const end = window.performance.now()
+		// const time = end -start
+		// if(time > 0.1) {
+		// 	console.log('calcNearbyWobs', time+'', bpid, feim.getLoadedCount()) // tree twotris takes 7ms, others max at 1ms.
+		// }
 	}
 
 	moveLightsToNearPlayer() {
-		if(Flame.player?.controller?.playerRig) {
-			const playerpos = Flame.player.controller.playerRig.position
-
+		const playerPos = Flame.player?.controller?.playerRig?.position
+		if(playerPos) {
 			const nearestWants = Flame.wantsLight.sort((a, b) => {
-				return Math.abs(a.position.distanceTo(playerpos)) -Math.abs(b.position.distanceTo(playerpos))
+				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
 
 			for(let index=0; index<Flame.lightPool.length; index++) {
