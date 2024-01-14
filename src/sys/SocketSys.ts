@@ -583,7 +583,7 @@ export class SocketSys {
 			console.debug('fetime', payload.fetime)
 
 			this.babs.worldSys.snapshotTimestamp = DateTime.utc()
-			const addRealMinutes = 12
+			const addRealMinutes = 0
 			const proximaTime = payload.fetime.rlSecondsSinceHour
 			this.babs.worldSys.snapshotRealHourFraction = (proximaTime /60 /60) +(addRealMinutes/60)
 			// this.babs.worldSys.snapshotRealHourFraction = 100000 // night?

@@ -49,6 +49,13 @@ export type Rotation = UintRange<0, 4>
 export type PlayerRotation = UintRange<0, 8>
 export type YardRange = UintRange<0, 250>
 export class SharedWob extends Blueprint {
+	static ROTATION_ANGLE_MAP_4 = { // For wobs, not controller!
+		0: 0,
+		1: 90,
+		2: 180,
+		3: 270,
+	}
+
 	constructor(
 		public idzone :number,
 		public x :number,

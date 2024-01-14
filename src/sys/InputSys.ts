@@ -1,5 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper, MeshStandardMaterial } from 'three'
+import { Box2, BufferGeometry, Camera, Color, InstancedMesh, Line, LineBasicMaterial, Material, PerspectiveCamera, Quaternion, Raycaster, SkinnedMesh, Vector3, Object3D, ArrowHelper, MeshStandardMaterial, Euler } from 'three'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import { isAwayUiDisplayed, rightMouseDown, debugMode, settings } from '../stores'
 import { get as svelteGet } from 'svelte/store'
@@ -19,12 +19,13 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
-import type { WobId, SharedWob } from '@/shared/SharedWob'
+import { type WobId, SharedWob } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 import * as KeyCode from 'keycode-js'
 import { CameraSys } from './CameraSys'
 import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
+import { degToRad } from 'three/src/math/MathUtils.js'
 
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
@@ -1478,11 +1479,18 @@ export class InputSys {
 										const text = data.text
 										console.debug('Audio converted successfully:', data.text)
 
-										this.babs.socketSys.send({
-											chat: {
-												text: text,
-											},
-										})
+										if(text.toLowerCase().trim() === 'you') { // When it doesn't get good audio, it does 'you' lol
+											console.debug('Audio result was "you", skipping')
+										}
+										else {
+											
+											this.babs.socketSys.send({
+												chat: {
+													text: text,
+												},
+											})
+										}
+
 									} catch(e) {
 										console.warn('error posting audio', e)
 									}
@@ -1815,9 +1823,15 @@ export class InputSys {
 					let pickedEngPos = this.pickedObject.yardCoord.toEngineCoordCentered('withCalcY')
 					pickedEngPos = this.liftedObject.feim.heightTweak(pickedEngPos)
 					// pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
+
+					const wobr = this.liftedObject.feim.instanceIndexToWob.get(liftedIndex).r
+					const rdegrees = SharedWob.ROTATION_ANGLE_MAP_4[wobr]
+					let matrixPickedEngPos = new Matrix4()
+
+					matrixPickedEngPos.makeRotationY(degToRad(rdegrees))
+					matrixPickedEngPos.setPosition(pickedEngPos)
 					
-					const matrixPickedEngPos = new Matrix4().setPosition(pickedEngPos)
-					console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name)
+					console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name, wobr, 'to', rdegrees, 'to', degToRad(rdegrees))
 					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixPickedEngPos)
 					// console.log('setMatrixAt down/update', liftedIndex)
 					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true

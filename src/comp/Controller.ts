@@ -34,7 +34,7 @@ export class Controller extends Comp {
 		Emote: 6,
 	}
 	static JUMP_HEIGHT = 3
-	static ROTATION_ANGLE_MAP = {
+	static ROTATION_ANGLE_MAP = { // For controller, not wobs!
 		0: 45,
 		1: 90,
 		2: 135,
