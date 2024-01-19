@@ -23,7 +23,7 @@ interface TroikaText extends Mesh {
 
 export class UiSys {
 	babs :Babs
-	toprightTextDefault = 'Welcome to First Earth!  <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>'
+	toprightTextDefault = 'Welcome to First Earth!  <a target="_new" href="https://discord.gg/YSzu2eYVpK">Discord</a>'
 	ctext
 	labelElements = []
 	expiringText = Array<any>()
@@ -47,7 +47,7 @@ export class UiSys {
 
 		if(this.babs.browser == 'chrome' || this.babs.browser == 'MS Edge Chromium') {
 			// this.toprightTextDefault = 'Welcome!  Two finger mouse click to move'
-			this.toprightTextDefault = '<span>Move using two mouse fingers</span> <a target="_new" href="https://discord.gg/r4pdPTWbm5">Discord</a>' //  or w or ↑ // inputtodo
+			this.toprightTextDefault = '<span>Move using two mouse fingers</span> <a target="_new" href="https://discord.gg/YSzu2eYVpK">Discord</a>' //  or w or ↑ // inputtodo
 		}
 
 		

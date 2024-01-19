@@ -2,7 +2,7 @@
 
 > A web-browser client for the player-world game First Earth, starring [three.js](https://github.com/mrdoob/three.js/) for graphics and native WebSocket for networking.
 
-Gamedev chat at https://discord.gg/r4pdPTWbm5
+Gamedev chat at https://discord.gg/YSzu2eYVpK
 
 ## What is this?
 
