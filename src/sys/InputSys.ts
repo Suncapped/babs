@@ -19,13 +19,13 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
-import { type WobId, SharedWob } from '@/shared/SharedWob'
+import { type WobId, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 import * as KeyCode from 'keycode-js'
 import { CameraSys } from './CameraSys'
 import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
-import { degToRad } from 'three/src/math/MathUtils.js'
+import { degToRad, radToDeg } from 'three/src/math/MathUtils.js'
 
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
@@ -61,6 +61,7 @@ type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto t
 	poMousedownTime? :number, // po prefix because these go onto a SkinnedMesh :S
 	landcoverString? :string,
 	landPoint? :Vector3,
+	rotationCardinal? :RotationCardinal,
 }
 
 export class InputSys {
@@ -862,6 +863,8 @@ export class InputSys {
 						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
+						console.debug('drop rotation cardinal', this.liftedObject.rotationCardinal)
+
 						console.debug('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
 						this.babs.socketSys.send({  // Intention is to move it
 							action: {
@@ -869,6 +872,7 @@ export class InputSys {
 								noun: wobSource.id(),
 								data: {
 									point: {x: coordDest.x, z: coordDest.z},
+									rotation: this.liftedObject.rotationCardinal,
 									idzone: coordDest.zone.id,
 								},
 							}
@@ -1112,6 +1116,7 @@ export class InputSys {
 
 		if(this.mousedownPickedObject?.poMousedownTime && Date.now() -this.mousedownPickedObject.poMousedownTime > this.doubleClickMs) {
 			if(this.mousedownPickedObject.pickedType === 'wob') {
+				// Mouse was held down on a wob, and it's been long enough to lift it
 				this.liftedObject = this.mousedownPickedObject
 				// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
 				this.mousedownPickedObject = null
@@ -1824,18 +1829,47 @@ export class InputSys {
 					pickedEngPos = this.liftedObject.feim.heightTweak(pickedEngPos)
 					// pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
 
-					const wobr = this.liftedObject.feim.instanceIndexToWob.get(liftedIndex).r
-					const rdegrees = SharedWob.ROTATION_ANGLE_MAP_4[wobr]
-					let matrixPickedEngPos = new Matrix4()
-
-					matrixPickedEngPos.makeRotationY(degToRad(rdegrees))
-					matrixPickedEngPos.setPosition(pickedEngPos)
+					// Get the original / data-based Y rotation
+					const wobrCardinal = this.liftedObject.feim.instanceIndexToWob.get(liftedIndex).r
+					const wobrDegreesCardinal = SharedWob.ROTATION_CARDINAL_TO_DEGREES[wobrCardinal]
 					
-					console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name, wobr, 'to', rdegrees, 'to', degToRad(rdegrees))
-					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixPickedEngPos)
-					// console.log('setMatrixAt down/update', liftedIndex)
-					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
+					// Get the current rotation and direction from getMatrixAt()
+					const currentTransform = new Matrix4()
+					this.liftedObject.feim.instancedMesh.getMatrixAt(liftedIndex, currentTransform)
+					const lastRotation = new Quaternion()
+					const lastPosition = new Vector3()
+					currentTransform.decompose(lastPosition, lastRotation, new Vector3())
 
+					// Compare pickedEngPos with lastPosition, and determine rotation direction based on direction the avatar is moving it
+					const deltaPosition = pickedEngPos.clone().sub(lastPosition)
+					console.log('deltaPosition', pickedEngPos.x+','+pickedEngPos.z, '-', lastPosition.x+','+lastPosition.z, '=', deltaPosition.x+','+deltaPosition.z)
+
+					// Use the old rotation unless the position has changed
+					let newRotationDegrees = wobrDegreesCardinal
+					const hasPositionChanged = deltaPosition.length() > 0.01
+					if(hasPositionChanged) {
+						// Calculate the angle in radians
+						let angleRadians = Math.atan2(deltaPosition.z, deltaPosition.x)
+						// Flip angle 180 degrees so you're dragging north-facing things from behind
+						angleRadians += Math.PI
+
+						// Convert to degrees, normalize and snap to cardinals
+						newRotationDegrees = SharedWob.DegreesToCardinalDegrees(radToDeg(angleRadians))
+
+						console.log('degreesToRotate', newRotationDegrees)
+					}
+					this.liftedObject.rotationCardinal = SharedWob.ROTATION_ROUNDDEGREES_TO_CARDINAL[newRotationDegrees]
+
+					// Set transform
+					let pickedTransform = new Matrix4()
+					pickedTransform.makeRotationY(degToRad(newRotationDegrees))
+					pickedTransform.setPosition(pickedEngPos)
+					// console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name, wobrCardinal, 'to', wobrDegrees, 'to', degToRad(wobrDegrees))
+					
+					// Set matrix
+					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, pickedTransform)
+					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
+					// console.log('setMatrixAt down/update', liftedIndex)
 				}
 
 			}

@@ -16,16 +16,15 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
 import { get as svelteGet } from 'svelte/store'
-import type { Sendable } from '@/shared/consts'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 export class SocketSys {
-	static pingSeconds = 30
+	static pingSeconds = 10
 
 	babsRunUpdate = false
 	session :string
@@ -81,7 +80,7 @@ export class SocketSys {
 		this.ws.onmessage = (event) => {
 			// console.log('finishSocketSetup socket rec:', event.data)
 			if(!(event.data instanceof ArrayBuffer)) {
-				const payload = JSON.parse(event.data) as Sendable
+				const payload = JSON.parse(event.data) as ProximaSendable
 				this.processEnqueue(payload)
 			}
 			else { // Movement
@@ -167,7 +166,7 @@ export class SocketSys {
 		callTasks()
 		this.processQueue = [] // todo could this potentially have a problem where update() gets called twice and parts of the queue get double processed?
 	}
-	async processEnqueue(payload :Sendable){
+	async processEnqueue(payload :ProximaSendable){
 		const command = Object.keys(payload)[0]
 
 		if('load' in payload || 'visitor' in payload || 'session' in payload) { 
@@ -178,7 +177,7 @@ export class SocketSys {
 			this.processQueue.push(payload)
 		}
 	}
-	async process(payload :Sendable){
+	async process(payload :ProximaSendable){
 		if('auth' in payload) {
 			(document.getElementById('charsave') as HTMLButtonElement).disabled = false
 			// Handle failed login/register here

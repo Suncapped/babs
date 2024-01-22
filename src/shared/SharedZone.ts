@@ -1,5 +1,5 @@
 import type { SharedBlueprintWithComps, WobId, blueprint_id } from './SharedWob'
-import { Blueprint, SharedWob, type Rotation } from './SharedWob'
+import { Blueprint, SharedWob, type RotationCardinal } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
 /*
@@ -71,7 +71,7 @@ export class SharedZone {
 	getWob(x :number, z :number) :SharedWob|null {
 		const idAndRot = this.wobIdRotGrid[x +(z *250)]
 		const locid = idAndRot >>> 4
-		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as Rotation
+		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as RotationCardinal
 
 		if(locid === 0) {
 			// It's empty or unset!
@@ -86,7 +86,7 @@ export class SharedZone {
 		}
 		return new SharedWob(this.id, x, z, r, blueprint)
 	}
-	setWob(x :number, z :number, blueprint_id :string|0, rotation :Rotation = undefined) {
+	setWob(x :number, z :number, blueprint_id :string|0, rotation :RotationCardinal = undefined) {
 		const isLocidBeingRemoved = !blueprint_id
 		let wob = this.getWob(x, z)
 
@@ -187,7 +187,7 @@ export class SharedZone {
 				if(!doNotApplyActually) this.wobIdRotGrid[x +(z *250)] = locidrot
 				if(returnWobs) {
 					// Note, also used in 'getSharedWobsBasedOnLocations':
-					const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
+					const r = (locidrot << (16 + 12)) >>> (16 + 12) as RotationCardinal
 					const bp = this.locidToBlueprint[locid]
 					if(!bp) {
 						locidsOfBlueprintsNotFound[locid] = locid
@@ -218,7 +218,7 @@ export class SharedZone {
 			const locid = locidrot >>> 4
 
 			// Extracted from above 'applyLocationsToGrid'
-			const r = (locidrot << (16 + 12)) >>> (16 + 12) as Rotation
+			const r = (locidrot << (16 + 12)) >>> (16 + 12) as RotationCardinal
 			const bp = this.locidToBlueprint[locid]
 			if(!bp) {
 				// console.warn('No blueprint found @6!', locid)

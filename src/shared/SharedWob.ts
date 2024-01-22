@@ -45,22 +45,41 @@ export function isWobId(item :any): item is WobId {
 	&& (item as WobId).blueprint_id !== undefined
 }
 
-export type Rotation = UintRange<0, 4>
+export type RotationCardinal = 0 | 1 | 2 | 3
+export type RotationCardinalDegrees = 0 | 90 | 180 | 270
 export type PlayerRotation = UintRange<0, 8>
 export type YardRange = UintRange<0, 250>
 export class SharedWob extends Blueprint {
-	static ROTATION_ANGLE_MAP_4 = { // For wobs, not controller!
+	static ROTATION_CARDINAL_TO_DEGREES = { // For wobs, not controller!
 		0: 0,
 		1: 90,
 		2: 180,
 		3: 270,
+	}
+	static ROTATION_ROUNDDEGREES_TO_CARDINAL = {
+		0: 0,
+		90: 1,
+		180: 2,
+		270: 3,
+	}
+
+	static DegreesToCardinalDegrees = (degrees :number) :RotationCardinalDegrees => {
+		// Normalize the angle to be between 0 and 360 degrees
+		const degreesNorm = (degrees + 360) % 360
+
+		console.log('DegreesToCardinalDegrees', degrees, degreesNorm)
+
+		if (degreesNorm <= 45 || degreesNorm > 315) return 0 // Right
+		else if (degreesNorm > 45 && degreesNorm <= 135) return 90 // Up
+		else if (degreesNorm > 135 && degreesNorm <= 225) return 180 // Left
+		else return 270 // Down
 	}
 
 	constructor(
 		public idzone :number,
 		public x :number,
 		public z :number,
-		public r :Rotation,
+		public r :RotationCardinal,
 		bp :Blueprint,
 	){
 		super(bp.blueprint_id, bp.locid, bp.comps, bp.name, bp.glb)

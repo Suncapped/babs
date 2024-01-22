@@ -5,7 +5,7 @@ import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, SharedWob, type Rotation } from '@/shared/SharedWob'
+import { Blueprint, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
@@ -19,7 +19,7 @@ export class Wob extends SharedWob {
 		public idzone :number,
 		public x :number,
 		public z :number,
-		public r :Rotation,
+		public r :RotationCardinal,
 		bp :Blueprint,
 	) {
 		super(idzone, x, z, r, bp)

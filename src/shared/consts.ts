@@ -1,5 +1,5 @@
 import * as Utils from '../Utils'
-import { type PlayerRotation, type WobId } from './SharedWob'
+import { type PlayerRotation, type RotationCardinal, type RotationCardinalDegrees, type WobId } from './SharedWob'
 import { SharedZone } from './SharedZone'
 
 export const NLCD = {
@@ -270,6 +270,7 @@ export type SendMoved = {
 		noun :WobId,
 		data :{
 			point :{x :number, z :number},
+			rotation: RotationCardinal,
 			idzone :number,
 		},
 	}
