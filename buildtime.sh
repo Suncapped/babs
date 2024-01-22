@@ -1,3 +1,5 @@
+# Deprecated in favor of buildtime.js for Windows compatibility
+
 latestcommit=$(git rev-parse --short HEAD)
 sed -i '' "s/build_info/$latestcommit/g" ./dist/assets/index*.js
 

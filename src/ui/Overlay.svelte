@@ -65,7 +65,7 @@
 	</div>
 
 	<div id="info" hidden="{!$debugMode}">
-		Built build_time (build_info).<br />
+		Built build_time (build_info) on build_platform.<br />
 		<span id="log"></span>
 	</div>
 	<div id="stats" hidden="{!$debugMode}"></div>
