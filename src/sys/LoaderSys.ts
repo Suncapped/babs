@@ -242,15 +242,17 @@ export class LoaderSys {
 				console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
 			}
 			const error = (err) => { // onError callback
-				console.error('loadGltf error:', err.message) // info because can just be missing model
+				console.error(`loadGltf error for '${name}':`, err.message) // info because can just be missing model
 				resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
 			}
 		
 
-			if(loadFromArchive) {
+			if(loadFromArchive && loadFromArchive.byteLength !== 0) {
 				this.loader.parse(loadFromArchive, '', success, error)
 			}
 			else {
+				// byteLength === 0 happens like when expressa fbx2gltf fails to convert something.  So it doesn't go into the archive?
+				// So in that case let's attempt a regular load, which also fails better.
 				this.loader.load(url, success, progress, error) // Should handle cache situations?  Maybe not for updated.
 			}
 
