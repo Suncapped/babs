@@ -59,6 +59,16 @@ module.exports = {
 		'prefer-rest-params': 'off',
 		'no-irregular-whitespace': 'warn',
 		'no-prototype-builtins': 'off',
+		'no-extra-semi': 'off', // Because we're warning on semi in rules above, but we need to use them for IIFEs by habit, which it sometimes considers 'extra'.
+		'no-undef': 'warn', // Ensures that you do not use variables that are not declared.  TS convers this too.
+		'no-global-assign': 'warn', // Disallow assignments to native objects or read-only global variables
+
+		// Handling of block scoping
+		'block-scoped-var': 'warn', // enforce the usage of variables within the scope they were defined. This does NOT work to prevent const/let hoisting :(
+		'no-shadow': 'warn', // This rule disallows shadowing of variables, i.e., declaring a variable in an inner scope with the same name as a variable in the outer scope. 
+		// 'no-use-before-define': 'error', // This rule disallows the use of variables before they are defined. It's particularly useful in preventing issues related to hoisting in JavaScript. // Disabled because a common pattern is using class functions before they are defined.
+
+
 
 		
 	},
