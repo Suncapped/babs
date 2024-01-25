@@ -458,7 +458,7 @@ export class Controller extends Comp {
 
 		const isNoVelocity = Math.round(this.velocity.z) == 0 && Math.round(this.velocity.x) == 0
 		if(isNoVelocity) {
-			if(this._stateMachine._currentState != 'idle') {
+			if(this._stateMachine._currentState.name != 'idle') {
 				this._stateMachine.setState('idle')
 			}
 		}
@@ -499,8 +499,21 @@ export class Controller extends Comp {
 			this._mixer.update(dt) // Optimziation would be to prevent movement while they're away and/or hide characters.
 		}
 
-		this.setPlayerGroundY()
-		
+		// Set player height based on ground height
+		if(this.playerRig?.zone) { // They're loaded // playerRig gets set well before loadZoneWobs, so it's current (ie doesn't wait for network)
+			const yardCoord = YardCoord.Create(this.playerRig)
+			const normalizedPositionWithinTile = new Vector3(yardCoord.subtileRemainder.x / WorldSys.Yard, 0, yardCoord.subtileRemainder.z / WorldSys.Yard)
+			const worldGroundHeight = this.playerRig.zone.engineHeightAt(yardCoord, normalizedPositionWithinTile)
+			
+			// Keep above ground
+			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
+				this.groundDistance = 1
+				this.playerRig.position.setY(worldGroundHeight +this.hover)
+			}
+			
+			this.groundDistance = this.playerRig.position.y - worldGroundHeight // Used for jump / falling
+		}
+
 		if(this.headRotationX) {
 			// this.modelHead ||= this.playerRig.getObjectByName( 'Head_M' )
 			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
@@ -512,24 +525,6 @@ export class Controller extends Comp {
 		if(!this.gPrevDestination?.equals(this.gDestination)) {
 			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
 		}
-	}
-
-	setPlayerGroundY() {
-		const zone = this.playerRig?.zone // This gets set well before loadZoneWobs, so it's current (ie doesn't wait for network)
-
-		if(zone){// && this.raycaster) {
-			const yardCoord = YardCoord.Create(this.playerRig)
-			const worldGroundHeight = zone.engineHeightAt(yardCoord)
-
-			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
-				// Keep above ground
-				this.groundDistance = 1
-				this.playerRig.position.setY(worldGroundHeight +this.hover)
-			}
-			this.groundDistance = this.playerRig.position.y - worldGroundHeight // Used for jump
-			return worldGroundHeight
-		}
-		return null
 	}
 
 	async loadZoneWobs(player :Player, enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()

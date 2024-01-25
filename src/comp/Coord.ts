@@ -70,13 +70,22 @@ export class YardCoord extends Coord {
 			// Actually, crosszoneCoord does this.
 			const crossEngineCoord = crosszoneCoord({x: coord.position.x, z: coord.position.z, zone: zoneSelf}, 1000)
 			// console.log('crossEngineCoord', crossEngineCoord)
-			crossEngineCoord.x = Math.floor(crossEngineCoord.x /4)
-			crossEngineCoord.z = Math.floor(crossEngineCoord.z /4)
+
+			// Save remainder, the sub-tile position data.  Used for eg player position when moving up slopes.
+			const subtileRemainder = {
+				x: crossEngineCoord.x %WorldSys.Yard,
+				z: crossEngineCoord.z %WorldSys.Yard,
+			}
+
+			crossEngineCoord.x = Math.floor(crossEngineCoord.x /WorldSys.Yard)
+			crossEngineCoord.z = Math.floor(crossEngineCoord.z /WorldSys.Yard)
+
 
 			return new YardCoord().init(
 				crossEngineCoord.x as YardRange, 
 				crossEngineCoord.z as YardRange, 
 				crossEngineCoord.zone,
+				subtileRemainder,
 			)
 
 		}
@@ -105,7 +114,8 @@ export class YardCoord extends Coord {
 	x :YardRange
 	z :YardRange
 	zone :Zone
-	private init(x: YardRange, z :YardRange, zone :Zone) {
+	subtileRemainder :{x :number, z :number}
+	private init(x: YardRange, z :YardRange, zone :Zone, subtileRemainder :{x :number, z :number} = {x: 0, z: 0}) {
 		if(x < 0 || x >= 250 || z < 0 || z >= 250) {
 			console.error('Invalid YardCoord: ', x, z, zone)
 			return undefined
@@ -113,6 +123,7 @@ export class YardCoord extends Coord {
 		this.x = x
 		this.z = z
 		this.zone = zone
+		this.subtileRemainder = subtileRemainder
 		return this
 	}
 

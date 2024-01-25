@@ -24,7 +24,7 @@ import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 export class SocketSys {
-	static pingSeconds = 10
+	static pingSeconds = 60
 
 	babsRunUpdate = false
 	session :string
@@ -236,7 +236,8 @@ export class SocketSys {
 
 			const load = payload.load
 			console.debug('socket: load', payload.load)
-			window.setInterval(() => { // Keep alive through Cloudflare's socket timeout
+			window.setInterval(() => { 
+				// Keep alive through Cloudflare's socket timeout.  See server notes.
 				this.send({ping:'ping'})
 			}, SocketSys.pingSeconds * 1000)
 

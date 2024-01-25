@@ -2,7 +2,7 @@
 import { YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
 
-import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector3 } from 'three'
+import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, Raycaster, Triangle, Vector2, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
@@ -164,7 +164,7 @@ export class Zone extends SharedZone {
 	coordToInstanceIndex :Record<string, number> = {}
 	farCoordToInstanceIndex :Record<string, number> = {}
 
-	engineHeightAt(coord :YardCoord, doCenter = true) :number { // Height of (corner or center) in engine
+	engineHeightAt(coord :YardCoord, innerPositionNorm :'corner'|'center'|Vector3 = 'center') :number { // Get height, of corner|center|[0-1,0-1] position
 		// Fetch from actual ground mesh vertices!
 
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
@@ -235,9 +235,13 @@ export class Zone extends SharedZone {
 			)
 		}
 
-		const halfTileCenter = doCenter ? 0.5 : 0
+		let innerPosition :Vector3
+		if(innerPositionNorm === 'corner') innerPosition = new Vector3(0, 0, 0)
+		else if(innerPositionNorm === 'center') innerPosition = new Vector3(0.5, 0, 0.5)
+		else innerPosition = innerPositionNorm
+
 		let baryOut = new Vector3()
-		triangle.getBarycoord(new Vector3(xInnerCoord +halfTileCenter, 0, zInnerCoord +halfTileCenter), baryOut)
+		triangle.getBarycoord(new Vector3(xInnerCoord +innerPosition.x, 0, zInnerCoord +innerPosition.z), baryOut)
 
 		let combinedWeights :number
 		if(isFirstHalf) {
