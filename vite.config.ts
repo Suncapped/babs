@@ -13,10 +13,11 @@ let config = {
 			name: 'log-full-url',
 			configResolved(config) {
 				// console.log(config)
+				const https = process.env.FE_HTTPS ? 's' : ''
 				if (config.server?.open) {
 					setTimeout(() => {
-						console.log(`\n  ➜  Full Local URL:   http://localhost:${config.server.port || 3000}${config.server.open}`)
-						console.log(`  ➜  Full Network URL: http://[your-network-IP]:${config.server.port || 3000}${config.server.open}\n`)
+						console.log(`\n  ➜  Full Local URL:   http${https}://localhost:${config.server.port || 3000}${config.server.open}`)
+						console.log(`  ➜  Full Network URL: http${https}://[your-network-IP]:${config.server.port || 3000}${config.server.open}\n`)
 					}, 200)
 				}
 			},

@@ -18,6 +18,7 @@ import { type Ent } from './ent/Ent'
 import type { Wob } from './ent/Wob'
 import type { Zone } from './ent/Zone'
 import Cookies from 'js-cookie'
+import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 
 declare global {
 	interface Window {
@@ -116,23 +117,55 @@ export class Babs {
 		this.uiSys.createStats('fps')
 		this.uiSys.createStats('mem')
 
-		this.renderSys = new RenderSys(this)
-		this.scene = this.renderSys._scene
-		this.camera = this.renderSys._camera
-
 		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
 			// console.log('VR supported', vrSupported)
 			this.vrSupported = vrSupported
+
+			this.renderSys = new RenderSys(this)
+			this.scene = this.renderSys._scene
+			this.camera = this.renderSys._camera
+	
+			this.group = new Group
+			this.group.name = 'fegroup'
+			this.scene.add(this.group)
+			this.group.scale.setScalar(CameraSys.CurrentScale)
+	
+			this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
+
+			const xrRenderer = this.renderSys.renderer.xr
+			if(xrRenderer.getCamera()?.cameras[0]) { // If we can get a camera
+				// Controllers
+				// Get the 1st controller
+				const [ct0, ct1] = [xrRenderer.getController(0), xrRenderer.getController(1)]
+				console.log('controllers', ct0, ct1)
+				const [ctGrip0, ctGrip1] = [xrRenderer.getControllerGrip(0), xrRenderer.getControllerGrip(1)]
+				console.log('grips', ctGrip0, ctGrip1)
+
+				const controllerModelFactory = new XRControllerModelFactory()
+
+				const model0 = controllerModelFactory.createControllerModel( ctGrip0 )
+				ctGrip0.add( model0 )
+				// this.babs.group.add( ctGrip0 )
+
+				const waitForReady = () => {
+					if(this.cameraSys?.cameraGroup) {
+						this.cameraSys.cameraGroup.add(ct0)
+						this.cameraSys.cameraGroup.add(ctGrip0)
+					} 
+					else setTimeout(waitForReady, 1000)
+				}
+				waitForReady()
+				
+				const model1 = controllerModelFactory.createControllerModel( ctGrip1 )
+				ctGrip1.add( model1 )
+				this.group.add( ctGrip1 )
+			}
+
 		}).catch((error) => {
 			console.error('Error checking for VR support:', error)
 		})
 
-		this.group = new Group
-		this.group.name = 'fegroup'
-		this.scene.add(this.group)
-		this.group.scale.setScalar(CameraSys.CurrentScale)
 
-		this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 
 		document.getElementById('charsave').addEventListener('click', (ev) => {
 			ev.preventDefault()
@@ -143,15 +176,6 @@ export class Babs {
 			)
 		})
 
-
-
-		// this.scene.children.forEach((node) => {
-		// 	const axes = new AxesHelper(10)
-		// 	axes.renderOrder = 1
-		// 	axes.position.add(new Vector3(-0.2,0.2,-0.2))
-		// 	node.add(axes)
-		// }) // todo make this happen upon all scene.add
-		
 		// Poll for ready so no circular dependency - todo rethink this dep situation
 		const waitForReady = () => {
 			if(this.socketSys.babsRunUpdate) {

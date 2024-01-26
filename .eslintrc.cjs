@@ -60,7 +60,7 @@ module.exports = {
 		'no-irregular-whitespace': 'warn',
 		'no-prototype-builtins': 'off',
 		'no-extra-semi': 'off', // Because we're warning on semi in rules above, but we need to use them for IIFEs by habit, which it sometimes considers 'extra'.
-		'no-undef': 'warn', // Ensures that you do not use variables that are not declared.  TS convers this too.
+		'no-undef': 'off', // Ensures that you do not use variables that are not declared.  TS convers this too. // Disabled because it warns on things like 'process.env'
 		'no-global-assign': 'warn', // Disallow assignments to native objects or read-only global variables
 
 		// Handling of block scoping

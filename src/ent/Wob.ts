@@ -140,7 +140,8 @@ export class Wob extends SharedWob {
 						feim.increaseLoadedCount()
 
 						if(feim.instancedMesh instanceof InstancedSkinnedMesh) {
-							feim.animTimeOffsets[existingIindex] = Math.random() *feim.gltf.animations[0].duration // todo anim, works with rearrangements?  Maybe doesn't matter too much.
+							// Start animation at a random spot so that they're not all in sync
+							feim.animTimeOffsets[existingIindex] = Math.random() *feim.gltf.animations[0].duration // Works with rearrangements?  Maybe doesn't matter too much.
 						}
 					}
 					else {

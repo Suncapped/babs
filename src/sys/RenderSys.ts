@@ -48,7 +48,8 @@ export class RenderSys {
 		this.renderer = new WebGLRenderer({ 
 		// this.renderer = new WebGPURenderer({ 
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
-			antialias: babs.graphicsQuality, // todo, see stuff below about WebXR anyway.
+			antialias: babs.graphicsQuality || babs.vrSupported, // Antialias (MSAA?) was killing M1 perf.  // Quest 2 needs it badly. 
+			// multiviewStereo: true, // OCULUS_multiview handling in WebXR, not ready yet https://github.com/mrdoob/three.js/pull/25981
 			// stencil: false, // Hmm
 			// depth: false, // lol no!
 			// powerPreference: 'high-performance',
@@ -127,8 +128,8 @@ export class RenderSys {
 			this.moveLightsToNearPlayer()
 			
 			const xrSession = (this.renderer instanceof WebGLRenderer) && this.renderer.xr.getSession()
-			const isVrActiveNow = !!xrSession
-			if(!this.isVrActive && isVrActiveNow) { // Entering VR
+			const isVrSessionActivated = !!xrSession
+			if(!this.isVrActive && isVrSessionActivated) { // Entering VR
 				CameraSys.CurrentScale = CameraSys.VR_SCALE
 				this._camera.near = 0.1
 				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
@@ -188,7 +189,7 @@ export class RenderSys {
 				}
 
 			}
-			else if(this.isVrActive && !isVrActiveNow) { // Leaving VR
+			else if(this.isVrActive && !isVrSessionActivated) { // Leaving VR
 				CameraSys.CurrentScale = CameraSys.FT_SCALE
 				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
 				this._camera.near = 12 *CameraSys.CurrentScale
@@ -197,7 +198,7 @@ export class RenderSys {
 					window.location.reload()
 				}, 1000)
 			}
-			this.isVrActive = isVrActiveNow
+			this.isVrActive = isVrSessionActivated
 
 		}, 1000)
 	}
@@ -217,7 +218,7 @@ export class RenderSys {
 		if(this.babs.graphicsQuality) {
 			if(this.fpsDetected < this.maxFrameRate -(this.maxFrameRate *0.10)) { // More than a 20% framedrop
 				this.framedropSeconds += dt
-				if(this.framedropSeconds > 10) { // 5 seconds of framedrop
+				if(this.framedropSeconds > 10 && !this.isVrActive) { // 5 seconds of framedrop, and not VR
 					this.babs.graphicsQuality = false // Stop coming into this loop
 					// Switch to performance mode
 					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<low framerate, switching graphics to performance>')
@@ -386,7 +387,7 @@ export class RenderSys {
 			if(isNearbyIsh) {
 				// Swap far iNearby with this near i
 				if(i !== iNearby) {
-					Zone.swapWobsAtIndexes(iNearby, i, feim) // todo anim
+					Zone.swapWobsAtIndexes(iNearby, i, feim)
 					// console.log('swapped: ', feim.instancedMesh.name, '('+imLoadedCount+')', iNearby, i)
 				}
 				iNearby++

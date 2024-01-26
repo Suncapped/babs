@@ -98,8 +98,6 @@ export class CameraSys {
 		return idealLookat
 	}
 
-	vrSetupDone = false
-	xrCam
 	update() {
 
 		// const idealOffset = this._CalculateIdealOffset()
@@ -122,44 +120,6 @@ export class CameraSys {
 		this.cameraGroup.lookAt(idealLookat) // Not needed?; let VR handle its own rotation?
 		// this.cameraGroup.matrixWorldNeedsUpdate = true
 		this.cameraGroup.updateMatrixWorld()
-
-		if(this.babs.vrSupported) {
-
-			if(this.vrSetupDone === false) {
-				this.vrSetupDone = true
-
-				const renderer = this.babs.renderSys.renderer
-				this.xrCam = renderer.xr.getCamera()?.cameras[0]
-				if(this.xrCam) {
-	
-					// Controllers
-					// Get the 1st controller
-					const [ct0, ct1] = [renderer.xr.getController(0), renderer.xr.getController(1)]
-					console.log('controllers', ct0, ct1)
-					const [ctGrip0, ctGrip1] = [renderer.xr.getControllerGrip(0), renderer.xr.getControllerGrip(1)]
-					console.log('grips', ctGrip0, ctGrip1)
-	
-	
-					const controllerModelFactory = new XRControllerModelFactory()
-	
-					const model0 = controllerModelFactory.createControllerModel( ctGrip0 )
-					ctGrip0.add( model0 )
-					// this.babs.group.add( ctGrip0 )
-					this.cameraGroup.add(ct0)
-					this.cameraGroup.add(ctGrip0)
-
-					
-					const model1 = controllerModelFactory.createControllerModel( ctGrip1 )
-					ctGrip1.add( model1 )
-					this.babs.group.add( ctGrip1 )
-
-	
-				}
-			}
-		
-			// VR every frame
-			
-		}
 
 	}
 }

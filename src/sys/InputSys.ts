@@ -845,7 +845,7 @@ export class InputSys {
 
 					// todo catch if source has moved since pickup
 
-					if (this.pickedObject.pickedType === 'land') {
+					if (this.pickedObject?.pickedType === 'land') {
 						
 						console.debug('dropped onto empty land', this.pickedObject)
 						
@@ -879,7 +879,7 @@ export class InputSys {
 						})
 
 					}
-					else if(this.pickedObject.pickedType === 'wob') {
+					else if(this.pickedObject?.pickedType === 'wob') {
 						console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject)
 						if(this.pickedObject.poid === this.liftedObject.poid) {
 							console.log('dropped where it was lifted from')
@@ -905,7 +905,7 @@ export class InputSys {
 							})
 						}
 					}
-					else if(this.pickedObject.pickedType === 'player') {
+					else if(this.pickedObject?.pickedType === 'player') {
 						console.log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
 						if(this.pickedObject.poid === this.babs.idSelf) {
 							console.debug('dropped onto self player', this.pickedObject, this.liftedObject)
@@ -1339,7 +1339,8 @@ export class InputSys {
 
 			// Get direction
 			vector.round()
-			if (this.keyboard.w || this.keyboard.up || this.mouse.left || this.autorun || this.touchmove === 1 || this.touchmove === 'auto') {
+			const isMouseLeftButNoKeyboardS = this.mouse.left && !this.keyboard.s // While holding a wob with mouse left, S on keyboard should still move you backwards
+			if (this.keyboard.w || this.keyboard.up || isMouseLeftButNoKeyboardS || this.autorun || this.touchmove === 1 || this.touchmove === 'auto') {
 				vector.negate() // Why is negate needed?
 			}
 
@@ -1814,7 +1815,7 @@ export class InputSys {
 
 
 				// Every time picked===land changes && lifted
-				if(this.liftedObject?.pickedType === 'wob' && this.pickedObject?.pickedType !== 'player') {
+				if(this.liftedObject?.pickedType === 'wob' && this.pickedObject && this.pickedObject?.pickedType !== 'player') {
 					// console.log('pickedAndChanged land', this.pickedObject, this.liftedObject)
 
 					/* Try 3 */

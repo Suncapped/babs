@@ -79,7 +79,7 @@ export class InstancedWobs {
 			this.instancedMesh = new InstancedMesh(wobMesh.geometry, wobMesh.material, this.maxCount)
 		}
 
-		wobMesh.visible = false // Hide the original mesh // todo anim
+		wobMesh.visible = false // Hide the original mesh // Is this necessary?
 		wobMesh.geometry.boundingBox.getSize(this.boundingSize) // sets into vector
 		this.wobIsSmall = this.boundingSize.y < Wob.WobIsTallnessMinimum
 		this.wobIsTall = this.boundingSize.y >= Wob.WobIsTallnessMinimum
@@ -117,13 +117,12 @@ export class InstancedWobs {
 		// https://stackoverflow.com/questions/28848863/threejs-how-to-rotate-around-objects-own-center-instead-of-world-center/28860849#28860849
 		
 		// Add instancedMesh and gltf.scene to a group
-		//* IMGroup version // todo animzoning
 		this.imGroup = new Group()
 		this.imGroup.name = this.blueprint_id
 		// @ts-ignore
 		this.imGroup.noShiftiness = true
-		// if(!asFarWobs && this.isAnimated) { // todo anim
-		// 	this.imGroup.add(gltf.scene) // Necessary for InstancedSkinnedMesh at least, so that translation doesn't...affect bones separately?  This when the butterflies would go in all directions when translating their instancedMesh on purely z axis.
+		// if(!asFarWobs && this.isAnimated) {
+		// 	this.imGroup.add(gltf.scene) // Necessary for InstancedSkinnedMesh at least, so that translation doesn't...affect bones separately?  This when the butterflies would go in all directions when translating their instancedMesh on purely z axis. // Nevermind?
 		// }
 		this.imGroup.add(this.instancedMesh)
 		this.babs.group.add(this.imGroup)
@@ -133,13 +132,6 @@ export class InstancedWobs {
 		// this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
 		this.imGroup.updateMatrix()
 		this.imGroup.updateMatrixWorld()
-		//*/
-		/* IM version
-		this.babs.group.add(this.instancedMesh)
-		this.babs.group.updateMatrix()
-		this.instancedMesh.updateMatrix()
-		this.instancedMesh.updateMatrixWorld()
-		//*/
 
 		Wob.InstancedWobs.set(this.blueprint_id, this)
 	}
@@ -200,7 +192,7 @@ export class InstancedWobs {
 			this.animMixer = new AnimationMixer(clonedScene)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
-		wobMesh.visible = false // Hide the original mesh // todo anim
+		wobMesh.visible = false // Hide the original mesh // Is this necessary?
 
 		// Here we only need to copy over InstancedMesh properties, not feim (which remains the same one).
 		newInstancedMesh.frustumCulled = this.instancedMesh.frustumCulled
@@ -215,7 +207,7 @@ export class InstancedWobs {
 		}
 		// this.instanceIndexToWob.set( // No need to set, because index will be the same and only InstancedMesh is being remade here, not InstancedWobs.
 		// zone.coordToInstanceIndex[ // Same thing
-		this.instancedMesh.instanceMatrix.needsUpdate = true // todo anim, needed?
+		this.instancedMesh.instanceMatrix.needsUpdate = true // Is this necessary?
 
 		newInstancedMesh.castShadow = this.instancedMesh.castShadow
 		newInstancedMesh.receiveShadow = this.instancedMesh.receiveShadow
