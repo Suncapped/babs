@@ -1,5 +1,4 @@
-import type { SharedBlueprintWithComps, WobId, blueprint_id } from './SharedWob'
-import { Blueprint, SharedWob, type RotationCardinal } from './SharedWob'
+import { Blueprint, SharedWob, type RotationCardinal, type blueprint_id, type SharedBlueprintWithComps } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
 /*

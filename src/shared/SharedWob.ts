@@ -65,13 +65,11 @@ export class SharedWob extends Blueprint {
 
 	static DegreesToCardinalDegrees = (degrees :number) :RotationCardinalDegrees => {
 		// Normalize the angle to be between 0 and 360 degrees
-		const degreesNorm = (degrees + 360) % 360
+		degrees = (degrees + 360) % 360
 
-		console.log('DegreesToCardinalDegrees', degrees, degreesNorm)
-
-		if (degreesNorm <= 45 || degreesNorm > 315) return 0 // Right
-		else if (degreesNorm > 45 && degreesNorm <= 135) return 90 // Up
-		else if (degreesNorm > 135 && degreesNorm <= 225) return 180 // Left
+		if (degrees <= 45 || degrees > 315) return 0 // Right
+		else if (degrees > 45 && degrees <= 135) return 90 // Up
+		else if (degrees > 135 && degrees <= 225) return 180 // Left
 		else return 270 // Down
 	}
 
