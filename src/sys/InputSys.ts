@@ -639,7 +639,7 @@ export class InputSys {
 
 		const buttonDownHandler = (e) => {
 			const ev = e as FePointerEvent
-			console.debug('buttonDownHandler', e.target?.id)
+			console.debug('buttonDownHandler')
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'bdown ' + ev.button + ', '+ev.target?.id)
 
 			if(ev.webkitForce > 1) { // Safari only
@@ -790,7 +790,8 @@ export class InputSys {
 					this.autorun = !this.autorun
 				}
 
-			}{
+			}
+			else { // Click is on HTML I guess
 				if (ev.button === MOUSE_LEFT_CODE) {
 					this.babs.uiSys.leftClickHtml(ev)
 				}

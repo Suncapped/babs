@@ -78,19 +78,23 @@ export class UiSys {
 
 	
 
-	async gotWindowFocus(ev? :FocusEvent) {
+	async gotWindowFocus(ev? :FocusEvent) { // If the player clicks, this comes before the click event
 		console.debug('gotWindowFocus', ev)
 
-		// if(ev && !this.babs.renderSys.isVrActive && this.babs.inputSys.mouse.device == 'mouse') {
-		// 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
-		// }
+		// // if(ev && !this.babs.renderSys.isVrActive && this.babs.inputSys.mouse.device == 'mouse') {
+		// // 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
+		// // }
 
-		const gotLock = await this.tryPermanentPointerLock()
-		if((gotLock === true || gotLock === null) && this.isGameAway) {
-			this.resumeGame()
-		}
+		// const gotLock = await this.tryPermanentPointerLock()
+		// if((gotLock === true || gotLock === null) && this.isGameAway) {
+		// 	this.resumeGame()
+		// }
 		// ^ This can fail on first page load since the user hasn't done a gesture yet.  That's fine, because then the game stays away and they can click again to get a lock.
 		
+		// When you click menu after unfocused window, make menu actually work.
+		// It's like...we want gotWindowFocus to do mouselock, UNLESS they clicked on a menu.
+		// But the focus event comes before the click event (on chrome).
+		// So we're disabling above and saying, no it doesn't auto on window focus.  It waits for a click (on non-HTML).
 
 	}
 
@@ -124,8 +128,9 @@ export class UiSys {
 	}
 	leftClickHtml(ev :MouseEvent) {
 		console.debug('leftClickHtml', ev)
-		// if((ev.target as HTMLElement).id == 'ResumeButton') { // No longer needed; it doesn't receive pointer events
-		// And clicking HTML won't in any other circumstance be a resume.
+		// If this event is occurring, then it's the menu and not the "pointer-events:none;" ResumeButton.
+		// So don't do a resume; just interact with whatever HTML normally.
+		// Canvas (above) does a resume.
 	}
 	async rightClickCanvas(ev :MouseEvent) {
 		console.debug('rightClickCanvas', ev)
