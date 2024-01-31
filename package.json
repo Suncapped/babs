@@ -10,9 +10,6 @@
   },
   "scripts": {
     "playerdev": "cross-env FE_ENV=playerdev vite --mode playerdev",
-    "//sharedln": "ln -f ./../proxima/src/shared/* ./src/shared",
-    "//sharedlnwin": "cmd /c if exist .\\src\\shared rmdir .\\src\\shared && mklink /D .\\src\\shared ..\\..\\proxima\\src\\shared",
-    "sharedln": "npm link",
     "dev": "vite --host",
     "pdevhttps": "cross-env FE_ENV=playerdev FE_HTTPS=true vite --mode playerdev",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",

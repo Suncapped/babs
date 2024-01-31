@@ -1,28 +1,4 @@
 
-// export type Ent = { id :number }
-
-// export type Transform = {
-// 	idzone :number,
-// 	x :number,
-// 	z :number,
-// }
-// export type Controller = {
-// 	email :string,
-// 	visitor :boolean,
-// 	pass? :string,
-// 	session? :string,
-// 	socket? :WebSocket,
-// }
-
-// export type Player = Ent & Transform & Controller
-
-
-// export type Com = 
-// 	Transform
-// 	| Controller
-// export type ComName = 'transform' | 'controller'
-// type Com = {[K in ComString]?: string}
-
 export type jobject = {[key:string]:any}
 
 export class ECS {
