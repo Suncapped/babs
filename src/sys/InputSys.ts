@@ -1142,7 +1142,7 @@ export class InputSys {
 				const yardCoord = this.pickedObject?.yardCoord
 
 				if(this.babs.debugMode) {
-					const pos = yardCoord.toEngineCoordCentered()
+					const pos = yardCoord.toEngineCoordCentered('withCalcY') // Y is for debugStuff
 					// const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x, yardCoord.z]
 
 					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
@@ -1150,7 +1150,7 @@ export class InputSys {
 
 					console.log('this.pickedObject', this.pickedObject, pos)
 					// debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z) // todo shiftiness
-					debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14])
+					debugStuff += ` (locid ${wob.locid})\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14])
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 				}
 
