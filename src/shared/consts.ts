@@ -239,6 +239,14 @@ export type SendAskTarget = {
 	asktarget :{
 		sourceWobId? :WobId,
 	},
+	/* This comes back like:
+	action: {
+		verb: 'used',
+		noun: this.askTargetSourceWob?.id(),
+		data: {
+			target: wob.id(),
+		},
+	} */
 }
 
 export type SendAlreadyIn = {

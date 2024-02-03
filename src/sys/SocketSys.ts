@@ -24,7 +24,7 @@ import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 export class SocketSys {
-	static pingSeconds = 60
+	static pingSeconds = 30
 
 	babsRunUpdate = false
 	session :string
