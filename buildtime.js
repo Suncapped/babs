@@ -1,7 +1,11 @@
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
-import { glob } from 'glob'
 import os from 'os'
+
+import util from 'util'
+import pkg from 'glob'
+const glob = util.promisify(pkg.glob) // This creates a promisified version of glob
+
 
 // This script was manually generated
 

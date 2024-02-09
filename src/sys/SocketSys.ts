@@ -354,7 +354,11 @@ export class SocketSys {
 			const pStatics = []
 			for(const zone of farZones) {
 				const isLoadinZone = zone.id == enterZone.id
-				pStatics.push(this.babs.worldSys.loadStatics(this.babs.urlFiles, zone, isLoadinZone))
+				try {
+					pStatics.push(this.babs.worldSys.loadStatics(this.babs.urlFiles, zone, isLoadinZone))
+				} catch (error) {
+					console.error('Failed to load statics 1', error)
+				}
 			}
 
 			// Shouldn't their Y be *relative* to 0,0's Y?  Or starting zone's?
@@ -363,7 +367,11 @@ export class SocketSys {
 			}
 
 			// console.time('stitch')
-			await Promise.all(pStatics)
+			try {
+				await Promise.all(pStatics)
+			} catch (error) {
+				console.error('Failed to load statics 2', error)
+			}
 
 			console.debug('Statics loaded:', farZones.length)
 			// console.timeEnd('stitch') // 182ms for 81 zones
