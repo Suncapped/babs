@@ -1,4 +1,4 @@
-import { Group, PerspectiveCamera, Vector3, Object3D } from 'three'
+import { Group, PerspectiveCamera, Vector3, Object3D, Quaternion } from 'three'
 import { Babs } from '@/Babs'
 
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js'
@@ -116,10 +116,30 @@ export class CameraSys {
 
 		// this.camera.lookAt(idealLookat)
 		// this.camera.position.copy(this.idealOffset) // But, cannot move camera in VR
-		this.cameraGroup.position.copy(this.idealOffset)
-		this.cameraGroup.lookAt(idealLookat) // Not needed?; let VR handle its own rotation?
-		// this.cameraGroup.matrixWorldNeedsUpdate = true
-		this.cameraGroup.updateMatrixWorld()
+
+
+
+		// If XR
+		if(this.babs.renderSys.isVrActive) {
+			const currentRefSpace = this.babs.renderSys.renderer.xr.getReferenceSpace()
+			// console.log('currentRefSpace', currentRefSpace, this.babs.renderSys.xrBaseReferenceSpace)
+
+			const offsetPosition = { x: - this.idealOffset.x, y: - this.idealOffset.y, z: - this.idealOffset.z, w: 1 };
+			const offsetRotation = new Quaternion();
+			const transform = new XRRigidTransform( offsetPosition, offsetRotation );
+			const teleportSpaceOffset = this.babs.renderSys.xrBaseReferenceSpace.getOffsetReferenceSpace( transform );
+			this.babs.renderSys.renderer.xr.setReferenceSpace( teleportSpaceOffset );
+
+			this.cameraGroup.position.set(0, 0, 0)
+			this.cameraGroup.rotation.setFromQuaternion(new Quaternion(0, 0, 0, 1))
+			this.cameraGroup.updateMatrixWorld()
+		}
+		else {
+			this.cameraGroup.position.copy(this.idealOffset)
+			this.cameraGroup.lookAt(idealLookat) // Not needed?; let VR handle its own rotation?
+			// this.cameraGroup.matrixWorldNeedsUpdate = true
+			this.cameraGroup.updateMatrixWorld()
+		}
 
 	}
 }

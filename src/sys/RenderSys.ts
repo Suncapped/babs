@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 
-import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion } from 'three'
+import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion, MeshBasicMaterial, SphereGeometry, DoubleSide, BufferGeometry, Line } from 'three'
 import { WorldSys } from './WorldSys'
 import { Flame } from '@/comp/Flame'
 import type { Babs } from '@/Babs'
@@ -18,6 +18,8 @@ import { CameraSys } from './CameraSys'
 import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
 import { YardCoord } from '@/comp/Coord'
 import Cookies from 'js-cookie'
+import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
+import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -41,6 +43,8 @@ export class RenderSys {
 	// renderPass :RenderPass
 
 	// postproComposer :PostproEffectComposer
+
+	public xrBaseReferenceSpace :XRReferenceSpace	
 
 	constructor(babs :Babs) {
 		this.babs = babs
@@ -88,8 +92,9 @@ export class RenderSys {
 		console.debug('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
-		const nearClip = 12 *(CameraSys.CurrentScale) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees!
+		const nearClip = 12 *(CameraSys.CurrentScale) // 5.1 // Slightly over 5' for testing looking down! // Oh wow, for VR, going from 0.01 to 12 helped SO much with z fighting trees! // Because GPT: "Avoid setting the near plane too close to 0, as this can disproportionately allocate depth precision near the camera. Finding the right balance is key to maintaining visual quality over a range of distances."
 		this._camera = new PerspectiveCamera(fov, window.innerWidth / window.innerHeight, nearClip, WorldSys.MAX_VIEW_DISTANCE *2)
+		// Note: AVP (Apple Vision Pro) has a far clip that maxes out at around 1000 ish.  Moving your head creates a weird disappearing-land-edge effect.  Lowering the clip here doesn't help, the effect just happens closer by.  Currently I can't think of a workaround that's easy!
 		this._camera.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI)
 		// ^ eek "Camera’s look along the negative z-axis by default. You have to rotate the camera around the y-axis around 180 degrees so it looks along the positive z-axis like ordinary 3D objects."
 		// https://discourse.threejs.org/t/three-js-attach-camera-to-a-3d-object-and-rotate-move-with-the-object-and-show-in-inset-window/12343
@@ -186,6 +191,109 @@ export class RenderSys {
 
 					// this.postproComposer.addPass(effectPass)
 					
+				}
+
+				// Set up controllers
+				// In steam, OpenXR runtime must be set to SteamVR, not Varjo?  This is set in Steam, and unset in Varjo Base by disabling OpenXR.  I think because...AI: "Varjo is a plugin for SteamVR, and it's not a standalone runtime." - not sure if true :p
+				const xrRenderer = this.renderer.xr
+				if(xrRenderer.getCamera()?.cameras[0]) { // If we can get a camera
+					console.log('Setting up VR controllers')
+					const [controller0, controller1] = [xrRenderer.getController(0), xrRenderer.getController(1)]
+					console.log('controllers', controller0, controller1)
+					
+					const controllerModelFactory = new XRControllerModelFactory()
+					const [controllerGrip0, controllerGrip1] = [xrRenderer.getControllerGrip(0), xrRenderer.getControllerGrip(1)]
+					console.log('grips', controllerGrip0, controllerGrip1)
+					controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0))
+					controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1))
+					
+					this.babs.scene.add(controller0)
+					this.babs.scene.add(controller1)
+					this.babs.scene.add(controllerGrip0)
+					this.babs.scene.add(controllerGrip1)
+
+					this.xrBaseReferenceSpace = this.babs.renderSys.renderer.xr.getReferenceSpace()
+
+					// controller0.position.set(5, 12, 5)
+					// controllerGrip0.position.setY(40)
+					// controllerGrip1.position.setY(40)
+	
+					const waitForReady = () => {
+						if(this.babs.cameraSys?.cameraGroup) {
+
+							// this.babs.cameraSys.camera.add(controller1)
+							// this.babs.cameraSys.camera.add(controllerGrip1)
+
+							// this.babs.inputSys.playerSelf.controller.playerRig.add(controller1)
+							// this.babs.inputSys.playerSelf.controller.playerRig.add(controllerGrip1)
+
+
+							console.log('Adding controllers to cameraGroup')
+
+							const geometryline0 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] );
+							const line0 = new Line( geometryline0, new MeshBasicMaterial( { color: 0x00ff00 } ));
+							line0.scale.z = 500;
+							line0.scale.x = 50;
+							line0.scale.y = 50;
+							controller0.add( line0.clone() );
+
+							const geometryline1 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] );
+							const line1 = new Line( geometryline1, new MeshBasicMaterial( { color: 0x0000ff } ));
+							line1.scale.z = 500;
+							line1.scale.x = 50;
+							line1.scale.y = 50;
+							controller1.add( line1.clone() );
+
+							// let geometry = new SphereGeometry(1, 32, 32);
+							// let material = new MeshBasicMaterial({color: 0xff0000});
+							// material.side = DoubleSide
+							// let sphere = new Mesh(geometry, material);
+							// sphere.position.copy(controller1.position);
+							// this.babs.scene.add(sphere);
+
+							const zone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+							const wobAtCoord = zone.getWob(0,0)
+
+							/* Log things in world rendered text
+							this.babs.uiSys.wobSaid( 'VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. ', wobAtCoord)
+
+							controller0.addEventListener('selectstart', (event) => {
+								console.log('controller0 selectstart')
+								this.babs.uiSys.wobSaid('<controller0 selectstart>', wobAtCoord)
+							})
+							controller0.addEventListener('selectend', (event) => {
+								console.log('controller0 selectend')
+								this.babs.uiSys.wobSaid('<controller0 selectend>', wobAtCoord)
+							})
+
+							controller1.addEventListener('selectstart', (event) => {
+								console.log('controller1 selectstart')
+								this.babs.uiSys.wobSaid('<controller1 selectstart>', wobAtCoord)
+							})
+							controller1.addEventListener('selectend', (event) => {
+								console.log('controller1 selectend')
+								this.babs.uiSys.wobSaid('<controller1 selectend>', wobAtCoord)
+							})
+							*/
+
+
+							// Hands?
+
+							let hand1, hand2;
+							hand1 = this.babs.renderSys.renderer.xr.getHand(0);
+							hand2 = this.babs.renderSys.renderer.xr.getHand(1);
+							this.babs.scene.add(hand1);
+							this.babs.scene.add(hand2);
+
+							let handModelFactory = new XRHandModelFactory();
+							hand1.add(handModelFactory.createHandModel(hand1));
+							hand2.add(handModelFactory.createHandModel(hand2));
+
+
+						} 
+						else setTimeout(waitForReady, 1000)
+					}
+					waitForReady()
 				}
 
 			}

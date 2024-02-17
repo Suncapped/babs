@@ -117,8 +117,8 @@ export class Babs {
 		this.uiSys.createStats('fps')
 		this.uiSys.createStats('mem')
 
-		navigator?.xr?.isSessionSupported('immersive-vr').then((vrSupported :boolean) => {
-			// console.log('VR supported', vrSupported)
+		const finishStartup = (vrSupported :boolean) => {
+			console.log('VR supported', vrSupported)
 			this.vrSupported = vrSupported
 
 			this.renderSys = new RenderSys(this)
@@ -132,38 +132,19 @@ export class Babs {
 	
 			this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 
-			const xrRenderer = this.renderSys.renderer.xr
-			if(xrRenderer.getCamera()?.cameras[0]) { // If we can get a camera
-				// Controllers
-				// Get the 1st controller
-				const [ct0, ct1] = [xrRenderer.getController(0), xrRenderer.getController(1)]
-				console.log('controllers', ct0, ct1)
-				const [ctGrip0, ctGrip1] = [xrRenderer.getControllerGrip(0), xrRenderer.getControllerGrip(1)]
-				console.log('grips', ctGrip0, ctGrip1)
+		}
 
-				const controllerModelFactory = new XRControllerModelFactory()
-
-				const model0 = controllerModelFactory.createControllerModel( ctGrip0 )
-				ctGrip0.add( model0 )
-				// this.babs.group.add( ctGrip0 )
-
-				const waitForReady = () => {
-					if(this.cameraSys?.cameraGroup) {
-						this.cameraSys.cameraGroup.add(ct0)
-						this.cameraSys.cameraGroup.add(ctGrip0)
-					} 
-					else setTimeout(waitForReady, 1000)
-				}
-				waitForReady()
-				
-				const model1 = controllerModelFactory.createControllerModel( ctGrip1 )
-				ctGrip1.add( model1 )
-				this.group.add( ctGrip1 )
-			}
-
-		}).catch((error) => {
-			console.error('Error checking for VR support:', error)
-		})
+		const canTryVr = navigator.xr?.isSessionSupported('immersive-vr')
+		if(canTryVr) {
+			navigator.xr.isSessionSupported('immersive-vr')
+				.then(finishStartup)
+				.catch((error) => {
+					console.error('Error checking for VR support:', error)
+				})
+		}
+		else {
+			finishStartup(false)
+		}
 
 
 

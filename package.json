@@ -10,8 +10,9 @@
   },
   "scripts": {
     "playerdev": "cross-env FE_ENV=playerdev vite --mode playerdev",
+    "playerdevhttps": "cross-env FE_ENV=playerdev FE_HTTPS=true vite --mode playerdev",
     "dev": "vite --host",
-    "pdevhttps": "cross-env FE_ENV=playerdev FE_HTTPS=true vite --mode playerdev",
+    "devhttps": "cross-env FE_HTTPS=true vite --host",
     "commitlist": "git --no-pager log -8 --pretty=format:\"%h - %an, %ar : %s\"",
     "//check": "svelte-check --tsconfig ./tsconfig.json",
     "serve": "vite preview",
