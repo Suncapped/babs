@@ -1659,6 +1659,9 @@ export class InputSys {
 					const temp = objectMaybe
 					// Here we switch targets to highlight the PLAYER when its bounding BOX is intersected!
 					newPickedObject = temp.parent.children[0].children[0]  // player // gltf loaded
+					// temp.parent.traverse(child => Utils.objectIsSomeKindOfMesh(child) ? newPickedObject = child : null)
+					// Player is currently special, different from other imports; can count on structure above.
+
 					newPickedObject.pickedType = 'player'
 					newPickedObject.poid = temp.parent.idplayer
 					newPickedObject.poHoverTime = Date.now()
@@ -1844,7 +1847,7 @@ export class InputSys {
 
 					// Compare pickedEngPos with lastPosition, and determine rotation direction based on direction the avatar is moving it
 					const deltaPosition = pickedEngPos.clone().sub(lastPosition)
-					console.log('deltaPosition', pickedEngPos.x+','+pickedEngPos.z, '-', lastPosition.x+','+lastPosition.z, '=', deltaPosition.x+','+deltaPosition.z)
+					// console.log('deltaPosition', pickedEngPos.x+','+pickedEngPos.z, '-', lastPosition.x+','+lastPosition.z, '=', deltaPosition.x+','+deltaPosition.z)
 
 					// Use the old rotation unless the position has changed
 					let newRotationDegrees = wobrDegreesCardinal
@@ -1858,7 +1861,7 @@ export class InputSys {
 						// Convert to degrees, normalize and snap to cardinals
 						newRotationDegrees = SharedWob.DegreesToCardinalDegrees(radToDeg(angleRadians))
 
-						console.log('degreesToRotate', newRotationDegrees)
+						// console.log('degreesToRotate', newRotationDegrees)
 					}
 					this.liftedObject.rotationCardinal = SharedWob.ROTATION_ROUNDDEGREES_TO_CARDINAL[newRotationDegrees]
 

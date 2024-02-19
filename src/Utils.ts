@@ -1,9 +1,9 @@
 // Simpler logging
 
-import { Vector2, Vector3 } from 'three'
+import { SkinnedMesh, Vector2, Vector3 } from 'three'
 import { debugMode } from './stores'
 import { get as svelteGet } from 'svelte/store'
-import type { Mesh } from 'three'
+import { Mesh } from 'three'
 import type { Zone } from './ent/Zone'
 import { WorldSys } from './sys/WorldSys'
 
@@ -134,4 +134,8 @@ export function storageGet(key) {
 
 export function v3out(vector :Vector3) {
 	return `(${vector.x.toFixed(2)}, ${vector.y.toFixed(2)}, ${vector.z.toFixed(2)})v3`
+}
+
+export function objectIsSomeKindOfMesh(object :any) :object is Mesh | SkinnedMesh{
+	return object instanceof Mesh || object instanceof SkinnedMesh
 }

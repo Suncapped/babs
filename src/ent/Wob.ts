@@ -10,6 +10,7 @@ import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
+import { objectIsSomeKindOfMesh } from '@/Utils'
 
 const FEET_IN_A_METER = 3.281
 
@@ -229,14 +230,12 @@ export class Wob extends SharedWob {
 			let wobMesh :Mesh|SkinnedMesh
 			// let animations :Array<AnimationClip>
 			try {
-				wobMesh = gltf.scene.children[0].children[0] as Mesh|SkinnedMesh// Counting on this, comes via FBX2GLTF script
+				// Use Object3D.traverse to filter for Mesh or SkinnedMesh; ends up with the last one
+				gltf.scene.traverse(child => objectIsSomeKindOfMesh(child) ? wobMesh = child : null)
 
-				const isSomeKindOfMesh = (object :any) => {
-					return object instanceof Mesh || object instanceof SkinnedMesh
-				}
-
-				if(!isSomeKindOfMesh(wobMesh)) {
-					throw new Error('wobMesh is not a Mesh in, gltf:', gltf)
+				if(!objectIsSomeKindOfMesh(wobMesh)) {
+					console.warn('wobMesh is not a Mesh in gltf:', gltf)
+					throw new Error('wobMesh is not a Mesh in gltf')
 				}
 
 				wobMesh.name = gltf.name

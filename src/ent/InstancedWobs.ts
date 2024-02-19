@@ -6,6 +6,7 @@ import { YardCoord } from '@/comp/Coord'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import type { Gltf } from '@/sys/LoaderSys'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
+import { objectIsSomeKindOfMesh } from '@/Utils'
 
 const INSTANCED_MAXCOUNT_EXTRA_MIN = 10 // Minimum number of extra instances to add when reallocating a larger buffer
 
@@ -36,7 +37,9 @@ export class InstancedWobs {
 		public gltf :Gltf,
 		public asFarWobs :'asFarWobs' = null,
 	) {
-		let wobMesh = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
+		let wobMesh :Mesh|SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
+		gltf.scene.traverse(child => objectIsSomeKindOfMesh(child) ? wobMesh = child : null)
+		
 		// - Set up wobMesh into InstancedMesh
 		if(!Wob.SphereMesh) { // Init it once
 			Wob.SphereMesh = new Mesh(Wob.SphereGeometry, Wob.SphereMaterial)
@@ -168,7 +171,9 @@ export class InstancedWobs {
 		this.maxCount = maxCount 
 		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT
 
-		const wobMesh = this.gltf.scene.children[0].children[0] as Mesh|SkinnedMesh
+		// const wobMesh = this.gltf.scene.children[0].children[0] as Mesh|SkinnedMesh
+		let wobMesh :Mesh|SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
+		this.gltf.scene.traverse(child => objectIsSomeKindOfMesh(child) ? wobMesh = child : null)
 
 		let newInstancedMesh :InstancedMesh|InstancedSkinnedMesh
 		if(!this.isAnimated) {
@@ -176,7 +181,9 @@ export class InstancedWobs {
 		}
 		else if((wobMesh instanceof SkinnedMesh)){ // Type narrowing
 			const clonedScene = SkeletonUtils.clone(this.gltf.scene)
-			const clonedMesh = clonedScene.children[0].children[0] as SkinnedMesh
+			// const clonedMesh = clonedScene.children[0].children[0] as SkinnedMesh
+			let clonedMesh :SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
+			clonedScene.traverse(child => objectIsSomeKindOfMesh(child) && child instanceof SkinnedMesh ? clonedMesh = child : null)
 
 			newInstancedMesh = new InstancedSkinnedMesh(clonedMesh.geometry, clonedMesh.material, this.maxCount)
 			// newInstancedMesh.copy(this.instancedMesh)
