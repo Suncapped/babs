@@ -30,6 +30,7 @@ export class InstancedWobs {
 
 	private loadedCount :number = 0 // Number that are considered loaded, after which they are deleted or unallocated
 
+	public glbUpdatedAt :string = ''
 	constructor(
 		public babs :Babs,
 		public blueprint_id :string,
@@ -39,6 +40,7 @@ export class InstancedWobs {
 	) {
 		let wobMesh :Mesh|SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
 		gltf.scene.traverse(child => objectIsSomeKindOfMesh(child) ? wobMesh = child : null)
+		this.glbUpdatedAt = gltf.glbUpdatedAt
 		
 		// - Set up wobMesh into InstancedMesh
 		if(!Wob.SphereMesh) { // Init it once

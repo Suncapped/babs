@@ -230,19 +230,19 @@ export class RenderSys {
 
 							console.log('Adding controllers to cameraGroup')
 
-							const geometryline0 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] );
-							const line0 = new Line( geometryline0, new MeshBasicMaterial( { color: 0x00ff00 } ));
-							line0.scale.z = 500;
-							line0.scale.x = 50;
-							line0.scale.y = 50;
-							controller0.add( line0.clone() );
+							const geometryline0 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] )
+							const line0 = new Line( geometryline0, new MeshBasicMaterial( { color: 0x00ff00 } ))
+							line0.scale.z = 500
+							line0.scale.x = 50
+							line0.scale.y = 50
+							controller0.add( line0.clone() )
 
-							const geometryline1 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] );
-							const line1 = new Line( geometryline1, new MeshBasicMaterial( { color: 0x0000ff } ));
-							line1.scale.z = 500;
-							line1.scale.x = 50;
-							line1.scale.y = 50;
-							controller1.add( line1.clone() );
+							const geometryline1 = new BufferGeometry().setFromPoints( [ new Vector3( 0, 0, 0 ), new Vector3( 0, 0, - 1 ) ] )
+							const line1 = new Line( geometryline1, new MeshBasicMaterial( { color: 0x0000ff } ))
+							line1.scale.z = 500
+							line1.scale.x = 50
+							line1.scale.y = 50
+							controller1.add( line1.clone() )
 
 							// let geometry = new SphereGeometry(1, 32, 32);
 							// let material = new MeshBasicMaterial({color: 0xff0000});
@@ -279,15 +279,15 @@ export class RenderSys {
 
 							// Hands?
 
-							let hand1, hand2;
-							hand1 = this.babs.renderSys.renderer.xr.getHand(0);
-							hand2 = this.babs.renderSys.renderer.xr.getHand(1);
-							this.babs.scene.add(hand1);
-							this.babs.scene.add(hand2);
+							let hand1, hand2
+							hand1 = this.babs.renderSys.renderer.xr.getHand(0)
+							hand2 = this.babs.renderSys.renderer.xr.getHand(1)
+							this.babs.scene.add(hand1)
+							this.babs.scene.add(hand2)
 
-							let handModelFactory = new XRHandModelFactory();
-							hand1.add(handModelFactory.createHandModel(hand1));
-							hand2.add(handModelFactory.createHandModel(hand2));
+							let handModelFactory = new XRHandModelFactory()
+							hand1.add(handModelFactory.createHandModel(hand1))
+							hand2.add(handModelFactory.createHandModel(hand2))
 
 
 						} 
@@ -326,7 +326,7 @@ export class RenderSys {
 		if(this.babs.graphicsQuality) {
 			if(this.fpsDetected < this.maxFrameRate -(this.maxFrameRate *0.10)) { // More than a 20% framedrop
 				this.framedropSeconds += dt
-				if(this.framedropSeconds > 10 && !this.isVrActive) { // 5 seconds of framedrop, and not VR
+				if(this.framedropSeconds > 10 && !this.isVrActive && this.documentHasFocus) { // 5 seconds of framedrop, and not VR, and not because they tabbed away
 					this.babs.graphicsQuality = false // Stop coming into this loop
 					// Switch to performance mode
 					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<low framerate, switching graphics to performance>')

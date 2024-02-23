@@ -179,7 +179,7 @@ export class YardCoord extends Coord {
 	}
 
 	toString(){
-		return `${this.zone.id}(${this.zone.x},${this.zone.z})zn.(${this.x}, ${this.z})yd`
+		return `yard: zone ${this.zone.id}(${this.zone.x},${this.zone.z}) @${this.x}, ${this.zone.engineHeightAt(this)} ${this.z}`
 	}
 
 }

@@ -1149,8 +1149,7 @@ export class InputSys {
 					const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x+','+yardCoord.z]
 
 					console.log('this.pickedObject', this.pickedObject, pos)
-					// debugStuff += `\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12] +this.babs.worldSys.shiftiness.x)+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] +this.babs.worldSys.shiftiness.z) // todo shiftiness
-					debugStuff += ` (locid ${wob.locid})\n${yardCoord}\n^${Math.round(pos.y)}ft\nii=`+index+`, feim.x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14])
+					debugStuff += ` (locid ${wob.locid})\n${yardCoord}\nii=`+index+`, feim x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] + '\n' + this.pickedObject?.feim.glbUpdatedAt)
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 				}
 

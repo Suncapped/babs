@@ -11,12 +11,14 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import JSZip, { type files } from 'jszip'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { Babs } from '@/Babs'
+import { DateTime } from 'luxon'
 
 
 export type Gltf = {
 	animations: Array<AnimationClip>,
 	scene: Scene,
 	name: string,
+	glbUpdatedAt: string,
 }
 
 export class LoaderSys {
@@ -189,12 +191,16 @@ export class LoaderSys {
 	async loadGltf(path :string, name :string = 'noname', archivedGlbs :typeof files = null) :Promise<GLTF|{name :string}> {
 
 		let loadFromArchive :ArrayBuffer = null
+		let glbUpdatedAt = ''
 		if(archivedGlbs) {
 			// In `name`, get only the string after the last `/`
 			const nameInArchive = name.split('/').pop()
 			// Find the item in `checkArchive` that matches the `name`.
 			const file = archivedGlbs[nameInArchive + '.glb']
 			if(file) {
+				glbUpdatedAt = 'glb: '+DateTime.fromJSDate(file.date, { zone: 'America/Chicago' }).toFormat("yyyy-MMM-d '@'h:mm:ssa").toLowerCase()
+
+				// console.log(nameInArchive, 'glbUpdatedAt', glbUpdatedAt)
 				const filedata = await file.async('arraybuffer')  // or 'text' for text files
 				if(filedata) {
 					loadFromArchive = filedata
@@ -235,6 +241,7 @@ export class LoaderSys {
 				// if(gltf.animations.length > 0) console.log(`${name} is animated!`, gltf.animations)
 	
 				gltf.name = name
+				gltf.glbUpdatedAt = glbUpdatedAt
 
 				resolve(gltf)
 			}

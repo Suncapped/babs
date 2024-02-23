@@ -96,6 +96,8 @@ export class UiSys {
 		// But the focus event comes before the click event (on chrome).
 		// So we're disabling above and saying, no it doesn't auto on window focus.  It waits for a click (on non-HTML).
 
+		// this.babs.renderSys.framedropSeconds = 0 // Prevent away from being counted as a frame drop, which would reduce performance // No, that is solved by not switching during unfocused.
+
 	}
 
 	lostFocus() {
