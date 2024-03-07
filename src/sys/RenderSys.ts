@@ -520,7 +520,18 @@ export class RenderSys {
 			})
 
 			for(let index=0; index<Flame.lightPool.length; index++) {
-				if(index > nearestWants.length -1) break
+				if(index > nearestWants.length -1) {
+					// No more lights to move
+
+					// Remove any remaining lights
+					for(let i=index; i<Flame.lightPool.length; i++) {
+						const pointLight = Flame.lightPool[i]
+						pointLight.parent.remove(pointLight)
+					}
+					Flame.lightPool.length = index
+					
+					break 
+				}
 				Flame.lightPool[index].position.copy(nearestWants[index].position)
 				Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
 			}
