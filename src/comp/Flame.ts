@@ -25,7 +25,7 @@ export class Flame extends Comp {
 
 	static wantsLight = []
 
-	constructor(wob :SharedWob, babs) {
+	constructor(wob :SharedWob, babs :Babs) {
 		super(wob.id(), Flame, babs)
 	}
 
@@ -106,7 +106,9 @@ export class Flame extends Comp {
 
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-		// console.log('flameComps', flameComps, this.babs.compcats)
+		
+		// console.debug('Flame.Delete flameComps', flameComps, babs.compcats)
+
 		const flame = flameComps?.find(fc => {
 			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
 				&& (fc.idEnt as WobId).x === deletingWob.id().x
@@ -115,9 +117,9 @@ export class Flame extends Comp {
 		})
 		if(flame) {
 			const oldlen = Flame.wantsLight.length
-			// console.log('flame to remove', flame, Flame.wantsLight.length)
+			// console.debug('flame to remove', flame, Flame.wantsLight.length)
 			Flame.wantsLight = Flame.wantsLight.filter(f => {
-				// console.log('fl', f.uuid, flame.fire.uuid)
+				// console.debug('fl', f.uuid, flame.fire.uuid)
 				return f.uuid !== flame.fire.uuid
 			})
 			babs.group.remove(flame.fire)

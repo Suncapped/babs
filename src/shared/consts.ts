@@ -131,6 +131,7 @@ export type SendLoad = {
 				mousedevice :string,
 				debugmode :boolean,
 				color :string,
+				volume :number,
 			},
 			char :{
 				gender :string,

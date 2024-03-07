@@ -1,4 +1,4 @@
-import { AnimationClip, AnimationMixer, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
+import { AnimationClip, AnimationMixer, AudioLoader, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
@@ -39,10 +39,13 @@ export class LoaderSys {
 	dracoLoader
 	urlFiles
 	objectTexture :Texture
+	audioLoader :AudioLoader
 
 	constructor(public babs :Babs) {
 		// console.log('LoaderSys', urlFiles)
 		this.urlFiles = babs.urlFiles
+
+		this.audioLoader = new AudioLoader()
 
 		this.loader = new GLTFLoader()
 		this.dracoLoader = new DRACOLoader()

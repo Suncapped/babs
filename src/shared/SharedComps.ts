@@ -43,6 +43,18 @@ export class SharedCompPlatform extends SharedComp {
 	zOffsetFeet :number
 }
 
+export class SharedCompAudible extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+
+	soundDistanceFeet :number
+	soundOnApproach :string
+	soundContinuousLoop :string
+	soundOnInteract :string
+}
+
 export class SharedCompVisible extends SharedComp {
 	constructor(values = {}) {
 		super(values)
@@ -60,4 +72,5 @@ export class SharedCompVisible extends SharedComp {
 // scented: SharedCompPlatform,
 // symbiote: SharedCompPlatform,
 // touched: SharedCompPlatform,
+// audible: SharedCompAudible,
 

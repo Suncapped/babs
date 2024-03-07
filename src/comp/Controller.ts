@@ -463,11 +463,6 @@ export class Controller extends Comp {
 			}
 		}
 
-		// if(platform) {  // Buggy; starts to accellerate next frame I think, so shivers, especially on afk
-		// 	this.velocity.z = 0
-		// 	this.playerRig.position.setZ(eDest.z +platform.zOffsetFeet)
-		// }
-
 		if(this.groundDistance == 0 || Math.round(this.groundDistance -this.hover) == 0) {
 			this.velocity.y = 0
 		} 

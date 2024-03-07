@@ -1,4 +1,4 @@
-import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2 } from 'three'
+import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2, PositionalAudio } from 'three'
 import { UiSys } from '@/sys/UiSys'
 
 import { Flame } from '@/comp/Flame'
@@ -11,6 +11,7 @@ import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import { objectIsSomeKindOfMesh } from '@/Utils'
+import { WorldSys } from '@/sys/WorldSys'
 
 const FEET_IN_A_METER = 3.281
 
@@ -196,6 +197,36 @@ export class Wob extends SharedWob {
 		
 					// Add new flame
 					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
+				}
+
+				// Add audio, if any
+				const audible = wob.comps?.audible
+				if(audible) {
+					console.debug('audible', audible)
+					// Fetch and play mp3 file in audible.soundContinuousLoop
+
+					// Load sound player
+					const sound = new PositionalAudio(babs.cameraSys.audioListener)
+					sound.name = 'positionalsound-' +wob.idString()
+
+					// Load specific sound
+					babs.loaderSys.audioLoader.load(`${babs.urlFiles}/audio/sounds/${audible.soundContinuousLoop}.mp3`, function( buffer ) {
+						sound.setBuffer(buffer)
+						sound.setLoop(true)
+						sound.setRefDistance(WorldSys.Plot)
+						// sound.setMaxDistance(40) // Does the opposite of what you want lol
+						sound.play()
+					})
+					// Load into object
+					const tempObject = new Object3D()
+					tempObject.position.copy(engPositionVector)
+					tempObject.updateMatrixWorld()
+					tempObject.name = 'positionalsound-' +wob.idString()
+					// console.log('tempObject', tempObject.position.x, tempObject.position.y, tempObject.position.z)
+					tempObject.add(sound)
+					babs.group.add(tempObject)
+
+					// When this unloads, we gotta stop it!  That is done in Zone.removeWobGraphic
 				}
 
 			}

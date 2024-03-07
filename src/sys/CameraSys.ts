@@ -1,4 +1,4 @@
-import { Group, PerspectiveCamera, Vector3, Object3D, Quaternion } from 'three'
+import { Group, PerspectiveCamera, Vector3, Object3D, Quaternion, AudioListener } from 'three'
 import { Babs } from '@/Babs'
 
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js'
@@ -23,6 +23,7 @@ export class CameraSys {
 	_currentPosition
 	_currentLookat
 	cameraGroup :Group
+	audioListener :AudioListener
 	constructor(public camera :PerspectiveCamera, targetController :Controller, public babs :Babs) {
 		this._target = targetController
 
@@ -36,6 +37,10 @@ export class CameraSys {
 		this.cameraGroup = new Group()
 		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
+
+		// Setup AudioListener
+		this.audioListener = new AudioListener()
+		this.camera.add(this.audioListener) // Todo does this work positionally for WebXR?
 		
 		// this.babs.group.add(this.cameraGroup)
 	}
@@ -124,11 +129,11 @@ export class CameraSys {
 			const currentRefSpace = this.babs.renderSys.renderer.xr.getReferenceSpace()
 			// console.log('currentRefSpace', currentRefSpace, this.babs.renderSys.xrBaseReferenceSpace)
 
-			const offsetPosition = { x: - this.idealOffset.x, y: - this.idealOffset.y, z: - this.idealOffset.z, w: 1 };
-			const offsetRotation = new Quaternion();
-			const transform = new XRRigidTransform( offsetPosition, offsetRotation );
-			const teleportSpaceOffset = this.babs.renderSys.xrBaseReferenceSpace.getOffsetReferenceSpace( transform );
-			this.babs.renderSys.renderer.xr.setReferenceSpace( teleportSpaceOffset );
+			const offsetPosition = { x: - this.idealOffset.x, y: - this.idealOffset.y, z: - this.idealOffset.z, w: 1 }
+			const offsetRotation = new Quaternion()
+			const transform = new XRRigidTransform( offsetPosition, offsetRotation )
+			const teleportSpaceOffset = this.babs.renderSys.xrBaseReferenceSpace.getOffsetReferenceSpace( transform )
+			this.babs.renderSys.renderer.xr.setReferenceSpace( teleportSpaceOffset )
 
 			this.cameraGroup.position.set(0, 0, 0)
 			this.cameraGroup.rotation.setFromQuaternion(new Quaternion(0, 0, 0, 1))

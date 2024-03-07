@@ -1148,7 +1148,7 @@ export class InputSys {
 					const wob = yardCoord.zone.getWob(yardCoord.x, yardCoord.z)
 					const index = yardCoord.zone.coordToInstanceIndex[yardCoord.x+','+yardCoord.z]
 
-					console.log('this.pickedObject', this.pickedObject, pos)
+					console.debug('this.pickedObject', this.pickedObject, pos)
 					debugStuff += ` (locid ${wob.locid})\n${yardCoord}\nii=`+index+`, feim x,z=`+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +12])+','+(this.pickedObject?.feim.instancedMesh.instanceMatrix.array[(index *16) +14] + '\n' + this.pickedObject?.feim.glbUpdatedAt)
 					// debugStuff += `\nengineHeightAt: ${yardCoord.zone.engineHeightAt(yardCoord)}`
 				}
