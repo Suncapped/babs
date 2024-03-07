@@ -122,7 +122,6 @@
 
 		// Watch joindate and color
 
-		let excitedReason
 		menuSelfData.subscribe((val) => {
 			console.debug('menuSelfData change', val)
 			joinDate = new Date(Date.parse($menuSelfData.created_at))
@@ -233,6 +232,20 @@
 
 	}
 
+	const defaultVolume = 0
+	let volumeTenth = (parseInt(Cookies.get('volumePercent')) || defaultVolume) /10
+	settings.set({volumePercent: volumeTenth *10})
+	function volumeChange(ev) {
+		const volumePercent = ev.target.value *10
+		Cookies.set('volumePercent', volumePercent.toString(), { 
+			domain: $baseDomain,
+			secure: $isProd,
+			sameSite: 'strict',
+		})
+		$settings.volumePercent = volumePercent
+		console.log('volumePercent', volumePercent)
+	}
+
 	function toggleFullscreen(ev) {
 		if(document.fullscreenElement) {
 			document.exitFullscreen()
@@ -265,6 +278,12 @@
 			<li>&bull; Ctrl + j to keep journal open.</li>
 			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>
+			</li>
+			<li style="text-align:right;">
+				<fieldset class="form-group">
+					<input type="range" name="volume" id="volume" min="0" max="10" on:input={volumeChange} bind:value={volumeTenth} >
+					<label for="volume">Volume&nbsp;&nbsp;</label>
+				</fieldset>
 			</li>
 			<li style="text-align:right;">
 				<fieldset class="form-group">

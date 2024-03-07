@@ -27,4 +27,4 @@
 // It gets loaded in Wob.ts
 // It get unloaded in Zone.ts during removeWobGraphic
 // Caching (if any?) is left to the library or browser.
-// And there should be an audible toggle in menu that defaults to off and is saved in account.
+// And there should be an audible toggle in menu that defaults to off and is saved locally.
