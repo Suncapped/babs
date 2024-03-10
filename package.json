@@ -19,7 +19,7 @@
     "build": "vite build",
     "postbuild": "node buildtime.js",
     "deploy": "npm run build && rsync --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs && node discord.js",
-    "deploywin": "npm run build && rsync -e \"C:\\Users\\earth\\suncapped\\cwrsync_6.2.11_x64_free\\bin\\ssh.exe\" --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs",
+    "deploywin": "npm run build && \"C:\\Users\\earth\\suncapped\\cwrsync_6.2.11_x64_free\\bin\\rsync\" -e \"C:\\Users\\earth\\suncapped\\cwrsync_6.2.11_x64_free\\bin\\ssh.exe\" --rsync-path 'sudo -u fe rsync' -azP --delete --exclude .gitignore ./dist/ root@earth.suncapped.com:/home/fe/expressa/public/babs",
     "noisydeploy": "npm run deploy && node discord.js",
     "noisydeploywin": "npm run deploywin && node discord.js",
     "log": "git --no-pager log --pretty=oneline --decorate=short -n10",

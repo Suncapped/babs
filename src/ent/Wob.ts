@@ -12,6 +12,7 @@ import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import { objectIsSomeKindOfMesh } from '@/Utils'
 import { WorldSys } from '@/sys/WorldSys'
+import { Audible } from '@/comp/Audible'
 
 const FEET_IN_A_METER = 3.281
 
@@ -200,33 +201,17 @@ export class Wob extends SharedWob {
 				}
 
 				// Add audio, if any
-				const audible = wob.comps?.audible
-				if(audible) {
-					console.debug('audible', audible)
-					// Fetch and play mp3 file in audible.soundContinuousLoop
+				const sharedCompAudible = wob.comps?.audible
+				if(sharedCompAudible) {
+					// console.debug('serverAudible', sharedCompAudible)
+					const audible = Audible.Create(wob, babs, sharedCompAudible)
 
-					// Load sound player
-					const sound = new PositionalAudio(babs.cameraSys.audioListener)
-					sound.name = 'positionalsound-' +wob.idString()
-
-					// Load specific sound
-					babs.loaderSys.audioLoader.load(`${babs.urlFiles}/audio/sounds/${audible.soundContinuousLoop}.mp3`, function( buffer ) {
-						sound.setBuffer(buffer)
-						sound.setLoop(true)
-						sound.setRefDistance(WorldSys.Plot)
-						// sound.setMaxDistance(40) // Does the opposite of what you want lol
-						sound.play()
-					})
-					// Load into object
-					const tempObject = new Object3D()
-					tempObject.position.copy(engPositionVector)
-					tempObject.updateMatrixWorld()
-					tempObject.name = 'positionalsound-' +wob.idString()
-					// console.log('tempObject', tempObject.position.x, tempObject.position.y, tempObject.position.z)
-					tempObject.add(sound)
-					babs.group.add(tempObject)
-
-					// When this unloads, we gotta stop it!  That is done in Zone.removeWobGraphic
+					if(babs.soundSys.hasContextStartedRunning) {
+						(await audible).playContinuous()
+					}
+					else {
+						// Later, upon user gesture (CameraSys), we will find all wobs with continuous sounds and play them then.
+					}
 				}
 
 			}

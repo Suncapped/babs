@@ -11,6 +11,7 @@ import { SharedWob, Blueprint } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 import type { InstancedWobs } from './InstancedWobs'
+import { Audible } from '@/comp/Audible'
 
 
 export class Zone extends SharedZone {
@@ -70,26 +71,7 @@ export class Zone extends SharedZone {
 
 		// Remove attachments
 		Flame.Delete(deletingWob, this.babs)
-
-		// Remove/unload sound
-		// Find sound in this.babs.group based on name string
-		let childSoundHolder = this.babs.group.children.find((child) => child.name === 'positionalsound-'+deletingWob.idString())
-		// if(deletingWob.blueprint_id === 'campfire') {
-		// 	console.warn('campfire removal', 'positionalsound-'+deletingWob.idString(), childSoundHolder, this.babs.group.children.map(c => c.name))
-		// }
-		if(childSoundHolder?.children?.length) {
-			childSoundHolder.children.forEach((child) => {
-				if(child instanceof PositionalAudio) { // It should be, but this helps assert the type
-					child.stop()
-					child.disconnect()
-					child = null
-				}
-			})
-			this.babs.group.remove(childSoundHolder)
-			childSoundHolder.children = []
-			childSoundHolder = null
-		}
-		
+		Audible.Delete(deletingWob, this.babs)
 		
 		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.
 		// Source is the last item in the instance index.

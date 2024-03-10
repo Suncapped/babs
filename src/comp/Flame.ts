@@ -52,19 +52,6 @@ export class Flame extends Comp {
 		// console.log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Flame(wob, babs)
 
-		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
-		// Init static singletons
-		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
-			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
-			// pointLight.castShadow = true // Complex?
-			pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
-			pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
-			pointLight.name = 'flamelight'
-			Flame.lightPool.push(pointLight)
-			babs.group.add(pointLight)
-		}
-		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
-
 		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
 		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
 
@@ -78,6 +65,24 @@ export class Flame extends Comp {
 			Flame.settings.noiseScaleZ,
 			0.3
 		)
+
+		// Add a glow of light
+		// console.log('Flame.wantsLight.push', com.fire.uuid)
+		Flame.wantsLight.push(com.fire) // Must come before Flame.lightPool.push, since moveLightsToNearPlayer() shrinks one to the other.
+
+		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
+		// Init static singletons
+		// console.log('Flame.Create', Flame.lightPool.length, Flame.LIGHT_POOL_MAX)
+		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
+			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
+			// pointLight.castShadow = true // Complex?
+			pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
+			pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
+			pointLight.name = 'flamelight'
+			Flame.lightPool.push(pointLight)
+			babs.group.add(pointLight)
+		}
+		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
 
 		com.fire.name = 'flame'
 		babs.group.add(com.fire)
@@ -94,10 +99,6 @@ export class Flame extends Comp {
 		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
 		com.fire.position.setZ(engPositionVector.z)// +2)
 
-		// Add a glow of light
-		// console.log('Flame.wantsLight.push', com.fire.uuid)
-		Flame.wantsLight.push(com.fire)
-
 		babs.renderSys.moveLightsToNearPlayer() // Move on creation so it makes light there fast :)
 
 		return com
@@ -110,10 +111,12 @@ export class Flame extends Comp {
 		// console.debug('Flame.Delete flameComps', flameComps, babs.compcats)
 
 		const flame = flameComps?.find(fc => {
-			return (fc.idEnt as WobId).idzone === deletingWob.id().idzone
-				&& (fc.idEnt as WobId).x === deletingWob.id().x
-				&& (fc.idEnt as WobId).z === deletingWob.id().z
-				&& (fc.idEnt as WobId).blueprint_id === deletingWob.id().blueprint_id
+			const compWobId = fc.idEnt as WobId
+			const deletingWobId = deletingWob.id()
+			return compWobId.idzone === deletingWobId.idzone
+				&& compWobId.x === deletingWobId.x
+				&& compWobId.z === deletingWobId.z
+				&& compWobId.blueprint_id === deletingWobId.blueprint_id
 		})
 		if(flame) {
 			const oldlen = Flame.wantsLight.length

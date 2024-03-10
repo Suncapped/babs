@@ -11,6 +11,7 @@ import type { PlayerArrive } from '@/shared/consts'
 import type { FeObject3D } from './Wob'
 import { get as svelteGet } from 'svelte/store'
 import { settings } from '../stores'
+import { SoundSys } from '@/sys/SoundSys'
 
 // Player Character
 export class Player extends Ent {
@@ -75,6 +76,7 @@ export class Player extends Ent {
 		if(plr.self) {
 			// Setup camera and input systems for self
 			plr.babs.cameraSys = new CameraSys(plr.babs.renderSys._camera, plr.controller, babs)
+			plr.babs.soundSys = new SoundSys(plr.babs.renderSys._camera, babs)
 			plr.babs.inputSys = new InputSys(plr.babs, plr, arrival.meta?.mousedevice)
 		}
 

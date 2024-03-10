@@ -7,6 +7,7 @@ import type { FeObject3D } from '@/ent/Wob'
 import { settings, volumePercent } from '@/stores'
 
 import { get as svelteGet } from 'svelte/store'
+import { Audible } from '@/comp/Audible'
 
 const FEET_IN_A_METER = 3.281
 
@@ -40,23 +41,6 @@ export class CameraSys {
 		this.cameraGroup = new Group()
 		this.cameraGroup.name = 'cameraGroup'
 		this.cameraGroup.add(camera)
-
-		// Setup AudioListener
-		this.audioListener = new AudioListener()
-		this.camera.add(this.audioListener) // Todo does this work positionally for WebXR?
-
-		// Handle volume
-		this.audioListener.setMasterVolume(0) // Init to zero, then later load when settings changes via cookie fetch in Menu.svelte
-		settings.subscribe(sets => { // Menu becomes visible
-			console.log('got settings')
-			for (const key in sets) {
-				if (key === 'volumePercent') {
-					console.log('got percent')
-					this.audioListener.setMasterVolume(sets[key] / 100)
-				}
-			}
-		})
-		
 		// this.babs.group.add(this.cameraGroup)
 	}
 

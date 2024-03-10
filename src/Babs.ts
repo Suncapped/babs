@@ -19,6 +19,7 @@ import type { Wob } from './ent/Wob'
 import type { Zone } from './ent/Zone'
 import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
+import type { SoundSys } from './sys/SoundSys'
 
 declare global {
 	interface Window {
@@ -51,6 +52,7 @@ export class Babs {
 	group :Group
 
 	cameraSys :CameraSys
+	soundSys :SoundSys
 	inputSys :InputSys
 	loaderSys :LoaderSys
 	uiSys :UiSys
