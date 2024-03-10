@@ -40,29 +40,31 @@ export class SoundSys {
 					this.camera.add(this.audioListener) // Todo does this work positionally for WebXR?
 					this.audioListener.setMasterVolume(this.audioListenerVolume)
 
-					// Monitor the `statechange` event to know when the AudioContext.state has changed.
-					this.audioListener.context.onstatechange = () => {
-						console.debug('audioListener.context.state', this.audioListener.context.state)
-						existingContinuousSoundsStartOnce()
+					// If we're running now, go ahead
+					if(this.audioListener.context.state === 'running') {
+						existingContinuousSoundsStartOnce('user gesture event ' + event)
 					}
 
-					// But if we're running now, go ahead
-					if(this.audioListener.context.state === 'running') {
-						existingContinuousSoundsStartOnce()
+					// And/or monitor the `statechange` event
+					this.audioListener.context.onstatechange = () => {
+						console.debug('audioListener.context.state', this.audioListener.context.state)
+						existingContinuousSoundsStartOnce('statechange ' + this.audioListener.context.state)
 					}
 				}
 			})
 		})
 
-		const existingContinuousSoundsStartOnce = () => {
+		const existingContinuousSoundsStartOnce = (reason :string) => {
 			if(this.hasContextStartedRunning) return // Run only once
 			this.hasContextStartedRunning = true
 
-			console.debug('existingContinuousSoundsStartOnce')
+			console.log('Starting sounds:', reason)
+
+
 
 			// Find from compcats ones which are Audible and play them
 			const audibleComps = this.babs.compcats.get(Audible.name) as Audible[]
-			audibleComps.forEach(audibleComp => {
+			audibleComps.forEach(async (audibleComp) => {
 				if(audibleComp.sharedCompAudible.soundContinuousLoop) {
 					audibleComp.playContinuous()
 				}

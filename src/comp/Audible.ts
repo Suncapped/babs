@@ -59,6 +59,13 @@ export class Audible extends Comp {
 	async playContinuous() {
 		// console.log('playContinuous', this.idEnt)
 
+		// Use a promised buffer to prefetch and load the file
+		this.continuousBuffer = new Promise((resolve, reject) => {
+			this.babs.loaderSys.audioLoader.load(`${this.babs.urlFiles}/audio/sounds/${this.sharedCompAudible.soundContinuousLoop}.mp3`, function( buffer ) {
+				resolve(buffer)
+			})
+		})
+
 		// Load sound player
 		this.continuousSound = new PositionalAudio(this.babs.soundSys.audioListener)
 
@@ -104,13 +111,6 @@ export class Audible extends Comp {
 		// console.log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Audible(wob, babs)
 		com.sharedCompAudible = sharedCompAudible
-
-		// Use a promised buffer to prefetch and load the file
-		com.continuousBuffer = new Promise((resolve, reject) => {
-			babs.loaderSys.audioLoader.load(`${babs.urlFiles}/audio/sounds/${com.sharedCompAudible.soundContinuousLoop}.mp3`, function( buffer ) {
-				resolve(buffer)
-			})
-		})
 
 		return com
 	}
