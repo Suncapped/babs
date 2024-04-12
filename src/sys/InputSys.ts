@@ -846,64 +846,72 @@ export class InputSys {
 
 					// todo catch if source has moved since pickup
 
-					if (this.pickedObject?.pickedType === 'land') {
-						
-						console.debug('dropped onto empty land', this.pickedObject)
-						
-						const coordDest = YardCoord.Create({
-							position: this.pickedObject.landPoint,
-							babs: this.babs,
-						})
-						// Todo put distance limits, here and server
-						// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
-						// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
-						// const wob = wobContained || wobInstanced
-
-						// const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
-
+					if (this.pickedObject?.pickedType === 'land'
+						|| this.pickedObject?.pickedType === 'wob'
+					) {
 						const coordSource = this.liftedObject.yardCoord
 						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
 
-						console.debug('drop rotation cardinal', this.liftedObject.rotationCardinal)
-
-						console.debug('Found for moved', wobSource?.id(), this.liftedObject, coordDest)
-						this.babs.socketSys.send({  // Intention is to move it
-							action: {
-								verb: 'moved',
-								noun: wobSource.id(),
-								data: {
-									point: {x: coordDest.x, z: coordDest.z},
-									rotation: this.liftedObject.rotationCardinal,
-									idzone: coordDest.zone.id,
-								},
-							}
-						})
-
-					}
-					else if(this.pickedObject?.pickedType === 'wob') {
-						console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject)
-						if(this.pickedObject.poid === this.liftedObject.poid) {
-							console.log('dropped where it was lifted from')
-							// Nothing happens
-						}
-						else { // Intention is to merge it
+						if(this.pickedObject?.pickedType === 'land') {
+							console.debug('dropped onto empty land', this.pickedObject, this.liftedObject.rotationCardinal)
 							
+							// Todo put distance limits, here and server
+							// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
+							// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
+							// const wob = wobContained || wobInstanced
 
-							const coordSource = this.liftedObject.yardCoord
-							const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
-
-							const coordDest = this.pickedObject.yardCoord
-
-							this.babs.socketSys.send({
+							// const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
+							const coordDest = YardCoord.Create({
+								position: this.pickedObject.landPoint,
+								babs: this.babs,
+							})
+							
+							this.babs.socketSys.send({  // Intention is to move it
 								action: {
-									verb: 'merged',
+									verb: 'moved',
 									noun: wobSource.id(),
 									data: {
 										point: {x: coordDest.x, z: coordDest.z},
-										idzone:coordDest.zone.id,
+										rotation: this.liftedObject.rotationCardinal,
+										idzone: coordDest.zone.id,
 									},
 								}
 							})
+
+						}
+						else if(this.pickedObject?.pickedType === 'wob') {
+							console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject, this.liftedObject.rotationCardinal)
+
+							const coordDest = this.pickedObject.yardCoord
+
+							if(this.pickedObject.poid === this.liftedObject.poid) {
+								console.log('dropped where it was lifted from')
+								// Nothing happens...except wait!  It might need to be rotated!
+								this.babs.socketSys.send({
+									action: {
+										verb: 'moved',
+										noun: wobSource.id(),
+										data: {
+											point: {x: coordDest.x, z: coordDest.z},
+											rotation: this.liftedObject.rotationCardinal,
+											idzone: coordDest.zone.id,
+										},
+									}
+								})
+							}
+							else { // Intention is to merge it
+								console.log('dropped onto a merge')
+								this.babs.socketSys.send({
+									action: {
+										verb: 'merged',
+										noun: wobSource.id(),
+										data: {
+											point: {x: coordDest.x, z: coordDest.z},
+											idzone:coordDest.zone.id,
+										},
+									}
+								})
+							}
 						}
 					}
 					else if(this.pickedObject?.pickedType === 'player') {
