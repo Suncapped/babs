@@ -54,7 +54,6 @@ export class RenderSys {
 			// antialias: window.devicePixelRatio < 3, // My monitor is 2, aliasing still shows
 			antialias: babs.graphicsQuality || babs.vrSupported, // Antialias (MSAA?) was killing M1 perf.  // Quest 2 needs it badly. 
 			// multiviewStereo: true, // OCULUS_multiview handling in WebXR, not ready yet https://github.com/mrdoob/three.js/pull/25981
-			// stencil: false, // Hmm
 			// depth: false, // lol no!
 			// powerPreference: 'high-performance',
 			canvas: document.getElementById('canvas'),
@@ -88,7 +87,6 @@ export class RenderSys {
 		this.renderer.setSize(window.innerWidth, window.innerHeight)
 
 		this.renderer.domElement.addEventListener('contextmenu', ev => ev.preventDefault()) // todo move to ui
-		console.debug('isWebGL2', this.renderer.capabilities.isWebGL2)
 		console.debug('aniso', this.renderer.capabilities.getMaxAnisotropy())
 
 		const fov = 45
