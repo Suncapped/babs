@@ -57,6 +57,8 @@ export class LoaderSys {
 		this.dracoLoader.preload()
 		this.loader.setDRACOLoader(this.dracoLoader)
 
+		// this.dracoLoader.getDecoderModule() // Prefetch // Doesn't work
+
 
 		// Prefetch and process cached GLB files
 		LoaderSys.CachedGlbFiles = babs.usePail && (async () => {

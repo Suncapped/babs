@@ -380,23 +380,21 @@ export class InputSys {
 
 				if (this.keyboard.f === PRESS) {
 					Wob.InstancedWobs.forEach((feim, bpid) => {
-						
-
 					})
-
 					console.log(this.babs.renderSys.renderer.info.render.triangles.toLocaleString())
-
 				}
+				
+				// if (this.keyboard.g === PRESS) {
+				// 	// Output player controller mesh debug information
+				// 	console.log(this.playerSelf.controller.playerRig)
+				// }
 
 				if (this.keyboard.l === PRESS) {
-
-
 					Wob.InstancedWobs.forEach((feim, bpid) => {
 						if(bpid == 'sneezeweed') {
 							console.log('sneezeweed feim.getLoadedCount() (reallocateLargerBuffer COUNTS)', feim.getLoadedCount())
 						}
 					})
-
 				}
 
 				// Instant Forest
