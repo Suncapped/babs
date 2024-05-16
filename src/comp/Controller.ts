@@ -125,7 +125,7 @@ export class Controller extends Comp {
 		this.playerRig.position.copy(this.gDestination.clone().multiplyScalar(4).addScalar(4/2))
 
 		// if(!this.isSelf) { // Todo shiftiness, reinstate this conditional once we move to relative zones :)
-			this.playerRig.position.add(this.playerRig.zone.ground.position)
+		this.playerRig.position.add(this.playerRig.zone.ground.position)
 		// }
 
 		// Set rotation

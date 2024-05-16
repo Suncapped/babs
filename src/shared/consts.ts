@@ -295,7 +295,16 @@ export type SendMerged = {
 	}
 }
 
-export type BabsSendable = SendMoved|SendMerged
+export type SendMove = {
+	move: {
+		movestate :number;
+		a :number;
+		b :number;
+		enterzone_id? :number;
+	}
+}
+
+export type BabsSendable = SendMoved|SendMerged|SendMove
 
 
 export function toHexString(byteArray) {
