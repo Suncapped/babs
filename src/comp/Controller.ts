@@ -160,21 +160,34 @@ export class Controller extends Comp {
 		this.gDestination = gDestVector3.clone()
 		// console.debug('setDestination changing', this.gDestination, movestate, this.isSelf)
 		
-		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > 249 || gDestVector3.z > 249
+		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > WorldSys.ZONE_MOVEMENT_EXTENT || gDestVector3.z > WorldSys.ZONE_MOVEMENT_EXTENT
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
 			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
 
+			const targetYardCoord = YardCoord.Create({
+				...this.gDestination, 
+				zone: this.babs.worldSys.currentGround.zone,
+			})
+
+			// Determine if player has the stamina to enter the wob if one is there
+			const wobAtDest = this.playerRig.zone.getWob(targetYardCoord.x, targetYardCoord.z)
+			const impassable = wobAtDest?.comps?.impassable
+			if(impassable) {
+				const playerStamina = 10 // todo
+				const impassableForStamina = playerStamina < impassable.staminaToPass
+				if(impassableForStamina) {
+					// Stop movement, similar to zoning below
+					this.gDestination = gDestOld
+					this._stateMachine.setState('idle')
+					return 
+				}
+			}
+
 			let enterzone_id :number = undefined
 			if(isOutsideOfZone){
-
-				const targetYardCoord = YardCoord.Create({
-					...this.gDestination, 
-					zone: this.babs.worldSys.currentGround.zone,
-				})
 				// console.log('targetYardCoord.zone', targetYardCoord.zone)
-
 				const nextZoneExists = targetYardCoord.zone // I can stop us from running off the edge here!
 				if(this.selfWaitZoningExitZone || !nextZoneExists) {
 					// Do not initiate shift/zoning while already zoning.

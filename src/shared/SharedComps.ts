@@ -64,6 +64,22 @@ export class SharedCompVisible extends SharedComp {
 	farMesh :string
 }
 
+export class SharedCompImpassable extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+	staminaToPass :number
+}
+
+export class SharedCompDurable extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+	destroyedOneTimeOutOf :number
+}
+
 // edible: SharedCompPlatform,
 // firestarter: SharedCompPlatform,
 // generated: SharedCompPlatform,
@@ -73,4 +89,6 @@ export class SharedCompVisible extends SharedComp {
 // symbiote: SharedCompPlatform,
 // touched: SharedCompPlatform,
 // audible: SharedCompAudible,
+// impassable: SharedCompImpassable,
+// durable: SharedCompDurable,
 

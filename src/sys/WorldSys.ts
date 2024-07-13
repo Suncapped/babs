@@ -938,8 +938,8 @@ export class WorldSys {
 							const zpos = coordOfVerticesIndex.z *5 +x*cubeSize *spacing -spacing*4 +1
 							
 							const yardCoord = YardCoord.Create({
-								x: clamp(xpos, 0, 249),
-								z: clamp(zpos, 0, 249),
+								x: clamp(xpos, 0, WorldSys.ZONE_MOVEMENT_EXTENT),
+								z: clamp(zpos, 0, WorldSys.ZONE_MOVEMENT_EXTENT),
 								zone: entZone,
 							})
 							// const engineCoord = yardCoord.toEngineCoord()
