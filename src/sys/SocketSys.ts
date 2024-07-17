@@ -258,20 +258,20 @@ export class SocketSys {
 					const tryMoveVrButton = () => { 
 						setTimeout(() => {
 							// console.log('trying to move')
-							const vrButton = document.getElementById('VRButton')
+							const vrButton2 = document.getElementById('VRButton')
 							const menuVrArea = document.getElementById('menuVrArea')
-							if(!vrButton || !menuVrArea) {
+							if(!vrButton2 || !menuVrArea) {
 								tryMoveVrButton()
 								return
 							}
-							vrButton.style.left = 'unset'
-							vrButton.style.right = 'unset'
-							vrButton.style.position = 'relative'
-							vrButton.style.bottom = '0px'
+							vrButton2.style.left = 'unset'
+							vrButton2.style.right = 'unset'
+							vrButton2.style.position = 'relative'
+							vrButton2.style.bottom = '0px'
 							menuVrArea.style.display = 'block'
 							menuVrArea.style.textAlign = 'center'
 							// menuVrArea.style.textAlign = 'center'
-							menuVrArea.appendChild(vrButton)
+							menuVrArea.appendChild(vrButton2)
 						}, 300) 
 					}
 					tryMoveVrButton()
@@ -389,7 +389,9 @@ export class SocketSys {
 
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
 			this.babs.worldSys.shiftEverything(-enterZone.x *WorldSys.ZONE_LENGTH_FEET, -enterZone.z *WorldSys.ZONE_LENGTH_FEET)//, true) // Set offset
-			await player.controller.loadZoneWobs(player, enterZone, null) // Load zones
+			await Zone.LoadZoneWobs(enterZone, null) // Load zones
+			await Zone.LoadZoneFootsteps(enterZone, null)
+			player.controller.selfWaitZoningExitZone = null
 
 			if(load.self.visitor !== true) {
 				document.getElementById('welcomebar').style.display = 'none' 
@@ -450,7 +452,9 @@ export class SocketSys {
 			// console.log('exitZone', player.controller.waitZoningExitZone, player.controller.playerRig.zone, exitZone.id)
 
 			if(player.id === this.babs.idSelf) {
-				await player.controller.loadZoneWobs(player, enterZone, exitZone) // Only for self
+				await Zone.LoadZoneWobs(enterZone, exitZone) // Only for self
+				await Zone.LoadZoneFootsteps(enterZone, exitZone) // Only for self
+				player.controller.selfWaitZoningExitZone = null
 			}
 				
 			player.controller.playerRig.zone = enterZone // This re-applies to self, but for others, this is the only place it's set
@@ -637,9 +641,9 @@ export class SocketSys {
 		const idPlayer = this.babs.zips.get(idzip)
 		const player = this.babs.ents.get(idPlayer)	as Player
 		if(player) {
+			const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
 			if(player.id !== this.babs.idSelf) { // Skip self movements
 				// console.log('finally actually moving player after attept', attempts, idzip)
-				const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
 				if(movestateName === 'run' || movestateName == 'walk') {
 					player.controller.setDestination(new Vector3(a, 0, b), movestateName)
 				}
@@ -653,6 +657,8 @@ export class SocketSys {
 					player.controller.setRotation(quat)
 				}
 			}
+
+
 		}
 		else { // Player not yet defined; probably still loading // todo check for defuncts
 			let tryCount = 0

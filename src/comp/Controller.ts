@@ -154,6 +154,26 @@ export class Controller extends Comp {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
+		// Update color based on footsteps
+		const player = this.babs.ents.get(this.idEnt as number) as Player
+		const zone = player.controller.playerRig.zone
+		// Get existing plot count for this point and add to it
+		const xPlotOld = Math.floor((player.controller.gDestination.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+		const zPlotOld = Math.floor((player.controller.gDestination.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+		const xPlotNew = Math.floor((gDestVector3.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+		const zPlotNew = Math.floor((gDestVector3.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+		if(xPlotOld !== xPlotNew || zPlotOld !== zPlotNew) {
+			// console.log('plot updating', xPlotOld, zPlotOld, xPlotNew, zPlotNew)
+			const plotcounts :Record<string, number> = {
+				[`${xPlotNew},${zPlotNew}`]: (zone.plotcountsSaved[`${xPlotNew},${zPlotNew}`] || 0) +1,
+				[`${xPlotOld +1},${zPlotOld}`]: (zone.plotcountsSaved[`${xPlotOld +1},${zPlotOld}`] || 0) +1,
+				[`${xPlotNew},${zPlotNew +1}`]: (zone.plotcountsSaved[`${xPlotNew},${zPlotNew +1}`] || 0) +1,
+				[`${xPlotOld +1},${zPlotOld +1}`]: (zone.plotcountsSaved[`${xPlotOld +1},${zPlotOld +1}`] || 0) +1,
+
+			}
+			zone.colorFootsteps(plotcounts)
+		}
+
 		this.babs.renderSys.calcPositionChanged = true
 
 		const gDestOld = this.gDestination.clone()
@@ -508,7 +528,7 @@ export class Controller extends Comp {
 		}
 
 		// Set player height based on ground height
-		if(this.playerRig?.zone) { // They're loaded // playerRig gets set well before loadZoneWobs, so it's current (ie doesn't wait for network)
+		if(this.playerRig?.zone) { // They're loaded // playerRig gets set well before LoadZoneWobs, so it's current (ie doesn't wait for network)
 			const yardCoord = YardCoord.Create(this.playerRig)
 			const normalizedPositionWithinTile = new Vector3(yardCoord.subtileRemainder.x / WorldSys.Yard, 0, yardCoord.subtileRemainder.z / WorldSys.Yard)
 			const worldGroundHeight = this.playerRig.zone.engineHeightAt(yardCoord, normalizedPositionWithinTile)
@@ -533,91 +553,6 @@ export class Controller extends Comp {
 		if(!this.gPrevDestination?.equals(this.gDestination)) {
 			this.gPrevDestination = this.gDestination.clone() // Save previous destination (if it's not the same)
 		}
-	}
-
-	async loadZoneWobs(player :Player, enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
-		// console.log('loadZoneWobs')
-		console.debug('loadZoneWobs zonein player zone', player.id, enterZone.id, )
-		console.debug('loadZoneWobs this.gDestination', this.gDestination)
-
-		// Calculate the zones we're exiting and the zones we're entering
-		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
-		const newZonesNear = enterZone.getZonesAround(Zone.loadedZones, 1)
-		const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
-		const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
-
-		const oldZonesFar = exitZone?.getZonesAround(Zone.loadedZones, 22) || []
-		const newZonesFar = enterZone.getZonesAround(Zone.loadedZones, 22)
-		const removedZonesFar = oldZonesFar.filter(zone => !newZonesFar.includes(zone))
-		const addedZonesFar = newZonesFar.filter(zone => !oldZonesFar.includes(zone))
-		// console.log('addedZonesFar', Zone.loadedZones, addedZonesFar.map(z => z.id).sort((a,b) => a-b), addedZonesNearby.map(z => z.id).sort((a,b) => a-b))
-
-		console.debug('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
-		
-		// this.babs.worldSys.currentGround = enterZone.ground // Now happens before network
-
-		// Removed; wob removal from exiting zones happens on setDestination(), before here.
-		
-		// Pull detailed wobs for entered zones, so we can load them.  
-		// This could later be moved to preload on approaching zone border, rathern than during zonein.
-
-		const pullWobsData = async () => {
-			let detailedWobsToAdd :SharedWob[] = []
-			let farWobsToAdd :SharedWob[] = []
-
-			// Here we actually fetch() the near wobs, but the far wobs have been prefetched (dekazones etc)
-
-			const fetches = []
-			for(let zone of addedZonesNearby) {
-				zone.locationData = fetch(`${this.babs.urlFiles}/zone/${zone.id}/locations.bin`)
-				fetches.push(zone.locationData)
-			}
-
-			await Promise.all(fetches)
-
-			for(let zone of addedZonesNearby) {
-				const fet4 = await zone.locationData
-				const data4 = await fet4.blob()
-				if (data4.size == 2) {  // hax on size (for `{}`)
-					zone.locationData = new Uint8Array()
-				}
-				else {
-					const buff4 = await data4.arrayBuffer()
-					zone.locationData = new Uint8Array(buff4)
-				}
-			}
-
-			for(let zone of addedZonesNearby) {
-				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
-				detailedWobsToAdd.push(...fWobs)
-			}
-
-			// Far wobs, using prefetched data
-			await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
-			for(let zone of addedZonesFar) {
-				// Data was prefetched, so just access it in zone.farLocationData
-				const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
-				farWobsToAdd.push(...fWobs)
-			}
-
-			// return [detailedWobsToAdd, farWobsToAdd] // These loads don't [later: didn't] need to await for zonein to complete~!
-			console.debug('entered zones: detailed wobs to add', detailedWobsToAdd.length)
-			await Wob.LoadInstancedWobs(detailedWobsToAdd, this.babs, false) 
-			await Wob.LoadInstancedWobs(farWobsToAdd, this.babs, false, 'asFarWobs') // Far ones :p
-
-			/* todo zoning
-				We may need to do something with zoneIn to return it to not-awaited, 
-					or preloading assets so there's no network request, 
-					or queuing up network/player commands until wobs are all loaded.
-				Maybe after rolling zones.
-			*/
-			
-			player.controller.selfWaitZoningExitZone = null
-
-		}
-		// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
-		await pullWobsData()
-
 	}
 
 

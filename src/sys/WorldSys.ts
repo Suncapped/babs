@@ -744,24 +744,7 @@ export class WorldSys {
 		})
 
 	}
-
-	async loadWobLocations(urlFiles, zone) { // todo this is no longer used
-		const fet = await fetch(`${urlFiles}/zone/${zone.id}/locations.bin`)
-		if(fet.status == 404) {// No such zone or zone with no objects cached yet
-			return new Uint8Array()
-		}
-
-		const dataBlob = await fet.blob()
-		if(dataBlob.size == 2) {  // hax on size (for `{}`)
-			return new Uint8Array()
-		}
-
-		const buff = await dataBlob.arrayBuffer()
-		const locations = new Uint8Array(buff)
-
-		return locations
-	}
-
+	
 	elevationData = {}
 	landcoverData
 	waterInstancedMesh
@@ -856,7 +839,6 @@ export class WorldSys {
 			let color = this.colorFromLc[lcString]
 
 			const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
-			let waterHere = false
 
 			// Find water nearby
 			for(let z=-1; z<=1; z++) {
@@ -868,12 +850,9 @@ export class WorldSys {
 						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamsmall'
 						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streammedium'
 						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamlarge'
-					
 					) {
-						waterHere = true
-						waterNearbyIndex[index]++
+						waterNearbyIndex[index]++ // Save for later
 					}
-
 				}
 			}
 
@@ -898,15 +877,14 @@ export class WorldSys {
 					colorsRef[colorsIndexOfGridPoint +0] = color.r
 					colorsRef[colorsIndexOfGridPoint +1] = color.g
 					colorsRef[colorsIndexOfGridPoint +2] = color.b
-						
 					// }
 				}
 			}
-
-
 		}
+		if(colorNotFound) console.warn('Some colors not found!  One is:', colorNotFound)
 
-		if(colorNotFound) console.warn('Color not found!', colorNotFound)
+		// Save a copy of colorsRef to the zone so we can bounce off it later when adding footsteps dirt color
+		zone.colorsCopy = colorsRef.slice()
 
 		// Water?  Delayed?
 		setTimeout(() => {
@@ -965,9 +943,9 @@ export class WorldSys {
 
 			// const geometry = new BoxGeometry(cubeSize *4, cubeSize *4, cubeSize *4)
 			const sizeish = cubeSize *3.5
-			const geometry = new IcosahedronGeometry(sizeish, 1)
+			const geometry2 = new IcosahedronGeometry(sizeish, 1)
 			const material = new MeshLambertMaterial({})
-			this.waterInstancedMesh = new InstancedMesh(geometry, material, waterCubePositions.length)
+			this.waterInstancedMesh = new InstancedMesh(geometry2, material, waterCubePositions.length)
 			this.waterInstancedMesh.name = 'water'
 			this.waterInstancedMesh.instanceMatrix.setUsage( StreamDrawUsage ) 
 			// ^ So I don't have to call .needsUpdate // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage

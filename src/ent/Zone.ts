@@ -2,7 +2,7 @@
 import { YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
 
-import { BufferAttribute, InstancedMesh, Matrix4, Mesh, Object3D, PlaneGeometry, PositionalAudio, Raycaster, Triangle, Vector2, Vector3 } from 'three'
+import { BufferAttribute, Color, InstancedMesh, MathUtils, Matrix4, Mesh, Object3D, PlaneGeometry, PositionalAudio, Raycaster, Triangle, Vector2, Vector3 } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
@@ -12,6 +12,9 @@ import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 import type { InstancedWobs } from './InstancedWobs'
 import { Audible } from '@/comp/Audible'
+import type { Player } from './Player'
+import { LoaderSys } from '@/sys/LoaderSys'
+import type { SendFootstepsCounts } from '@/shared/consts'
 
 
 export class Zone extends SharedZone {
@@ -39,6 +42,8 @@ export class Zone extends SharedZone {
 
 	geometry :PlaneGeometry
 	ground :Mesh // ground 3d Mesh
+
+	colorsCopy :Float32Array
 
 	key() {
 		return `${this.x},${this.z}`
@@ -286,9 +291,151 @@ export class Zone extends SharedZone {
 	// 	return result
 	// }
 
+	static CalcZoningDiff(enterZone :Zone, exitZone :Zone|null) :[Zone[], Zone[], Zone[], Zone[]] {
+		// Calculate the zones we're exiting and the zones we're entering
+		const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
+		const newZonesNear = enterZone.getZonesAround(Zone.loadedZones, 1)
+		const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
+		const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
 
+		const oldZonesFar = exitZone?.getZonesAround(Zone.loadedZones, 22) || []
+		const newZonesFar = enterZone.getZonesAround(Zone.loadedZones, 22)
+		const removedZonesFar = oldZonesFar.filter(zone => !newZonesFar.includes(zone))
+		const addedZonesFar = newZonesFar.filter(zone => !oldZonesFar.includes(zone))
+		// console.log('addedZonesFar', Zone.loadedZones, addedZonesFar.map(z => z.id).sort((a,b) => a-b), addedZonesNearby.map(z => z.id).sort((a,b) => a-b))
+		console.debug('zonediff', removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar)
 
+		return [removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar]
+	}
 
+	static async LoadZoneWobs(enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
+		// console.log('LoadZoneWobs')
+		console.debug('LoadZoneWobs zonein zone', enterZone.id, )
+		
+		const [removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar] = Zone.CalcZoningDiff(enterZone, exitZone)
+		
+		// enterZone.babs.worldSys.currentGround = enterZone.ground // Now happens before network
+
+		// Removed; wob removal from exiting zones happens on setDestination(), before here.
+		
+		// Pull detailed wobs for entered zones, so we can load them.  
+		// This could later be moved to preload on approaching zone border, rathern than during zonein.
+
+		const pullWobsData = async () => {
+			let detailedWobsToAdd :SharedWob[] = []
+			let farWobsToAdd :SharedWob[] = []
+
+			// Here we actually fetch() the near wobs, but the far wobs have been prefetched (dekazones etc)
+
+			const fetches = []
+			for(let zone of addedZonesNearby) {
+				zone.locationData = fetch(`${enterZone.babs.urlFiles}/zone/${zone.id}/locations.bin`)
+				fetches.push(zone.locationData)
+			}
+
+			await Promise.all(fetches)
+
+			for(let zone of addedZonesNearby) {
+				const fet4 = await zone.locationData
+				const data4 = await fet4.blob()
+				if (data4.size == 2) {  // hax on size (for `{}`)
+					zone.locationData = new Uint8Array()
+				}
+				else {
+					const buff4 = await data4.arrayBuffer()
+					zone.locationData = new Uint8Array(buff4)
+				}
+			}
+
+			for(let zone of addedZonesNearby) {
+				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+				detailedWobsToAdd.push(...fWobs)
+			}
+
+			// Far wobs, using prefetched data
+			await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
+			for(let zone of addedZonesFar) {
+				// Data was prefetched, so just access it in zone.farLocationData
+				const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
+				farWobsToAdd.push(...fWobs)
+			}
+
+			// return [detailedWobsToAdd, farWobsToAdd] // These loads don't [later: didn't] need to await for zonein to complete~!
+			console.debug('entered zones: detailed wobs to add', detailedWobsToAdd.length)
+			await Wob.LoadInstancedWobs(detailedWobsToAdd, enterZone.babs, false) 
+			await Wob.LoadInstancedWobs(farWobsToAdd, enterZone.babs, false, 'asFarWobs') // Far ones :p
+
+			/* todo zoning
+				We may need to do something with zoneIn to return it to not-awaited, 
+					or preloading assets so there's no network request, 
+					or queuing up network/player commands until wobs are all loaded.
+				Maybe after rolling zones.
+			*/
+
+		}
+		// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
+		await pullWobsData()
+
+	}
+
+	plotcountsSaved :Record<string, number> = {} // For saving incoming data
+	static async LoadZoneFootsteps(enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
+		console.debug('LoadZoneFootsteps zonein zone', enterZone.id)
+		const [removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar] = Zone.CalcZoningDiff(enterZone, exitZone)
+		const pullFootstepsData = async () => {
+			const zoneFootstepsCounts :Promise<Response>[] = []
+			for(let zone of addedZonesNearby) {
+				zoneFootstepsCounts.push(fetch(`${enterZone.babs.urlFiles}/zone/${zone.id}/footsteps.json`))
+			}
+			await Promise.all(zoneFootstepsCounts)
+
+			for(const response of zoneFootstepsCounts) {
+				const footstepsCounts = (await (await response).json() as SendFootstepsCounts).footstepscounts
+				if(footstepsCounts) {
+					// console.log('footstepsCounts', footstepsCounts)
+					const zone = enterZone.babs.ents.get(footstepsCounts.idzone) as Zone
+					zone.colorFootsteps(footstepsCounts.plotcounts)
+				}
+			}
+		}
+		await pullFootstepsData()
+	}
+	colorFootsteps(plotcountsUpdates :SendFootstepsCounts['footstepscounts']['plotcounts']) {
+		// Make the vertex colors more brown the higher the number is per plotcount
+		const brownColor = new Color(0.5, 0.3, 0.1)
+
+		for(let [plot, count] of Object.entries(plotcountsUpdates)) {
+			this.plotcountsSaved[plot] = count // Save incoming data
+			// Set one color at Plot x, z to combine with brown in proportion to percentage
+			const xPlot = parseInt(plot.split(',')[0])
+			const zPlot = parseInt(plot.split(',')[1])
+
+			const maxBrownFootsteps = 100
+			count =  Math.min(100, count) // Cap at 100
+			const brownPercentage = count / maxBrownFootsteps
+
+			const colorsRef = this.ground.geometry.getAttribute('color').array as Float32Array
+			// Because vertex colors don't color the center but the zeropoint, we expand this to the full square.
+			// Nevermind; instead of coloring the ones around it, I will up the count on the ones around it.
+			for (let i = 0; i <= 0; i++) {
+				for (let j = 0; j <= 0; j++) {
+					const xPos = xPlot +i
+					const zPos = zPlot +j
+					const colorsIndexOfGridPoint = Utils.coordToIndex(xPos, zPos, WorldSys.ZONE_ARR_SIDE_LEN, 3)
+					colorsRef[colorsIndexOfGridPoint + 0] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 0], brownColor.r, brownPercentage)
+					colorsRef[colorsIndexOfGridPoint + 1] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 1], brownColor.g, brownPercentage)
+					colorsRef[colorsIndexOfGridPoint + 2] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 2], brownColor.b, brownPercentage)
+
+					// todo: If the range is outside of this zone's edges, apply it to the next zone up or down?
+				}
+			}
+
+			// console.log('colorFootsteps setting:' + xPlot + ',' + zPlot + ' to ' + count)
+		}
+
+		// Indicate updates are needed
+		this.ground.geometry.attributes.color.needsUpdate = true
+	}
 
 
 }

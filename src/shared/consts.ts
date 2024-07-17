@@ -98,6 +98,12 @@ export type SendWobsUpdate = {
 		shownames? :boolean,
 	},
 }
+export type SendFootstepsCounts = {
+	footstepscounts :{
+		idzone :number
+		plotcounts :Record<string, number>
+	}
+}
 
 export type Zoneinfo = {
 	id :number,
