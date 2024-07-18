@@ -3,10 +3,10 @@
   "type": "module",
   "version": "0.3.0",
   "engines": {
-    "node": "v21"
+    "node": "v22"
   },
   "volta": {
-    "node": "21.2.0"
+    "node": "22.5.0"
   },
   "scripts": {
     "playerdev": "cross-env FE_ENV=playerdev vite --mode playerdev",
@@ -29,42 +29,42 @@
   },
   "devDependencies": {
     "@suncapped/eslint-plugin": "file:eslint",
-    "@sveltejs/vite-plugin-svelte": "^3.0.1",
-    "@tsconfig/svelte": "^5.0.2",
-    "@types/dat.gui": "^0.7.12",
+    "@sveltejs/vite-plugin-svelte": "^3.1.1",
+    "@tsconfig/svelte": "^5.0.4",
+    "@types/dat.gui": "^0.7.13",
     "@types/js-cookie": "^3.0.6",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^20.11.7",
+    "@types/node": "^20.14.11",
     "@types/suncalc": "^1.9.2",
     "@types/three": "^0.166.0",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "bicubic-interpolate": "^1.0.4",
     "cross-env": "^7.0.3",
     "deep-object-diff": "^1.1.9",
-    "dotenv-cli": "^7.3.0",
+    "dotenv-cli": "^7.4.2",
     "eslint": "^8.56.0",
-    "glob": "^10.3.10",
-    "lil-gui": "^0.19.1",
-    "svelte": "^4.2.9",
-    "svelte-check": "^3.6.3",
-    "svelte-preprocess": "^5.1.3",
+    "glob": "^11.0.0",
+    "lil-gui": "^0.19.2",
+    "svelte": "^4.2.18",
+    "svelte-check": "^3.8.4",
+    "svelte-preprocess": "^6.0.2",
     "three": "^0.166.1",
-    "tslib": "^2.6.2",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12",
+    "tslib": "^2.6.3",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.4",
     "webhook-discord": "^3.7.8"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
-    "@neodrag/svelte": "^2.0.3",
+    "@neodrag/svelte": "^2.0.6",
     "dat.gui": "^0.7.9",
     "js-cookie": "^3.0.5",
     "jszip": "^3.10.1",
     "keycode-js": "^3.1.0",
     "luxon": "^3.4.4",
     "suncalc": "^1.9.0",
-    "troika-three-text": "^0.49.0"
+    "troika-three-text": "^0.49.1"
   }
 }
