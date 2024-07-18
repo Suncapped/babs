@@ -18,7 +18,14 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 	maxCount :number// It shall differ from InstancedMesh because I'm going to use maxCount, since some of the funs below happen after wobs are added, which is when increaseLoadedCount() is called.  We want the max to be preserved for setting bones and data texture.
 	count :number // This actually gets read by the js engine like this: getInstanceCount( renderObject ) { [...] return geometry.isInstancedBufferGeometry ? geometry.instanceCount : ( object.isInstancedMesh ? object.count : 1 ) } // So this .count will thereby determine the number of instances displayed.
 
-	constructor(geometry :BufferGeometry, material :Material|Material[], maxCount :number) {
+	constructor(geometry :BufferGeometry, material :Material, maxCount :number) {
+		material.onBeforeCompile = function (shader) {
+			shader.vertexShader = `
+			  #ifdef USE_INSTANCING_MORPH
+			  #undef USE_INSTANCING_MORPH
+			  #endif
+			` + shader.vertexShader
+		}
 		super(geometry, material)
 
 		// console.log('---- Initing count', maxCount)
@@ -77,13 +84,15 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
 			patchedChunks = true
 
 			ShaderChunk.skinning_pars_vertex = /* glsl */ `
+		#ifdef USE_INSTANCING_MORPH
+			#undef USE_INSTANCING_MORPH // This is a hack to avoid errors starting with r159 
+		#endif
         #ifdef USE_SKINNING
 
           uniform mat4 bindMatrix;
           uniform mat4 bindMatrixInverse;
 
           uniform highp sampler2D boneTexture;
-          uniform int boneTextureSize;
 
           mat4 getBoneMatrix( const in float i ) {
 
@@ -97,25 +106,18 @@ export class InstancedSkinnedMesh extends SkinnedMesh {
               
           #else
 
-            float j = i * 4.0;
-            float x = mod( j, float( boneTextureSize ) );
-            float y = floor( j / float( boneTextureSize ) );
-
-            float dx = 1.0 / float( boneTextureSize );
-            float dy = 1.0 / float( boneTextureSize );
-
-            y = dy * ( y + 0.5 );
-
-            vec4 v1 = texture2D( boneTexture, vec2( dx * ( x + 0.5 ), y ) );
-            vec4 v2 = texture2D( boneTexture, vec2( dx * ( x + 1.5 ), y ) );
-            vec4 v3 = texture2D( boneTexture, vec2( dx * ( x + 2.5 ), y ) );
-            vec4 v4 = texture2D( boneTexture, vec2( dx * ( x + 3.5 ), y ) );
+			int size = textureSize( boneTexture, 0 ).x;
+			int j = int( i ) * 4;
+			int x = j % size;
+			int y = j / size;
+			vec4 v1 = texelFetch( boneTexture, ivec2( x, y ), 0 );
+			vec4 v2 = texelFetch( boneTexture, ivec2( x + 1, y ), 0 );
+			vec4 v3 = texelFetch( boneTexture, ivec2( x + 2, y ), 0 );
+			vec4 v4 = texelFetch( boneTexture, ivec2( x + 3, y ), 0 );
 
           #endif
 
-            mat4 bone = mat4( v1, v2, v3, v4 );
-
-            return bone;
+            return mat4( v1, v2, v3, v4 );
 
           }
 

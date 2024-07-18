@@ -375,16 +375,18 @@ export class RenderSys {
 					const timeOffset = instancedWobs.animTimeOffsets[i]
 					const animTime = (secondsElapsed +timeOffset) % duration
 
-					instancedWobs.animMixer.setTime(animTime)
-					instancedWobs.silly.skeleton.bones.forEach((b) => {
-						b.updateMatrixWorld()
-					})
+					if(instancedWobs.animMixer) { // Guard in case of disabling animations at ISM creation
+						instancedWobs.animMixer.setTime(animTime)
+						instancedWobs.silly.skeleton.bones.forEach((b) => {
+							b.updateMatrixWorld()
+						})
 
-					instancedWobs.silly.updateMatrix()
-					// instancedWobs.instancedMesh.updateMatrix()
-					// instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix) // not needed since I'm not translating etc it?
-					instancedWobs.instancedMesh.setBonesAt(i, instancedWobs.silly.skeleton)
-					// instancedWobs.instancedMesh.updateMatrix()
+						instancedWobs.silly.updateMatrix()
+						// instancedWobs.instancedMesh.updateMatrix()
+						// instancedWobs.instancedMesh.setMatrixAt(i, instancedWobs.silly.matrix) // not needed since I'm not translating etc it?
+						instancedWobs.instancedMesh.setBonesAt(i, instancedWobs.silly.skeleton)
+						// instancedWobs.instancedMesh.updateMatrix()
+					}
 				}
 
 				instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true
