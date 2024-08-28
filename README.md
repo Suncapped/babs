@@ -18,12 +18,12 @@ This codebase might not be useful as a library for making a different game, beca
 
 ## Install Nodejs
 
-Uses Node.js version 20.  [nvm](https://github.com/nvm-sh/nvm) can do this but I have been using [volta](https://github.com/volta-cli/volta).  Brief MacOS/Linux instructions:
+Uses Node.js version 22.  [nvm](https://github.com/nvm-sh/nvm) can do this but I have been using [volta](https://github.com/volta-cli/volta).  Brief MacOS/Linux instructions:
 
 ```console
 curl https://get.volta.sh | bash
 exit # Closes console.  Then open a new console and:
-volta install node@20
+volta install node@22
 ```
 
 ## Clone repo and run dev server

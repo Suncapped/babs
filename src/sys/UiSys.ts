@@ -552,7 +552,7 @@ export class UiSys {
 
 		const oldPos = selfRig?.position
 		if(this.babs.debugMode) {
-			const newLogText = `zone: ${selfRig?.zone.id} (${selfRig?.zone.x}, ${selfRig?.zone.z}), y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures} progs: ${this.babs.renderSys.renderer.info['programs']?.length} geoms: ${this.babs.renderSys.renderer.info.memory.geometries} draws: ${this.babs.renderSys.renderer.info.render['calls']} tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
+			const newLogText = `zone: ${selfRig?.zone.id} (${selfRig?.zone.x}, ${selfRig?.zone.z}), y: ${Math.floor(oldPos.y)}, in-zone xz: (${Math.floor(oldPos.x/4)}, ${Math.floor(oldPos.z/4)}) \n texs: ${this.babs.renderSys.renderer.info.memory.textures}, progs: ${this.babs.renderSys.renderer.info['programs']?.length}, geoms: ${this.babs.renderSys.renderer.info.memory.geometries}, draws: ${this.babs.renderSys.renderer.info.render['calls']}, tris: ${this.babs.renderSys.renderer.info.render.triangles.toLocaleString()} \n playerid: ${this.babs.idSelf} ents: ${this.babs.ents.size.toLocaleString()} wobs: ${Wob.totalArrivedWobs?.toLocaleString()} fps: ${this.babs.renderSys.fpsDetected}`
 			if(this.logText !== newLogText) {
 				this.logText = newLogText
 				window.document.getElementById('log').innerText = this.logText
