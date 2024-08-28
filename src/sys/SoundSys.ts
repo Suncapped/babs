@@ -64,7 +64,7 @@ export class SoundSys {
 
 			// Find from compcats ones which are Audible and play them
 			const audibleComps = this.babs.compcats.get(Audible.name) as Audible[]
-			audibleComps.forEach(async (audibleComp) => {
+			audibleComps?.forEach(async (audibleComp) => {
 				if(audibleComp.sharedCompAudible.soundContinuousLoop) {
 					audibleComp.playContinuous()
 				}
