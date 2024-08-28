@@ -18,12 +18,12 @@ This codebase might not be useful as a library for making a different game, beca
 
 ## Install Nodejs
 
-Uses Node.js version 22.  [nvm](https://github.com/nvm-sh/nvm) can do this but I have been using [volta](https://github.com/volta-cli/volta).  Brief MacOS/Linux instructions:
+Uses Node.js version 22 and [pnpm](https://pnpm.io/).  Brief MacOS/Linux instructions:
 
 ```console
-curl https://get.volta.sh | bash
+curl -fsSL https://get.pnpm.io/install.sh | sh -
 exit # Closes console.  Then open a new console and:
-volta install node@22
+pnpm env use --global 22
 ```
 
 ## Clone repo and run dev server
@@ -31,7 +31,7 @@ volta install node@22
 ```console
 git clone https://github.com/Suncapped/babs.git
 cd babs
-npm ci # Installs locked dependencies
-npm run playerdev # Runs the game client for local dev, with connections going to prod
+pnpm install # Installs dependencies
+pnpm run playerdev # Runs the game client for local dev, with connections going to prod
 ```
 Then your browser can open `http://localhost:3001/?fe_env=playerdev`; and you're playing on the central https://earth.suncapped.com server.  Welcome to First Earth!
