@@ -951,9 +951,9 @@ export class InputSys {
 
 						if (this.pickedObject?.pickedType === 'player') {
 							console.log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
-							const player = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
-							this.nickTargetId = player.id
-							this.chatboxSetContent(`${InputSys.NickPromptStart} ${player.nick || 'stranger'}: `)
+							const pickedPlayer = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
+							this.nickTargetId = pickedPlayer.id
+							this.chatboxSetContent(`${InputSys.NickPromptStart} ${pickedPlayer.nick || 'stranger'}: `)
 						
 						} 
 						else if (this.pickedObject?.pickedType === 'wob'){
@@ -1394,8 +1394,11 @@ export class InputSys {
 
 		// Voice
 		if(this.keyboard.space === PRESS) {
-			// Start recording?
+			// Okay, let's just be silly and jump!
+			this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
 
+			/* // Start recording?
+			
 			// Request access to the user's microphone:
 			if(!this.mediaRecorder) { // Note this is less throttled by this and more by not being able to press space while <<>> messages are up in chatbox.
 				(async () => {
@@ -1521,7 +1524,7 @@ export class InputSys {
 
 				})()
 			}
-
+			*/
 		}
 		if(this.keyboard.space === LIFT) {
 

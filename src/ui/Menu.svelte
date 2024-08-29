@@ -272,7 +272,7 @@
 			</li>
 			<li id="menuVrArea" style="display:none; margin-top:10px;"></li>
 			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
-			<li>&bull; Type to chat or hold space to talk.</li>
+			<li>&bull; Type to chat.</li>
 			<li>&bull; Double click someone to name.</li>
 			<li>&bull; Ctrl + j to keep journal open.</li>
 			<li style="text-align:right; margin-top:10px;">

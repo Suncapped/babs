@@ -64,7 +64,8 @@ export function objectFlipKeyValue(obj) {
 
 export const StringifyLandcover = objectFlipKeyValue(FE_LANDCOVERS)
 
-export enum UiTypes {
+// eslint-disable-next-line no-shadow 
+export enum UiTypes { // ^ I don't understand, it's not shadowing anything!
 	journal='journal',
 	container='container',
 	menu='menu',

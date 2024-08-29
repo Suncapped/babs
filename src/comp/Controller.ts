@@ -228,8 +228,8 @@ export class Controller extends Comp {
 
 				const oldZonesNear = exitZone?.getZonesAround(Zone.loadedZones, 1) || [] // You're not always exiting a zone (eg on initial load)
 				const newZonesNear = enterZone.getZonesAround(Zone.loadedZones, 1)
-				const removedZonesNearby = oldZonesNear.filter(zone => !newZonesNear.includes(zone))
-				const addedZonesNearby = newZonesNear.filter(zone => !oldZonesNear.includes(zone))
+				const removedZonesNearby = oldZonesNear.filter(zn => !newZonesNear.includes(zn))
+				const addedZonesNearby = newZonesNear.filter(zn => !oldZonesNear.includes(zn))
 
 				console.debug('Initiating Zoning', exitZone.id, '->', enterZone.id)
 
@@ -366,10 +366,11 @@ export class Controller extends Comp {
 	}
 
 	jump(height :number) {
-		console.log('jump!', this.groundDistance, this.velocity.y)
-		if(this.groundDistance < 10 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
+		// console.log('jump', this.groundDistance, this.hover, this.velocity.y)
+		if(this.groundDistance < 6 && this.velocity.y >= -10) { // Allow multi jump but not too high, and not while falling
+			// console.log('jumping!', this.groundDistance, this.hover, this.velocity.y, height)
 			this.velocity.y += height*(1000/200) *4 // $4ft, 200ms (5 times per second) // 4 made up to match *10 gravity...
-			this.groundDistance = this.groundDistance || 1 // Get off the ground at least
+			this.groundDistance = (this.groundDistance || 1) +this.hover // Get off the ground at least
 		}
 		// todo add this anim and get this state working?  also dance?
 		// if(this._stateMachine._currentState != 'jump') {
@@ -490,22 +491,25 @@ export class Controller extends Comp {
 		}
 
 		const isNoVelocity = Math.round(this.velocity.z) == 0 && Math.round(this.velocity.x) == 0
+		// console.log('isNoVelocity', isNoVelocity)
 		if(isNoVelocity) {
 			if(this._stateMachine._currentState.name != 'idle') {
 				this._stateMachine.setState('idle')
 			}
 		}
 
-		if(this.groundDistance == 0 || Math.round(this.groundDistance -this.hover) == 0) {
+		const zeroGroundDistance = this.groundDistance == 0
+		const zeroGroundDistanceWithHover = Math.abs(this.groundDistance -this.hover) < 0.1
+		if(zeroGroundDistance || zeroGroundDistanceWithHover) {
 			this.velocity.y = 0
 		} 
-		else {
-			const gravityFtS = 32 *10 // Why does it feel off without *10?
-
-			if(!this.selfWaitZoningExitZone) { // No gravity while walking between zones waiting for zonein
-				this.velocity.y -= gravityFtS*dt
-			}
+		// else {
+		// Always falling, for jump
+		const gravityFtS = 32 *5 // Why does it feel off at *1?
+		if(!this.selfWaitZoningExitZone) { // No gravity while walking between zones waiting for zonein
+			this.velocity.y -= gravityFtS*dt
 		}
+		// }
 
 		const forward = new Vector3(1, 1, 1)
 
@@ -534,8 +538,8 @@ export class Controller extends Comp {
 			const worldGroundHeight = this.playerRig.zone.engineHeightAt(yardCoord, normalizedPositionWithinTile)
 			
 			// Keep above ground
-			if(worldGroundHeight > this.playerRig.position.y || this.hover) {
-				this.groundDistance = 1
+			if(worldGroundHeight +this.hover > this.playerRig.position.y) {
+				this.groundDistance = 1 -this.hover
 				this.playerRig.position.setY(worldGroundHeight +this.hover)
 			}
 			
