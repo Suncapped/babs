@@ -273,7 +273,8 @@
 			<li id="menuVrArea" style="display:none; margin-top:10px;"></li>
 			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
 			<li>&bull; Type to chat.</li>
-			<li>&bull; Double click someone to name.</li>
+			<li>&bull; Click someone to name them.</li>
+			<li>&bull; Double click to follow.</li>
 			<li>&bull; Ctrl + j to keep journal open.</li>
 			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>

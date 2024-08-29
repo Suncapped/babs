@@ -9,40 +9,40 @@
 
 	// document.addEventListener('keydown', chatKeydown);
 
-	const sendChat = () => {
-		if(!chatbox.textContent) return
+	// const sendChat = () => {
+	// 	if(!chatbox.textContent) return
 
-		if(chatbox.textContent.startsWith('/')) { // Slash command
-			const command = chatbox.textContent.substring(1)
-			socketSend.set({
-				action: {
-					verb: 'commanded',
-					noun: command,
-				}
-			})
+	// 	if(chatbox.textContent.startsWith('/')) { // Slash command
+	// 		const command = chatbox.textContent.substring(1)
+	// 		socketSend.set({
+	// 			action: {
+	// 				verb: 'commanded',
+	// 				noun: command,
+	// 			}
+	// 		})
 
-		}
-		else if(chatbox.textContent.startsWith(InputSys.NickPromptStart)) { //Naming someone
-			const nickparts = chatbox.textContent.split(':')
-			nickparts.shift()
-			socketSend.set({
-				// savenick: {
-				// 	idplayer: $nickTargetId,
-				// 	nick: nickparts.join(':'),
-				// },
-			})
-		}
-		else { // Regular chat
-			if(chatbox.textContent !== 'w') {
-				socketSend.set({
-					chat: {
-						text: chatbox.textContent
-					},
-				})
-			}
-		}
-		chatbox.textContent = ''
-	}
+	// 	}
+	// 	else if(chatbox.textContent.startsWith(InputSys.NickPromptStart)) { //Naming someone
+	// 		const nickparts = chatbox.textContent.split(':')
+	// 		nickparts.shift()
+	// 		socketSend.set({
+	// 			// savenick: {
+	// 			// 	idplayer: $nickTargetId,
+	// 			// 	nick: nickparts.join(':'),
+	// 			// },
+	// 		})
+	// 	}
+	// 	else { // Regular chat
+	// 		if(chatbox.textContent !== 'w') {
+	// 			socketSend.set({
+	// 				chat: {
+	// 					text: chatbox.textContent
+	// 				},
+	// 			})
+	// 		}
+	// 	}
+	// 	chatbox.textContent = ''
+	// }
 	function chatKeydown(ev) {
 		// console.log('chatKeydown', $rightMouseDown, ev)
 

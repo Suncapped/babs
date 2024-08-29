@@ -727,6 +727,20 @@ export class InputSys {
 							} // Double click
 							else if (Date.now() - this.mouse.ldouble <= this.doubleClickMs) { // Double click within time
 								this.mouse.ldouble = 0
+
+								console.log('Double click on ', this.pickedObject)
+
+								if (this.pickedObject?.pickedType === 'player') {
+									console.log('player double click', this.pickedObject, this.pickedObject.parent.parent)
+									const pickedPlayer = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
+									// this.nickTargetId = pickedPlayer.id
+									// Double click hack; remove naming text
+									if(this.chatbox.textContent.startsWith(InputSys.NickPromptStart)){
+										this.chatboxSetContent('')
+									}
+									
+									// todo follow them
+								} 
 								
 							}
 						}
