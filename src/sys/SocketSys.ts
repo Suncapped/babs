@@ -16,7 +16,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { Flame } from '@/comp/Flame'
@@ -72,10 +72,11 @@ export class SocketSys {
 		// 		// Cookies.remove('session') // Well this for some reason deletes session on earth.suncapped.com...
 		// 		// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
 		// 	}
-			
-		this.send({
-			auth: existingSession
-		})
+
+		const existingSessionAsSendAuth = {
+			auth: existingSession 
+		} as SendAuth // Force string to be a SendAuth
+		this.send(existingSessionAsSendAuth)
 
 		this.ws.onmessage = (event) => {
 			// console.log('finishSocketSetup socket rec:', event.data)
@@ -127,13 +128,13 @@ export class SocketSys {
 			this.babs.uiSys.offerReconnect('Server connection closed.')
 		}
 
-		socketSend.subscribe(data => { // Used by eg Overlay.svelte 
+		socketSend.subscribe(data => { // Used by eg Overlay.svelte, for like savecolor, savereason, savedebugmode, commanded, chat, saveui
 			// console.log('got socketSend.set', data)
-			this.send(data)
+			this.send(data as any) // Just letting it happen untyped :p
 		})
 	}
 
-	enter(email, pass) {
+	enter(email :string, pass :string) {
 		this.send({
 			enter: {
 				email,
@@ -145,7 +146,8 @@ export class SocketSys {
 
 	async send(json :BabsSendable) { // todo add :Sendable and set up client sendables
 		if(Object.keys(json).length === 0) return
-		if(!json.ping && !json.move) console.debug('Send:', json)
+		const isPingOrMove = json.hasOwnProperty('ping') || json.hasOwnProperty('move')
+		if(!isPingOrMove) console.debug('Send:', json) // Log everything but pings and moves
 		if(this.ws.readyState === this.ws.OPEN) {
 			this.ws.send(JSON.stringify(json))
 		}

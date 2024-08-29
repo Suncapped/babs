@@ -187,16 +187,11 @@ export class InstancedWobs {
 			let clonedMesh :SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
 			clonedScene.traverse(child => objectIsSomeKindOfMesh(child) && child instanceof SkinnedMesh ? clonedMesh = child : null)
 
-			newInstancedMesh = new InstancedSkinnedMesh(clonedMesh.geometry, clonedMesh.material, this.maxCount)
+			const singleMaterial = Array.isArray(clonedMesh.material) ? clonedMesh[0].material : clonedMesh.material
+			newInstancedMesh = new InstancedSkinnedMesh(clonedMesh.geometry, singleMaterial, this.maxCount)
 			// newInstancedMesh.copy(this.instancedMesh)
 			newInstancedMesh.bind(clonedMesh.skeleton, clonedMesh.bindMatrix)
 
-			// let transferMatrix = new Matrix4()
-			// for(let i=0; i<this.loadedCount; i++) {
-			// 	newInstancedMesh.getBonesAt(i, transferMatrix)
-			// 	newInstancedMesh.setBonesAt(i, transferMatrix)
-			// }
-			
 			this.silly = clonedMesh
 			this.animMixer = new AnimationMixer(clonedScene)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()

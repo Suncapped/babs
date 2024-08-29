@@ -32,11 +32,11 @@ class FiniteStateMachine {
 		this._currentState = null
 	}
 
-	addState(name, type :State) {
+	addState(name: string, type: new (parent: FiniteStateMachine) => State) {
 		this._states[name] = type
 	}
 
-	setState(name) {
+	setState(name: string) {
 		const prevState = this._currentState
 
 		if (prevState) {

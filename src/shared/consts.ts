@@ -243,7 +243,7 @@ export type SendAskTarget = {
 	asktarget :{
 		sourceWobId? :WobId,
 	},
-	/* This comes back like:
+	/* This comes back like: (ie SendUsed)
 	action: {
 		verb: 'used',
 		noun: this.askTargetSourceWob?.id(),
@@ -276,6 +276,14 @@ export type ProximaSendable = SendLoad|SendVisitor|SendSession
 
 // Babs Sendables
 
+export type SendEnter = {
+	enter :{
+		email :string,
+		pass :string,
+		session :string,
+	}
+}
+
 export type SendMoved = {
 	action :{
 		verb :'moved',
@@ -300,7 +308,7 @@ export type SendMerged = {
 }
 
 export type SendMove = {
-	move: {
+	move :{
 		movestate :number;
 		a :number;
 		b :number;
@@ -308,7 +316,38 @@ export type SendMove = {
 	}
 }
 
-export type BabsSendable = SendMoved|SendMerged|SendMove
+export type SendPing = {
+	ping :string,
+}
+
+export type SendChat = {
+	chat :{
+		text :string,
+	}
+}
+export type SendSaveNick = {
+	savenick :{
+		idplayer :number,
+		nick :string,
+	}
+}
+export type SendSaveMouseDevice = {
+	savemousedevice :string,
+}
+
+export type SendUsed = {
+	action :{
+		verb :'used',
+		noun :WobId|'ground',
+		data? :{
+			target? :WobId,
+			point? :{x :number, z :number},
+			idzone? :number,
+		},
+	}
+}
+
+export type BabsSendable = SendMoved|SendMerged|SendMove|SendPing|SendEnter|SendAuth|SendChat|SendSaveNick|SendSaveMouseDevice|SendUsed
 
 
 export function toHexString(byteArray) {

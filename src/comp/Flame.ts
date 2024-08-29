@@ -396,7 +396,7 @@ class ThreeFire extends Mesh {
 
 		
 		super(new BoxGeometry( 1.0, 1.0, 1.0 ), fireMaterial) //THREE.Mesh.call( this, geometry, material);
-		super.material
+		// super.material
 
 		if(Array.isArray(this.material)) {
 			console.warn('Error: Array material')

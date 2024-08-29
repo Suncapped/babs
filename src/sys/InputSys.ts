@@ -1891,7 +1891,7 @@ export class InputSys {
 		}
 	}
 
-	setMouseDevice(newDevice) {
+	setMouseDevice(newDevice :string) {
 
 		if (this.mouse.device === newDevice) return // Only detect new device if device is changing
 

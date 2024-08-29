@@ -24,7 +24,7 @@
 		handle: '#Journal > .handle',
 		bounds: 'parent',
 		axis: 'none', // Disable drag
-	}
+	} 
 	console.debug('init, options, ui:', options, ui)
 
 	let dragDistance = 0
