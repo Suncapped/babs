@@ -1064,14 +1064,15 @@ export class InputSys {
 				}
 			}
 
-			// if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') {
-			// 	if (ev.deltaY < 0) {
-			// 		this.runmode = true
-			// 	}
-			// 	else if (ev.deltaY > 0) {
-			// 		this.runmode = false
-			// 	}
-			// }
+			// Wheel swaps between run and walk
+			if (this.mouse.device === 'mouse' || this.mouse.device === 'undetermined') {
+				if (ev.deltaY < 0) {
+					this.runmode = true
+				}
+				else if (ev.deltaY > 0) {
+					this.runmode = false
+				}
+			}
 
 		}, {passive: false})
 
@@ -1208,19 +1209,19 @@ export class InputSys {
 		if (!this.topMenuVisibleLocal) {
 			// Swipe up progresses thorugh: walk -> run -> jump.  Down does the reverse
 			// Tested on Mac touchpads; not sure how it will do on PC
-			// if (this.mouse.zoom > 40) {
-			// 	this.mouse.zoom = -this.mouse.zoom / 4
-			// 	if (!this.runmode) {
-			// 		this.runmode = true
-			// 	}
-			// 	else { // If ready in runmode, jump!
-			// 		this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
-			// 	}
-			// }
-			// else if (this.mouse.zoom < -40) {
-			// 	this.mouse.zoom = -this.mouse.zoom / 4
-			// 	this.runmode = false
-			// }
+			if (this.mouse.zoom > 40) {
+				this.mouse.zoom = -this.mouse.zoom / 4
+				if (!this.runmode) {
+					this.runmode = true
+				}
+				else { // If ready in runmode, jump!
+					this.playerSelf.controller.jump(Controller.JUMP_HEIGHT)
+				}
+			}
+			else if (this.mouse.zoom < -40) {
+				this.mouse.zoom = -this.mouse.zoom / 4
+				this.runmode = false
+			}
 
 			if (this.mouse.right) {
 				const mouseSensitivityPercent = 30 // hmm isn't this the same as just changing this.mouseAccumThreshold?
@@ -1900,7 +1901,7 @@ export class InputSys {
 
 		// Hax, show more screen on mobile devices when they first load
 		if (window.innerWidth < 800) { // Small screen, like a phone, smaller than ipad
-			// this.babs.uiSys.svJournal.toggleFurl(false) // Done at default
+			// this.babs.uiSys.svJournal.toggleFurl() // Done at default
 			// document.getElementById('Menu').style.display = 'none'
 			document.getElementById('topleft').style.display = 'none' // todo ui, make this more dynamic or something
 			document.getElementById('topright').style.paddingBottom = '12px'

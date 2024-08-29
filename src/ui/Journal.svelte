@@ -72,12 +72,11 @@
 		}, 1)
 	}
 
-	export function toggleFurl(force = undefined) {
-		const beingForced = force !== undefined
-		if(!beingForced && dragDistance > DRAG_THRESHOLD) {
+	export function toggleFurl() {
+		if(dragDistance > DRAG_THRESHOLD) {
 			return // Don't toggle if they were just dragging
 		}
-		ui.unfurled = beingForced ? force : !ui.unfurled
+		ui.unfurled = !ui.unfurled
 		socketSend.set({
 			'saveui': ui,
 		})
