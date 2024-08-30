@@ -967,7 +967,10 @@ export class InputSys {
 							console.log('playeruse', this.pickedObject, this.pickedObject.parent.parent)
 							const pickedPlayer = this.babs.ents.get((this.pickedObject.parent.parent as FeObject3D).idplayer) as Player
 							this.nickTargetId = pickedPlayer.id
-							this.chatboxSetContent(`${InputSys.NickPromptStart} ${pickedPlayer.nick || 'stranger'}: `)
+
+							const isSelf = pickedPlayer.id === this.babs.idSelf // Don't name self
+							const content = isSelf ? '' : `${InputSys.NickPromptStart} ${pickedPlayer.nick || 'stranger'}: `
+							this.chatboxSetContent(content)
 						
 						} 
 						else if (this.pickedObject?.pickedType === 'wob'){
@@ -1153,8 +1156,9 @@ export class InputSys {
 				// Long hover player, get their name or nick
 				const pl = this.pickedObject.parent.parent as FeObject3D
 				const player = this.babs.ents.get(pl.idplayer) as Player
-				// Display name about head when you hover a player or yourself
-				this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
+				// Display name about head when you hover a player (not yourself)
+				const isSelf = player.id === this.babs.idSelf
+				if(!isSelf) this.babs.uiSys.aboveHeadChat(player.id, player.nickWrapped(), null, player.colorHex)
 			}
 			else if (this.pickedObject.pickedType === 'wob') {
 				let debugStuff = ''

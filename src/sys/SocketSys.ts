@@ -471,7 +471,9 @@ export class SocketSys {
 
 			if(chattyPlayer && chattyPlayer.colorHex !== said.color) {
 				chattyPlayer.colorHex = said.color // Update their color
-				chattyPlayer.nickSetAndDisplay(chattyPlayer.nick)
+				const isSelf = chattyPlayer.id === this.babs.idSelf // Don't name self
+				const nick = isSelf ? 'You' : chattyPlayer.nick
+				chattyPlayer.nickSetAndDisplay(nick)
 				// ^ In future, could send a color change event, but with text chat isn't too bad.
 			}
 			
@@ -486,15 +488,17 @@ export class SocketSys {
 				if(!player) continue // If no player, skip display stuff.  
 				// Note, that can happen when 'load' is still awaiting rig download etc, so socketsys moved on to nicklist.
 
-				player?.nickSetAndDisplay(pair.nick)
+				const isSelf = player?.id === this.babs.idSelf
+				const nick = isSelf ? 'You' : pair.nick
+				player?.nickSetAndDisplay(nick)
 				
-				// Also...I don't understand why this part is working to fill in menu name, if player is false?
-				if(player?.id === this.babs.idSelf) {
-					menuSelfData.set({
-						...svelteGet(menuSelfData),
-						nick: pair.nick,
-					})
-				}
+				// Also...I don't understand why this part is working to fill in menu name, if player is false? // Later: Ohh, race condition? Anyway, removed name in menu.
+				// if(player?.id === this.babs.idSelf) {
+				// 	menuSelfData.set({
+				// 		...svelteGet(menuSelfData),
+				// 		nick: pair.nick,
+				// 	})
+				// }
 			}
 		}
 		else if('wobsupdate' in payload) {

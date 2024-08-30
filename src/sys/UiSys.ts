@@ -339,8 +339,9 @@ export class UiSys {
 			player.controller.playerRig.add(ttext)
 
 			// Hax, make name stay up
-			const isPlayerNickBeingSet = player.nickWrapped() === words.content
-			if(isPlayerNickBeingSet && player.id !== this.babs.idSelf) { // Do not pin self name
+			const isThisCallShowingPlayerNick = player.nickWrapped() === words.content
+			const isSelf = player.id === this.babs.idSelf
+			if(isThisCallShowingPlayerNick && !isSelf) { // Don't name self
 				this.expiringText
 					.filter(t => t.parent.idplayer === player.id && t.expires === Infinity)
 					.forEach(t=>t.expires=Date.now()) // Remove any old stickies on this player

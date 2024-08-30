@@ -66,7 +66,7 @@ export class Player extends Ent {
 
 		plr.controller = await Controller.Create(arrival, plr.babs, playerRig)
 
-		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id))
+		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id)) // Note this pass is undefined, see comment in func
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
