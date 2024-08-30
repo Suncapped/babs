@@ -472,8 +472,7 @@ export class SocketSys {
 			if(chattyPlayer && chattyPlayer.colorHex !== said.color) {
 				chattyPlayer.colorHex = said.color // Update their color
 				const isSelf = chattyPlayer.id === this.babs.idSelf // Don't name self
-				const nick = isSelf ? 'You' : chattyPlayer.nick
-				chattyPlayer.nickSetAndDisplay(nick)
+				if(!isSelf) chattyPlayer.nickSetAndDisplay(chattyPlayer.nick)
 				// ^ In future, could send a color change event, but with text chat isn't too bad.
 			}
 			

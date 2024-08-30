@@ -66,7 +66,14 @@ export class Player extends Ent {
 
 		plr.controller = await Controller.Create(arrival, plr.babs, playerRig)
 
-		plr.nickSetAndDisplay(babs.uiSys.nicklist.get(arrival.id)) // Note this pass is undefined, see comment in func
+		const kinNick = babs.uiSys.nicklist.get(arrival.id)
+		const registeredNick = arrival.visitor ? null : 'Stranger'
+		const anonNick = 'animal spirit'
+
+		const nick = kinNick || registeredNick || anonNick
+		// For people with no nick, this will be undefined.  Also for self.
+		// For those with a nick, it is set at this point.
+		if(!plr.self) plr.nickSetAndDisplay(nick) // Don't name self
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -91,7 +98,7 @@ export class Player extends Ent {
 
 	nickSetAndDisplay(newNick :string) {
 		if(!newNick) {
-			// console.log('nickSetAndDisplay canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first.
+			// console.log('nickSetAndDisplay canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first. // To self, I think this means, not so much others.
 			return
 		}
 		this.nick = newNick
