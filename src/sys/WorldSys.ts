@@ -54,6 +54,7 @@ import { DateTime } from 'luxon'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 
 import { GUI } from 'lil-gui'
+import { Flame } from '@/comp/Flame'
 
 export class WorldSys {
 
@@ -664,6 +665,40 @@ export class WorldSys {
 		}
 
 		// this.csm?.update()
+
+		// Update smoke
+		if(Flame.smokePuffIm) {
+			// For each smokePuffIm instance, make it rise on y
+			// Also make it get larger over time
+			const tempMatrix = new Matrix4()
+			const tempPosition = new Vector3()
+			for(let i=0; i<Flame.smokePuffIm.count; i++) {
+				Flame.smokePuffIm.getMatrixAt(i, tempMatrix)
+				tempPosition.setFromMatrixPosition(tempMatrix)
+
+				// Make it rise
+				tempPosition.y += Flame.SMOKE_SPEED *dt
+
+				// Make it get larger
+				const scale = tempMatrix.getMaxScaleOnAxis()
+				if (scale < Flame.SMOKE_MAX_SCALE) {
+					// const growthFactor = 1 + (1 - scale / Flame.SMOKE_MAX_SCALE) * 0.003
+					// tempMatrix.scale(new Vector3(growthFactor, growthFactor, growthFactor))
+					tempMatrix.scale(new Vector3().setScalar(Flame.SMOKE_SCALEUP_RATE))
+				}
+
+				// If height is past max height, reset it
+				if(tempPosition.y > Flame.SMOKE_MAX_HEIGHT) {
+					tempPosition.y = Flame.SMOKE_STARTING_EXTRAHEIGHT // Reset y
+					tempMatrix.makeScale(1,1,1) // Reset scale
+				}
+
+				tempMatrix.setPosition(tempPosition)
+				Flame.smokePuffIm.setMatrixAt(i, tempMatrix)
+				Flame.smokePuffIm.instanceMatrix.needsUpdate = true
+			}
+			
+		}
 
 		this.updateCount++
 	}

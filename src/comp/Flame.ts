@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 
-import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, Object3D, PointLight, Quaternion, ShaderMaterial, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, IcosahedronGeometry, InstancedBufferAttribute, InstancedMesh, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, MeshLambertMaterial, Object3D, PointLight, Quaternion, ShaderMaterial, StreamDrawUsage, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -15,26 +15,29 @@ import { YardCoord } from './Coord'
 import { Wob } from '@/ent/Wob'
 import type { WobId, SharedWob } from '@/shared/SharedWob'
 import { CameraSys } from '@/sys/CameraSys'
+import type { Player } from '@/ent/Player'
 
 export class Flame extends Comp {
-
-	static player
+	static player :Player
 
 	static lightPool = []
 	static LIGHT_POOL_MAX
-
 	static wantsLight = []
+	static PointLightIntensity = 400
+	static PointLightDistance = 100
 
-	constructor(wob :SharedWob, babs :Babs) {
-		super(wob.id(), Flame, babs)
-	}
+	static SMOKE_STARTING_SIZE = 1
+	static SMOKE_STARTING_EXTRAHEIGHT = 3
+	static SMOKE_PUFFS_PER_LIGHT = 40
+	static smokePuffIm :InstancedMesh
+	static SMOKE_MAX_HEIGHT = 1000
+	static SMOKE_MAX_SCALE = 120
+	static SMOKE_SPEED = 12
+	static SMOKE_SCALEUP_RATE = 1.001
 
-	fire :ThreeFire
 
-	points
-	line
-
-	static settings = {
+	static fireTex :Texture
+	static flameSettings = {
 		speed       : 5.0,//1
 		magnitude   : 1,//1.3,
 		lacunarity  : 2.0,
@@ -43,34 +46,101 @@ export class Flame extends Comp {
 		noiseScaleY : 1.5,//2.0,
 		noiseScaleZ : 1.5,//1.0,
 	}
+	fire :ThreeFire
 
-	static PointLightIntensity = 400
-	static PointLightDistance = 100
+	constructor(wob :SharedWob, babs :Babs) {
+		super(wob.id(), Flame, babs)
 
-	static fireTex :Texture
+		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
+
+		// Set up smoke trail singleton
+		if(!Flame.smokePuffIm) {
+
+			const geometry = new IcosahedronGeometry(Flame.SMOKE_STARTING_SIZE, 1)
+			const material = new MeshLambertMaterial({})
+			const smokePuffTotal = Flame.LIGHT_POOL_MAX * Flame.SMOKE_PUFFS_PER_LIGHT
+			Flame.smokePuffIm = new InstancedMesh(geometry, material, smokePuffTotal)
+			Flame.smokePuffIm.name = 'smoke'
+			Flame.smokePuffIm.instanceMatrix.setUsage(StreamDrawUsage)
+			babs.group.add(Flame.smokePuffIm)
+
+			const smokePuffColors = []
+			for (let i = 0; i < smokePuffTotal; i++) {
+				smokePuffColors.push(0.5, 0.5, 0.5)
+			}
+			const bufferAttr = new InstancedBufferAttribute(new Float32Array(smokePuffColors), 3)
+			bufferAttr.needsUpdate = true
+			Flame.smokePuffIm.instanceColor = bufferAttr
+
+			let isFirstRun = true
+			const repositionSmokeTrails = () => {
+				const lightPositions = Flame.lightPool.map(light => {
+					return light.position
+				})
+				for (let i = 0; i < lightPositions.length; i++) {
+					const lightPos = lightPositions[i]
+					for (let j = 0; j < Flame.SMOKE_PUFFS_PER_LIGHT; j++) {
+						const index = i * Flame.SMOKE_PUFFS_PER_LIGHT + j
+						const tempMatrix = new Matrix4()
+						Flame.smokePuffIm.getMatrixAt(index, tempMatrix)
+
+						const tempScale = new Vector3()
+						const tempPosition = new Vector3()
+						tempMatrix.decompose(tempPosition, new Quaternion(), tempScale)
+
+						let extraHeight = 0
+						if(isFirstRun) { 
+							// On first run, distribute the y positions across the range based on j
+							extraHeight = j * Flame.SMOKE_MAX_HEIGHT / Flame.SMOKE_PUFFS_PER_LIGHT
+						}
+
+						tempPosition.set(lightPos.x, tempPosition.y, lightPos.z) // Keep only y
+						tempPosition.y = Math.max(tempPosition.y, lightPos.y + Flame.SMOKE_STARTING_EXTRAHEIGHT) +extraHeight // Start above light
+						
+						const newMatrix = new Matrix4()
+						newMatrix.compose(tempPosition, new Quaternion(), tempScale)
+						Flame.smokePuffIm.setMatrixAt(index, newMatrix)
+					}
+				}
+
+				isFirstRun = false
+
+				// On first run, distribute 
+
+				Flame.smokePuffIm.instanceMatrix.needsUpdate = true
+
+				// Flame.smokePuffIm.geometry.computeBoundingBox()
+				// Flame.smokePuffIm.geometry.computeBoundingSphere()
+				Flame.smokePuffIm.frustumCulled = false
+
+			}
+
+			setInterval(repositionSmokeTrails, 1000)
+		}
+	
+
+	}
+
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
 		// console.log('Flame.Create, right before wantslight.push', wob.name)
 		const com = new Flame(wob, babs)
 
 		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
 		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
-
 		com.fire = new ThreeFire(Flame.fireTex)
-		com.fire.material.uniforms.magnitude.value = Flame.settings.magnitude
-		com.fire.material.uniforms.lacunarity.value = Flame.settings.lacunarity
-		com.fire.material.uniforms.gain.value = Flame.settings.gain
+		com.fire.material.uniforms.magnitude.value = Flame.flameSettings.magnitude
+		com.fire.material.uniforms.lacunarity.value = Flame.flameSettings.lacunarity
+		com.fire.material.uniforms.gain.value = Flame.flameSettings.gain
 		com.fire.material.uniforms.noiseScale.value = new Vector4(
-			Flame.settings.noiseScaleX,
-			Flame.settings.noiseScaleY,
-			Flame.settings.noiseScaleZ,
+			Flame.flameSettings.noiseScaleX,
+			Flame.flameSettings.noiseScaleY,
+			Flame.flameSettings.noiseScaleZ,
 			0.3
 		)
 
 		// Add a glow of light
 		// console.log('Flame.wantsLight.push', com.fire.uuid)
 		Flame.wantsLight.push(com.fire) // Must come before Flame.lightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
-
-		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
 		// Init static singletons
 		// console.log('Flame.Create', Flame.lightPool.length, Flame.LIGHT_POOL_MAX)
 		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
@@ -82,27 +152,36 @@ export class Flame extends Comp {
 			Flame.lightPool.push(pointLight)
 			babs.group.add(pointLight)
 		}
-		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf)
+		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf) as Player // This sets player so that moveThingsToNearPlayer() can move things to near the player.
 
 		com.fire.name = 'flame'
 		babs.group.add(com.fire)
-
 		com.fire.scale.set(scale,scale*1.33,scale)
 
 		const yardCoord = YardCoord.Create(wob)
-
-		// const rayPos = zone.rayHeightAt(yardCoord)
 		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
-		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 
 		com.fire.position.setY(engPositionVector.y +yup)
 		com.fire.position.setX(engPositionVector.x)
 		com.fire.position.setZ(engPositionVector.z)
 
+		// Where there's smoke, there's fire
+		// Add a smoke trail via InstancedMesh
+		// Pools like lightPool, but for smoke
+		// And the pool consists of tracking the positions
+		// Then in moveThings, the InstancedMesh positions reflect the lightpool positions (nearest Flames)
+		// Or maybe we can take out that middle pool step and just do it in the IM?  No, I like the pool.
+		// But I won't be pooling PointLight, so what will I pool?  Just some Vector3s?
+
+
+
 		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
 
 		return com
 	}
+
+	// I mean, it's safe to say there will always be fires.  So maybe I should just one-time instantiate the smoke IM.
+	
 
 
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
@@ -140,7 +219,7 @@ export class Flame extends Comp {
 	}
 
 	update(dt) {
-		this.fire?.update(dt *Flame.settings.speed)
+		this.fire?.update(dt *Flame.flameSettings.speed)
 	}
 
 }
@@ -414,7 +493,7 @@ class ThreeFire extends Mesh {
 	}
 
 	update(dt) {
-		const time = performance.now() /1000 *Flame.settings.speed
+		const time = performance.now() /1000 *Flame.flameSettings.speed
 		let invModelMatrix = this.material.uniforms.invModelMatrix.value
 
 		// this.updateMatrix()

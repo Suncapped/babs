@@ -199,6 +199,8 @@ export class Wob extends SharedWob {
 						scale = 2
 						yup = 1.2
 					}
+
+					console.log('Adding flame', wob.name, scale, yup)
 		
 					// Add new flame
 					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
