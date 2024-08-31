@@ -68,7 +68,7 @@ export class Flame extends Comp {
 
 		// Add a glow of light
 		// console.log('Flame.wantsLight.push', com.fire.uuid)
-		Flame.wantsLight.push(com.fire) // Must come before Flame.lightPool.push, since moveLightsToNearPlayer() shrinks one to the other.
+		Flame.wantsLight.push(com.fire) // Must come before Flame.lightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
 
 		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
 		// Init static singletons
@@ -96,10 +96,10 @@ export class Flame extends Comp {
 		// engPositionVector.add(new Vector3(-babs.worldSys.shiftiness.x, 0, -babs.worldSys.shiftiness.z))
 
 		com.fire.position.setY(engPositionVector.y +yup)
-		com.fire.position.setX(engPositionVector.x)// +1.96) // 1.96 because torch was slightly offcenter :p  
-		com.fire.position.setZ(engPositionVector.z)// +2)
+		com.fire.position.setX(engPositionVector.x)
+		com.fire.position.setZ(engPositionVector.z)
 
-		babs.renderSys.moveLightsToNearPlayer() // Move on creation so it makes light there fast :)
+		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
 
 		return com
 	}
@@ -119,10 +119,7 @@ export class Flame extends Comp {
 				&& compWobId.blueprint_id === deletingWobId.blueprint_id
 		})
 		if(flame) {
-			const oldlen = Flame.wantsLight.length
-			// console.debug('flame to remove', flame, Flame.wantsLight.length)
 			Flame.wantsLight = Flame.wantsLight.filter(f => {
-				// console.debug('fl', f.uuid, flame.fire.uuid)
 				return f.uuid !== flame.fire.uuid
 			})
 			babs.group.remove(flame.fire)

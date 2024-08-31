@@ -128,7 +128,7 @@ export class RenderSys {
 		})
 
 		setInterval(() => {
-			this.moveLightsToNearPlayer()
+			this.moveThingsToNearPlayer()
 			
 			const xrSession = (this.renderer instanceof WebGLRenderer) && this.renderer.xr.getSession()
 			const isVrSessionActivated = !!xrSession
@@ -512,7 +512,7 @@ export class RenderSys {
 		// }
 	}
 
-	moveLightsToNearPlayer() {
+	moveThingsToNearPlayer() {
 		const playerPos = Flame.player?.controller?.playerRig?.position
 		if(playerPos) {
 			const nearestWants = Flame.wantsLight.sort((a, b) => {

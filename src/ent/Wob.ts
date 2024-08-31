@@ -184,7 +184,7 @@ export class Wob extends SharedWob {
 				}
 
 				if(!alreadyExistsAtSameSpot &&
-					(wob.name === 'campfire' || wob.name === 'torch')
+					(wob.name === 'campfire' || wob.name === 'torch' || wob.name === 'brushfire')
 				) {
 					let scale, yup
 					if(wob.name === 'campfire') {
@@ -194,6 +194,10 @@ export class Wob extends SharedWob {
 					else if(wob.name === 'torch') {
 						scale = 1.1
 						yup = 3.5
+					}
+					else if(wob.name === 'brushfire') {
+						scale = 2
+						yup = 1.2
 					}
 		
 					// Add new flame
