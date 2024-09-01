@@ -151,9 +151,9 @@ export class SharedZone {
 		let locidsOfBlueprintsNotFound = {}
 
 		for(let i=0; i<locations.length; i+=4){
-			const left = (locations[i+0] << 8)
-			const right = locations[i+1]
-			const locidrot = left +right
+			const left = ((locations[i+0] & 0xFF) << 8) >>> 8
+			const right = locations[i+1] & 0xFF
+			const locidrot = (left << 8) + right
 			const x = locations[i+2]
 			const z = locations[i+3]
 			const locid = locidrot >>> 4
@@ -209,9 +209,9 @@ export class SharedZone {
 		const locations = this.getLocationsFromGrid()
 		let fwobs :SharedWob[] = []
 		for(let i=0; i<locations.length; i+=4){
-			const left = (locations[i+0] << 8)
-			const right = locations[i+1]
-			const locidrot = left +right
+			const left = ((locations[i+0] & 0xFF) << 8) >>> 8
+			const right = locations[i+1] & 0xFF
+			const locidrot = (left << 8) + right
 			const x = locations[i+2]
 			const z = locations[i+3]
 			const locid = locidrot >>> 4

@@ -55,22 +55,16 @@ export class Wob extends SharedWob {
 		// const playerZone = playerSelf.controller.playerRig.zone
 		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
 
-		for(const wob of arrivalWobs) {
-			// if(wob.blueprint_id == 'campfire') {
-			// 	wob.blueprint_id = 'feather grass'
-			// 	wob.name = 'feather grass'
-			// }
-			// // if(wob.blueprint_id != 'campfire') {
-			// 	wob.blueprint_id = 'feather grass'
-			// 	wob.name = 'feather grass'
-			// // }
 
+		for(const wob of arrivalWobs) {
 			if(asFarWobs) {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
 			}
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 		}
+
+		// console.log('nameCounts', [...nameCounts.entries()].sort((a, b) => a[0].localeCompare(b[0])))
 
 		const wobsToLoad = arrivalWobs.map(w=>w.name)
 		console.debug('meshesToLoad', nameCounts)
@@ -183,24 +177,27 @@ export class Wob extends SharedWob {
 					babs.uiSys.wobSaid(wob.name, wob)
 				}
 
+				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
+				const bp = zone.locidToBlueprint[wob.locid]
+				console.log('wob to bp', wob, bp.blueprint_id)
 				if(!alreadyExistsAtSameSpot &&
-					(wob.name === 'campfire' || wob.name === 'torch' || wob.name === 'brushfire')
+					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
 				) {
 					let scale, yup
-					if(wob.name === 'campfire') {
+					if(bp.blueprint_id === 'campfire') {
 						scale = 3
 						yup = 1.8
 					}
-					else if(wob.name === 'torch') {
+					else if(bp.blueprint_id === 'torch') {
 						scale = 1.1
 						yup = 3.5
 					}
-					else if(wob.name === 'brushfire') {
+					else if(bp.blueprint_id === 'brushfire') {
 						scale = 2
 						yup = 1.2
 					}
 
-					console.log('Adding flame', wob.name, scale, yup)
+					// console.log('Adding flame:', bp.blueprint_id, scale, yup)
 		
 					// Add new flame
 					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
