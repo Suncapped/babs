@@ -108,7 +108,7 @@ export class Audible extends Comp {
 	}
 	
 	static async Create(wob :SharedWob, babs :Babs, sharedCompAudible :SharedCompAudible) {
-		// console.log('Flame.Create, right before WantsLight.push', wob.name)
+		// console.log('Flame.Create, right before FlameFires.push', wob.name)
 		const com = new Audible(wob, babs)
 		com.sharedCompAudible = sharedCompAudible
 

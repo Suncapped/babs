@@ -193,14 +193,14 @@ export class Wob extends SharedWob {
 						yup = 3.5
 					}
 					else if(bp.blueprint_id === 'brushfire') {
-						scale = 2
-						yup = 1.2
+						scale = 1
+						yup = 0.8
 					}
 
 					console.log('Adding flame:', bp.blueprint_id, scale, yup)
 		
 					// Add new flame
-					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)
+					const flameComp = Flame.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms)
 				}
 
 				// Add audio, if any

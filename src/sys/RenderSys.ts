@@ -515,22 +515,22 @@ export class RenderSys {
 	moveThingsToNearPlayer() {
 		const playerPos = Flame.player?.controller?.playerRig?.position
 		if(playerPos) {
-			const nearestWants = Flame.WantsLight.sort((a, b) => {
+			const nearestFlames = Flame.FlameFires.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
 
 			// If there's more lights than wants, remove the extras
-			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestWants.length', nearestWants.length)
-			if(Flame.LightPool.length > nearestWants.length) {
-				for(let i=nearestWants.length; i<Flame.LightPool.length; i++) {
+			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestFlames.length', nearestFlames.length)
+			if(Flame.LightPool.length > nearestFlames.length) {
+				for(let i=nearestFlames.length; i<Flame.LightPool.length; i++) {
 					const pointLight = Flame.LightPool[i]
 					pointLight.parent.remove(pointLight)
 				}
-				Flame.LightPool.length = nearestWants.length
+				Flame.LightPool.length = nearestFlames.length
 			}
 
 			for(let index=0; index<Flame.LightPool.length; index++) {
-				Flame.LightPool[index].position.copy(nearestWants[index].position)
+				Flame.LightPool[index].position.copy(nearestFlames[index].position)
 				Flame.LightPool[index].position.setY(Flame.LightPool[index].position.y +2)
 			}
 		}
