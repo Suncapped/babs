@@ -18,7 +18,7 @@ import { CameraSys } from '@/sys/CameraSys'
 import type { Player } from '@/ent/Player'
 
 export class Flame extends Comp {
-	static player :Player
+	static Player :Player
 
 	static LightPool :PointLight[] = []
 	static LightPoolMax :number
@@ -80,25 +80,38 @@ export class Flame extends Comp {
 	}
 
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
-		console.log('Flame.Create, right before FlameFires.push', wob)
-		const flameComp = new Flame(wob, babs)
-
+		// console.log('Flame.Create, right before FlameFires.push', wob)
+		
+		// Ensure texture is loaded
 		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
 		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
-		flameComp.fire = new ThreeFire(Flame.fireTex)
-		flameComp.fire.material.uniforms.magnitude.value = Flame.flameSettings.magnitude
-		flameComp.fire.material.uniforms.lacunarity.value = Flame.flameSettings.lacunarity
-		flameComp.fire.material.uniforms.gain.value = Flame.flameSettings.gain
-		flameComp.fire.material.uniforms.noiseScale.value = new Vector4(
-			Flame.flameSettings.noiseScaleX,
-			Flame.flameSettings.noiseScaleY,
-			Flame.flameSettings.noiseScaleZ,
-			0.3
-		)
+		if(!Flame.Player) Flame.Player = babs.ents.get(babs.idSelf) as Player // This sets player so that moveThingsToNearPlayer() can move things to near the player.
 
-		// Add a glow of light
-		// console.log('Flame.FlameFires.push', com.fire.uuid)
-		Flame.FlameFires.push(flameComp.fire) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
+		if(!asFarWobs) {
+			const flameComp = new Flame(wob, babs)
+			flameComp.fire = new ThreeFire(Flame.fireTex)
+			flameComp.fire.material.uniforms.magnitude.value = Flame.flameSettings.magnitude
+			flameComp.fire.material.uniforms.lacunarity.value = Flame.flameSettings.lacunarity
+			flameComp.fire.material.uniforms.gain.value = Flame.flameSettings.gain
+			flameComp.fire.material.uniforms.noiseScale.value = new Vector4(
+				Flame.flameSettings.noiseScaleX,
+				Flame.flameSettings.noiseScaleY,
+				Flame.flameSettings.noiseScaleZ,
+				0.3
+			)
+			// Add a glow of light
+			Flame.FlameFires.push(flameComp.fire) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
+
+			flameComp.fire.name = 'flame'
+			babs.group.add(flameComp.fire)
+			flameComp.fire.scale.set(scale,scale*1.33,scale)
+
+			const yardCoord = YardCoord.Create(wob)
+			const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
+			flameComp.fire.position.setY(engPositionVector.y +yup)
+			flameComp.fire.position.setX(engPositionVector.x)
+			flameComp.fire.position.setZ(engPositionVector.z)
+		}
 		// Init static singletons
 		// console.log('Flame.Create', Flame.LightPool.length, Flame.LightPoolMax)
 		if(Flame.LightPool.length < Flame.LightPoolMax) {
@@ -110,32 +123,8 @@ export class Flame extends Comp {
 			Flame.LightPool.push(pointLight)
 			babs.group.add(pointLight)
 		}
-		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf) as Player // This sets player so that moveThingsToNearPlayer() can move things to near the player.
-
-		flameComp.fire.name = 'flame'
-		babs.group.add(flameComp.fire)
-		flameComp.fire.scale.set(scale,scale*1.33,scale)
-
-		const yardCoord = YardCoord.Create(wob)
-		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
-
-		flameComp.fire.position.setY(engPositionVector.y +yup)
-		flameComp.fire.position.setX(engPositionVector.x)
-		flameComp.fire.position.setZ(engPositionVector.z)
-
-		// Where there's smoke, there's fire
-		// Add a smoke trail via InstancedMesh
-		// Pools like LightPool, but for smoke
-		// And the pool consists of tracking the positions
-		// Then in moveThings, the InstancedMesh positions reflect the lightpool positions (nearest Flames)
-		// Or maybe we can take out that middle pool step and just do it in the IM?  No, I like the pool.
-		// But I won't be pooling PointLight, so what will I pool?  Just some Vector3s?
-
-
 
 		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
-
-		return flameComp
 	}
 
 	// I mean, it's safe to say there will always be fires.  So maybe I should just one-time instantiate the smoke IM.

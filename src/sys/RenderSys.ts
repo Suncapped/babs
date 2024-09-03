@@ -513,7 +513,7 @@ export class RenderSys {
 	}
 
 	moveThingsToNearPlayer() {
-		const playerPos = Flame.player?.controller?.playerRig?.position
+		const playerPos = Flame.Player?.controller?.playerRig?.position
 		if(playerPos) {
 			const nearestFlames = Flame.FlameFires.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))

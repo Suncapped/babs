@@ -200,7 +200,8 @@ export class Wob extends SharedWob {
 					console.log('Adding flame:', bp.blueprint_id, scale, yup)
 		
 					// Add new flame
-					const flameComp = Flame.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms)
+					// Smoke and light we'll attach exclusively to  farwobs via 'asFarWobs' flag
+					Flame.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms) // Not awaiting
 				}
 
 				// Add audio, if any

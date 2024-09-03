@@ -685,21 +685,24 @@ export class WorldSys {
 
 				// Pick a random from Flame.LightPool
 				const randomLight = Flame.LightPool[Math.floor(Math.random() *Flame.LightPool.length)]
-				// Spawn a smoke puff at that light's position
-				randomLight.getWorldPosition(tempPosition)
+				// It seems that sometimes, the light is null due to fast zoning.  
+				if(randomLight) {
+					// Spawn a smoke puff at that light's position
+					randomLight.getWorldPosition(tempPosition)
 
-				// Add a bit of randomness
-				const randomFactor = 5
-				const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
-				tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
-				tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
+					// Add a bit of randomness
+					const randomFactor = 5
+					const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
+					tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
+					tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
 
-				tempMatrix.setPosition(tempPosition)
-				Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
-				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+					tempMatrix.setPosition(tempPosition)
+					Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
+					Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
 
-				Flame.SmokeLatestIndex++
-				// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
+					Flame.SmokeLatestIndex++
+					// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
+				}
 			}
 
 			// For each SmokePuffIm instance, make it rise on y
