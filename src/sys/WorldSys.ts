@@ -33,6 +33,7 @@ import {
 	SRGBColorSpace,
 	PCFSoftShadowMap,
 	BasicShadowMap,
+	Vector2,
 } from 'three'
 
 import { WireframeGeometry } from 'three'
@@ -667,13 +668,46 @@ export class WorldSys {
 		// this.csm?.update()
 
 		// Update smoke
-		if(Flame.smokePuffIm) {
-			// For each smokePuffIm instance, make it rise on y
+		if(Flame.SmokePuffIm) {
+			// Maybe spawn a new smoke puff occasionally
+			if(this.updateCount % 30 === 0) {
+				if(Flame.SmokeLatestIndex >= Flame.SmokePuffMaxCount) {
+					// We've reached the max, so loop index back to 0
+					// Flame.SmokePuffIm.count = 0
+					Flame.SmokeLatestIndex = 0
+				}
+				if(Flame.SmokePuffIm.count < Flame.SmokePuffMaxCount) {
+					// Up the render count (until we reach max)
+					Flame.SmokePuffIm.count++
+				}
+				const tempMatrix = new Matrix4()
+				const tempPosition = new Vector3()
+
+				// Pick a random from Flame.LightPool
+				const randomLight = Flame.LightPool[Math.floor(Math.random() *Flame.LightPool.length)]
+				// Spawn a smoke puff at that light's position
+				randomLight.getWorldPosition(tempPosition)
+
+				// Add a bit of randomness
+				const randomFactor = 5
+				const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
+				tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
+				tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
+
+				tempMatrix.setPosition(tempPosition)
+				Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
+				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+
+				Flame.SmokeLatestIndex++
+				// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
+			}
+
+			// For each SmokePuffIm instance, make it rise on y
 			// Also make it get larger over time
 			const tempMatrix = new Matrix4()
 			const tempPosition = new Vector3()
-			for(let i=0; i<Flame.smokePuffIm.count; i++) {
-				Flame.smokePuffIm.getMatrixAt(i, tempMatrix)
+			for(let i=0; i<Flame.SmokePuffIm.count; i++) {
+				Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
 				tempPosition.setFromMatrixPosition(tempMatrix)
 
 				// Make it rise
@@ -687,6 +721,11 @@ export class WorldSys {
 					tempMatrix.scale(new Vector3().setScalar(Flame.SMOKE_SCALEUP_RATE))
 				}
 
+				// Make it randomly move on x and z too
+				const randomFactor = 2 *dt
+				const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
+				tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
+
 				// If height is past max height, reset it
 				if(tempPosition.y > Flame.SMOKE_MAX_HEIGHT) {
 					tempPosition.y = Flame.SMOKE_STARTING_EXTRAHEIGHT // Reset y
@@ -694,8 +733,8 @@ export class WorldSys {
 				}
 
 				tempMatrix.setPosition(tempPosition)
-				Flame.smokePuffIm.setMatrixAt(i, tempMatrix)
-				Flame.smokePuffIm.instanceMatrix.needsUpdate = true
+				Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
+				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
 			}
 			
 		}
@@ -1014,6 +1053,7 @@ export class WorldSys {
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
 			'cameraGroup', 'camera', // Doesn't really matter since they're set per frame anyway, but might as well.
+			'smoke',
 		] // , 'PointLight', 'ThreeFire', InstancedMesh
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
@@ -1040,6 +1080,24 @@ export class WorldSys {
 			// child.updateMatrix()
 			// child.matrixWorldNeedsUpdate = true
 		})
+
+		// Shift existing smoke puffs, having ignored above
+		// There may be a more standard way to do this...
+		// I'm using randomLight.getWorldPosition to get light position, is the problem.
+		if(Flame.SmokePuffIm) {
+			const tempMatrix = new Matrix4()
+			const tempPosition = new Vector3()
+			for(let i=0; i<Flame.SmokePuffIm.count; i++) {
+				Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
+				tempPosition.setFromMatrixPosition(tempMatrix)
+
+				tempPosition.add(shiftVector)
+
+				tempMatrix.setPosition(tempPosition)
+				Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
+				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+			}
+		}
 
 		this.shiftiness.add(shiftVector)
 		// return shiftVector

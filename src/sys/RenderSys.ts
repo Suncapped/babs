@@ -137,7 +137,7 @@ export class RenderSys {
 				this._camera.near = 0.1
 				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
 
-				Flame.lightPool.forEach((pointLight) => {
+				Flame.LightPool.forEach((pointLight) => {
 					pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
 					pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
 				})
@@ -515,23 +515,23 @@ export class RenderSys {
 	moveThingsToNearPlayer() {
 		const playerPos = Flame.player?.controller?.playerRig?.position
 		if(playerPos) {
-			const nearestWants = Flame.wantsLight.sort((a, b) => {
+			const nearestWants = Flame.WantsLight.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
 
 			// If there's more lights than wants, remove the extras
-			// console.log('Flame.lightPool.length', Flame.lightPool.length, 'nearestWants.length', nearestWants.length)
-			if(Flame.lightPool.length > nearestWants.length) {
-				for(let i=nearestWants.length; i<Flame.lightPool.length; i++) {
-					const pointLight = Flame.lightPool[i]
+			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestWants.length', nearestWants.length)
+			if(Flame.LightPool.length > nearestWants.length) {
+				for(let i=nearestWants.length; i<Flame.LightPool.length; i++) {
+					const pointLight = Flame.LightPool[i]
 					pointLight.parent.remove(pointLight)
 				}
-				Flame.lightPool.length = nearestWants.length
+				Flame.LightPool.length = nearestWants.length
 			}
 
-			for(let index=0; index<Flame.lightPool.length; index++) {
-				Flame.lightPool[index].position.copy(nearestWants[index].position)
-				Flame.lightPool[index].position.setY(Flame.lightPool[index].position.y +2)
+			for(let index=0; index<Flame.LightPool.length; index++) {
+				Flame.LightPool[index].position.copy(nearestWants[index].position)
+				Flame.LightPool[index].position.setY(Flame.LightPool[index].position.y +2)
 			}
 		}
 	}

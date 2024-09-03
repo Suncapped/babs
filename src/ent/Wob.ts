@@ -179,7 +179,7 @@ export class Wob extends SharedWob {
 
 				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
 				const bp = zone.locidToBlueprint[wob.locid]
-				console.log('wob to bp', wob, bp.blueprint_id)
+				// console.log('wob to bp', wob, bp.blueprint_id)
 				if(!alreadyExistsAtSameSpot &&
 					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
 				) {
@@ -197,7 +197,7 @@ export class Wob extends SharedWob {
 						yup = 1.2
 					}
 
-					// console.log('Adding flame:', bp.blueprint_id, scale, yup)
+					console.log('Adding flame:', bp.blueprint_id, scale, yup)
 		
 					// Add new flame
 					const flame = Flame.Create(wob, wob.zone, babs, scale, yup) // Is relatively slow (extra ~0.25 ms)

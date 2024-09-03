@@ -310,7 +310,7 @@ export class Zone extends SharedZone {
 
 	static async LoadZoneWobs(enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
 		// console.log('LoadZoneWobs')
-		console.debug('LoadZoneWobs zonein zone', enterZone.id, )
+		console.log('LoadZoneWobs zonein zone', enterZone.id, )
 		
 		const [removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar] = Zone.CalcZoningDiff(enterZone, exitZone)
 		

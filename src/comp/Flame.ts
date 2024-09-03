@@ -1,7 +1,7 @@
 import { EventSys } from '@/sys/EventSys'
 import { LoaderSys } from '@/sys/LoaderSys'
 
-import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, IcosahedronGeometry, InstancedBufferAttribute, InstancedMesh, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, MeshLambertMaterial, Object3D, PointLight, Quaternion, ShaderMaterial, StreamDrawUsage, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
+import { BoxGeometry, BufferGeometry, ClampToEdgeWrapping, Color, Euler, IcosahedronGeometry, InstancedBufferAttribute, InstancedMesh, Line, LinearFilter, LineBasicMaterial, Material, MathUtils, Mesh, MeshLambertMaterial, Object3D, OctahedronGeometry, PointLight, Quaternion, ShaderMaterial, StreamDrawUsage, Texture, TextureLoader, UniformsUtils, Vector4 } from 'three'
 import { Vector3 } from 'three'
 import { Comp } from '@/comp/Comp'
 import { SocketSys } from '@/sys/SocketSys'
@@ -20,20 +20,23 @@ import type { Player } from '@/ent/Player'
 export class Flame extends Comp {
 	static player :Player
 
-	static lightPool = []
-	static LIGHT_POOL_MAX
-	static wantsLight = []
+	static LightPool :PointLight[] = []
+	static LightPoolMax :number
+	static WantsLight :ThreeFire[] = []
 	static PointLightIntensity = 400
 	static PointLightDistance = 100
 
 	static SMOKE_STARTING_SIZE = 1
-	static SMOKE_STARTING_EXTRAHEIGHT = 3
+	static SMOKE_STARTING_EXTRAHEIGHT = 12
 	static SMOKE_PUFFS_PER_LIGHT = 40
-	static smokePuffIm :InstancedMesh
 	static SMOKE_MAX_HEIGHT = 1000
 	static SMOKE_MAX_SCALE = 120
 	static SMOKE_SPEED = 12
 	static SMOKE_SCALEUP_RATE = 1.001
+	static SmokePuffIm :InstancedMesh
+	static SmokeRandomizationPool :Vector3[]
+	static SmokePuffMaxCount = 0 // gets set during init
+	static SmokeLatestIndex = 0
 
 
 	static fireTex :Texture
@@ -51,78 +54,32 @@ export class Flame extends Comp {
 	constructor(wob :SharedWob, babs :Babs) {
 		super(wob.id(), Flame, babs)
 
-		Flame.LIGHT_POOL_MAX = babs.graphicsQuality ? 12 : 4
+		Flame.LightPoolMax = babs.graphicsQuality ? 12 : 4
 
 		// Set up smoke trail singleton
-		if(!Flame.smokePuffIm) {
-
-			const geometry = new IcosahedronGeometry(Flame.SMOKE_STARTING_SIZE, 1)
+		if(!Flame.SmokePuffIm) {
+			const geometry = new OctahedronGeometry(Flame.SMOKE_STARTING_SIZE, 1)
 			const material = new MeshLambertMaterial({})
-			const smokePuffTotal = Flame.LIGHT_POOL_MAX * Flame.SMOKE_PUFFS_PER_LIGHT
-			Flame.smokePuffIm = new InstancedMesh(geometry, material, smokePuffTotal)
-			Flame.smokePuffIm.name = 'smoke'
-			Flame.smokePuffIm.instanceMatrix.setUsage(StreamDrawUsage)
-			babs.group.add(Flame.smokePuffIm)
+			Flame.SmokePuffMaxCount = Flame.SMOKE_PUFFS_PER_LIGHT * Flame.LightPoolMax
+			Flame.SmokePuffIm = new InstancedMesh(geometry, material, Flame.SmokePuffMaxCount)
+			Flame.SmokePuffIm.count = 0
+			Flame.SmokePuffIm.name = 'smoke'
+			Flame.SmokePuffIm.instanceMatrix.setUsage(StreamDrawUsage)
+			Flame.SmokePuffIm.frustumCulled = false
+			babs.group.add(Flame.SmokePuffIm)
 
 			const smokePuffColors = []
-			for (let i = 0; i < smokePuffTotal; i++) {
+			for (let i = 0; i < Flame.SmokePuffMaxCount; i++) {
 				smokePuffColors.push(0.5, 0.5, 0.5)
 			}
 			const bufferAttr = new InstancedBufferAttribute(new Float32Array(smokePuffColors), 3)
 			bufferAttr.needsUpdate = true
-			Flame.smokePuffIm.instanceColor = bufferAttr
-
-			let isFirstRun = true
-			const repositionSmokeTrails = () => {
-				const lightPositions = Flame.lightPool.map(light => {
-					return light.position
-				})
-				for (let i = 0; i < lightPositions.length; i++) {
-					const lightPos = lightPositions[i]
-					for (let j = 0; j < Flame.SMOKE_PUFFS_PER_LIGHT; j++) {
-						const index = i * Flame.SMOKE_PUFFS_PER_LIGHT + j
-						const tempMatrix = new Matrix4()
-						Flame.smokePuffIm.getMatrixAt(index, tempMatrix)
-
-						const tempScale = new Vector3()
-						const tempPosition = new Vector3()
-						tempMatrix.decompose(tempPosition, new Quaternion(), tempScale)
-
-						let extraHeight = 0
-						if(isFirstRun) { 
-							// On first run, distribute the y positions across the range based on j
-							extraHeight = j * Flame.SMOKE_MAX_HEIGHT / Flame.SMOKE_PUFFS_PER_LIGHT
-						}
-
-						tempPosition.set(lightPos.x, tempPosition.y, lightPos.z) // Keep only y
-						tempPosition.y = Math.max(tempPosition.y, lightPos.y + Flame.SMOKE_STARTING_EXTRAHEIGHT) +extraHeight // Start above light
-						
-						const newMatrix = new Matrix4()
-						newMatrix.compose(tempPosition, new Quaternion(), tempScale)
-						Flame.smokePuffIm.setMatrixAt(index, newMatrix)
-					}
-				}
-
-				isFirstRun = false
-
-				// On first run, distribute 
-
-				Flame.smokePuffIm.instanceMatrix.needsUpdate = true
-
-				// Flame.smokePuffIm.geometry.computeBoundingBox()
-				// Flame.smokePuffIm.geometry.computeBoundingSphere()
-				Flame.smokePuffIm.frustumCulled = false
-
-			}
-
-			setInterval(repositionSmokeTrails, 1000)
+			Flame.SmokePuffIm.instanceColor = bufferAttr
 		}
-	
-
 	}
 
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup) {
-		// console.log('Flame.Create, right before wantslight.push', wob.name)
+		// console.log('Flame.Create, right before WantsLight.push', wob.name)
 		const com = new Flame(wob, babs)
 
 		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
@@ -139,17 +96,17 @@ export class Flame extends Comp {
 		)
 
 		// Add a glow of light
-		// console.log('Flame.wantsLight.push', com.fire.uuid)
-		Flame.wantsLight.push(com.fire) // Must come before Flame.lightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
+		// console.log('Flame.WantsLight.push', com.fire.uuid)
+		Flame.WantsLight.push(com.fire) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
 		// Init static singletons
-		// console.log('Flame.Create', Flame.lightPool.length, Flame.LIGHT_POOL_MAX)
-		if(Flame.lightPool.length < Flame.LIGHT_POOL_MAX) {
+		// console.log('Flame.Create', Flame.LightPool.length, Flame.LightPoolMax)
+		if(Flame.LightPool.length < Flame.LightPoolMax) {
 			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
 			// pointLight.castShadow = true // Complex?
 			pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
 			pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
 			pointLight.name = 'flamelight'
-			Flame.lightPool.push(pointLight)
+			Flame.LightPool.push(pointLight)
 			babs.group.add(pointLight)
 		}
 		if(!Flame.player) Flame.player = babs.ents.get(babs.idSelf) as Player // This sets player so that moveThingsToNearPlayer() can move things to near the player.
@@ -167,7 +124,7 @@ export class Flame extends Comp {
 
 		// Where there's smoke, there's fire
 		// Add a smoke trail via InstancedMesh
-		// Pools like lightPool, but for smoke
+		// Pools like LightPool, but for smoke
 		// And the pool consists of tracking the positions
 		// Then in moveThings, the InstancedMesh positions reflect the lightpool positions (nearest Flames)
 		// Or maybe we can take out that middle pool step and just do it in the IM?  No, I like the pool.
@@ -198,7 +155,7 @@ export class Flame extends Comp {
 				&& compWobId.blueprint_id === deletingWobId.blueprint_id
 		})
 		if(flame) {
-			Flame.wantsLight = Flame.wantsLight.filter(f => {
+			Flame.WantsLight = Flame.WantsLight.filter(f => {
 				return f.uuid !== flame.fire.uuid
 			})
 			babs.group.remove(flame.fire)
