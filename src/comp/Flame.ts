@@ -150,7 +150,6 @@ export class Flame extends Comp {
 				pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
 				pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
 				pointLight.name = 'flamelight'
-				pointLight.frustumCulled = false // todo smoke, needed?
 				Flame.LightPool.push(pointLight)
 				babs.group.add(pointLight)
 				// console.log('adding pointlight', pointLight.position, wob)

@@ -166,9 +166,6 @@ export class Wob extends SharedWob {
 					}
 				}
 
-				// const alreadyExistsAtSameSpot = JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id()) // todo smoke, hmm what was this for?
-				// if(feim.instanceIndexToWob.get(existingIindex)) console.log('alreadyExistsAtSameSpot', feim.instanceIndexToWob.get(existingIindex))
-
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
 				// matrix = new Matrix4() // not needed I guess?
@@ -188,7 +185,7 @@ export class Wob extends SharedWob {
 				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
 				const bp = zone.locidToBlueprint[wob.locid]
 				// console.log('wob to bp', wob, bp.blueprint_id)
-				if(//!alreadyExistsAtSameSpot &&
+				if(//!alreadyExistsAtSameSpot && // What was that for?  It compared wobIds
 					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
 				) {
 					let scale, yup
