@@ -14,7 +14,7 @@ import type { Babs } from '@/Babs'
 import { DateTime } from 'luxon'
 
 
-export type Gltf = {
+export type FeGltf = {
 	animations: Array<AnimationClip>,
 	scene: Scene,
 	name: string,
@@ -139,14 +139,14 @@ export class LoaderSys {
 		LoaderSys.ColorAtlasNew2 = this.loadTexture(`/texture/color-atlas-new2.png`)
 
 		// Prefetch Kid Rig
-		LoaderSys.CachedKidRig = this.loadGltf(`/char/female/female-rig.glb`) as unknown as Promise<GLTF> // It's not meant to error and return {name}
+		LoaderSys.CachedKidRig = this.loadGltf(`/char/female/female-rig.glb`)
 		
 		// Prefetch Kid Anims
 		LoaderSys.KidAnimList.forEach(anim => {
 			LoaderSys.KidAnimPaths[anim] = `/char/female/female-anim-${anim}.glb`
 		})
 		Object.entries(LoaderSys.KidAnimPaths).forEach(([anim, path] :[string, string|unknown]) => {
-			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path as string) as unknown as Promise<GLTF> // It's not meant to error and return {name}
+			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path as string)
 		})
 
 	}
@@ -193,7 +193,7 @@ export class LoaderSys {
 	}
 
 	
-	async loadGltf(path :string, name :string = 'noname', archivedGlbs :typeof files = null) :Promise<GLTF|{name :string}> {
+	async loadGltf(path :string, name :string = 'noname', archivedGlbs :typeof files = null) :Promise<GLTF> {
 
 		let loadFromArchive :ArrayBuffer = null
 		let glbUpdatedAt = ''
@@ -255,7 +255,7 @@ export class LoaderSys {
 			}
 			const error = (err) => { // onError callback
 				console.error(`loadGltf error for '${name}':`, err.message) // info because can just be missing model
-				resolve({name: name}) // Need to return name so it doesn't fail to make an instanced for spheres
+				resolve(null)
 			}
 		
 

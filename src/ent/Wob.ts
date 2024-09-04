@@ -8,7 +8,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Blueprint, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
-import { LoaderSys, type Gltf } from '@/sys/LoaderSys'
+import { LoaderSys, type FeGltf } from '@/sys/LoaderSys'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
 import { objectIsSomeKindOfMesh } from '@/Utils'
 import { WorldSys } from '@/sys/WorldSys'
@@ -44,7 +44,7 @@ export class Wob extends SharedWob {
 
 	static totalArrivedWobs = 0
 
-	static LoadedGltfs = new Map<string, true|Gltf>()
+	static LoadedGltfs = new Map<string, Promise<FeGltf>>()
 	static InstancedWobs = new Map<string, InstancedWobs>()
 	static async LoadInstancedWobs(arrivalWobs :Array<SharedWob>, babs :Babs, shownames :boolean, asFarWobs :'asFarWobs' = null) {
 		// arrivalWobs = arrivalWobs.splice(0, Math.round(arrivalWobs.length /2))
@@ -57,21 +57,23 @@ export class Wob extends SharedWob {
 				wob.blueprint_id = Wob.FarwobName
 			}
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
+			// console.log('name has been set', wob.name)
 		}
 
 		// console.log('nameCounts', [...nameCounts.entries()].sort((a, b) => a[0].localeCompare(b[0])))
 
 		const wobsToLoad = arrivalWobs.map(w=>w.name)
-		console.debug('meshesToLoad', nameCounts)
+		console.debug('meshesToLoad', nameCounts, asFarWobs)
 		await Wob.ensureGltfsLoaded(wobsToLoad, babs) // Loads them into Wob.LoadedGltfs
 
 		// console.debug('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
-		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
-			// console.log('blueprint_id, gltf', blueprint_id, gltf)
-			if(!gltf.hasOwnProperty('scene')) {
+		for(const [blueprint_id, gltfMaybe] of Wob.LoadedGltfs) {
+			const gltfResolved = await gltfMaybe
+			// console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
+			if(!gltfResolved.hasOwnProperty('scene')) {
 				// Skip if failed to load
-				console.warn('Failed to load gltf:', blueprint_id)
+				console.warn('gltfResolved does not have scene:', blueprint_id, gltfResolved)
 				continue
 			}
 
@@ -80,7 +82,7 @@ export class Wob extends SharedWob {
 			// console.log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
 			if(!instanced) {
 				// console.log('About to create instanced for blueprint_id', blueprint_id, newWobsCount)
-				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, gltf as Gltf, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
+				instanced = new InstancedWobs(babs, blueprint_id, newWobsCount, gltfResolved, asFarWobs) // 'wobMesh' shouldn't be 'true' by now due to promises finishing
 				// console.debug('Created instanced for blueprint_id', blueprint_id)
 				// instanced.instancedMesh.geometry.computeBoundsTree() // bvh
 			}
@@ -240,18 +242,21 @@ export class Wob extends SharedWob {
 	 */
 	static async ensureGltfsLoaded(arrivalWobsNames :Array<string>, babs :Babs) {
 		let loads = []
+		console.log('ensureGltfsLoaded 1:', arrivalWobsNames)
 
 		for(const wobName of arrivalWobsNames) {
-			if(!Wob.LoadedGltfs.get(wobName)){
-				// console.debug('Loading gltf:', wobName)
+			if(!Wob.LoadedGltfs.get(wobName)){ // If not loaded (gltf) or loading (promise)
+				console.debug('Loading gltf:', wobName)
 				const load = babs.loaderSys.loadGltf(`/environment/${wobName}.glb`, wobName, await LoaderSys.CachedGlbFiles)
-				Wob.LoadedGltfs.set(wobName, true) // Hold its spot in case there are more loads.  Gets set right after this
+				Wob.LoadedGltfs.set(wobName, load as unknown as Promise<FeGltf>) // Hold its spot in case there are more loads.  Gets set right after this
 				loads.push(load)
 			}
 		}
+		console.log('ensureGltfsLoaded 2:', arrivalWobsNames)
 		const finishedLoads = await Promise.all(loads)
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const gltf of finishedLoads) {
+			// console.log('finishedLoad:', gltf.name, gltf)
 			let wobMesh :Mesh|SkinnedMesh
 			// let animations :Array<AnimationClip>
 			try {
@@ -319,8 +324,11 @@ export class Wob extends SharedWob {
 				console.warn('Error loading gltf:', gltf.name, e.message)
 			}
 			
+			// console.log('finished, reassigning:', gltf.name)
 			Wob.LoadedGltfs.set(gltf.name, gltf)
 		}
+
+		console.log('ensureGltfsLoaded 3', arrivalWobsNames)
 
 	}
 	

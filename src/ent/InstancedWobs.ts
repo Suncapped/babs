@@ -4,7 +4,7 @@ import { Wob } from './Wob'
 
 import { YardCoord } from '@/comp/Coord'
 import { InstancedSkinnedMesh } from './InstancedSkinnedMesh'
-import type { Gltf } from '@/sys/LoaderSys'
+import type { FeGltf } from '@/sys/LoaderSys'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import { objectIsSomeKindOfMesh } from '@/Utils'
 
@@ -35,7 +35,7 @@ export class InstancedWobs {
 		public babs :Babs,
 		public blueprint_id :string,
 		public maxCount :number, // Number above which a larger buffer (new InstancedMesh) is needed
-		public gltf :Gltf,
+		public gltf :FeGltf,
 		public asFarWobs :'asFarWobs' = null,
 	) {
 		let wobMesh :Mesh|SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
