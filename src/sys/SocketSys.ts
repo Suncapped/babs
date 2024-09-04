@@ -19,7 +19,6 @@ import { SharedWob } from '@/shared/SharedWob'
 import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
-import { Fire } from '@/comp/Fire'
 import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 

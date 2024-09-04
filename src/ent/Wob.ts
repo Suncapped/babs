@@ -151,7 +151,8 @@ export class Wob extends SharedWob {
 						}
 					}
 					else {
-						console.log('Index does exist?', existingIindex)
+						// This happens when Proxima re-sends everything during a generate.
+						// console.log('Index does exist?', existingIindex)
 					}
 
 					// Perhaps best way to handle removing of instanced ids is to make an association from iindex->wobid.
@@ -167,8 +168,11 @@ export class Wob extends SharedWob {
 						feim.increaseLoadedCount()
 					}
 				}
-				
-				const alreadyExistedAtSameSpot = isMatchingWobIds(wob, feim.instanceIndexToWob.get(existingIindex)?.id())
+				const alreadyExistedAtSameSpot = isMatchingWobIds(wob, feim.instanceIndexToWob.get(existingIindex)?.id(), true)
+				if(alreadyExistedAtSameSpot) {
+					// console.log('alreadyExistedAtSameSpot', wob.id(), feim.instanceIndexToWob.get(existingIindex)?.id())
+					continue
+				}
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
@@ -190,9 +194,7 @@ export class Wob extends SharedWob {
 				const bp = zone.locidToBlueprint[wob.locid]
 				// console.log('wob to bp', wob, bp.blueprint_id)a
 
-				// JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id())
-				if(alreadyExistedAtSameSpot) console.log('Look into: alreadyExistedAtSameSpot', wob.id(), feim.instanceIndexToWob.get(existingIindex)?.id())
-				if(//!alreadyExistedAtSameSpot && // What was that for?  It compared wobIds
+				if(//!alreadyExistedAtSameSpot &&
 					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushflame')
 				) {
 					let scale, yup

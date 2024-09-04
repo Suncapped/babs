@@ -186,7 +186,7 @@ export class Fire extends Comp {
 		else {
 			// This presumably means that it was a farwob, and only had a light.
 			// Remove light
-			console.log('FireLights before filter', Fire.FireLights.length)
+			// console.log('FireLights before filter', Fire.FireLights.length)
 			Fire.FireLights = Fire.FireLights.filter(fireLight => {
 				// console.log('Fire.Delete fireLight filter:', fireLight, deletingWobId)
 				const fireLightWobId = fireLight.wobId as WobId
@@ -194,7 +194,7 @@ export class Fire extends Comp {
 				const flameWobMatchesDeletingWob = isMatchingWobIds(fireLightWobId, deletingWobId, onlyDeleteFarXorNear)
 				return !flameWobMatchesDeletingWob
 			})
-			console.log('FireLights after filter', Fire.FireLights.length)
+			// console.log('FireLights after filter', Fire.FireLights.length)
 
 		}
 	}
