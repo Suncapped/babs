@@ -26,6 +26,8 @@ export class Flame extends Comp {
 	static Player :Player
 
 	static LightPool :PointLight[] = []
+	static LIGHTPOOL_LQ = 4
+	static LIGHTPOOL_HQ = 12
 	static LightPoolMax :number
 	static FlameLights :(ThreeFire | FlameLight)[] = []
 	static PointLightIntensity = 400
@@ -38,7 +40,7 @@ export class Flame extends Comp {
 	static SMOKE_PUFF_CREATION_INTERVAL = 0.2
 	static SMOKE_MAX_SCALE = 150
 	static SMOKE_SPEED = 12
-	static SMOKE_SCALEUP_RATE = 1.001
+	static SMOKE_SCALEUP_RATE = 0.07
 	static SmokePuffIm :InstancedMesh
 	static SmokeRandomizationPool :Vector3[]
 	static SmokePuffMaxCount = 0 // gets set during init
@@ -60,7 +62,7 @@ export class Flame extends Comp {
 	constructor(wob :SharedWob, babs :Babs) {
 		super(wob.id(), Flame, babs)
 
-		Flame.LightPoolMax = babs.graphicsQuality ? 12 : 4
+		Flame.LightPoolMax = babs.graphicsQuality ? Flame.LIGHTPOOL_HQ : Flame.LIGHTPOOL_LQ
 
 		// Set up smoke trail singleton
 		if(!Flame.SmokePuffIm) {
@@ -166,7 +168,7 @@ export class Flame extends Comp {
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		
-		// console.debug('Flame.Delete flameComps', flameComps, babs.compcats)\
+		console.debug('Flame.Delete flameComps', flameComps, babs.compcats)
 		const deletingWobId = deletingWob.id()
 
 		const flameComp = flameComps?.find(fc => {

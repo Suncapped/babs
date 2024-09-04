@@ -667,14 +667,17 @@ export class WorldSys {
 
 		// Update smoke
 		if(Flame.SmokePuffIm) {
+			// We need to do more generation when there are more lights, or else smoke stacks get too high
+			const actualNumLightsFactor = Flame.LightPool.length / Flame.LIGHTPOOL_LQ // aka 4/4 (1.0) or 12/4 (3.0)
+
 			// Maybe create a new smoke puff occasionally
-			this.smokeAccumulator += dt
+			this.smokeAccumulator += (dt *actualNumLightsFactor)
 			if(this.smokeAccumulator >= Flame.SMOKE_PUFF_CREATION_INTERVAL) {
 				this.smokeAccumulator -= Flame.SMOKE_PUFF_CREATION_INTERVAL
 				this.makeSmokePuffs(dt)
 			}
 
-			this.smokePuffsRise(dt)
+			this.smokePuffsRiseScale(dt)
 			
 		}
 
@@ -761,14 +764,15 @@ export class WorldSys {
 
 	}
 	makeSmokePuffs(dt :number) {
-		// console.log('smoke stats:', Flame.SmokePuffIm.count, 'of', Flame.SmokePuffMaxCount, ',', Flame.SmokeLatestIndex)
+		const currentLimitBasedOnNumStacks = Flame.LightPool.length *Flame.SMOKE_PUFFS_PER_LIGHT
+		// console.log('smoke stats:', `${Flame.SmokePuffIm.count} of ${Flame.SmokePuffMaxCount} (${currentLimitBasedOnNumStacks}), index: ${Flame.SmokeLatestIndex}`)
 
-		if(Flame.SmokeLatestIndex >= Flame.SmokePuffMaxCount) {
+		if(Flame.SmokeLatestIndex >= currentLimitBasedOnNumStacks) {
 			// We've reached the max, so loop index back to 0
 			// Flame.SmokePuffIm.count = 0
 			Flame.SmokeLatestIndex = 0
 		}
-		if(Flame.SmokePuffIm.count < Flame.SmokePuffMaxCount) {
+		if(Flame.SmokePuffIm.count < currentLimitBasedOnNumStacks) {
 			// Up the render count (until we reach max)
 			Flame.SmokePuffIm.count++
 		}
@@ -799,12 +803,17 @@ export class WorldSys {
 			Flame.SmokeLatestIndex++
 			// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
 		}
+		else {
+			console.warn('randomLight is null')
+		}
 	}
-	smokePuffsRise(dt :number) {
+	smokePuffsRiseScale(dt :number) {
+		// dt on 120fps = 0.008399999999999637
 		// For each SmokePuffIm instance, make it rise on y
 		// Also make it get larger over time
 		const tempMatrix = new Matrix4()
 		const tempPosition = new Vector3()
+		const scaleupQualityRelative = 1 +(Flame.SMOKE_SCALEUP_RATE *dt) // Was designed at 60fps, this scales it using dt
 		for(let i=0; i<Flame.SmokePuffIm.count; i++) {
 			Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
 			tempPosition.setFromMatrixPosition(tempMatrix)
@@ -817,7 +826,10 @@ export class WorldSys {
 			if (scale < Flame.SMOKE_MAX_SCALE) {
 				// const growthFactor = 1 + (1 - scale / Flame.SMOKE_MAX_SCALE) * 0.003
 				// tempMatrix.scale(new Vector3(growthFactor, growthFactor, growthFactor))
-				tempMatrix.scale(new Vector3().setScalar(Flame.SMOKE_SCALEUP_RATE).setY(Flame.SMOKE_SCALEUP_RATE*0.9998)) // flatten on y // Smaller number is flatter
+				const reduceBy = 0.00005//0.05 *dt
+				const scaleBy = new Vector3().setScalar(scaleupQualityRelative)
+				scaleBy.setY(scaleBy.y *(1.0 -reduceBy))
+				tempMatrix.scale(scaleBy)
 			}
 
 			// Make it randomly move on x and z too

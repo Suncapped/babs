@@ -211,17 +211,19 @@ export class Wob extends SharedWob {
 					Flame.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms) // Not awaiting
 				}
 
-				// Add audio, if any
-				const sharedCompAudible = wob.comps?.audible
-				if(sharedCompAudible) {
-					// console.debug('serverAudible', sharedCompAudible)
-					const audible = Audible.Create(wob, babs, sharedCompAudible)
+				if(!asFarWobs) {
+					// Add audio, if any
+					const sharedCompAudible = wob.comps?.audible
+					if(sharedCompAudible) {
+						// console.debug('serverAudible', sharedCompAudible)
+						const audible = Audible.Create(wob, babs, sharedCompAudible)
 
-					if(babs.soundSys.hasContextStartedRunning) {
-						(await audible).playContinuous()
-					}
-					else {
-						// Later, upon user gesture (CameraSys), we will find all wobs with continuous sounds and play them then.
+						if(babs.soundSys.hasContextStartedRunning) {
+							(await audible).playContinuous()
+						}
+						else {
+							// Later, upon user gesture (CameraSys), we will find all wobs with continuous sounds and play them then.
+						}
 					}
 				}
 
@@ -242,7 +244,7 @@ export class Wob extends SharedWob {
 	 */
 	static async ensureGltfsLoaded(arrivalWobsNames :Array<string>, babs :Babs) {
 		let loads = []
-		console.log('ensureGltfsLoaded 1:', arrivalWobsNames)
+		// console.log('ensureGltfsLoaded 1:', arrivalWobsNames)
 
 		for(const wobName of arrivalWobsNames) {
 			if(!Wob.LoadedGltfs.get(wobName)){ // If not loaded (gltf) or loading (promise)
@@ -252,7 +254,7 @@ export class Wob extends SharedWob {
 				loads.push(load)
 			}
 		}
-		console.log('ensureGltfsLoaded 2:', arrivalWobsNames)
+		// console.log('ensureGltfsLoaded 2:', arrivalWobsNames)
 		const finishedLoads = await Promise.all(loads)
 		// Use name passed in to loadGltf to set so we don't have to await later
 		for(const gltf of finishedLoads) {
@@ -327,9 +329,7 @@ export class Wob extends SharedWob {
 			// console.log('finished, reassigning:', gltf.name)
 			Wob.LoadedGltfs.set(gltf.name, gltf)
 		}
-
-		console.log('ensureGltfsLoaded 3', arrivalWobsNames)
-
+		// console.log('ensureGltfsLoaded 3', arrivalWobsNames)
 	}
 	
 }

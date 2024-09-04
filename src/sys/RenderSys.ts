@@ -521,10 +521,9 @@ export class RenderSys {
 			const nearestFlames = Flame.FlameLights.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
+			// console.log('nearestFlames', nearestFlames.length)
 
-			// console.log('nearestFlames', nearestFlames)
-
-			// If there's more lights than wants, remove the extras
+			// If there's more lightpool spots than actual flames, reduce pool
 			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestFlames.length', nearestFlames.length)
 			if(Flame.LightPool.length > nearestFlames.length) {
 				for(let i=nearestFlames.length; i<Flame.LightPool.length; i++) {
