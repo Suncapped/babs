@@ -19,7 +19,7 @@ import { SharedWob } from '@/shared/SharedWob'
 import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
-import { Flame } from '@/comp/Flame'
+import { Fire } from '@/comp/Fire'
 import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
@@ -619,7 +619,7 @@ export class SocketSys {
 
 			// // Must find diff between server creatures and client creatures
 
-			// Flame.Create(wob, zone, this.babs, 6, 4)
+			// Fire.Create(wob, zone, this.babs, 6, 4)
 		}
 
 		else if('reposition' in payload) {

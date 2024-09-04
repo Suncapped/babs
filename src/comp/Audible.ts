@@ -8,7 +8,7 @@
 //  And there would probably be a lot of creating/removing PositionalAudios during zoning.
 //  Also the holder objects would need to be managed a bit?
 // (It's quite similar to colliders, which I don't need because I'm using tiles.)
-// I kind of wish I could just attach it to flames.  But there will be non-flame sounds...right?
+// I kind of wish I could just attach it to fires.  But there will be non-fire sounds...right?
 // I think Sound.ts itself should, as a Comp, mostly be the data.  Then a SoundSys should handle pools and playing.
 // Is that even worth separating?
 
@@ -108,7 +108,7 @@ export class Audible extends Comp {
 	}
 	
 	static async Create(wob :SharedWob, babs :Babs, sharedCompAudible :SharedCompAudible) {
-		// console.log('Flame.Create, right before FlameLights.push', wob.name)
+		// console.log('Fire.Create, right before FireLights.push', wob.name)
 		const com = new Audible(wob, babs)
 		com.sharedCompAudible = sharedCompAudible
 
@@ -116,7 +116,7 @@ export class Audible extends Comp {
 	}
 
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
-		const audibleComps = babs.compcats.get(Audible.name) as Audible[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
+		const audibleComps = babs.compcats.get(Audible.name) as Audible[] // todo abstract this .get so that I don't have to remember to use Fire.name instead of 'Fire' - because build changes name to _Fire, while it stays Fire on local dev.
 		
 		const audibleComp = audibleComps?.find(fc => {
 			const compWobId = fc.idEnt as WobId
@@ -126,7 +126,7 @@ export class Audible extends Comp {
 		})
 		if(audibleComp?.holderObject) {
 			// Update compcats
-			// console.log('deleting Audible?', deletingWob, audibleComp, audibleComps) // todo, make it kinda match light/fire?
+			// console.log('deleting Audible?', deletingWob, audibleComp, audibleComps) // todo, make it kinda match light/flame?
 			babs.compcats.set(Audible.name, audibleComps.filter(c => c.holderObject.uuid !== audibleComp.holderObject.uuid))
 
 			audibleComp.continuousSound.stop()
@@ -140,7 +140,7 @@ export class Audible extends Comp {
 	}
 
 	update(dt) {
-		// this.fire?.update(dt *Flame.settings.speed)
+		// this.flame?.update(dt *Fire.settings.speed)
 	}
 
 }

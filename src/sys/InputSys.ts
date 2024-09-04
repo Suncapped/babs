@@ -520,7 +520,7 @@ export class InputSys {
 
 		const touchHandler = (ev) => {
 			console.log('touchhandler')
-			this.setMouseDevice('fingers')  // Only finger devices should fire these touch events
+			this.setMouseDevice('fingers')  // Only finger devices should flame these touch events
 
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'touchHandler: ' + ev.target?.id + ', '+ev.type)
 			
@@ -811,13 +811,13 @@ export class InputSys {
 
 
 		}
-		document.addEventListener('pointerdown', (e) => { // Note, standard probably says this gets fired before mousedown :)
+		document.addEventListener('pointerdown', (e) => { // Note, standard probably says this gets flamed before mousedown :)
 			if(e.pointerType === 'touch') {
 				this.setMouseDevice('fingers')
 				buttonDownHandler(e)
 			}
 		})
-		// Well, pointerdown doesn't fire on multiple mouse buttons *rolleyes* so it's not really equivalent to mousedown.
+		// Well, pointerdown doesn't flame on multiple mouse buttons *rolleyes* so it's not really equivalent to mousedown.
 		// I see why they do it but I need those mouse buttons unless I want to track that all in the pointer event.
 		// How else can I know a second button is down, except by looking at mousedown itself?
 		document.addEventListener('mousedown', buttonDownHandler)
@@ -1609,7 +1609,7 @@ export class InputSys {
 			if(logTime) console.time('intersectObjects')
 			if(logTime) console.timeLog('intersectObjects', this.babs.group.children.length)
 			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
-			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'debugdestinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'flame', 'feWords', 'nightsky', 'daysky', 'dirlight', 'flamelight', 'hemilight', ]
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'debugdestinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'fire', 'feWords', 'nightsky', 'daysky', 'dirlight', 'firelight', 'hemilight', ]
 			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
 			// Well, filtering out 'tree twotris' does help a lot with framerate.
 			if(logTime) console.timeLog('intersectObjects', 'filteredChildren', filteredChildren.length)
@@ -1761,8 +1761,8 @@ export class InputSys {
 					else if (objectMaybe?.name === 'nightsky') { // Sky
 						// console.log('ray to skybox')
 					}
-					else if (objectMaybe?.name === 'flame') { // Flame
-						// console.log('ray to flame')
+					else if (objectMaybe?.name === 'fire') { // Fire
+						// console.log('ray to fire')
 					}
 					else if (objectMaybe instanceof TroikaText) { // Troika text
 						console.warn('ray to troika text')

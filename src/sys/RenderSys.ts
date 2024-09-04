@@ -2,7 +2,7 @@ import { UiSys } from './UiSys'
 
 import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion, MeshBasicMaterial, SphereGeometry, DoubleSide, BufferGeometry, Line } from 'three'
 import { WorldSys } from './WorldSys'
-import { Flame } from '@/comp/Flame'
+import { Fire } from '@/comp/Fire'
 import type { Babs } from '@/Babs'
 import { Wob } from '@/ent/Wob'
 import { Zone } from '@/ent/Zone'
@@ -60,7 +60,7 @@ export class RenderSys {
 			canvas: document.getElementById('canvas'),
 			// alpha: true,
 			// premultipliedAlpha: false,
-			logarithmicDepthBuffer: true, // Can cause shader problems; fixed for flame (search 'logdepthbuf' ), MSAA may need fix too?  https://github.com/mrdoob/three.js/issues/22017
+			logarithmicDepthBuffer: true, // Can cause shader problems; fixed for fire (search 'logdepthbuf' ), MSAA may need fix too?  https://github.com/mrdoob/three.js/issues/22017
 			// also: "Note that this setting uses gl_FragDepth if available which disables the Early Fragment Test optimization and can cause a decrease in performance." // todo test this out?
 			// On VR, that helps with far tree base z fighting, but doesn't help with wob antialiasing
 
@@ -138,9 +138,9 @@ export class RenderSys {
 				this._camera.near = 0.1
 				this.babs.group.scale.setScalar(CameraSys.CurrentScale)
 
-				Flame.LightPool.forEach((pointLight) => {
-					pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
-					pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
+				Fire.LightPool.forEach((pointLight) => {
+					pointLight.intensity = Fire.PointLightIntensity *CameraSys.CurrentScale
+					pointLight.distance = Fire.PointLightDistance *CameraSys.CurrentScale
 				})
 
 				// Determine from XRWebGLLayer whether antialias is supported
@@ -514,28 +514,28 @@ export class RenderSys {
 	}
 
 	moveThingsToNearPlayer() {
-		if(!Flame.Player) Flame.Player = this.babs.ents.get(this.babs.idSelf) as Player
+		if(!Fire.Player) Fire.Player = this.babs.ents.get(this.babs.idSelf) as Player
 
-		const playerPos = Flame.Player?.controller?.playerRig?.position
+		const playerPos = Fire.Player?.controller?.playerRig?.position
 		if(playerPos) {
-			const nearestFlames = Flame.FlameLights.sort((a, b) => {
+			const nearestFires = Fire.FireLights.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
-			// console.log('nearestFlames', nearestFlames.length, nearestFlames[0])
+			// console.log('nearestFires', nearestFires.length, nearestFires[0])
 
-			// If there's more lightpool spots than actual flames, reduce pool
-			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestFlames.length', nearestFlames.length)
-			if(Flame.LightPool.length > nearestFlames.length) {
-				for(let i=nearestFlames.length; i<Flame.LightPool.length; i++) {
-					const pointLight = Flame.LightPool[i]
+			// If there's more lightpool spots than actual fires, reduce pool
+			// console.log('Fire.LightPool.length', Fire.LightPool.length, 'nearestFires.length', nearestFires.length)
+			if(Fire.LightPool.length > nearestFires.length) {
+				for(let i=nearestFires.length; i<Fire.LightPool.length; i++) {
+					const pointLight = Fire.LightPool[i]
 					pointLight.parent.remove(pointLight)
 				}
-				Flame.LightPool.length = nearestFlames.length
+				Fire.LightPool.length = nearestFires.length
 			}
 
-			for(let index=0; index<Flame.LightPool.length; index++) {
-				Flame.LightPool[index].position.copy(nearestFlames[index].position)
-				Flame.LightPool[index].position.setY(Flame.LightPool[index].position.y +2)
+			for(let index=0; index<Fire.LightPool.length; index++) {
+				Fire.LightPool[index].position.copy(nearestFires[index].position)
+				Fire.LightPool[index].position.setY(Fire.LightPool[index].position.y +2)
 			}
 		}
 	}

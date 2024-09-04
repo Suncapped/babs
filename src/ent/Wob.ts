@@ -1,7 +1,7 @@
 import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2, PositionalAudio } from 'three'
 import { UiSys } from '@/sys/UiSys'
 
-import { Flame } from '@/comp/Flame'
+import { Fire } from '@/comp/Fire'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
@@ -186,14 +186,14 @@ export class Wob extends SharedWob {
 					babs.uiSys.wobSaid(wob.name, wob)
 				}
 
-				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
+				// Translate locid back to blueprint_id, so that farwob original name can be found for fires!
 				const bp = zone.locidToBlueprint[wob.locid]
 				// console.log('wob to bp', wob, bp.blueprint_id)a
 
 				// JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id())
 				if(alreadyExistedAtSameSpot) console.log('Look into: alreadyExistedAtSameSpot', wob.id(), feim.instanceIndexToWob.get(existingIindex)?.id())
 				if(//!alreadyExistedAtSameSpot && // What was that for?  It compared wobIds
-					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
+					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushflame')
 				) {
 					let scale, yup
 					if(bp.blueprint_id === 'campfire') {
@@ -204,16 +204,16 @@ export class Wob extends SharedWob {
 						scale = 1.1
 						yup = 3.5
 					}
-					else if(bp.blueprint_id === 'brushfire') {
+					else if(bp.blueprint_id === 'brushflame') {
 						scale = 1
 						yup = 0.8
 					}
 
-					// console.log('Adding flame:', bp.blueprint_id, wob.x, wob.z, asFarWobs)
+					// console.log('Adding fire:', bp.blueprint_id, wob.x, wob.z, asFarWobs)
 		
-					// Add new flame
+					// Add new fire
 					// Smoke and light we'll attach exclusively to  farwobs via 'asFarWobs' flag
-					Flame.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms) // Not awaiting
+					Fire.Create(wob, wob.zone, babs, scale, yup, asFarWobs) // Is relatively slow (extra ~0.25 ms) // Not awaiting
 				}
 
 				if(!asFarWobs) {

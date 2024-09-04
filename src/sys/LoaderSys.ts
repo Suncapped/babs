@@ -26,7 +26,7 @@ export class LoaderSys {
 	static CachedGlbFiles :Promise<typeof JSZip.files>
 	static CachedDekazoneFiles :Promise<typeof JSZip.files>
 	static CachedDekafarwobsFiles :Promise<typeof JSZip.files>
-	static CachedFiretex :Promise<Texture>
+	static CachedFlametex :Promise<Texture>
 	static MegaColorAtlas :Promise<void>
 	static ColorAtlasNew2 :Promise<Texture>
 	static CachedKidRig :Promise<GLTF>
@@ -99,8 +99,8 @@ export class LoaderSys {
 
 
 
-		// Prefetch Firetex
-		LoaderSys.CachedFiretex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/firetex.png`).then((texture) => {
+		// Prefetch Flametex
+		LoaderSys.CachedFlametex = new TextureLoader().loadAsync(`${babs.urlFiles}/texture/flametex.png`).then((texture) => {
 			// texture.colorSpace = SRGBColorSpace // Nope!  Made it quite transparent
 			return texture
 		})

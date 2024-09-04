@@ -55,7 +55,7 @@ import { DateTime } from 'luxon'
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 
 import { GUI } from 'lil-gui'
-import { Flame } from '@/comp/Flame'
+import { Fire } from '@/comp/Fire'
 
 export class WorldSys {
 
@@ -666,18 +666,18 @@ export class WorldSys {
 
 
 		// Update smoke (even if game away, but prevent accum buildup too)
-		if(Flame.SmokePuffIm) {
+		if(Fire.SmokePuffIm) {
 			// We need to do more generation when there are more lights, or else smoke stacks get too high
-			const actualNumLightsFactor = Flame.LightPool.length / Flame.LIGHTPOOL_LQ // aka 4/4 (1.0) or 12/4 (3.0)
+			const actualNumLightsFactor = Fire.LightPool.length / Fire.LIGHTPOOL_LQ // aka 4/4 (1.0) or 12/4 (3.0)
 
 			// Maybe create a new smoke puff occasionally
 			this.smokeAccumulator += (dt *actualNumLightsFactor)
-			if(this.smokeAccumulator >= Flame.SMOKE_PUFF_CREATION_INTERVAL) {
+			if(this.smokeAccumulator >= Fire.SMOKE_PUFF_CREATION_INTERVAL) {
 				// Prevent huge accumulator buildup if not rendering
-				if(this.smokeAccumulator > Flame.SMOKE_PUFF_CREATION_INTERVAL *10) {
-					this.smokeAccumulator = Flame.SMOKE_PUFF_CREATION_INTERVAL
+				if(this.smokeAccumulator > Fire.SMOKE_PUFF_CREATION_INTERVAL *10) {
+					this.smokeAccumulator = Fire.SMOKE_PUFF_CREATION_INTERVAL
 				}
-				this.smokeAccumulator -= Flame.SMOKE_PUFF_CREATION_INTERVAL
+				this.smokeAccumulator -= Fire.SMOKE_PUFF_CREATION_INTERVAL
 				this.createSmokePuffs(dt)
 			}
 
@@ -768,24 +768,24 @@ export class WorldSys {
 
 	}
 	createSmokePuffs(dt :number) {
-		const currentLimitBasedOnNumStacks = Flame.LightPool.length *Flame.SMOKE_PUFFS_PER_LIGHT
-		// console.log('smoke stats:', `${Flame.SmokePuffIm.count} of ${Flame.SmokePuffMaxCount} (${currentLimitBasedOnNumStacks}), index: ${Flame.SmokeLatestIndex}`)
+		const currentLimitBasedOnNumStacks = Fire.LightPool.length *Fire.SMOKE_PUFFS_PER_LIGHT
+		// console.log('smoke stats:', `${Fire.SmokePuffIm.count} of ${Fire.SmokePuffMaxCount} (${currentLimitBasedOnNumStacks}), index: ${Fire.SmokeLatestIndex}`)
 
-		if(Flame.SmokeLatestIndex >= currentLimitBasedOnNumStacks) {
+		if(Fire.SmokeLatestIndex >= currentLimitBasedOnNumStacks) {
 			// We've reached the max, so loop index back to 0
-			// Flame.SmokePuffIm.count = 0
-			Flame.SmokeLatestIndex = 0
+			// Fire.SmokePuffIm.count = 0
+			Fire.SmokeLatestIndex = 0
 		}
-		if(Flame.SmokePuffIm.count < currentLimitBasedOnNumStacks) {
+		if(Fire.SmokePuffIm.count < currentLimitBasedOnNumStacks) {
 			// Up the render count (until we reach max)
-			Flame.SmokePuffIm.count++
+			Fire.SmokePuffIm.count++
 		}
 		const tempMatrix = new Matrix4()
 		const tempPosition = new Vector3()
 
-		// Pick a random from Flame.LightPool
-		const randomIndex = Math.floor(Math.random() *Flame.LightPool.length)
-		const randomLight = Flame.LightPool[randomIndex]
+		// Pick a random from Fire.LightPool
+		const randomIndex = Math.floor(Math.random() *Fire.LightPool.length)
+		const randomLight = Fire.LightPool[randomIndex]
 
 		// console.log('randomLight', randomIndex, randomLight.position)
 
@@ -795,20 +795,20 @@ export class WorldSys {
 			randomLight.getWorldPosition(tempPosition)
 			
 			// Subtract smoke IM offset so that it's relative to shifted position
-			tempPosition.sub(Flame.SmokePuffIm.position)
+			tempPosition.sub(Fire.SmokePuffIm.position)
 
 			// Add a bit of randomness
 			const randomFactor = 5
 			const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
 			tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
-			tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
+			tempPosition.y += Fire.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the fire
 
 			tempMatrix.setPosition(tempPosition)
-			Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
-			Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+			Fire.SmokePuffIm.setMatrixAt(Fire.SmokeLatestIndex, tempMatrix)
+			Fire.SmokePuffIm.instanceMatrix.needsUpdate = true
 
-			Flame.SmokeLatestIndex++
-			// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
+			Fire.SmokeLatestIndex++
+			// console.log('Just set a new smoke puff at', tempPosition, Fire.SmokePuffIm.count, Fire.SmokeLatestIndex)
 		}
 		else {
 			console.warn('randomLight is null')
@@ -820,18 +820,18 @@ export class WorldSys {
 		// Also make it get larger over time
 		const tempMatrix = new Matrix4()
 		const tempPosition = new Vector3()
-		const scaleupQualityRelative = 1 +(Flame.SMOKE_SCALEUP_RATE *dt) // Was designed at 60fps, this scales it using dt
-		for(let i=0; i<Flame.SmokePuffIm.count; i++) {
-			Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
+		const scaleupQualityRelative = 1 +(Fire.SMOKE_SCALEUP_RATE *dt) // Was designed at 60fps, this scales it using dt
+		for(let i=0; i<Fire.SmokePuffIm.count; i++) {
+			Fire.SmokePuffIm.getMatrixAt(i, tempMatrix)
 			tempPosition.setFromMatrixPosition(tempMatrix)
 
 			// Make it rise
-			tempPosition.y += Flame.SMOKE_SPEED *dt
+			tempPosition.y += Fire.SMOKE_SPEED *dt
 
 			// Make it get larger
 			const scale = tempMatrix.getMaxScaleOnAxis()
-			if (scale < Flame.SMOKE_MAX_SCALE) {
-				// const growthFactor = 1 + (1 - scale / Flame.SMOKE_MAX_SCALE) * 0.003
+			if (scale < Fire.SMOKE_MAX_SCALE) {
+				// const growthFactor = 1 + (1 - scale / Fire.SMOKE_MAX_SCALE) * 0.003
 				// tempMatrix.scale(new Vector3(growthFactor, growthFactor, growthFactor))
 				const reduceBy = 0.00005//0.05 *dt
 				const scaleBy = new Vector3().setScalar(scaleupQualityRelative)
@@ -851,15 +851,15 @@ export class WorldSys {
 			// 	continue
 			// }
 			// const groundHeight = yardCoord.zone.engineHeightAt(yardCoord)
-			// if(tempPosition.y > groundHeight + Flame.SMOKE_MAX_HEIGHT) {
-			// 	tempPosition.y = groundHeight + Flame.SMOKE_STARTING_EXTRAHEIGHT // Reset y
+			// if(tempPosition.y > groundHeight + Fire.SMOKE_MAX_HEIGHT) {
+			// 	tempPosition.y = groundHeight + Fire.SMOKE_STARTING_EXTRAHEIGHT // Reset y
 			// 	tempMatrix.makeScale(1,1,1) // Reset scale
 			// }
 			// Actually, we kinda want it so that smoke is getting moved/removed before reaching its y limits.  That way, when a light is moved, the smoke doesn't y reset on the old position.
 
 			tempMatrix.setPosition(tempPosition)
-			Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
-			Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+			Fire.SmokePuffIm.setMatrixAt(i, tempMatrix)
+			Fire.SmokePuffIm.instanceMatrix.needsUpdate = true
 		}
 	}
 	
@@ -1108,7 +1108,7 @@ export class WorldSys {
 			// @ts-ignore
 			if(child.noShiftiness) {
 				// console.log('noShiftiness', child.name) // todo shiftiness
-				return // Having done this, now the shift is just: ground, flame, flamelight, and self (sometimes).
+				return // Having done this, now the shift is just: ground, fire, firelight, and self (sometimes).
 			}
 			// if(child.name !== 'ground' && child.name !== 'groundgrid') console.log('gonna shift', child.name)
 
@@ -1127,8 +1127,8 @@ export class WorldSys {
 			// child.matrixWorldNeedsUpdate = true
 		})
 
-		// Also update Flame.FlameLights, since they are not in the group (they're just recordkeeping)
-		Flame.FlameLights.forEach(light => {
+		// Also update Fire.FireLights, since they are not in the group (they're just recordkeeping)
+		Fire.FireLights.forEach(light => {
 			light.position.add(shiftVector)
 		})
 

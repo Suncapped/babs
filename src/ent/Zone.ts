@@ -6,7 +6,7 @@ import { BufferAttribute, Color, InstancedMesh, MathUtils, Matrix4, Mesh, Object
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
-import { Flame } from '@/comp/Flame'
+import { Fire } from '@/comp/Fire'
 import { SharedWob, Blueprint } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
@@ -75,7 +75,7 @@ export class Zone extends SharedZone {
 		const deletingWobZone = this.babs.ents.get(deletingWob.idzone) as Zone
 
 		// Remove attachments
-		Flame.Delete(deletingWob, this.babs)
+		Fire.Delete(deletingWob, this.babs)
 		Audible.Delete(deletingWob, this.babs)
 		
 		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.

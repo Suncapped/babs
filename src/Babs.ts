@@ -20,7 +20,7 @@ import type { Zone } from './ent/Zone'
 import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import type { SoundSys } from './sys/SoundSys'
-import { Flame } from './comp/Flame'
+import { Fire } from './comp/Fire'
 
 declare global {
 	interface Window {
@@ -103,7 +103,7 @@ export class Babs {
 			case agent.indexOf('opr') > -1 && !!window['opr']: return 'opera'
 			case agent.indexOf('chrome') > -1 && !!window['chrome']: return 'chrome'
 			case agent.indexOf('trident') > -1: return 'Internet Explorer'
-			case agent.indexOf('firefox') > -1: return 'firefox'
+			case agent.indexOf('flamefox') > -1: return 'flamefox'
 			case agent.indexOf('safari') > -1: return 'safari'
 			default: return 'other'
 			}
@@ -133,7 +133,7 @@ export class Babs {
 			this.scene.add(this.group)
 			this.group.scale.setScalar(CameraSys.CurrentScale)
 			
-			Flame.Setup(this) // Requires babs.group
+			Fire.Setup(this) // Requires babs.group
 	
 			this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 
