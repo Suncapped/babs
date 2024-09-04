@@ -20,6 +20,7 @@ import type { Zone } from './ent/Zone'
 import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import type { SoundSys } from './sys/SoundSys'
+import { Flame } from './comp/Flame'
 
 declare global {
 	interface Window {
@@ -131,6 +132,8 @@ export class Babs {
 			this.group.name = 'fegroup'
 			this.scene.add(this.group)
 			this.group.scale.setScalar(CameraSys.CurrentScale)
+			
+			Flame.Setup(this) // Requires babs.group
 	
 			this.worldSys = new WorldSys(this.renderSys.renderer, this, this.camera)
 

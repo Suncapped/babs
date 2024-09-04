@@ -665,7 +665,7 @@ export class WorldSys {
 		}
 
 
-		// Update smoke
+		// Update smoke (even if game away, but prevent accum buildup too)
 		if(Flame.SmokePuffIm) {
 			// We need to do more generation when there are more lights, or else smoke stacks get too high
 			const actualNumLightsFactor = Flame.LightPool.length / Flame.LIGHTPOOL_LQ // aka 4/4 (1.0) or 12/4 (3.0)
@@ -673,8 +673,12 @@ export class WorldSys {
 			// Maybe create a new smoke puff occasionally
 			this.smokeAccumulator += (dt *actualNumLightsFactor)
 			if(this.smokeAccumulator >= Flame.SMOKE_PUFF_CREATION_INTERVAL) {
+				// Prevent huge accumulator buildup if not rendering
+				if(this.smokeAccumulator > Flame.SMOKE_PUFF_CREATION_INTERVAL *10) {
+					this.smokeAccumulator = Flame.SMOKE_PUFF_CREATION_INTERVAL
+				}
 				this.smokeAccumulator -= Flame.SMOKE_PUFF_CREATION_INTERVAL
-				this.makeSmokePuffs(dt)
+				this.createSmokePuffs(dt)
 			}
 
 			this.smokePuffsRiseScale(dt)
@@ -763,7 +767,7 @@ export class WorldSys {
 		})
 
 	}
-	makeSmokePuffs(dt :number) {
+	createSmokePuffs(dt :number) {
 		const currentLimitBasedOnNumStacks = Flame.LightPool.length *Flame.SMOKE_PUFFS_PER_LIGHT
 		// console.log('smoke stats:', `${Flame.SmokePuffIm.count} of ${Flame.SmokePuffMaxCount} (${currentLimitBasedOnNumStacks}), index: ${Flame.SmokeLatestIndex}`)
 
@@ -789,6 +793,9 @@ export class WorldSys {
 		if(randomLight) {
 			// Create a smoke puff at that light's position
 			randomLight.getWorldPosition(tempPosition)
+			
+			// Subtract smoke IM offset so that it's relative to shifted position
+			tempPosition.sub(Flame.SmokePuffIm.position)
 
 			// Add a bit of randomness
 			const randomFactor = 5
@@ -1090,18 +1097,20 @@ export class WorldSys {
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
 			'cameraGroup', 'camera', // Doesn't really matter since they're set per frame anyway, but might as well.
-			'smoke',
-		] // , 'PointLight', 'ThreeFire', InstancedMesh
+		]
 		if(initialLoadExcludeSelf) excludeFromShift.push('self')
 
 		let shiftingLog = []
 		this.babs.group.children.forEach(child => {
+			// if(child.name !== 'ground' && child.name !== 'groundgrid') console.log('will shift?', child.name)
 			if(excludeFromShift.includes(child.name)) return
+
 			// @ts-ignore
 			if(child.noShiftiness) {
-				// console.log('noShiftiness') // todo shiftiness
+				// console.log('noShiftiness', child.name) // todo shiftiness
 				return // Having done this, now the shift is just: ground, flame, flamelight, and self (sometimes).
 			}
+			// if(child.name !== 'ground' && child.name !== 'groundgrid') console.log('gonna shift', child.name)
 
 			child.position.setX(child.position.x +shiftVector.x)
 			child.position.setZ(child.position.z +shiftVector.z)
@@ -1118,21 +1127,10 @@ export class WorldSys {
 			// child.matrixWorldNeedsUpdate = true
 		})
 
-		// Shift existing smoke puffs, having ignored above
-		// There may be a more standard way to do this...
-		// I'm using randomLight.getWorldPosition to get light position, is the problem.
-		if(Flame.SmokePuffIm) {
-			const tempMatrix = new Matrix4()
-			const tempPosition = new Vector3()
-			for(let i=0; i<Flame.SmokePuffIm.count; i++) {
-				Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
-				tempPosition.setFromMatrixPosition(tempMatrix)
-				tempPosition.add(shiftVector)
-				tempMatrix.setPosition(tempPosition)
-				Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
-				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
-			}
-		}
+		// Also update Flame.FlameLights, since they are not in the group (they're just recordkeeping)
+		Flame.FlameLights.forEach(light => {
+			light.position.add(shiftVector)
+		})
 
 		this.shiftiness.add(shiftVector)
 		// return shiftVector

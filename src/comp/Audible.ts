@@ -126,7 +126,7 @@ export class Audible extends Comp {
 		})
 		if(audibleComp?.holderObject) {
 			// Update compcats
-			console.log('deleting Audible?', deletingWob, audibleComp, audibleComps)
+			// console.log('deleting Audible?', deletingWob, audibleComp, audibleComps) // todo, make it kinda match light/fire?
 			babs.compcats.set(Audible.name, audibleComps.filter(c => c.holderObject.uuid !== audibleComp.holderObject.uuid))
 
 			audibleComp.continuousSound.stop()

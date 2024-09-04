@@ -58,17 +58,15 @@ export class Flame extends Comp {
 		noiseScaleZ : 1.5,//1.0,
 	}
 	fire :ThreeFire
-
-	constructor(wob :SharedWob, babs :Babs) {
-		super(wob.id(), Flame, babs)
-
+	
+	static Setup(babs :Babs) { // Static initializer
 		Flame.LightPoolMax = babs.graphicsQuality ? Flame.LIGHTPOOL_HQ : Flame.LIGHTPOOL_LQ
+		Flame.SmokePuffMaxCount = Flame.SMOKE_PUFFS_PER_LIGHT * Flame.LightPoolMax
 
-		// Set up smoke trail singleton
+		// Set up smoke trail singleton // Requires babs.group to be ready
 		if(!Flame.SmokePuffIm) {
 			const geometry = new OctahedronGeometry(Flame.SMOKE_STARTING_SIZE, 1)
 			const material = new MeshLambertMaterial({})
-			Flame.SmokePuffMaxCount = Flame.SMOKE_PUFFS_PER_LIGHT * Flame.LightPoolMax
 			Flame.SmokePuffIm = new InstancedMesh(geometry, material, Flame.SmokePuffMaxCount)
 			Flame.SmokePuffIm.castShadow = false
 			Flame.SmokePuffIm.count = 0
@@ -87,16 +85,22 @@ export class Flame extends Comp {
 		}
 	}
 
+	constructor(wob :SharedWob, babs :Babs) {
+		super(wob.id(), Flame, babs)
+	}
+
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
 		// console.log('Flame.Create', asFarWobs)
 		
-		// When a flame is added in a nearzone, it adds light+fire+audible.
-		// When a flame is added in a farzone, it adds light.
+		// When a flame is added in a nearzone, it should add light+fire(+audible).
+		// When a flame is added in a farzone, it should add light.
+		// No, instead: When a flame is added asfarwobs, it should only add light.  As near, only adds fire.
 
 		const yardCoord = YardCoord.Create(wob)
 		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 		let flameLight :ThreeFire | FlameLight
 		if(!asFarWobs) {
+			console.log('Flame.Create near (add fire only)', asFarWobs)
 			// Add fire
 
 			Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex // Ensure texture is loaded
@@ -120,11 +124,12 @@ export class Flame extends Comp {
 			flameComp.fire.position.setX(engPositionVector.x)
 			flameComp.fire.position.setZ(engPositionVector.z)
 
-			// Add light
+			// // Add light
 			flameComp.fire.wobId = wob.id()
-			flameLight = flameComp.fire
+			// flameLight = flameComp.fire
 		}
 		else {
+			console.log('Flame.Create asFarWobs (add light only)', asFarWobs)
 			// Add light only
 			flameLight = {
 				position: new Vector3(),
@@ -133,16 +138,32 @@ export class Flame extends Comp {
 			flameLight.position.setY(engPositionVector.y +yup)
 			flameLight.position.setX(engPositionVector.x)
 			flameLight.position.setZ(engPositionVector.z)
+
+			Flame.FlameLights.push(flameLight) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
+
+			// Init static singletons
+			// console.log('Flame.Create', Flame.LightPool.length, Flame.LightPoolMax)
+			if(Flame.LightPool.length < Flame.LightPoolMax) {
+				const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
+				// pointLight.castShadow = true // Complex?
+				pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale *5 // todo smoke
+				pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale *5 // todo smoke
+				pointLight.name = 'flamelight'
+				Flame.LightPool.push(pointLight)
+				babs.group.add(pointLight)
+				// console.log('adding pointlight', pointLight.position, wob)
+			}
 		}
 
-		// When adding farwobs, if there's a light already there, don't add another.
-		// We don't care if it's a far or near; we just want to avoid duplicates in the same spot.  
-		// On delete, we'll attempt to delete either one.
-		const existingLight = Flame.FlameLights.find(fl => {
-			const flameLightWobId = fl.wobId as WobId
-			return isMatchingWobIds(flameLightWobId, wob.id())
-		})
-		if(!existingLight) {
+		/*
+		// // When adding farwobs, if there's a light already there, don't add another.
+		// // We don't care if it's a far or near; we just want to avoid duplicates in the same spot.  
+		// // On delete, we'll attempt to delete either one.
+		// const existingLight = Flame.FlameLights.find(fl => {
+		// 	const flameLightWobId = fl.wobId as WobId
+		// 	return isMatchingWobIds(flameLightWobId, wob.id())
+		// })
+		// if(!existingLight) {
 			// console.log('Flame.Create NOT existingLight', existingLight)
 			// Add a glow of light, or, at least, smoke :p
 			Flame.FlameLights.push(flameLight) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
@@ -152,15 +173,16 @@ export class Flame extends Comp {
 			if(Flame.LightPool.length < Flame.LightPoolMax) {
 				const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
 				// pointLight.castShadow = true // Complex?
-				pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
-				pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
+				pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale *5 // todo smoke
+				pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale *5 // todo smoke
 				pointLight.name = 'flamelight'
 				Flame.LightPool.push(pointLight)
 				babs.group.add(pointLight)
 				// console.log('adding pointlight', pointLight.position, wob)
 			}
-		}
-		
+		// }
+		*/
+
 		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
 	}
 
@@ -169,18 +191,24 @@ export class Flame extends Comp {
 
 
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
-		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
-		
+		// When a flame is removed in a nearzone, it should remove light+fire(+audible).
+		// When a flame is removed in a farzone, it should remove light.
+		// No, instead: When a flame is removed asfarwobs, it should only remove light.  As near, only removes fire.
+
 		const deletingWobId = deletingWob.id()
 
+		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		const flameComp = flameComps?.find(fc => {
 			const compWobId = fc.idEnt as WobId
-			return isMatchingWobIds(compWobId, deletingWobId)
+			const onlyDeleteFarXorNear = true
+			return isMatchingWobIds(compWobId, deletingWobId, onlyDeleteFarXorNear)
 		})
 		if(flameComp) {
-			// console.log('Flame.Delete && flameComp')//, flameComps, babs.compcats)
-			babs.group.remove(flameComp.fire)
+			const zone = babs.ents.get(flameComp.fire.wobId.idzone)
+			console.log(`Flame.Delete && flameComp on so deletingWob, on zone:`, deletingWob, zone)
 
+			// Remove fire
+			babs.group.remove(flameComp.fire)
 			flameComp.fire.geometry.dispose()
 			flameComp.fire.visible = false
 			if(Array.isArray(flameComp.fire.material)) {
@@ -191,15 +219,21 @@ export class Flame extends Comp {
 				flameComp.fire.material.dispose()
 				flameComp.fire.material.visible = false
 			}
-			
 			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flameComp.fire.uuid)) // This was it.  This was what was needed
-
+		}
+		else {
+			// This presumably means that it was a farwob, and only had a light.
+			// Remove light
+			console.log('FlameLights before filter', Flame.FlameLights.length)
 			Flame.FlameLights = Flame.FlameLights.filter(flameLight => {
 				// console.log('Flame.Delete flameLight filter:', flameLight, deletingWobId)
 				const flameLightWobId = flameLight.wobId as WobId
-				const fireWobMatchesDeletingWob = isMatchingWobIds(flameLightWobId, deletingWobId)
+				const onlyDeleteFarXorNear = true
+				const fireWobMatchesDeletingWob = isMatchingWobIds(flameLightWobId, deletingWobId, onlyDeleteFarXorNear)
 				return !fireWobMatchesDeletingWob
 			})
+			console.log('FlameLights after filter', Flame.FlameLights.length)
+
 		}
 	}
 
