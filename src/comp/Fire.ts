@@ -91,14 +91,10 @@ export class Fire extends Comp {
 
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
 		// console.log('Fire.Create', asFarWobs)
-		
-		// When a fire is added in a nearzone, it should add light+flame(+audible).
-		// When a fire is added in a farzone, it should add light.
-		// No, instead: When a fire is added asfarwobs, it should only add light.  As near, only adds flame.
+		// When a fire is added asfarwobs, it should only add light.  As near, only adds flame.
 
 		const yardCoord = YardCoord.Create(wob)
 		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
-		let fireLight :ThreeFlame | FireLight
 		if(!asFarWobs) {
 			console.log('Fire.Create near (add flame only)', asFarWobs)
 			// Add flame
@@ -126,23 +122,22 @@ export class Fire extends Comp {
 
 			// // Add light
 			fireComp.flame.wobId = wob.id()
-			// fireLight = fireComp.flame
 		}
 		else {
 			console.log('Fire.Create asFarWobs (add light only)', asFarWobs)
 			// Add light only
-			fireLight = {
-				position: new Vector3(),
+			
+			
+			const fireLight :FireLight = {
+				position: new Vector3(
+					engPositionVector.x,
+					engPositionVector.y +yup,
+					engPositionVector.z
+				),
 				wobId: wob.id(),
 			}
-			fireLight.position.setY(engPositionVector.y +yup)
-			fireLight.position.setX(engPositionVector.x)
-			fireLight.position.setZ(engPositionVector.z)
-
 			Fire.FireLights.push(fireLight) // Must come before Fire.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
 
-			// Init static singletons
-			// console.log('Fire.Create', Fire.LightPool.length, Fire.LightPoolMax)
 			if(Fire.LightPool.length < Fire.LightPoolMax) {
 				const pointLight = new PointLight(0xeb7b54, Fire.PointLightIntensity, Fire.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
 				// pointLight.castShadow = true // Complex?
@@ -153,47 +148,14 @@ export class Fire extends Comp {
 				babs.group.add(pointLight)
 				// console.log('adding pointlight', pointLight.position, wob)
 			}
+
+			babs.renderSys.moveLightsToNearPlayer() // Move on creation so it makes light there fast :)
 		}
 
-		/*
-		// // When adding farwobs, if there's a light already there, don't add another.
-		// // We don't care if it's a far or near; we just want to avoid duplicates in the same spot.  
-		// // On delete, we'll attempt to delete either one.
-		// const existingLight = Fire.FireLights.find(fl => {
-		// 	const fireLightWobId = fl.wobId as WobId
-		// 	return isMatchingWobIds(fireLightWobId, wob.id())
-		// })
-		// if(!existingLight) {
-			// console.log('Fire.Create NOT existingLight', existingLight)
-			// Add a glow of light, or, at least, smoke :p
-			Fire.FireLights.push(fireLight) // Must come before Fire.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
-
-			// Init static singletons
-			// console.log('Fire.Create', Fire.LightPool.length, Fire.LightPoolMax)
-			if(Fire.LightPool.length < Fire.LightPoolMax) {
-				const pointLight = new PointLight(0xeb7b54, Fire.PointLightIntensity, Fire.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
-				// pointLight.castShadow = true // Complex?
-				pointLight.intensity = Fire.PointLightIntensity *CameraSys.CurrentScale *5 // todo smoke
-				pointLight.distance = Fire.PointLightDistance *CameraSys.CurrentScale *5 // todo smoke
-				pointLight.name = 'firelight'
-				Fire.LightPool.push(pointLight)
-				babs.group.add(pointLight)
-				// console.log('adding pointlight', pointLight.position, wob)
-			}
-		// }
-		*/
-
-		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
 	}
 
-	// I mean, it's safe to say there will always be flames.  So maybe I should just one-time instantiate the smoke IM.
-	
-
-
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
-		// When a fire is removed in a nearzone, it should remove light+flame(+audible).
-		// When a fire is removed in a farzone, it should remove light.
-		// No, instead: When a fire is removed asfarwobs, it should only remove light.  As near, only removes flame.
+		// When a fire is removed asfarwobs, it should only remove light.  As near, only removes flame.
 
 		const deletingWobId = deletingWob.id()
 

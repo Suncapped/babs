@@ -129,7 +129,7 @@ export class RenderSys {
 		})
 
 		setInterval(() => {
-			this.moveThingsToNearPlayer()
+			this.moveLightsToNearPlayer()
 			
 			const xrSession = (this.renderer instanceof WebGLRenderer) && this.renderer.xr.getSession()
 			const isVrSessionActivated = !!xrSession
@@ -513,7 +513,7 @@ export class RenderSys {
 		// }
 	}
 
-	moveThingsToNearPlayer() {
+	moveLightsToNearPlayer() {
 		if(!Fire.Player) Fire.Player = this.babs.ents.get(this.babs.idSelf) as Player
 
 		const playerPos = Fire.Player?.controller?.playerRig?.position
