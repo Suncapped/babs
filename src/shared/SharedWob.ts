@@ -49,6 +49,7 @@ export function isWobId(item :any): item is WobId {
 }
 
 export function isMatchingWobIds(a: WobId, b: WobId, blueprint_too = false) {
+	if(!(a && b)) return false
 	return a.idzone === b.idzone
 	&& a.x === b.x
 	&& a.z === b.z

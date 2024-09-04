@@ -90,15 +90,17 @@ export class Flame extends Comp {
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
 		// console.log('Flame.Create', asFarWobs)
 		
+		// When a flame is added in a nearzone, it adds light+fire+audible.
+		// When a flame is added in a farzone, it adds light.
 
 		const yardCoord = YardCoord.Create(wob)
 		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 		let flameLight :ThreeFire | FlameLight
 		if(!asFarWobs) {
-			// Ensure texture is loaded
-			Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
-			// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
+			// Add fire
 
+			Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex // Ensure texture is loaded
+			// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
 			const flameComp = new Flame(wob, babs)
 			flameComp.fire = new ThreeFire(Flame.fireTex)
 			flameComp.fire.material.uniforms.magnitude.value = Flame.flameSettings.magnitude
@@ -110,7 +112,6 @@ export class Flame extends Comp {
 				Flame.flameSettings.noiseScaleZ,
 				0.3
 			)
-
 			flameComp.fire.name = 'flame'
 			babs.group.add(flameComp.fire)
 			flameComp.fire.scale.set(scale,scale*1.33,scale)
@@ -119,10 +120,12 @@ export class Flame extends Comp {
 			flameComp.fire.position.setX(engPositionVector.x)
 			flameComp.fire.position.setZ(engPositionVector.z)
 
+			// Add light
 			flameComp.fire.wobId = wob.id()
 			flameLight = flameComp.fire
 		}
 		else {
+			// Add light only
 			flameLight = {
 				position: new Vector3(),
 				wobId: wob.id(),
@@ -168,7 +171,6 @@ export class Flame extends Comp {
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		
-		console.debug('Flame.Delete flameComps', flameComps, babs.compcats)
 		const deletingWobId = deletingWob.id()
 
 		const flameComp = flameComps?.find(fc => {
@@ -176,6 +178,7 @@ export class Flame extends Comp {
 			return isMatchingWobIds(compWobId, deletingWobId)
 		})
 		if(flameComp) {
+			// console.log('Flame.Delete && flameComp')//, flameComps, babs.compcats)
 			babs.group.remove(flameComp.fire)
 
 			flameComp.fire.geometry.dispose()
@@ -190,14 +193,14 @@ export class Flame extends Comp {
 			}
 			
 			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flameComp.fire.uuid)) // This was it.  This was what was needed
-		}
 
-		Flame.FlameLights = Flame.FlameLights.filter(flameLight => {
-			// console.log('Flame.Delete flameLight filter:', flameLight, deletingWobId)
-			const flameLightWobId = flameLight.wobId as WobId
-			const fireWobMatchesDeletingWob = isMatchingWobIds(flameLightWobId, deletingWobId)
-			return !fireWobMatchesDeletingWob
-		})
+			Flame.FlameLights = Flame.FlameLights.filter(flameLight => {
+				// console.log('Flame.Delete flameLight filter:', flameLight, deletingWobId)
+				const flameLightWobId = flameLight.wobId as WobId
+				const fireWobMatchesDeletingWob = isMatchingWobIds(flameLightWobId, deletingWobId)
+				return !fireWobMatchesDeletingWob
+			})
+		}
 	}
 
 	update(dt :number) {

@@ -5,7 +5,7 @@ import { Flame } from '@/comp/Flame'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
+import { Blueprint, isMatchingWobIds, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys, type FeGltf } from '@/sys/LoaderSys'
@@ -167,6 +167,8 @@ export class Wob extends SharedWob {
 						feim.increaseLoadedCount()
 					}
 				}
+				
+				const alreadyExistedAtSameSpot = isMatchingWobIds(wob, feim.instanceIndexToWob.get(existingIindex)?.id())
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
@@ -186,8 +188,11 @@ export class Wob extends SharedWob {
 
 				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
 				const bp = zone.locidToBlueprint[wob.locid]
-				// console.log('wob to bp', wob, bp.blueprint_id)
-				if(//!alreadyExistsAtSameSpot && // What was that for?  It compared wobIds
+				// console.log('wob to bp', wob, bp.blueprint_id)a
+
+				// JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id())
+				if(alreadyExistedAtSameSpot) console.log('Look into: alreadyExistedAtSameSpot', wob.id(), feim.instanceIndexToWob.get(existingIindex)?.id())
+				if(//!alreadyExistedAtSameSpot && // What was that for?  It compared wobIds
 					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
 				) {
 					let scale, yup
