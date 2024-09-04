@@ -51,11 +51,6 @@ export class Wob extends SharedWob {
 		console.debug('arrivalWobs', arrivalWobs.length)
 		const nameCounts = new Map<string, number>()
 
-		// const playerSelf = babs.ents.get(babs.idSelf) as Player
-		// const playerZone = playerSelf.controller.playerRig.zone
-		// const zonesNearbyIds = playerZone.getZonesAround(Zone.loadedZones).map(z=>z.id)
-
-
 		for(const wob of arrivalWobs) {
 			if(asFarWobs) {
 				wob.name = Wob.FarwobName
@@ -73,6 +68,13 @@ export class Wob extends SharedWob {
 		// console.debug('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, gltf] of Wob.LoadedGltfs) {
+			// console.log('blueprint_id, gltf', blueprint_id, gltf)
+			if(!gltf.hasOwnProperty('scene')) {
+				// Skip if failed to load
+				console.warn('Failed to load gltf:', blueprint_id)
+				continue
+			}
+
 			const newWobsCount = nameCounts.get(blueprint_id)
 			let instanced = Wob.InstancedWobs.get(blueprint_id)
 			// console.log('Checking for instanced for blueprint_id', blueprint_id, newWobsCount)
@@ -100,11 +102,7 @@ export class Wob extends SharedWob {
 		// Why separately?  Because this happens en-masse
 		for(const fwob of arrivalWobs) {
 			// console.log('arrival of', fwob.name, fwob.blueprint_id)
-			let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
-				blueprint_id: fwob.blueprint_id, 
-				locid: fwob.locid,
-				comps: fwob.comps,
-			})
+
 
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI
@@ -118,14 +116,23 @@ export class Wob extends SharedWob {
 			// 	// babs.uiSys.svContainers[0].delWob(wob.id)
 			// }
 
-			if(wob.idzone) { // Place in zone (; is not a backpack item)
+			if(fwob.idzone) { // Place in zone (; is not a backpack item)
+				const feim = Wob.InstancedWobs.get(fwob.blueprint_id)
+				if(!feim) {
+					console.warn('No feim for:', fwob.blueprint_id)
+					continue
+				}
+
+				let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
+					blueprint_id: fwob.blueprint_id, 
+					locid: fwob.locid,
+					comps: fwob.comps,
+				})
 				zone = babs.ents.get(wob.idzone) as Zone
-				const feim = Wob.InstancedWobs.get(wob.name)
 
 				yardCoord = YardCoord.Create(wob)
 				engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 				engPositionVector = feim.heightTweak(engPositionVector)
-
 
 				let existingIindex
 				if(!asFarWobs) {
@@ -159,7 +166,8 @@ export class Wob extends SharedWob {
 					}
 				}
 
-				const alreadyExistsAtSameSpot = JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id())
+				// const alreadyExistsAtSameSpot = JSON.stringify(feim.instanceIndexToWob.get(existingIindex)?.id()) === JSON.stringify(wob.id()) // todo smoke, hmm what was this for?
+				// if(feim.instanceIndexToWob.get(existingIindex)) console.log('alreadyExistsAtSameSpot', feim.instanceIndexToWob.get(existingIindex))
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
@@ -180,7 +188,7 @@ export class Wob extends SharedWob {
 				// Translate locid back to blueprint_id, so that farwob original name can be found for flames!
 				const bp = zone.locidToBlueprint[wob.locid]
 				// console.log('wob to bp', wob, bp.blueprint_id)
-				if(!alreadyExistsAtSameSpot &&
+				if(//!alreadyExistsAtSameSpot &&
 					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushfire')
 				) {
 					let scale, yup
@@ -197,7 +205,7 @@ export class Wob extends SharedWob {
 						yup = 0.8
 					}
 
-					console.log('Adding flame:', bp.blueprint_id, scale, yup)
+					// console.log('Adding flame:', bp.blueprint_id, wob.x, wob.z, asFarWobs)
 		
 					// Add new flame
 					// Smoke and light we'll attach exclusively to  farwobs via 'asFarWobs' flag

@@ -48,6 +48,13 @@ export function isWobId(item :any): item is WobId {
 	&& (item as WobId).blueprint_id !== undefined
 }
 
+export function isMatchingWobIds(a: WobId, b: WobId, blueprint_too = false) {
+	return a.idzone === b.idzone
+	&& a.x === b.x
+	&& a.z === b.z
+	&& (!blueprint_too || a.blueprint_id === b.blueprint_id)
+}
+
 export type RotationCardinal = 0 | 1 | 2 | 3
 export type RotationCardinalDegrees = 0 | 90 | 180 | 270
 export type PlayerRotation = UintRange<0, 8>

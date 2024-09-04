@@ -20,6 +20,7 @@ import { YardCoord } from '@/comp/Coord'
 import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js'
+import type { Player } from '@/ent/Player'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -335,7 +336,7 @@ export class RenderSys {
 					})
 					setTimeout(() => {
 						window.location.reload()
-					}, 2000)
+					}, 3000)
 				}
 			}
 			else {
@@ -513,11 +514,15 @@ export class RenderSys {
 	}
 
 	moveThingsToNearPlayer() {
+		if(!Flame.Player) Flame.Player = this.babs.ents.get(this.babs.idSelf) as Player
+
 		const playerPos = Flame.Player?.controller?.playerRig?.position
 		if(playerPos) {
-			const nearestFlames = Flame.FlameFires.sort((a, b) => {
+			const nearestFlames = Flame.FlameLights.sort((a, b) => {
 				return Math.abs(a.position.distanceTo(playerPos)) -Math.abs(b.position.distanceTo(playerPos))
 			})
+
+			// console.log('nearestFlames', nearestFlames)
 
 			// If there's more lights than wants, remove the extras
 			// console.log('Flame.LightPool.length', Flame.LightPool.length, 'nearestFlames.length', nearestFlames.length)

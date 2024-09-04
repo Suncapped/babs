@@ -168,7 +168,7 @@ export class InstancedWobs {
 	}
 
 	reallocateLargerBuffer(maxCount :number) {
-		console.log('Reallocate:', this.blueprint_id, this.maxCount, '->', maxCount)
+		console.debug('Reallocate:', this.blueprint_id, this.maxCount, '->', maxCount)
 		// Expand InstancedMesh to a larger buffer
 		this.maxCount = maxCount 
 		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT

@@ -40,7 +40,7 @@ import { Comp } from '@/comp/Comp'
 import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
-import type { WobId, SharedWob } from '@/shared/SharedWob'
+import { type WobId, type SharedWob, isMatchingWobIds } from '@/shared/SharedWob'
 import { CameraSys } from '@/sys/CameraSys'
 import type { SharedCompAudible } from '@/shared/SharedComps'
 import { Wob } from '@/ent/Wob'
@@ -108,7 +108,7 @@ export class Audible extends Comp {
 	}
 	
 	static async Create(wob :SharedWob, babs :Babs, sharedCompAudible :SharedCompAudible) {
-		// console.log('Flame.Create, right before FlameFires.push', wob.name)
+		// console.log('Flame.Create, right before FlameLights.push', wob.name)
 		const com = new Audible(wob, babs)
 		com.sharedCompAudible = sharedCompAudible
 
@@ -121,10 +121,8 @@ export class Audible extends Comp {
 		const audibleComp = audibleComps?.find(fc => {
 			const compWobId = fc.idEnt as WobId
 			const deletingWobId = deletingWob.id()
-			return compWobId.idzone === deletingWobId.idzone
-				&& compWobId.x === deletingWobId.x
-				&& compWobId.z === deletingWobId.z
-				&& compWobId.blueprint_id === deletingWobId.blueprint_id
+
+			return isMatchingWobIds(compWobId, deletingWobId)
 		})
 		if(audibleComp) {
 			// Update compcats

@@ -447,8 +447,8 @@ export class WorldSys {
 	phi :number // Preserve this so we can skip frames
 	theta :number
 
-	dtSum = 0
-	update(dt) {
+	smokeAccumulator = 0
+	update(dt :number) {
 		if(!this.snapshotRealHourFraction) return // Time comes before Earth :)
 
 		// Update sun position over time!
@@ -662,85 +662,24 @@ export class WorldSys {
 				this.waterInstancedMesh.setMatrixAt(i, this.waterMatrix)
 				this.waterInstancedMesh.instanceMatrix.needsUpdate = true
 			}
+		}
 
+
+		// Update smoke
+		if(Flame.SmokePuffIm) {
+			// Maybe create a new smoke puff occasionally
+			this.smokeAccumulator += dt
+			if(this.smokeAccumulator >= Flame.SMOKE_PUFF_CREATION_INTERVAL) {
+				this.smokeAccumulator -= Flame.SMOKE_PUFF_CREATION_INTERVAL
+				this.makeSmokePuffs(dt)
+			}
+
+			this.smokePuffsRise(dt)
+			
 		}
 
 		// this.csm?.update()
 
-		// Update smoke
-		if(Flame.SmokePuffIm) {
-			// Maybe spawn a new smoke puff occasionally
-			if(this.updateCount % 30 === 0) {
-				if(Flame.SmokeLatestIndex >= Flame.SmokePuffMaxCount) {
-					// We've reached the max, so loop index back to 0
-					// Flame.SmokePuffIm.count = 0
-					Flame.SmokeLatestIndex = 0
-				}
-				if(Flame.SmokePuffIm.count < Flame.SmokePuffMaxCount) {
-					// Up the render count (until we reach max)
-					Flame.SmokePuffIm.count++
-				}
-				const tempMatrix = new Matrix4()
-				const tempPosition = new Vector3()
-
-				// Pick a random from Flame.LightPool
-				const randomLight = Flame.LightPool[Math.floor(Math.random() *Flame.LightPool.length)]
-				// It seems that sometimes, the light is null due to fast zoning.  
-				if(randomLight) {
-					// Spawn a smoke puff at that light's position
-					randomLight.getWorldPosition(tempPosition)
-
-					// Add a bit of randomness
-					const randomFactor = 5
-					const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
-					tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
-					tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
-
-					tempMatrix.setPosition(tempPosition)
-					Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
-					Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
-
-					Flame.SmokeLatestIndex++
-					// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
-				}
-			}
-
-			// For each SmokePuffIm instance, make it rise on y
-			// Also make it get larger over time
-			const tempMatrix = new Matrix4()
-			const tempPosition = new Vector3()
-			for(let i=0; i<Flame.SmokePuffIm.count; i++) {
-				Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
-				tempPosition.setFromMatrixPosition(tempMatrix)
-
-				// Make it rise
-				tempPosition.y += Flame.SMOKE_SPEED *dt
-
-				// Make it get larger
-				const scale = tempMatrix.getMaxScaleOnAxis()
-				if (scale < Flame.SMOKE_MAX_SCALE) {
-					// const growthFactor = 1 + (1 - scale / Flame.SMOKE_MAX_SCALE) * 0.003
-					// tempMatrix.scale(new Vector3(growthFactor, growthFactor, growthFactor))
-					tempMatrix.scale(new Vector3().setScalar(Flame.SMOKE_SCALEUP_RATE))
-				}
-
-				// Make it randomly move on x and z too
-				const randomFactor = 2 *dt
-				const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
-				tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
-
-				// If height is past max height, reset it
-				if(tempPosition.y > Flame.SMOKE_MAX_HEIGHT) {
-					tempPosition.y = Flame.SMOKE_STARTING_EXTRAHEIGHT // Reset y
-					tempMatrix.makeScale(1,1,1) // Reset scale
-				}
-
-				tempMatrix.setPosition(tempPosition)
-				Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
-				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
-			}
-			
-		}
 
 		this.updateCount++
 	}
@@ -820,6 +759,89 @@ export class WorldSys {
 			groundGrid.visible = on
 		})
 
+	}
+	makeSmokePuffs(dt :number) {
+		// console.log('smoke stats:', Flame.SmokePuffIm.count, 'of', Flame.SmokePuffMaxCount, ',', Flame.SmokeLatestIndex)
+
+		if(Flame.SmokeLatestIndex >= Flame.SmokePuffMaxCount) {
+			// We've reached the max, so loop index back to 0
+			// Flame.SmokePuffIm.count = 0
+			Flame.SmokeLatestIndex = 0
+		}
+		if(Flame.SmokePuffIm.count < Flame.SmokePuffMaxCount) {
+			// Up the render count (until we reach max)
+			Flame.SmokePuffIm.count++
+		}
+		const tempMatrix = new Matrix4()
+		const tempPosition = new Vector3()
+
+		// Pick a random from Flame.LightPool
+		const randomIndex = Math.floor(Math.random() *Flame.LightPool.length)
+		const randomLight = Flame.LightPool[randomIndex]
+
+		// console.log('randomLight', randomIndex, randomLight.position)
+
+		// It seems that sometimes, the light is null due to fast zoning.  
+		if(randomLight) {
+			// Create a smoke puff at that light's position
+			randomLight.getWorldPosition(tempPosition)
+
+			// Add a bit of randomness
+			const randomFactor = 5
+			const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
+			tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
+			tempPosition.y += Flame.SMOKE_STARTING_EXTRAHEIGHT// +(randomFactor/2) // Don't let randomness tart it below the flame
+
+			tempMatrix.setPosition(tempPosition)
+			Flame.SmokePuffIm.setMatrixAt(Flame.SmokeLatestIndex, tempMatrix)
+			Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+
+			Flame.SmokeLatestIndex++
+			// console.log('Just set a new smoke puff at', tempPosition, Flame.SmokePuffIm.count, Flame.SmokeLatestIndex)
+		}
+	}
+	smokePuffsRise(dt :number) {
+		// For each SmokePuffIm instance, make it rise on y
+		// Also make it get larger over time
+		const tempMatrix = new Matrix4()
+		const tempPosition = new Vector3()
+		for(let i=0; i<Flame.SmokePuffIm.count; i++) {
+			Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
+			tempPosition.setFromMatrixPosition(tempMatrix)
+
+			// Make it rise
+			tempPosition.y += Flame.SMOKE_SPEED *dt
+
+			// Make it get larger
+			const scale = tempMatrix.getMaxScaleOnAxis()
+			if (scale < Flame.SMOKE_MAX_SCALE) {
+				// const growthFactor = 1 + (1 - scale / Flame.SMOKE_MAX_SCALE) * 0.003
+				// tempMatrix.scale(new Vector3(growthFactor, growthFactor, growthFactor))
+				tempMatrix.scale(new Vector3().setScalar(Flame.SMOKE_SCALEUP_RATE).setY(Flame.SMOKE_SCALEUP_RATE*0.9998)) // flatten on y // Smaller number is flatter
+			}
+
+			// Make it randomly move on x and z too
+			const randomFactor = 2 *dt
+			const randomness = new Vector2().random().multiplyScalar(randomFactor).subScalar(randomFactor/2)
+			tempPosition.add(new Vector3(randomness.x, 0, randomness.y))
+
+			// // If elevation above ground is past max height, reset it
+			// const yardCoord = YardCoord.Create({position: tempPosition, babs: this.babs})
+			// if(!yardCoord.zone) {
+			// 	console.log('yardCoord.zone is null', yardCoord)
+			// 	continue
+			// }
+			// const groundHeight = yardCoord.zone.engineHeightAt(yardCoord)
+			// if(tempPosition.y > groundHeight + Flame.SMOKE_MAX_HEIGHT) {
+			// 	tempPosition.y = groundHeight + Flame.SMOKE_STARTING_EXTRAHEIGHT // Reset y
+			// 	tempMatrix.makeScale(1,1,1) // Reset scale
+			// }
+			// Actually, we kinda want it so that smoke is getting moved/removed before reaching its y limits.  That way, when a light is moved, the smoke doesn't y reset on the old position.
+
+			tempMatrix.setPosition(tempPosition)
+			Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
+			Flame.SmokePuffIm.instanceMatrix.needsUpdate = true
+		}
 	}
 	
 	elevationData = {}
@@ -1093,9 +1115,7 @@ export class WorldSys {
 			for(let i=0; i<Flame.SmokePuffIm.count; i++) {
 				Flame.SmokePuffIm.getMatrixAt(i, tempMatrix)
 				tempPosition.setFromMatrixPosition(tempMatrix)
-
 				tempPosition.add(shiftVector)
-
 				tempMatrix.setPosition(tempPosition)
 				Flame.SmokePuffIm.setMatrixAt(i, tempMatrix)
 				Flame.SmokePuffIm.instanceMatrix.needsUpdate = true

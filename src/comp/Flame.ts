@@ -13,24 +13,30 @@ import { Babs } from '@/Babs'
 import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { Wob } from '@/ent/Wob'
-import type { WobId, SharedWob } from '@/shared/SharedWob'
+import { type WobId, type SharedWob, isMatchingWobIds } from '@/shared/SharedWob'
 import { CameraSys } from '@/sys/CameraSys'
 import type { Player } from '@/ent/Player'
+
+type FlameLight = {
+	position: Vector3
+	wobId: WobId
+}
 
 export class Flame extends Comp {
 	static Player :Player
 
 	static LightPool :PointLight[] = []
 	static LightPoolMax :number
-	static FlameFires :ThreeFire[] = []
+	static FlameLights :(ThreeFire | FlameLight)[] = []
 	static PointLightIntensity = 400
 	static PointLightDistance = 100
 
 	static SMOKE_STARTING_SIZE = 1
 	static SMOKE_STARTING_EXTRAHEIGHT = 12
-	static SMOKE_PUFFS_PER_LIGHT = 40
-	static SMOKE_MAX_HEIGHT = 1000
-	static SMOKE_MAX_SCALE = 120
+	static SMOKE_PUFFS_PER_LIGHT = 80
+	// static SMOKE_MAX_HEIGHT = 475
+	static SMOKE_PUFF_CREATION_INTERVAL = 0.2
+	static SMOKE_MAX_SCALE = 150
 	static SMOKE_SPEED = 12
 	static SMOKE_SCALEUP_RATE = 1.001
 	static SmokePuffIm :InstancedMesh
@@ -62,7 +68,7 @@ export class Flame extends Comp {
 			const material = new MeshLambertMaterial({})
 			Flame.SmokePuffMaxCount = Flame.SMOKE_PUFFS_PER_LIGHT * Flame.LightPoolMax
 			Flame.SmokePuffIm = new InstancedMesh(geometry, material, Flame.SmokePuffMaxCount)
-			Flame.SmokePuffIm.castShadow = true
+			Flame.SmokePuffIm.castShadow = false
 			Flame.SmokePuffIm.count = 0
 			Flame.SmokePuffIm.name = 'smoke'
 			Flame.SmokePuffIm.instanceMatrix.setUsage(StreamDrawUsage)
@@ -80,14 +86,17 @@ export class Flame extends Comp {
 	}
 
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
-		// console.log('Flame.Create, right before FlameFires.push', wob)
+		// console.log('Flame.Create', asFarWobs)
 		
-		// Ensure texture is loaded
-		Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
-		// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
-		if(!Flame.Player) Flame.Player = babs.ents.get(babs.idSelf) as Player // This sets player so that moveThingsToNearPlayer() can move things to near the player.
 
+		const yardCoord = YardCoord.Create(wob)
+		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
+		let flameLight :ThreeFire | FlameLight
 		if(!asFarWobs) {
+			// Ensure texture is loaded
+			Flame.fireTex = Flame.fireTex || await LoaderSys.CachedFiretex
+			// fireTex.colorSpace = SRGBColorSpace // This too, though the default seems right
+
 			const flameComp = new Flame(wob, babs)
 			flameComp.fire = new ThreeFire(Flame.fireTex)
 			flameComp.fire.material.uniforms.magnitude.value = Flame.flameSettings.magnitude
@@ -99,31 +108,55 @@ export class Flame extends Comp {
 				Flame.flameSettings.noiseScaleZ,
 				0.3
 			)
-			// Add a glow of light
-			Flame.FlameFires.push(flameComp.fire) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
 
 			flameComp.fire.name = 'flame'
 			babs.group.add(flameComp.fire)
 			flameComp.fire.scale.set(scale,scale*1.33,scale)
 
-			const yardCoord = YardCoord.Create(wob)
-			const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 			flameComp.fire.position.setY(engPositionVector.y +yup)
 			flameComp.fire.position.setX(engPositionVector.x)
 			flameComp.fire.position.setZ(engPositionVector.z)
+
+			flameComp.fire.wobId = wob.id()
+			flameLight = flameComp.fire
 		}
-		// Init static singletons
-		// console.log('Flame.Create', Flame.LightPool.length, Flame.LightPoolMax)
-		if(Flame.LightPool.length < Flame.LightPoolMax) {
-			const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
-			// pointLight.castShadow = true // Complex?
-			pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
-			pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
-			pointLight.name = 'flamelight'
-			Flame.LightPool.push(pointLight)
-			babs.group.add(pointLight)
+		else {
+			flameLight = {
+				position: new Vector3(),
+				wobId: wob.id(),
+			}
+			flameLight.position.setY(engPositionVector.y +yup)
+			flameLight.position.setX(engPositionVector.x)
+			flameLight.position.setZ(engPositionVector.z)
 		}
 
+		// When adding farwobs, if there's a light already there, don't add another.
+		// We don't care if it's a far or near; we just want to avoid duplicates in the same spot.  
+		// On delete, we'll attempt to delete either one.
+		const existingLight = Flame.FlameLights.find(fl => {
+			const flameLightWobId = fl.wobId as WobId
+			return isMatchingWobIds(flameLightWobId, wob.id())
+		})
+		if(!existingLight) {
+			// console.log('Flame.Create NOT existingLight', existingLight)
+			// Add a glow of light, or, at least, smoke :p
+			Flame.FlameLights.push(flameLight) // Must come before Flame.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
+
+			// Init static singletons
+			// console.log('Flame.Create', Flame.LightPool.length, Flame.LightPoolMax)
+			if(Flame.LightPool.length < Flame.LightPoolMax) {
+				const pointLight = new PointLight(0xeb7b54, Flame.PointLightIntensity, Flame.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
+				// pointLight.castShadow = true // Complex?
+				pointLight.intensity = Flame.PointLightIntensity *CameraSys.CurrentScale
+				pointLight.distance = Flame.PointLightDistance *CameraSys.CurrentScale
+				pointLight.name = 'flamelight'
+				pointLight.frustumCulled = false // todo smoke, needed?
+				Flame.LightPool.push(pointLight)
+				babs.group.add(pointLight)
+				// console.log('adding pointlight', pointLight.position, wob)
+			}
+		}
+		
 		babs.renderSys.moveThingsToNearPlayer() // Move on creation so it makes light there fast :)
 	}
 
@@ -134,20 +167,14 @@ export class Flame extends Comp {
 	static async Delete(deletingWob :SharedWob, babs :Babs) {
 		const flameComps = babs.compcats.get(Flame.name) as Flame[] // todo abstract this .get so that I don't have to remember to use Flame.name instead of 'Flame' - because build changes name to _Flame, while it stays Flame on local dev.
 		
-		// console.debug('Flame.Delete flameComps', flameComps, babs.compcats)
+		// console.debug('Flame.Delete flameComps', flameComps, babs.compcats)\
+		const deletingWobId = deletingWob.id()
 
 		const flameComp = flameComps?.find(fc => {
 			const compWobId = fc.idEnt as WobId
-			const deletingWobId = deletingWob.id()
-			return compWobId.idzone === deletingWobId.idzone
-				&& compWobId.x === deletingWobId.x
-				&& compWobId.z === deletingWobId.z
-				&& compWobId.blueprint_id === deletingWobId.blueprint_id
+			return isMatchingWobIds(compWobId, deletingWobId)
 		})
 		if(flameComp) {
-			Flame.FlameFires = Flame.FlameFires.filter(fire => {
-				return fire.uuid !== flameComp.fire.uuid
-			})
 			babs.group.remove(flameComp.fire)
 
 			flameComp.fire.geometry.dispose()
@@ -163,9 +190,16 @@ export class Flame extends Comp {
 			
 			babs.compcats.set(Flame.name, flameComps.filter(f => f.fire.uuid !== flameComp.fire.uuid)) // This was it.  This was what was needed
 		}
+
+		Flame.FlameLights = Flame.FlameLights.filter(flameLight => {
+			// console.log('Flame.Delete flameLight filter:', flameLight, deletingWobId)
+			const flameLightWobId = flameLight.wobId as WobId
+			const fireWobMatchesDeletingWob = isMatchingWobIds(flameLightWobId, deletingWobId)
+			return !fireWobMatchesDeletingWob
+		})
 	}
 
-	update(dt) {
+	update(dt :number) {
 		this.fire?.update(dt *Flame.flameSettings.speed)
 	}
 
@@ -404,6 +438,7 @@ let FireShader = {
 
 class ThreeFire extends Mesh {
 	declare material :ShaderMaterial
+	public wobId: WobId
 
 	constructor( fireTex, color = new Color( 0xeeeeee )) {
 		const fireMaterial = new ShaderMaterial( {
