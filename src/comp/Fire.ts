@@ -96,7 +96,7 @@ export class Fire extends Comp {
 		const yardCoord = YardCoord.Create(wob)
 		const engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
 		if(!asFarWobs) {
-			console.log('Fire.Create near (add flame only)', asFarWobs)
+			// console.log('Fire.Create near (add flame only)', asFarWobs)
 			// Add flame
 
 			Fire.flameTex = Fire.flameTex || await LoaderSys.CachedFlametex // Ensure texture is loaded
@@ -124,7 +124,7 @@ export class Fire extends Comp {
 			fireComp.flame.wobId = wob.id()
 		}
 		else {
-			console.log('Fire.Create asFarWobs (add light only)', asFarWobs)
+			// console.log('Fire.Create asFarWobs (add light only)', asFarWobs)
 			// Add light only
 			
 			
@@ -161,7 +161,7 @@ export class Fire extends Comp {
 		if(isFarWobs) {
 			// This means that it was a farwob, so only had a light.
 			// Remove light
-			console.log(`Fire.Delete for farwob (only light):`, deletingWob)
+			// console.log(`Fire.Delete for farwob (only light):`, deletingWob)
 			// console.log('FireLights before filter', Fire.FireLights)
 			Fire.FireLights = Fire.FireLights.filter(fireLight => {
 				const fireLightWobId = fireLight.wobId as WobId
@@ -196,7 +196,7 @@ export class Fire extends Comp {
 				return
 			}
 			const zone = babs.ents.get(fireComp.flame.wobId.idzone)
-			console.log(`Fire.Delete && fireComp on so deletingWob, on zone:`, deletingWob, zone)
+			// console.log(`Fire.Delete && fireComp on so deletingWob, on zone:`, deletingWob, zone)
 
 			// Remove flame
 			babs.group.remove(fireComp.flame)

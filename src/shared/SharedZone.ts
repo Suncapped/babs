@@ -143,7 +143,8 @@ export class SharedZone {
 
 	}
 	removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) {
-		console.warn('Wrong removeWobGraphicAt() is being run!') // No, it's not actually wrong; server does this, it's intended to do nothing on server.
+		// console.warn('Wrong removeWobGraphicAt() is being run!') // No, it's not actually wrong; server does this, it's intended to do nothing on server.
+		// Meh, server will run it sometimes.
 		// To be overridden
 	}
 

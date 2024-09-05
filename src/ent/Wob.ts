@@ -52,14 +52,18 @@ export class Wob extends SharedWob {
 		const nameCounts = new Map<string, number>()
 
 		for(const wob of arrivalWobs) {
+			// Filter farwobs that do not have a comps.visible
+			if(asFarWobs && !wob.comps?.visible?.farMesh) {
+				if(wob.name === 'campfire') {
+					console.log('skipping', wob.name, 'as', wob, 'arrivalWobs', arrivalWobs)
+				}
+				continue
+			}
 			if(asFarWobs) {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
 			}
-			// Filter farwobs that do not have a comps.visible
-			if(asFarWobs && !wob.comps?.visible?.farMesh) {
-				continue
-			}
+
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 			// console.log('name has been set', wob.name)
 		}
@@ -108,8 +112,10 @@ export class Wob extends SharedWob {
 		// Why separately?  Because this happens en-masse
 		for(const fwob of arrivalWobs) {
 			// console.log('arrival of', fwob.name, fwob.blueprint_id)
+
 			// Filter farwobs that do not have a comps.visible
-			if(asFarWobs && !fwob.comps?.visible?.farMesh) {
+			if(asFarWobs && (!fwob.comps?.visible?.farMesh)) {
+				console.log('skipping', fwob.name, 'as', fwob, 'arrivalWobs', arrivalWobs)
 				continue
 			}
 
@@ -138,6 +144,11 @@ export class Wob extends SharedWob {
 					comps: fwob.comps,
 				})
 				zone = babs.ents.get(wob.idzone) as Zone
+
+				
+				// Translate locid back to blueprint_id, so that farwob original name can be found for fires!
+				const farwobOrigBp = zone.locidToBlueprint[fwob.locid]
+				// console.log('wob to bp', wob, bp.blueprint_id)
 
 				yardCoord = YardCoord.Create(wob)
 				engPositionVector = yardCoord.toEngineCoordCentered('withCalcY')
@@ -197,28 +208,24 @@ export class Wob extends SharedWob {
 					babs.uiSys.wobSaid(wob.name, wob)
 				}
 
-				// Translate locid back to blueprint_id, so that farwob original name can be found for fires!
-				const bp = zone.locidToBlueprint[wob.locid]
-				// console.log('wob to bp', wob, bp.blueprint_id)a
-
 				if(//!alreadyExistedAtSameSpot &&
-					(bp.blueprint_id === 'campfire' || bp.blueprint_id === 'torch' || bp.blueprint_id === 'brushflame')
+					(farwobOrigBp.blueprint_id === 'campfire' || farwobOrigBp.blueprint_id === 'torch' || farwobOrigBp.blueprint_id === 'brushfire')
 				) {
 					let scale, yup
-					if(bp.blueprint_id === 'campfire') {
+					if(farwobOrigBp.blueprint_id === 'campfire') {
 						scale = 3
 						yup = 1.8
 					}
-					else if(bp.blueprint_id === 'torch') {
+					else if(farwobOrigBp.blueprint_id === 'torch') {
 						scale = 1.1
 						yup = 3.5
 					}
-					else if(bp.blueprint_id === 'brushflame') {
+					else if(farwobOrigBp.blueprint_id === 'brushfire') {
 						scale = 1
 						yup = 0.8
 					}
 
-					// console.log('Adding fire:', bp.blueprint_id, wob.x, wob.z, asFarWobs)
+					// console.log('Adding fire:', farwobOrigBp.blueprint_id, wob.x, wob.z, asFarWobs)
 		
 					// Add new fire
 					// Smoke and light we'll attach exclusively to  farwobs via 'asFarWobs' flag
