@@ -242,10 +242,10 @@ export class Controller extends Comp {
 
 				// Remove and decrease count for exiting zones
 				for(const removedZone of removedZonesNearby) {
-					const removedFwobs = removedZone.getSharedWobsBasedOnLocations()
+					const removedFwobs = removedZone.getSharedWobsBasedOnLocations('near')
 					console.debug('exited zone: detailed wobs to remove', removedZone.id, removedFwobs.length)
 					for(const zoneFwob of removedFwobs) { // First remove existing detailed graphics
-						removedZone.removeWobGraphic(zoneFwob)
+						removedZone.removeWobGraphic(zoneFwob, false)
 					}
 					removedZone.coordToInstanceIndex = {} // In future, need similar for farCoordToInstanceIndex?
 				}

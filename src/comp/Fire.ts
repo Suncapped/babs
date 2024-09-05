@@ -141,8 +141,8 @@ export class Fire extends Comp {
 			if(Fire.LightPool.length < Fire.LightPoolMax) {
 				const pointLight = new PointLight(0xeb7b54, Fire.PointLightIntensity, Fire.PointLightDistance, 1.5) // 1.5 is more fun casting light on nearby trees
 				// pointLight.castShadow = true // Complex?
-				pointLight.intensity = Fire.PointLightIntensity *CameraSys.CurrentScale *5 // todo smoke
-				pointLight.distance = Fire.PointLightDistance *CameraSys.CurrentScale *5 // todo smoke
+				pointLight.intensity = Fire.PointLightIntensity *CameraSys.CurrentScale
+				pointLight.distance = Fire.PointLightDistance *CameraSys.CurrentScale
 				pointLight.name = 'firelight'
 				Fire.LightPool.push(pointLight)
 				babs.group.add(pointLight)
@@ -154,18 +154,47 @@ export class Fire extends Comp {
 
 	}
 
-	static async Delete(deletingWob :SharedWob, babs :Babs) {
+	static async Delete(deletingWob :SharedWob, babs :Babs, isFarWobs :boolean) {
 		// When a fire is removed asfarwobs, it should only remove light.  As near, only removes flame.
 
 		const deletingWobId = deletingWob.id()
+		if(isFarWobs) {
+			// This means that it was a farwob, so only had a light.
+			// Remove light
+			console.log(`Fire.Delete for farwob (only light):`, deletingWob)
+			// console.log('FireLights before filter', Fire.FireLights)
+			Fire.FireLights = Fire.FireLights.filter(fireLight => {
+				const fireLightWobId = fireLight.wobId as WobId
 
-		const fireComps = babs.compcats.get(Fire.name) as Fire[] // todo abstract this .get so that I don't have to remember to use Fire.name instead of 'Fire' - because build changes name to _Fire, while it stays Fire on local dev.
-		const fireComp = fireComps?.find(fc => {
-			const compWobId = fc.idEnt as WobId
-			const onlyDeleteFarXorNear = true
-			return isMatchingWobIds(compWobId, deletingWobId, onlyDeleteFarXorNear)
-		})
-		if(fireComp) {
+				let compareWobId = deletingWobId
+				if(isFarWobs) { // For farwobs, allow comparing on comp visible name (eg 'tree twotris') for removal
+					compareWobId.blueprint_id = deletingWob.comps?.visible?.farMesh
+					if(!compareWobId.blueprint_id) {
+						console.warn('Farwob without visible comp, giving up on removing it!', deletingWob)
+						return true
+					}
+				}
+
+				const onlyDeleteFarXorNear = true
+				const flameWobMatchesDeletingWob = isMatchingWobIds(fireLightWobId, compareWobId, onlyDeleteFarXorNear)
+				return !flameWobMatchesDeletingWob
+			})
+			// console.log('FireLights after filter', Fire.FireLights)
+		}
+		else {
+			// It was a nearwob, so had only a flame.
+			const fireComps = babs.compcats.get(Fire.name) as Fire[] // todo abstract this .get so that I don't have to remember to use Fire.name instead of 'Fire' - because build changes name to _Fire, while it stays Fire on local dev.
+			const fireComp = fireComps?.find(fc => {
+				const compWobId = fc.idEnt as WobId
+				const onlyDeleteFarXorNear = true
+				return isMatchingWobIds(compWobId, deletingWobId, onlyDeleteFarXorNear)
+			})
+
+			if(!fireComp) {
+				// console.warn('Fire.Delete nearwob without fireComp:', deletingWob)
+				// This is very typical, eg for everything but fire.  Sneezeweed has Delete() called for instance.
+				return
+			}
 			const zone = babs.ents.get(fireComp.flame.wobId.idzone)
 			console.log(`Fire.Delete && fireComp on so deletingWob, on zone:`, deletingWob, zone)
 
@@ -182,20 +211,6 @@ export class Fire extends Comp {
 				fireComp.flame.material.visible = false
 			}
 			babs.compcats.set(Fire.name, fireComps.filter(f => f.flame.uuid !== fireComp.flame.uuid)) // This was it.  This was what was needed
-		}
-		else {
-			// This presumably means that it was a farwob, and only had a light.
-			// Remove light
-			// console.log('FireLights before filter', Fire.FireLights.length)
-			Fire.FireLights = Fire.FireLights.filter(fireLight => {
-				// console.log('Fire.Delete fireLight filter:', fireLight, deletingWobId)
-				const fireLightWobId = fireLight.wobId as WobId
-				const onlyDeleteFarXorNear = true
-				const flameWobMatchesDeletingWob = isMatchingWobIds(fireLightWobId, deletingWobId, onlyDeleteFarXorNear)
-				return !flameWobMatchesDeletingWob
-			})
-			// console.log('FireLights after filter', Fire.FireLights.length)
-
 		}
 	}
 

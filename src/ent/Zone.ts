@@ -49,73 +49,66 @@ export class Zone extends SharedZone {
 		return `${this.x},${this.z}`
 	}
 
-	override removeWobGraphicAt(x :number, z :number) {
-		const existingWob = this.getWob(x, z)
+	override removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) {
+		const existingWob = this.getWob(x, z, isFarWobs ? 'far' : 'near')
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
-		// console.log('existing', existingWob)
-		return this.removeWobGraphic(existingWob)
+		// console.log('removeWobGraphicAt existingWob', existingWob)
+		return this.removeWobGraphic(existingWob, isFarWobs)
 
 	}
-	removeWobGraphic(deletingWob :SharedWob, overrideNameAndBlueprint :string|false = false, recalculateIndexKey = true) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
-		const originalName = deletingWob.name
-		const originalBlueprintId = deletingWob.blueprint_id
-		if(overrideNameAndBlueprint) {
-			deletingWob.name = overrideNameAndBlueprint
-			deletingWob.blueprint_id = overrideNameAndBlueprint
-		} // These get un-mutated below
+	removeWobGraphic(deletingWob :SharedWob, isFarWobs = false) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
+		// console.log('removeWobGraphic', deletingWob, isFarWobs ? 'isFarWobs' : 'isNearWobs')
 
 		if(!deletingWob.blueprint_id) {
 			console.warn('deletingWob does not have a blueprint_id:', deletingWob)
 		}
 
-		const feim = Wob.InstancedWobs.get(deletingWob.blueprint_id)
+		// Get either the nearwobs feim or the farwobs feim
+		const feim = isFarWobs ? Wob.InstancedWobs.get(deletingWob.comps?.visible?.farMesh) : Wob.InstancedWobs.get(deletingWob.blueprint_id)
 		if(!feim) {
-			console.warn('no matching instanced to:', deletingWob.blueprint_id)
+			if(!isFarWobs) console.warn('no matching instanced or farmesh to:', deletingWob.blueprint_id)
+			// So this is overkill, because it attempts to remove from farwobs even if it's not a farwob.  But it can't hurt?  So leaving it for now.
+			return
 		}
 		const deletingWobZone = this.babs.ents.get(deletingWob.idzone) as Zone
 
 		// Remove attachments
-		Fire.Delete(deletingWob, this.babs)
+		Fire.Delete(deletingWob, this.babs, isFarWobs)
 		Audible.Delete(deletingWob, this.babs)
 		
 		// We are going to copy the source (last item) to the target (item being deleted).  Then cleanup of references.
 		// Source is the last item in the instance index.
-		// const sourceIndex = instancedMesh.count -1
 		const sourceIndex = feim.getLoadedCount() -1
 		// Target is the item being deleted.
-		const targetIndex = deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z] 
+		const targetIndex = isFarWobs
+			? deletingWobZone.farCoordToInstanceIndex[deletingWob.x+','+deletingWob.z]
+			: deletingWobZone.coordToInstanceIndex[deletingWob.x+','+deletingWob.z] 
 		// May also need for farCoordToInstanceIndex?  Once we allow removal via zoning/updates
-
-		// console.log('--------- deletingWobXZ, sourceIndex, targetIndex', deletingWob.name, 'at', deletingWobZone.id+':['+deletingWob.x+','+deletingWob.z+']', 'will', sourceIndex+' ==> '+ targetIndex, deletingWobZone.coordToInstanceIndex)
+		// Hey, that time is now!  (1 year later)
 
 		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, feim, 'delete')
 		// instancedMesh.count = instancedMesh.count -1
 		feim.decreaseLoadedCount()
 		feim.instancedMesh.instanceMatrix.needsUpdate = true 
-		if(deletingWob.blueprint_id !== feim.blueprint_id) {
-			console.warn('deletingWob.blueprint_id mismatch with instancedMesh.name', deletingWob.blueprint_id, feim.blueprint_id)
-		}
-		// Wob.InstancedMeshes.set(deletingWob.blueprint_id, instancedMesh)
-
-		// Don't mutate these
-		if(overrideNameAndBlueprint) {
-			deletingWob.name = originalName
-			deletingWob.blueprint_id = originalBlueprintId
-		}
 	}
 
 	static swapWobsAtIndexes(sourceIndex :number, targetIndex :number, feim :InstancedWobs, doDeleteSource :'delete' = null) {
+		const showSwapLogs = false
 		if(sourceIndex === targetIndex) { // No change
 			// return // No, because 'doDeleteSource' may still need to run
+			if(showSwapLogs) console.log('swapWobsAtIndexes: sourceIndex === targetIndex, no change')
 		}
 		const sourceMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(sourceIndex, sourceMatrix)
 		const targetMatrix = new Matrix4(); feim.instancedMesh.getMatrixAt(targetIndex, targetMatrix)
 
-		const showSwapLogs = false
+		if(showSwapLogs) {
+			console.log('swapWobsAtIndexes', sourceIndex, targetIndex, feim, doDeleteSource)
+		}
 
 		// Get source and target wobs from instanceIndexToWob
 		const sourceWobAnyZone = feim.instanceIndexToWob.get(sourceIndex)
 		const targetWobAnyZone = feim.instanceIndexToWob.get(targetIndex)
+		if(showSwapLogs) console.log(sourceWobAnyZone, targetWobAnyZone)
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${sourceIndex} result: ${sourceWobAnyZone.name}`)
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${targetIndex} result: ${targetWobAnyZone.name}`)
 
@@ -348,7 +341,7 @@ export class Zone extends SharedZone {
 			}
 
 			for(let zone of addedZonesNearby) {
-				const fWobs = zone.applyLocationsToGrid(zone.locationData, true)
+				const fWobs = zone.applyLocationsToGrid(zone.locationData, { returnWobs: true, doApply: true, isFarWobs: false })
 				detailedWobsToAdd.push(...fWobs)
 			}
 
@@ -356,7 +349,7 @@ export class Zone extends SharedZone {
 			await LoaderSys.CachedDekafarwobsFiles // Make sure prefetch is finished!
 			for(let zone of addedZonesFar) {
 				// Data was prefetched, so just access it in zone.farLocationData
-				const fWobs = zone.applyLocationsToGrid(zone.farLocationData, true, 'doNotApplyActually')
+				const fWobs = zone.applyLocationsToGrid(zone.farLocationData, { returnWobs: true, doApply: true, isFarWobs: true })
 				farWobsToAdd.push(...fWobs)
 			}
 

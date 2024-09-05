@@ -510,11 +510,32 @@ export class SocketSys {
 			Could I simplify by creating graphics during setWob, set locations etc?  Yes I suppose.  But instance management then gets weird.  And slower?
 			So the purpose of LoadInstancedWobs is to load the graphics, pretty much.
 			*/
-			const zone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
+			const wobsZone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
 			console.debug('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
-			const sharedWobs = zone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), true)
+			
+			
+			{ // Nearwobs
+				// Determine if this zone is !far, and if so, add the nearwobs
+				const playerZone = this.babs.inputSys.playerSelf.controller.playerRig.zone as Zone
+				const playerNearZones = playerZone.getZonesAround(Zone.loadedZones, 1)
+				const isNearWobs = playerNearZones.includes(wobsZone)
+				console.debug('wobsupdate are nearwobs too?', isNearWobs)
+				if(isNearWobs) { // Is nearwobs, so update in addition to farwobs
+					const sharedNearWobs = wobsZone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), { returnWobs: true, doApply: true, isFarWobs: false })
+					if(sharedNearWobs.length) await Wob.LoadInstancedWobs(sharedNearWobs, this.babs, payload.wobsupdate.shownames)
+				}
+			}
 
-			await Wob.LoadInstancedWobs(sharedWobs, this.babs, payload.wobsupdate.shownames)
+			// We're going to update farwobs regardless.  If they're near, we also update that.
+			{ // Farwobs
+				// Although actually, we only want to update farwobs when the wobs have comps.visible?
+				// Yeah normally, getting farlocations from server (.bin or zip) limits them by a DB query, so they're already filtered.
+				// But from proxima-wide updates like this, we're getting ones that shouldn't be shown.  Need to filter them.
+				// We do this in LoadInstancedWobs.
+				const sharedFarWobs = wobsZone.applyLocationsToGrid(new Uint8Array(payload.wobsupdate.locationData), { returnWobs: true, doApply: true, isFarWobs: true })
+				if(sharedFarWobs.length) await Wob.LoadInstancedWobs(sharedFarWobs, this.babs, false, 'asFarWobs')
+			}
+
 		}
 		else if('contains' in payload) {
 			// console.debug('contains', payload.contains)

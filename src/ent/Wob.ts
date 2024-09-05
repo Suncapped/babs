@@ -56,6 +56,10 @@ export class Wob extends SharedWob {
 				wob.name = Wob.FarwobName
 				wob.blueprint_id = Wob.FarwobName
 			}
+			// Filter farwobs that do not have a comps.visible
+			if(asFarWobs && !wob.comps?.visible?.farMesh) {
+				continue
+			}
 			nameCounts.set(wob.name, (nameCounts.get(wob.name) || 0) +1)
 			// console.log('name has been set', wob.name)
 		}
@@ -104,7 +108,10 @@ export class Wob extends SharedWob {
 		// Why separately?  Because this happens en-masse
 		for(const fwob of arrivalWobs) {
 			// console.log('arrival of', fwob.name, fwob.blueprint_id)
-
+			// Filter farwobs that do not have a comps.visible
+			if(asFarWobs && !fwob.comps?.visible?.farMesh) {
+				continue
+			}
 
 			// const wobPrevious = wobZone.getWob(fwob.x, fwob.z)
 			// If it's being removed from bag, delete it from bag UI

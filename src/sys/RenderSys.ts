@@ -251,7 +251,7 @@ export class RenderSys {
 							// this.babs.scene.add(sphere);
 
 							const zone = this.babs.inputSys.playerSelf.controller.playerRig.zone
-							const wobAtCoord = zone.getWob(0,0)
+							// const wobAtCoord = zone.getWob(0,0)
 
 							/* Log things in world rendered text
 							this.babs.uiSys.wobSaid( 'VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. VR has been initialized. ', wobAtCoord)

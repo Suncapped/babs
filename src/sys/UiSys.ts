@@ -299,7 +299,7 @@ export class UiSys {
 			})
 			let pointCentered = yardCoord.toEngineCoordCentered('withCalcY')
 
-			const wob = zone.getWob(words.idTargetWob.x, words.idTargetWob.z)
+			const wob = zone.getWob(words.idTargetWob.x, words.idTargetWob.z, 'near') // todo this is an assumption that words won't go onto far wobs?
 			const feim = Wob.InstancedWobs.get(wob.name)
 			if(!feim) {
 				console.warn('feWords with no feim', wob.name, wob, words)
