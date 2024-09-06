@@ -72,6 +72,14 @@ export class SharedCompObstructive extends SharedComp {
 	staminaToPass :number
 }
 
+export class SharedCompWeighty extends SharedComp {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+	strengthToLift :number
+}
+
 export class SharedCompDurable extends SharedComp {
 	constructor(values = {}) {
 		super(values)
@@ -90,5 +98,6 @@ export class SharedCompDurable extends SharedComp {
 // touched: SharedCompPlatform,
 // audible: SharedCompAudible,
 // obstructive: SharedCompObstructive,
+// weighty: SharedCompWeighty,
 // durable: SharedCompDurable,
 

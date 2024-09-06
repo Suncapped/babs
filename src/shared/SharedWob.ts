@@ -1,5 +1,5 @@
 import { type UintRange } from './TypeUtils'
-import { SharedCompGenerated, type SharedCompPlatform, type SharedCompEdible, type SharedCompAudible, SharedCompObstructive, SharedCompDurable, SharedCompVisible } from './SharedComps'
+import { SharedCompGenerated, type SharedCompPlatform, type SharedCompEdible, type SharedCompAudible, SharedCompObstructive, SharedCompDurable, SharedCompVisible, SharedCompWeighty } from './SharedComps'
 
 export class SharedBlueprint {
 	constructor(
@@ -26,6 +26,7 @@ class SharedCompClasses {
 	// touched? :SharedCompPlatform
 	audible? :SharedCompAudible
 	obstructive? :SharedCompObstructive
+	weighty? :SharedCompWeighty
 	durable? :SharedCompDurable
 	visible? :SharedCompVisible
 }
