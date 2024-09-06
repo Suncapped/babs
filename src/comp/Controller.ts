@@ -193,11 +193,11 @@ export class Controller extends Comp {
 
 			// Determine if player has the stamina to enter the wob if one is there
 			const wobAtDest = this.playerRig.zone.getWob(targetYardCoord.x, targetYardCoord.z)
-			const impassable = wobAtDest?.comps?.impassable
-			if(impassable) {
+			const obstructive = wobAtDest?.comps?.obstructive
+			if(obstructive) {
 				const playerStamina = 10 // todo
-				const impassableForStamina = playerStamina < impassable.staminaToPass
-				if(impassableForStamina) {
+				const obstructiveForStamina = playerStamina < obstructive.staminaToPass
+				if(obstructiveForStamina) {
 					// Stop movement, similar to zoning below
 					this.gDestination = gDestOld
 					this._stateMachine.setState('idle')

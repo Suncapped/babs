@@ -64,7 +64,7 @@ export class SharedCompVisible extends SharedComp {
 	farMesh :string
 }
 
-export class SharedCompImpassable extends SharedComp {
+export class SharedCompObstructive extends SharedComp {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -89,6 +89,6 @@ export class SharedCompDurable extends SharedComp {
 // symbiote: SharedCompPlatform,
 // touched: SharedCompPlatform,
 // audible: SharedCompAudible,
-// impassable: SharedCompImpassable,
+// obstructive: SharedCompObstructive,
 // durable: SharedCompDurable,
 
