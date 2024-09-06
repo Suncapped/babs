@@ -139,8 +139,8 @@ export class Audible extends Comp {
 		}
 	}
 
-	update(dt) {
-		// this.flame?.update(dt *Fire.settings.speed)
+	update(dt :number) {
+
 	}
 
 }

@@ -231,7 +231,7 @@ export class Controller extends Comp {
 				const removedZonesNearby = oldZonesNear.filter(zn => !newZonesNear.includes(zn))
 				const addedZonesNearby = newZonesNear.filter(zn => !oldZonesNear.includes(zn))
 
-				console.debug('Initiating Zoning', exitZone.id, '->', enterZone.id)
+				console.log(`Zoning ${exitZone.id} (${exitZone.x},${exitZone.z}) -> ${enterZone.id} (${enterZone.x},${enterZone.z})`)
 
 				this.selfWaitZoningExitZone = exitZone
 				this.playerRig.zone = enterZone
@@ -251,7 +251,7 @@ export class Controller extends Comp {
 				}
 
 				let totalCount = 0
-				console.time('Shift remaining instance items')
+				// console.time('Shift remaining instance items')
 				{ // Shift all existing wobs relative to delta.
 					Wob.InstancedWobs.forEach(instancedWobs => {
 						const instanceMatrix = instancedWobs.instancedMesh.instanceMatrix
@@ -264,7 +264,7 @@ export class Controller extends Comp {
 						instanceMatrix.needsUpdate = true
 					})
 				}
-				console.timeEnd('Shift remaining instance items') // 2.3ms on desktop - not too bad!
+				// console.timeEnd('Shift remaining instance items') // 2.3ms on desktop - not too bad!
 				console.debug('shift total count', totalCount)
 
 				this.babs.worldSys.shiftEverything(-vZoneDiff.x *WorldSys.ZONE_LENGTH_FEET, -vZoneDiff.z *WorldSys.ZONE_LENGTH_FEET)

@@ -50,6 +50,11 @@ const z = locations[3] // 8 bits
 console.log(id, r, x, z)
 */
 
+interface Bluestatic {
+	gridIndices: Set<number> // Index into wobIdRotGrid for each wob with this bluestatic
+	// and blueprint static data for that specific blueprint
+}
+
 interface ApplyLocationsOptions {
 	returnWobs :boolean
 	doApply :boolean
@@ -73,9 +78,11 @@ export class SharedZone {
 	// ^ Storing 12-bit locid and 4-bit rotation in a grid.  (position is the x,z of the grid)
 	locidToBlueprint :Record<number, Blueprint> = []
 	bpidToLocid :Record<string, number> = {}
+	bluestaticWobs :Map<string, Bluestatic> = new Map()
 
 	getWob(x :number, z :number, farOrNear :FarOrNear = 'near') :SharedWob|null {
-		const idAndRot = farOrNear === 'near' ? this.wobIdRotGrid[x +(z *250)] : this.farWobIdRotGrid[x +(z *250)]
+		const index = x +(z *250)
+		const idAndRot = farOrNear === 'near' ? this.wobIdRotGrid[index] : this.farWobIdRotGrid[index]
 		const locid = idAndRot >>> 4
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as RotationCardinal
 
@@ -96,29 +103,34 @@ export class SharedZone {
 		const isLocidBeingRemoved = !blueprint_id
 		let wob = this.getWob(x, z, 'near')
 
+		const index = x +(z *250)
+
+		const locid = this.bpidToLocid[blueprint_id]
+		const bp = this.locidToBlueprint[locid]
+		if(!bp) {
+			console.warn('No blueprint found @3! For:', locid)
+			return null
+		}
+
+		if(!this.bluestaticWobs.has(bp.blueprint_id)) this.bluestaticWobs.set(bp.blueprint_id, {gridIndices: new Set<number>()}) // Init if empty
+
 		if(isLocidBeingRemoved) {
 			if(wob) { // Is null on server
 				this.removeWobGraphicAt(wob.x, wob.z, false) // no far support
 			}
-			this.wobIdRotGrid[x +(z *250)] = 0 // no far support
+			this.wobIdRotGrid[index] = 0 // no far support
+			this.bluestaticWobs.get(bp.blueprint_id).gridIndices.delete(index) // Remove this index
+
 			return [0, 0, wob?.x | x, wob?.z | z]
 		}
-
 		// Otherwise, we are setting or updating locid in grid
-
-		const locid = this.bpidToLocid[blueprint_id]
-		const blueprint = this.locidToBlueprint[locid]
-		if(!blueprint) {
-			console.warn('No blueprint found @3! For:', locid)
-			return null
-		}
 
 		if(wob) { // Updating an existing one
 			this.removeWobGraphicAt(wob.x, wob.z, false) // no far support
 		}
 		else { // Unset spot && we are setting
 		}
-		wob = new SharedWob(this.id, x, z, 0, blueprint)
+		wob = new SharedWob(this.id, x, z, 0, bp)
 
 		wob.blueprint_id = blueprint_id
 		wob.locid = this.bpidToLocid[blueprint_id]
@@ -134,7 +146,8 @@ export class SharedZone {
 		const idAndRot = idShifted +rotShifted
 		// console.log('idAndRot', idShifted, rotShifted, idAndRot)
 
-		this.wobIdRotGrid[x +(z *250)] = idAndRot // no far support
+		this.wobIdRotGrid[index] = idAndRot // no far support
+		this.bluestaticWobs.get(bp.blueprint_id).gridIndices.add(index) // Add this index
 
 		// Return locations array of newly added wob
 		const byte1 = idAndRot >>> 8
@@ -143,11 +156,10 @@ export class SharedZone {
 
 	}
 	removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) {
+		// To be overridden
 		// console.warn('Wrong removeWobGraphicAt() is being run!') // No, it's not actually wrong; server does this, it's intended to do nothing on server.
 		// Meh, server will run it sometimes.
-		// To be overridden
 	}
-
 
 	applyLocationsToGrid(locations :Uint8Array, options :ApplyLocationsOptions) :Array<SharedWob> {
 		if(!options.isFarWobs) options.isFarWobs = false // Default to near for the sake of server use
@@ -161,6 +173,8 @@ export class SharedZone {
 
 		let locidsOfBlueprintsNotFound = {}
 
+		this.bluestaticWobs.clear()
+
 		for(let i=0; i<locations.length; i+=4){
 			const left = ((locations[i+0] & 0xFF) << 8) >>> 8
 			const right = locations[i+1] & 0xFF
@@ -171,7 +185,9 @@ export class SharedZone {
 			// ^ Note, also used in 'getSharedWobsBasedOnLocations'
 			// Also used in Expressa!
 
-			const oldIdAndRot = options.isFarWobs ? this.farWobIdRotGrid[x +(z *250)] : this.wobIdRotGrid[x +(z *250)]
+			const index = x +(z *250)
+
+			const oldIdAndRot = options.isFarWobs ? this.farWobIdRotGrid[index] : this.wobIdRotGrid[index]
 			const oldLocid = oldIdAndRot >>> 4
 
 			const isLocidBeingRemoved = locid === 0
@@ -185,8 +201,8 @@ export class SharedZone {
 				}
 				this.removeWobGraphicAt(x, z, options.isFarWobs)
 				if(options.doApply) {
-					if(options.isFarWobs) this.farWobIdRotGrid[x +(z *250)] = 0
-					else this.wobIdRotGrid[x +(z *250)] = 0
+					if(options.isFarWobs) this.farWobIdRotGrid[index] = 0
+					else this.wobIdRotGrid[index] = 0
 				}
 			}
 			else {
@@ -198,9 +214,16 @@ export class SharedZone {
 					}
 					this.removeWobGraphicAt(x, z, options.isFarWobs)
 				}
+				// And/or is being added for the first time
 				if(options.doApply) {
-					if(options.isFarWobs) this.farWobIdRotGrid[x +(z *250)] = locidrot
-					else this.wobIdRotGrid[x +(z *250)] = locidrot
+					if(options.isFarWobs) this.farWobIdRotGrid[index] = locidrot
+					else this.wobIdRotGrid[index] = locidrot
+
+
+					const bp = this.locidToBlueprint[locid]
+					const comps = bp?.comps
+					if(!this.bluestaticWobs.has(bp.blueprint_id)) this.bluestaticWobs.set(bp.blueprint_id, {gridIndices: new Set<number>()}) // Init if empty
+					this.bluestaticWobs.get(bp.blueprint_id).gridIndices.add(index) // Add this index
 				}
 				if(options.returnWobs) {
 					// Note, also used in 'getSharedWobsBasedOnLocations':
@@ -270,7 +293,8 @@ export class SharedZone {
 		const locs = []
 		for(let x=0; x<250; x++) {
 			for(let z=0; z<250; z++) {
-				const idAndRot = farOrNear === 'near' ? this.wobIdRotGrid[x +(z *250)] : this.farWobIdRotGrid[x +(z *250)]
+				const index = x +(z *250)
+				const idAndRot = farOrNear === 'near' ? this.wobIdRotGrid[index] : this.farWobIdRotGrid[index]
 				if(idAndRot) {
 					const byte1 = idAndRot >>> 8
 					const byte2 = (idAndRot << 24) >>> 24
