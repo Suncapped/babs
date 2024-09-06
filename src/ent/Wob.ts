@@ -5,7 +5,7 @@ import { Fire } from '@/comp/Fire'
 import { Zone } from './Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { Blueprint, isMatchingWobIds, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
+import { SharedBlueprint, isMatchingWobIds, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
 import { Player } from './Player'
 import { InstancedWobs } from './InstancedWobs'
 import { LoaderSys, type FeGltf } from '@/sys/LoaderSys'
@@ -23,7 +23,7 @@ export class Wob extends SharedWob {
 		public x :number,
 		public z :number,
 		public r :RotationCardinal,
-		bp :Blueprint,
+		bp :SharedBlueprint,
 	) {
 		super(idzone, x, z, r, bp)
 	}
@@ -54,9 +54,7 @@ export class Wob extends SharedWob {
 		for(const wob of arrivalWobs) {
 			// Filter farwobs that do not have a comps.visible
 			if(asFarWobs && !wob.comps?.visible?.farMesh) {
-				if(wob.name === 'campfire') {
-					console.log('skipping', wob.name, 'as', wob, 'arrivalWobs', arrivalWobs)
-				}
+				// console.log('skipping', wob.name, 'as', wob, 'arrivalWobs', arrivalWobs) // This is normal for wobs that aren't far, eg sneezeweed
 				continue
 			}
 			if(asFarWobs) {
@@ -115,7 +113,7 @@ export class Wob extends SharedWob {
 
 			// Filter farwobs that do not have a comps.visible
 			if(asFarWobs && (!fwob.comps?.visible?.farMesh)) {
-				console.log('skipping', fwob.name, 'as', fwob, 'arrivalWobs', arrivalWobs)
+				// console.log('skipping', fwob.name, 'as', fwob, 'arrivalWobs', arrivalWobs) // This is normal for wobs that aren't far, eg sneezeweed
 				continue
 			}
 

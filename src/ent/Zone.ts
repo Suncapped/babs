@@ -7,7 +7,7 @@ import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
 import { Fire } from '@/comp/Fire'
-import { SharedWob, Blueprint } from '@/shared/SharedWob'
+import { SharedWob, SharedBlueprint, type blueprint_id, type SharedBlueprintWithComps } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 import type { InstancedWobs } from './InstancedWobs'
@@ -49,12 +49,32 @@ export class Zone extends SharedZone {
 		return `${this.x},${this.z}`
 	}
 
-	override removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) {
+	locidToBlueprint :Record<number, SharedBlueprint> = []
+	
+	applyBlueprints(blueprints: Map<blueprint_id, SharedBlueprintWithComps>) {
+		// console.log('applyBlueprints', blueprints)
+		for(const blueprintsWithComps of blueprints.values()) {
+			const blueprint = new SharedBlueprint(
+				blueprintsWithComps.blueprint_id,
+				blueprintsWithComps.locid, 
+				blueprintsWithComps.comps,
+			)
+			this.locidToBlueprint[blueprint.locid] = blueprint
+			this.bpidToLocid[blueprint.blueprint_id] = blueprint.locid
+
+			for(const compKey in blueprint.comps) {
+				if (blueprint.comps.hasOwnProperty(compKey)) {
+					this.allCompStrings.add(compKey)
+				}
+			}
+		}
+	}
+
+	removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) {
 		const existingWob = this.getWob(x, z, isFarWobs ? 'far' : 'near')
 		// Problem was: It's still getting this from location data array.  For frontend, we want to be able to pass in a wob.  Thus we split off removeWobGraphic()
 		// console.log('removeWobGraphicAt existingWob', existingWob)
 		return this.removeWobGraphic(existingWob, isFarWobs)
-
 	}
 	removeWobGraphic(deletingWob :SharedWob, isFarWobs = false) { // Don't recalculateIndexKey for large (eg zone-wide) removals, it's quite slow
 		// console.log('removeWobGraphic', deletingWob, isFarWobs ? 'isFarWobs' : 'isNearWobs')

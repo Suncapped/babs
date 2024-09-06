@@ -1,7 +1,7 @@
 import { type UintRange } from './TypeUtils'
 import { SharedCompGenerated, type SharedCompPlatform, type SharedCompEdible, type SharedCompAudible, SharedCompImpassable, SharedCompDurable, SharedCompVisible } from './SharedComps'
 
-export class Blueprint {
+export class SharedBlueprint {
 	constructor(
 		public blueprint_id :string,
 		public locid :number,
@@ -61,7 +61,7 @@ export type RotationCardinal = 0 | 1 | 2 | 3
 export type RotationCardinalDegrees = 0 | 90 | 180 | 270
 export type PlayerRotation = UintRange<0, 8>
 export type YardRange = UintRange<0, 250>
-export class SharedWob extends Blueprint {
+export class SharedWob extends SharedBlueprint {
 	static ROTATION_CARDINAL_TO_DEGREES = { // For wobs, not controller!
 		0: 0,
 		1: 90,
@@ -90,7 +90,7 @@ export class SharedWob extends Blueprint {
 		public x :number,
 		public z :number,
 		public r :RotationCardinal,
-		bp :Blueprint,
+		bp :SharedBlueprint,
 	){
 		super(bp.blueprint_id, bp.locid, bp.comps, bp.name, bp.glb)
 	}
