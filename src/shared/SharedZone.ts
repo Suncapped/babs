@@ -78,7 +78,7 @@ export abstract class SharedZone {
 	// ^ Storing 12-bit locid and 4-bit rotation in a grid.  (position is the x,z of the grid)
 	abstract locidToBlueprint :Record<number, any>
 	bpidToLocid :Record<string, number> = {}
-	bluestaticWobs :Map<string, Bluestatic> = new Map()
+	bluestaticWobs :Map<string, Bluestatic> = new Map() // string is comp.  Note this is currently only used on the server
 
 	getWob(x :number, z :number, farOrNear :FarOrNear = 'near') :SharedWob|null {
 		const index = x +(z *250)
@@ -104,8 +104,6 @@ export abstract class SharedZone {
 		let wob = this.getWob(x, z, 'near')
 
 		const index = x +(z *250)
-
-		// if(!this.bluestaticWobs.has(bp.blueprint_id)) this.bluestaticWobs.set(bp.blueprint_id, {gridIndices: new Set<number>()}) // Init if empty
 
 		if(isLocidBeingRemoved) {
 			if(wob) { // Is null on server // (is it though?)
@@ -171,21 +169,23 @@ export abstract class SharedZone {
 	applyLocationsToGrid(locations :Uint8Array, options :ApplyLocationsOptions) :Array<SharedWob> {
 		if(!options.isFarWobs) options.isFarWobs = false // Default to near for the sake of server use
 
+		// Initialize bluestaticWobs
+		// this.bluestaticWobs.clear() // No, because applyLocationsToGrid can be partial, not a full reinit
+		// console.log('this.allCompStrings', this.allCompStrings)
+		for(const comp of this.allCompStrings) {
+			if(!this.bluestaticWobs.has(comp)) { // Init it if it doesn't have it already
+				this.bluestaticWobs.set(comp, {gridIndices: new Set<number>()})
+			}
+		}
+
 		if(!locations || !locations.length) {
-			// console.log('applyLocations: no locations!')
+			// console.log('applyLocations: no locations!') // This happens naturally when a zone is empty eg on dev
 			return [] // locations are not set for this zone (empty zone)
 		}
 
 		let wobs = []
 
 		let locidsOfBlueprintsNotFound = {}
-
-		// Initialize bluestaticWobs
-		this.bluestaticWobs.clear()
-		// Set all comp types to have an empty gridIndices set, using this.allCompStrings
-		for(const comp of this.allCompStrings) {
-			this.bluestaticWobs.set(comp, {gridIndices: new Set<number>()})
-		}
 
 		for(let i=0; i<locations.length; i+=4){
 			const left = ((locations[i+0] & 0xFF) << 8) >>> 8
@@ -218,7 +218,7 @@ export abstract class SharedZone {
 
 					// Update bluestaticWobs with removed wob
 					for(const compKey in oldbp.comps) {
-						console.log('applyLocationsToGrid() removing compKey', compKey, index)
+						// console.log('applyLocationsToGrid() removing compKey', compKey, index)
 						this.bluestaticWobs.get(compKey).gridIndices.delete(index) // Remove this index
 					}
 				}
@@ -260,9 +260,7 @@ export abstract class SharedZone {
 		const keys = Object.keys(locidsOfBlueprintsNotFound)
 		if(keys.length) console.warn('No blueprint found @5!  bpid[]:', keys.join(','))
 
-		// if(this.x === 0 && this.z === 0) {
-		// 	console.log('this.bluestaticWobs', this.bluestaticWobs)
-		// }
+		// if(this.x === 0 && this.z === 0) console.log('this.bluestaticWobs', this.bluestaticWobs)
 
 		return wobs
 	}
