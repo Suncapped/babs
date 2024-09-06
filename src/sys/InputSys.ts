@@ -1141,11 +1141,33 @@ export class InputSys {
 
 		if(this.mousedownPickedObject?.poMousedownTime && Date.now() -this.mousedownPickedObject.poMousedownTime > this.doubleClickMs) {
 			if(this.mousedownPickedObject.pickedType === 'wob') {
-				// Mouse was held down on a wob, and it's been long enough to lift it
-				this.liftedObject = this.mousedownPickedObject
-				// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
-				this.mousedownPickedObject = null
-				this.raycastSetPickedObject(true)
+				// console.log('this.mousedownPickedObject', this.mousedownPickedObject)
+				// Detect if it's too weighty
+				// Get wob from zone
+				const {x, z, zone} = this.mousedownPickedObject.yardCoord
+				const wob = zone.getWob(x, z)
+
+				if(!wob) {
+					console.warn('No wob on mousedownPickedObject', this.mousedownPickedObject, zone)
+					this.mousedownPickedObject = null
+				} 
+				else {
+					// Get required weight from weighty comp, if any
+					const weightToLift = wob?.comps?.weighty?.strengthToLift || 0
+					const playerStrength = 10 // todo
+					if(weightToLift > playerStrength) {
+						console.debug(`${wob.blueprint_id} too weighty to lift: ${weightToLift} > ${playerStrength}`)
+						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, '<<you struggle to lift it>>')
+						this.mousedownPickedObject = null
+					}
+					else {
+						// Mouse was held down on a wob, and it's been long enough to lift it
+						this.liftedObject = this.mousedownPickedObject
+						// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'liftedObject ' + this.liftedObject.poid)
+						this.mousedownPickedObject = null
+						this.raycastSetPickedObject(true)
+					}
+				}
 			}
 		}
 		if(!this.babs.uiSys.isGameAway && this.pickedObject?.poHoverTime && Date.now() -this.pickedObject.poHoverTime > this.doubleClickMs *2) {
