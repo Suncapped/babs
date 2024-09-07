@@ -1157,7 +1157,7 @@ export class InputSys {
 					const playerStrength = 10 // todo
 					if(weightToLift > playerStrength) {
 						console.debug(`${wob.blueprint_id} too weighty to lift: ${weightToLift} > ${playerStrength}`)
-						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, '<<you struggle to lift it>>')
+						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, '<<you struggle to carry it>>')
 						this.mousedownPickedObject = null
 					}
 					else {
