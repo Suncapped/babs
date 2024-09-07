@@ -480,7 +480,7 @@ export class SocketSys {
 		else if('nicklist' in payload) {
 			console.debug('nicklist', payload.nicklist)
 			for(let pair of payload.nicklist) {
-				this.babs.uiSys.nicklist.set(pair.idtarget, pair.nick) // Save for later Player.Arrive players
+				this.babs.uiSys.nicklist.set(pair.idtarget, {nick: pair.nick, tribe: pair.tribe}) // Save for later Player.Arrive players
 
 				const player = this.babs.ents.get(pair.idtarget) as Player
 				if(!player) continue // If no player, skip display stuff.  
@@ -488,7 +488,8 @@ export class SocketSys {
 
 				const isSelf = player?.id === this.babs.idSelf
 				const nick = isSelf ? 'You' : pair.nick
-				player?.nickSetAndDisplay(nick)
+				const displayName = nick +(pair.tribe ? ` *${pair.tribe}`  :'')
+				player?.nickSetAndDisplay(displayName)
 				
 				// Also...I don't understand why this part is working to fill in menu name, if player is false? // Later: Ohh, race condition? Anyway, removed name in menu.
 				// if(player?.id === this.babs.idSelf) {

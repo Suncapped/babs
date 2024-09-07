@@ -30,7 +30,7 @@ export class UiSys {
 	svJournal :Journal
 	svMenu
 	svContainers = []
-	nicklist = new Map()
+	nicklist = new Map<number, { nick: string, tribe: string }>()
 	isFullscreen = false
 
 	constructor(babs) {
