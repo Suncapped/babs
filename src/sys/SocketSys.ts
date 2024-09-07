@@ -471,7 +471,7 @@ export class SocketSys {
 			if(chattyPlayer && chattyPlayer.colorHex !== said.color) {
 				chattyPlayer.colorHex = said.color // Update their color
 				const isSelf = chattyPlayer.id === this.babs.idSelf // Don't name self
-				if(!isSelf) chattyPlayer.nickSetAndDisplay(chattyPlayer.nick)
+				if(!isSelf) chattyPlayer.setDisplayNick(chattyPlayer.nick, chattyPlayer.tribe)
 				// ^ In future, could send a color change event, but with text chat isn't too bad.
 			}
 			
@@ -486,10 +486,10 @@ export class SocketSys {
 				if(!player) continue // If no player, skip display stuff.  
 				// Note, that can happen when 'load' is still awaiting rig download etc, so socketsys moved on to nicklist.
 
+				// console.log('nicklist item', pair.nick, pair.tribe)
+
 				const isSelf = player?.id === this.babs.idSelf
-				const nick = isSelf ? 'You' : pair.nick
-				const displayName = nick +(pair.tribe ? ` *${pair.tribe}`  :'')
-				player?.nickSetAndDisplay(displayName)
+				player?.setDisplayNick(isSelf?'You':pair.nick, pair.tribe) // Don't show own tribe
 				
 				// Also...I don't understand why this part is working to fill in menu name, if player is false? // Later: Ohh, race condition? Anyway, removed name in menu.
 				// if(player?.id === this.babs.idSelf) {
@@ -557,7 +557,7 @@ export class SocketSys {
 		}
 		else if('fewords' in payload) {
 			const fewords = payload.fewords
-			console.log('server fewords', fewords)
+			console.debug('server fewords', fewords)
 
 			if(fewords.idTargetPlayer) {
 				this.babs.uiSys.aboveHeadChat(fewords.idTargetPlayer, fewords.content, fewords.journalContent, fewords.colorHex)

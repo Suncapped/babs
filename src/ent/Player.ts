@@ -28,6 +28,7 @@ export class Player extends Ent {
 	char
 
 	nick :string
+	tribe :string
 	
 	model :Scene
 
@@ -70,12 +71,12 @@ export class Player extends Ent {
 		const registeredNick = arrival.visitor ? null : 'Stranger'
 		const anonNick = 'animal spirit'
 
-		const displayName = (nick || registeredNick || anonNick) +(tribe ? ` *${tribe}`  :'')
+		const displayName = (nick || registeredNick || anonNick)
 		// For people with no nick, this will be undefined.  Also for self.
 		// For those with a nick, it is set at this point.
 
 		// Let's also 
-		if(!plr.self) plr.nickSetAndDisplay(displayName) // Don't name self
+		if(!plr.self) plr.setDisplayNick(displayName, tribe) // Don't name self
 
 		EventSys.Dispatch('controller-ready', {
 			controller: plr.controller,
@@ -98,17 +99,18 @@ export class Player extends Ent {
 		
 	}
 
-	nickSetAndDisplay(newNick :string) {
-		if(!newNick) {
-			// console.log('nickSetAndDisplay canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first. // To self, I think this means, not so much others.
-			return
-		}
-		this.nick = newNick
+	setDisplayNick(nick :string, tribe :string = '') {
+		// if(!nick) {
+		// 	// console.log('setDisplayNick canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first. // To self, I think this means, not so much others.
+		// 	return
+		// }
+		this.nick = nick
+		this.tribe = tribe
 		this.babs.uiSys.aboveHeadChat(this.id, this.nickWrapped(), null, this.colorHex) // Show above head
 	}
 
 	nickWrapped() {
-		return `< ${this.nick || 'Stranger'} >`
+		return `< ${this.nick || 'Stranger'}${this.tribe?` *${this.tribe}`:''} >`
 	}
 
 	remove() {

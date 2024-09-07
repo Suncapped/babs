@@ -185,7 +185,7 @@ export type SendPlayersArrive = {
 	playersarrive :Array<PlayerArrive>
 }
 
-export type NickList = [{idtarget :number, nick :string, tribe :string}]
+export type NickList = {idtarget :number, nick :string, tribe :string}[]
 export type SendNickList = {
 	nicklist :NickList,
 }
