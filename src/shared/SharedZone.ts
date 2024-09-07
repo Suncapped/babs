@@ -112,7 +112,7 @@ export abstract class SharedZone {
 
 			// Update bluestaticWobs with removed wob
 			for(const compKey in wob.comps) {
-				console.log('setWob() removing compKey', compKey, index)
+				// console.log('setWob() removing compKey', compKey, index)
 				this.bluestaticWobs.get(compKey).gridIndices.delete(index) // Remove this index
 			}
 
