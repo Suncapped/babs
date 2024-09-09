@@ -1211,7 +1211,9 @@ export class InputSys {
 				else {
 					console.debug('hovered wob, this.pickedObject', this.pickedObject, yardCoord)
 					if(!this.liftedObject) {
-						this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
+						if(this.pickedObject?.instancedBpid !== 'footpath') {
+							this.babs.uiSys.wobSaid(this.pickedObject?.instancedBpid +debugStuff, wob)
+						}
 					}
 				}
 				
@@ -1227,7 +1229,9 @@ export class InputSys {
 				})
 				const wobAtCoord = zone.getWob(coord.x, coord.z)
 				if(wobAtCoord && !this.liftedObject) {
-					this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+					if(wobAtCoord.blueprint_id !== 'footpath') {
+						this.babs.uiSys.wobSaid(wobAtCoord.name, wobAtCoord)
+					}
 				}
 			}
 
