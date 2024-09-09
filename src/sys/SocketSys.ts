@@ -16,7 +16,7 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth } from '@/shared/consts'
+import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth, SendFirelink } from '@/shared/consts'
 import type { WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { get as svelteGet } from 'svelte/store'
@@ -72,8 +72,21 @@ export class SocketSys {
 		// 		// so fine, then .get() will get the root one.  .delete() will never delete the root because that's set with domain
 		// 	}
 
+		// Check the url for 'fire/{sylna}' and send that as a 'sylna' to the server
+		const urlParts = window.location.pathname.split('/')
+		const sylna = urlParts[1] === 'fire' ? urlParts[2] : null
+
+		// Remove everything from the url after and including the first slash, rewrite history 
+		// Actually, why not just keep it?  :)
+		// if(sylna) {
+		// 	window.history.replaceState(null, '', '/')
+		// }
+
 		const existingSessionAsSendAuth = {
-			auth: existingSession 
+			auth: {
+				session: existingSession,
+				sylna: sylna,
+			}
 		} as SendAuth // Force string to be a SendAuth
 		this.send(existingSessionAsSendAuth)
 
@@ -182,19 +195,19 @@ export class SocketSys {
 		if('auth' in payload) {
 			(document.getElementById('charsave') as HTMLButtonElement).disabled = false
 			// Handle failed login/register here
-			if(payload.auth === 'userpasswrong') {
+			if(payload.auth.session === 'userpasswrong') {
 				document.getElementById('topleft').style.visibility = 'visible'
 				toprightText.set('Username/password does not match.')
 			}
-			else if(payload.auth === 'emailinvalid') {
+			else if(payload.auth.session === 'emailinvalid') {
 				document.getElementById('topleft').style.visibility = 'visible'
 				toprightText.set('Email is invalid.')
 			}
-			else if(payload.auth === 'accountfailed') {
+			else if(payload.auth.session === 'accountfailed') {
 				document.getElementById('topleft').style.visibility = 'visible'
 				toprightText.set('Account creation error.')
 			}
-			else if(payload.auth === 'passtooshort') {
+			else if(payload.auth.session === 'passtooshort') {
 				document.getElementById('topleft').style.visibility = 'visible'
 				toprightText.set('Password too short, must be 8.')
 			}
@@ -655,6 +668,18 @@ export class SocketSys {
 			// else {
 			window.location.reload()
 			// }
+		}
+		else if('firelink' in payload) {
+			const firelink = payload.firelink
+
+			// Add domain
+			const firelinkFull = `${window.location.origin}${firelink}`
+
+			// Put above head (and in journal) that a firelink has been created
+			this.babs.uiSys.aboveHeadChat(this.babs.idSelf, 'Firelink copied to clipboard: '+firelinkFull, firelinkFull)
+
+			// Copy to clipboard
+			navigator.clipboard.writeText(firelinkFull)
 		}
 		else {
 			console.log('unknown command: ', payload)

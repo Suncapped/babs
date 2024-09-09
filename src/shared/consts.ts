@@ -166,7 +166,10 @@ export type SendSession = {
 }
 
 export type SendAuth = {
-	auth :'userpasswrong'|'passtooshort'|'accountfailed'|'emailinvalid',
+	auth: {
+		session :'userpasswrong'|'passtooshort'|'accountfailed'|'emailinvalid',
+		sylna? :string,
+	}
 }
 
 export type SendPlayerDepart = {
@@ -231,6 +234,10 @@ export type SendReposition = {
 	},
 }
 
+export type SendFirelink = {
+	firelink :string
+}
+
 export class FeWords {
 	content :string
 	idZone :number // Zone it's about
@@ -284,6 +291,7 @@ export type ProximaSendable = SendLoad|SendVisitor|SendSession
 	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
 	|SendZoneIn|SendReposition|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
+	|SendFirelink
 
 
 // Babs Sendables

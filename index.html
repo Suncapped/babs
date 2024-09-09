@@ -112,7 +112,9 @@
 				socket.onopen = (event) => {
 					// console.log('HTML sending visitor')
 					socket.send(JSON.stringify({
-						auth: 'visitor'
+						auth: {
+							session: 'visitor', // no sylna
+						}
 					}))
 				}
 				socket.onmessage = (event) => {
