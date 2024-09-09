@@ -129,6 +129,13 @@ export class Zone extends SharedZone {
 		const sourceWobAnyZone = feim.instanceIndexToWob.get(sourceIndex)
 		const targetWobAnyZone = feim.instanceIndexToWob.get(targetIndex)
 		if(showSwapLogs) console.log(sourceWobAnyZone, targetWobAnyZone)
+		
+		// Catch unexpected errors early
+		if(!sourceWobAnyZone) console.warn('swapWobsAtIndexes: sourceWobAnyZone is null', sourceIndex, targetIndex, feim, doDeleteSource)
+		if(!targetWobAnyZone) console.warn('swapWobsAtIndexes: targetWobAnyZone is null', sourceIndex, targetIndex, feim, doDeleteSource)
+		if(!sourceWobAnyZone || !targetWobAnyZone) return // Skip this one, I suppose
+
+
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${sourceIndex} result: ${sourceWobAnyZone.name}`)
 		if(showSwapLogs) console.log(`instanceIndexToWob.get: '${sourceWobAnyZone.name}/${targetWobAnyZone.name}' get ${targetIndex} result: ${targetWobAnyZone.name}`)
 

@@ -41,6 +41,8 @@ export class InstancedWobs {
 		let wobMesh :Mesh|SkinnedMesh// = gltf?.scene?.children[0]?.children[0] as Mesh|SkinnedMesh
 		gltf.scene.traverse(child => objectIsSomeKindOfMesh(child) ? wobMesh = child : null)
 		this.glbUpdatedAt = gltf.glbUpdatedAt
+
+		const isWater = blueprint_id === 'water'
 		
 		// - Set up wobMesh into InstancedMesh
 		if(!Wob.SphereMesh) { // Init it once
@@ -60,6 +62,10 @@ export class InstancedWobs {
 
 		if(asFarWobs) {
 			wobMesh.geometry.scale(4, 1, 4)
+		}
+		if(isWater) {
+			const wideScale = 2
+			wobMesh.geometry.scale(wideScale,1/wideScale,wideScale)
 		}
 
 		this.maxCount += Math.max(Math.floor(this.maxCount *0.10), INSTANCED_MAXCOUNT_EXTRA_MIN) // Add +10% or +INSTANCED_EXTRA_MAXCOUNT to maxCount for preallocation margin; prevents needing immediate reallocation.
@@ -113,8 +119,13 @@ export class InstancedWobs {
 		// ^ Requires calling .needsUpdate ? // https://www.khronos.org/opengl/wiki/Buffer_Object#Buffer_Object_Usage
 		// instanced.instanceMatrix.needsUpdate = true
 		
+		
 		this.instancedMesh.castShadow = this.boundingSize.y >= 1
 		this.instancedMesh.receiveShadow = true
+		if(isWater) {
+			this.instancedMesh.castShadow = false
+			this.instancedMesh.receiveShadow = false
+		}
 
 		this.instancedMesh.computeBoundingSphere()
 		this.instancedMesh.geometry.center()
@@ -135,6 +146,9 @@ export class InstancedWobs {
 		// Will not need re-setting during reallocate
 		// this.imGroup.position.setX(babs.worldSys.shiftiness.x)
 		// this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
+		
+		if(isWater) this.imGroup.position.setY(-7)
+
 		this.imGroup.updateMatrix()
 		this.imGroup.updateMatrixWorld()
 

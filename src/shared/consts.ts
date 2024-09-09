@@ -58,6 +58,17 @@ export const FE_LANDCOVERS = {
 	Cliff: 200,
 }
 
+export function isActualWater(code :number) {
+	const actualWaters = [
+		FE_LANDCOVERS.Lake,
+		FE_LANDCOVERS.River,
+		FE_LANDCOVERS.StreamSmall,
+		FE_LANDCOVERS.StreamMedium,
+		FE_LANDCOVERS.StreamLarge,
+	]
+	return actualWaters.includes(code)
+}
+
 export function objectFlipKeyValue(obj) {
 	return Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
 }

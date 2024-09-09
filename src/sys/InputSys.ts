@@ -1635,7 +1635,7 @@ export class InputSys {
 			if(logTime) console.time('intersectObjects')
 			if(logTime) console.timeLog('intersectObjects', this.babs.group.children.length)
 			// intersectObjects is 10% of xperformance.  Maybe don't do children? Works, below improves performance
-			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'debugdestinationmesh', 'three-helper', 'water', 'farzone', 'camerahelper', 'fire', 'feWords', 'nightsky', 'daysky', 'dirlight', 'firelight', 'hemilight', ]
+			const excluded = [Wob.FarwobName, 'groundgrid', 'LineSegments', 'debugdestinationmesh', 'three-helper', 'farzone', 'camerahelper', 'fire', 'feWords', 'nightsky', 'daysky', 'dirlight', 'firelight', 'hemilight', ] // 'water'
 			let filteredChildren = this.babs.group.children.filter(c=>!excluded.includes(c.name))
 			// Well, filtering out 'tree twotris' does help a lot with framerate.
 			if(logTime) console.timeLog('intersectObjects', 'filteredChildren', filteredChildren.length)

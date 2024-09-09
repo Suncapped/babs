@@ -623,6 +623,7 @@ export class WorldSys {
 		// console.log('noonness', noonness, this.hemiLight.intensity)
 	
 
+		/* @removewater
 		if(!this.babs.uiSys.isGameAway) {
 
 			// Water randomized rotation
@@ -663,6 +664,7 @@ export class WorldSys {
 				this.waterInstancedMesh.instanceMatrix.needsUpdate = true
 			}
 		}
+		*/
 
 
 		// Update smoke (even if game away, but prevent accum buildup too)
@@ -865,8 +867,8 @@ export class WorldSys {
 	
 	elevationData = {}
 	landcoverData
-	waterInstancedMesh
-	waterInstancedRands = []
+	// waterInstancedMesh
+	// waterInstancedRands = []
 	async genElevation(urlFiles :string, geometry :PlaneGeometry, zone :Zone) {
 		// Save thigns onto zone for later
 		zone.geometry = geometry
@@ -949,7 +951,7 @@ export class WorldSys {
 	
 		// console.log(verticesRef.length, colorArr.length, colorsRef.length, geometry)
 
-		let waterNearbyIndex = new Array(WorldSys.ZONE_ARR_SIDE_LEN **2).fill(0)
+		// let waterNearbyIndex = new Array(WorldSys.ZONE_ARR_SIDE_LEN **2).fill(0)
 		let colorNotFound = ''
 
 		for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
@@ -959,6 +961,7 @@ export class WorldSys {
 			const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
 
 			// Find water nearby
+			/* @removewater
 			for(let z=-1; z<=1; z++) {
 				for(let x=-1; x<=1; x++) {
 					const offsetIndex = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, WorldSys.ZONE_ARR_SIDE_LEN)
@@ -973,6 +976,7 @@ export class WorldSys {
 					}
 				}
 			}
+				*/
 
 			// Spread color from this vertex as well as to its +1 forward vertices (ie over the plot, the 20x20ft)
 			// LateR: Well, it doesn't work because they get overwritten by their fellows; so instead just do on single point with x<=0,z<=0.
@@ -1005,6 +1009,7 @@ export class WorldSys {
 		zone.colorsCopy = colorsRef.slice()
 
 		// Water?  Delayed?
+		/* @removewater
 		setTimeout(() => {
 			if(!
 			(
@@ -1083,7 +1088,7 @@ export class WorldSys {
 			}
 
 		}, 2000) // todo race condition here; will get fixed when water moves to wobs
-
+		*/
 	}
 
 	shiftiness = new Vector3()
