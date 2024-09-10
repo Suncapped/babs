@@ -99,7 +99,7 @@ export class Player extends Ent {
 		
 	}
 
-	setDisplayNick(nick :string, tribe :string = '') {
+	setDisplayNick(nick :string, tribe :string = '', doNotDisplay :'doNotDisplay' = null) {
 		// if(!nick) {
 		// 	// console.log('setDisplayNick canceling') // Note this happens on Arrive()!  Surprisingly.  It's because it's awaiting rig load, so nicklist gets here first. // To self, I think this means, not so much others.
 		// 	return

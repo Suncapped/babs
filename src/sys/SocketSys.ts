@@ -59,6 +59,12 @@ export class SocketSys {
 		lookForFeExistingSession()
 	}
 
+	getUrlSylna() {
+		const urlParts = window.location.pathname.split('/')
+		const sylna = urlParts[1] === 'fire' ? urlParts[2] : null
+		return sylna
+	}
+
 	finishSocketSetup(existingSession :string) {
 		// Note: Needs to be able to handle a situation where existingSession exists but isn't valid (eg doesn't exist on the server)
 
@@ -73,14 +79,10 @@ export class SocketSys {
 		// 	}
 
 		// Check the url for 'fire/{sylna}' and send that as a 'sylna' to the server
-		const urlParts = window.location.pathname.split('/')
-		const sylna = urlParts[1] === 'fire' ? urlParts[2] : null
+		const sylna = this.getUrlSylna()
 
 		// Remove everything from the url after and including the first slash, rewrite history 
-		// Actually, why not just keep it?  :)
-		// if(sylna) {
-		// 	window.history.replaceState(null, '', '/')
-		// }
+		// We'll keep it if they're a visitor, but remove if they're registered.  That must be done after they get 'load' info.
 
 		const existingSessionAsSendAuth = {
 			auth: {
@@ -245,7 +247,6 @@ export class SocketSys {
 			this.babs.uiSys.offerReconnect('Disconnected from other tab; try a refresh.')
 		}
 		else if('load' in payload) {
-
 			this.babs.loaderSys = new LoaderSys(this.babs)
 
 			const load = payload.load
@@ -254,6 +255,11 @@ export class SocketSys {
 				// Keep alive through Cloudflare's socket timeout.  See server notes.
 				this.send({ping:'ping'})
 			}, SocketSys.pingSeconds * 1000)
+
+			const isRegistered = !load.self.visitor
+			if(this.getUrlSylna() && isRegistered) {
+				window.history.replaceState(null, '', '/')
+			}
 
 			console.debug('Welcome to', load.self.idzone, load.self.id, load.self.visitor)
 			toprightText.set(this.babs.uiSys.toprightTextDefault)
@@ -502,7 +508,7 @@ export class SocketSys {
 				// console.log('nicklist item', pair.nick, pair.tribe)
 
 				const isSelf = player?.id === this.babs.idSelf
-				player?.setDisplayNick(isSelf?'You':pair.nick, pair.tribe) // Don't show own tribe
+				player?.setDisplayNick(isSelf?'You':pair.nick, pair.tribe, 'doNotDisplay')// Don't show self, but do store it
 				
 				// Also...I don't understand why this part is working to fill in menu name, if player is false? // Later: Ohh, race condition? Anyway, removed name in menu.
 				// if(player?.id === this.babs.idSelf) {
