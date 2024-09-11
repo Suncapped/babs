@@ -194,6 +194,25 @@ export class Zone extends SharedZone {
 	engineHeightAt(coord :YardCoord, innerPositionNorm :'corner'|'center'|Vector3 = 'center') :number { // Get height, of corner|center|[0-1,0-1] position
 		// Fetch from actual ground mesh vertices!
 
+		const isProduction = window.FeIsProd
+		if(isProduction && !coord.zone) { // Only catch on production; on dev, we WANT the crash so we're forced to see the error.
+			// Throw an error and trace
+			console.error('engineHeightAt: coord.zone is null!', coord)
+			console.trace()
+			return 0
+
+			// This happened that coord.zone was null, and I'm not sure how!
+			/*
+				Zone.ts:197 Uncaught TypeError: Cannot read properties of null (reading 'geometry')
+				at Zone.engineHeightAt (Zone.ts:197:35)
+				at Controller.update (Controller.ts:538:50)
+				at Babs.update (Babs.ts:207:9)
+				at Babs.ts:180:11
+				at onAnimationFrame (three.module.js:29614:36)
+				at onAnimationFrame (three.module.js:13488:3)
+			*/
+		}
+
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
 		const nCoordsComponents = 3 // x,y,z
 

@@ -678,14 +678,13 @@ export class SocketSys {
 		else if('firelink' in payload) {
 			const firelink = payload.firelink
 
-			// Add domain
-			const firelinkFull = `${window.location.origin}${firelink}`
-
 			// Put above head (and in journal) that a firelink has been created
-			this.babs.uiSys.aboveHeadChat(this.babs.idSelf, 'Firelink copied to clipboard: '+firelinkFull, firelinkFull)
+			const firelinkHostOnly = `${window.location.host}${firelink}`
+			this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '⧉ '+firelinkHostOnly, firelinkHostOnly)
 
 			// Copy to clipboard
-			navigator.clipboard.writeText(firelinkFull)
+			const firelinkWithScheme = `${window.location.origin}${firelink}`
+			navigator.clipboard.writeText(firelinkWithScheme)
 		}
 		else {
 			console.log('unknown command: ', payload)
