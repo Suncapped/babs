@@ -109,6 +109,10 @@ export class Zone extends SharedZone {
 		Zone.swapWobsAtIndexes(sourceIndex, targetIndex, feim, 'delete')
 		// instancedMesh.count = instancedMesh.count -1
 		feim.decreaseLoadedCount()
+
+		// Also unset the highlight color on the swapped index
+		feim.instancedMesh.setColorAt(targetIndex, new Color(1, 1, 1))
+		feim.instancedMesh.instanceColor.needsUpdate = true
 		feim.instancedMesh.instanceMatrix.needsUpdate = true 
 	}
 

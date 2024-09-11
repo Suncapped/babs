@@ -87,7 +87,7 @@ export abstract class SharedZone {
 		const r = (idAndRot << (16 + 12)) >>> (16 + 12) as RotationCardinal
 
 		if(locid === 0) {
-			// It's empty or unset!
+			// It's empty or unset!  This can happen when seeing if there's a wob at a location, for example.  If there's no wob.
 			// console.log('noloc')
 			return null
 		}
@@ -99,74 +99,74 @@ export abstract class SharedZone {
 		}
 		return new SharedWob(this.id, x, z, r, blueprint)
 	}
-	setWob(x :number, z :number, blueprint_id :string|0, rotation :RotationCardinal = undefined) { // NOTE, currently not used on client, and doesn't support near vs far
-		const isLocidBeingRemoved = !blueprint_id
-		let wob = this.getWob(x, z, 'near')
-
+	setWob(x :number, z :number, bpidBecoming :string|0, rotation :RotationCardinal = undefined) { // NOTE, currently not used on client, and doesn't support near vs far
+		const setwobLogging = false
+		const isLocidBeingRemoved = !bpidBecoming
 		const index = x +(z *250)
+		const wobPrevious = this.getWob(x, z, 'near')
 
-		if(isLocidBeingRemoved) {
-			if(wob) { // Is null on server // (is it though?)
-				this.removeWobGraphicAt(wob.x, wob.z, false) // no far support
-			}
+		// We remove graphics, and bluestaticWobs comps, either way.  We will re-add them later.
+		if(wobPrevious) { 
+			this.removeWobGraphicAt(wobPrevious.x, wobPrevious.z, false) // no far support
 
 			// Update bluestaticWobs with removed wob
-			for(const compKey in wob.comps) {
-				// console.log('setWob() removing compKey', compKey, index)
+			for(const compKey in wobPrevious.comps) {
+				if(setwobLogging) console.log('setWob() removing compKey index: ', `this.bluestaticWobs.get(${compKey}).gridIndices.delete(${index})`)
 				this.bluestaticWobs.get(compKey).gridIndices.delete(index) // Remove this index
 			}
-
-			this.wobIdRotGrid[index] = 0 // no far support
-
-			return [0, 0, wob?.x | x, wob?.z | z]
 		}
 
-		// Otherwise, we are setting or updating locid in grid
+		if(isLocidBeingRemoved) {
+			// This is a simple deletion, not a create or update
+			if(setwobLogging) console.log(`setWob() isLocidBeingRemoved===true, setting wobIdRotGrid[${index}] = 0.  Change: ${this.wobIdRotGrid[index]} -> ${0}`)
+			this.wobIdRotGrid[index] = 0 // no far support
+			return [0, 0, wobPrevious?.x | x, wobPrevious?.z | z]
+		}
 
-		const locid = this.bpidToLocid[blueprint_id]
+		// Otherwise, we are creating or updating the locid in grid
+		const locid = this.bpidToLocid[bpidBecoming]
 		const bp = this.locidToBlueprint[locid]
 		if(!bp) {
 			console.warn('No blueprint found @3! For:', locid)
 			return null
 		}
 
-		if(wob) { // Updating an existing one
-			this.removeWobGraphicAt(wob.x, wob.z, false) // no far support
-		}
-		else { // Unset spot && we are setting
-		}
-		wob = new SharedWob(this.id, x, z, 0, bp)
+		// (!wobPrevious) would mean: Unset spot && we are setting
+		const wobNew = new SharedWob(this.id, x, z, 0, bp)
 
-		wob.blueprint_id = blueprint_id
-		wob.locid = this.bpidToLocid[blueprint_id]
+		wobNew.blueprint_id = bpidBecoming
+		wobNew.locid = this.bpidToLocid[bpidBecoming]
 
 		const isRotationBeingSet = rotation !== undefined
 		if(isRotationBeingSet) {
-			wob.r = rotation
+			wobNew.r = rotation
 		}
 
 		// Recombine them
-		const idShifted = wob.locid << 4
-		const rotShifted = wob.r << 0
+		const idShifted = wobNew.locid << 4
+		const rotShifted = wobNew.r << 0
 		const idAndRot = idShifted +rotShifted
 		// console.log('idAndRot', idShifted, rotShifted, idAndRot)
 
+		if(setwobLogging) console.log(`setWob() setting wobIdRotGrid[${index}] = ${idAndRot}.  Change: ${this.wobIdRotGrid[index]} -> ${idAndRot}`)
 		this.wobIdRotGrid[index] = idAndRot // no far support
 
 		// Update bluestaticWobs with added wob
 		for(const compKey in bp.comps) {
+			if(setwobLogging) console.log('setWob() adding compKey index: ', `this.bluestaticWobs.get(${compKey}).gridIndices.add(${index})`)
 			this.bluestaticWobs.get(compKey).gridIndices.add(index) // Add this index
 		}
 
 		// Return locations array of newly added wob
 		const byte1 = idAndRot >>> 8
 		const byte2 = (idAndRot << 24) >>> 24
-		return [byte1, byte2, wob.x, wob.z]
+		return [byte1, byte2, wobNew.x, wobNew.z]
 
 	}
 	abstract removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) :void
 
 	applyLocationsToGrid(locations :Uint8Array, options :ApplyLocationsOptions) :Array<SharedWob> {
+		// console.log('----------------- applyLocationsToGrid()')
 		if(!options.isFarWobs) options.isFarWobs = false // Default to near for the sake of server use
 
 		// Initialize bluestaticWobs
