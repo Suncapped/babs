@@ -469,26 +469,23 @@ export class Zone extends SharedZone {
 	}
 
 	plotcountsSaved :Record<string, number> = {} // For saving incoming data
-	static async LoadZoneFootsteps(enterZone :Zone, exitZone :Zone|null) { // Used to be zoneIn()
+	static async LoadZoneFootsteps(enterZone :Zone, exitZone :Zone|null) {
 		console.debug('LoadZoneFootsteps zonein zone', enterZone.id)
 		const [removedZonesNearby, addedZonesNearby, removedZonesFar, addedZonesFar] = Zone.CalcZoningDiff(enterZone, exitZone)
-		const pullFootstepsData = async () => {
-			const zoneFootstepsCounts :Promise<Response>[] = []
-			for(let zone of addedZonesNearby) {
-				zoneFootstepsCounts.push(fetch(`${enterZone.babs.urlFiles}/zone/${zone.id}/footsteps.json`))
-			}
-			await Promise.all(zoneFootstepsCounts)
+		const zoneFootstepsCounts :Promise<Response>[] = []
+		for(let zone of addedZonesNearby) {
+			zoneFootstepsCounts.push(fetch(`${enterZone.babs.urlFiles}/zone/${zone.id}/footsteps.json`))
+		}
+		await Promise.all(zoneFootstepsCounts)
 
-			for(const response of zoneFootstepsCounts) {
-				const footstepsCounts = (await (await response).json() as SendFootstepsCounts).footstepscounts
-				if(footstepsCounts) {
-					// console.log('footstepsCounts', footstepsCounts)
-					const zone = enterZone.babs.ents.get(footstepsCounts.idzone) as Zone
-					zone.colorFootsteps(footstepsCounts.plotcounts)
-				}
+		for(const response of zoneFootstepsCounts) {
+			const footstepsCounts = (await (await response).json() as SendFootstepsCounts).footstepscounts
+			if(footstepsCounts) {
+				// console.log('footstepsCounts', footstepsCounts)
+				const zone = enterZone.babs.ents.get(footstepsCounts.idzone) as Zone
+				zone.colorFootsteps(footstepsCounts.plotcounts)
 			}
 		}
-		await pullFootstepsData()
 	}
 	colorFootsteps(plotcountsUpdates :SendFootstepsCounts['footstepscounts']['plotcounts']) {
 		// Make the vertex colors more brown the higher the number is per plotcount
