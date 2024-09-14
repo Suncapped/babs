@@ -60,11 +60,7 @@ export class Audible extends Comp {
 		// console.log('playContinuous', this.idEnt)
 
 		// Use a promised buffer to prefetch and load the file
-		this.continuousBuffer = new Promise((resolve, reject) => {
-			this.babs.loaderSys.audioLoader.load(`${this.babs.urlFiles}/audio/sounds/${this.sharedCompAudible.soundContinuousLoop}.mp3`, function( buffer ) {
-				resolve(buffer)
-			})
-		})
+		this.continuousBuffer = this.babs.loaderSys.getLoadedAudioBuffer(this.sharedCompAudible.soundContinuousLoop)
 
 		// Load sound player
 		this.continuousSound = new PositionalAudio(this.babs.soundSys.audioListener)

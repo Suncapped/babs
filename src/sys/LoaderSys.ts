@@ -40,6 +40,7 @@ export class LoaderSys {
 	urlFiles
 	objectTexture :Texture
 	audioLoader :AudioLoader
+	loadedAudioBuffers :Map<string, Promise<AudioBuffer>> = new Map()
 
 	constructor(public babs :Babs) {
 		// console.log('LoaderSys', urlFiles)
@@ -376,6 +377,22 @@ export class LoaderSys {
 			this.mapPathAnimCache.set(path, group) // Store group, not group.scene, because group.animations[] is where they are.
 			return group
 		}
+	}
+
+	async getLoadedAudioBuffer(name :string) :Promise<AudioBuffer> {
+
+		const buffer = this.babs.loaderSys.loadedAudioBuffers.get(name)
+		if(buffer) return buffer
+
+		// Use a promised buffer to prefetch and load the file
+		const newBufferPromise = new Promise<AudioBuffer>((resolve, reject) => {
+			this.babs.loaderSys.audioLoader.load(`${this.babs.urlFiles}/audio/sounds/${name}.mp3`, function( newBuffer ) {
+				resolve(newBuffer)
+			})
+		})
+
+		this.loadedAudioBuffers.set(name, newBufferPromise)
+		return newBufferPromise
 	}
 
 
