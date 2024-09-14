@@ -1854,6 +1854,9 @@ export class InputSys {
 
 					this.pickedObject.feim.instancedMesh.setColorAt(index, new Color(1, 1, 1))
 					this.pickedObject.feim.instancedMesh.instanceColor.needsUpdate = true
+
+					// Cancel double click
+					this.mouse.ldouble = false
 				}
 				else if(this.pickedObject.pickedType === 'player') { 
 					// @ts-ignore
