@@ -24,9 +24,8 @@ export class InstancedWobs {
 	public sink :number
 	public instanceIndexToWob = new Map<number, Wob>
 	public farInstanceIndexToWob = new Map<number, Wob>
-	public wobIsSmall :boolean
 	public wobIsTall :boolean
-	public wobIsFar :boolean
+	public wobIsFlat :boolean
 
 	private loadedCount :number = 0 // Number that are considered loaded, after which they are deleted or unallocated
 
@@ -92,14 +91,17 @@ export class InstancedWobs {
 
 		wobMesh.visible = false // Hide the original mesh // Is this necessary?
 		wobMesh.geometry.boundingBox.getSize(this.boundingSize) // sets into vector
-		this.wobIsSmall = this.boundingSize.y < Wob.WobIsTallnessMinimum
 		this.wobIsTall = this.boundingSize.y >= Wob.WobIsTallnessMinimum
-		this.wobIsFar = this.boundingSize.y >= Wob.WobIsTallnessMinimum
+		this.wobIsFlat = this.boundingSize.y <= Wob.WobIsFlatnessMaximum
 
 		this.sink = Math.min(this.boundingSize.y *0.05, 0.2)
 		// ^ Sink by a percent but with a max for things like trees.
 		this.lift = (this.boundingSize.y < 0.01 ? 0.066 : 0)
 		// ^ For very small items (like flat 2d cobblestone tiles), let's lift them a bit
+		if(!this.wobIsFlat && this.wobIsTall) {
+			// For things that are not flat, and are tall, sink them (ie hide tree trunk bottoms)
+			this.sink += 1.5
+		}
 
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)

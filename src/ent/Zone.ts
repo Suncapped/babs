@@ -303,36 +303,83 @@ export class Zone extends SharedZone {
 		return combinedWeights
 	}
 
-	// calcElevationAtIndex(index :number) {
-	// 	return (this.elevationData[index] *this.yscale) +this.y
-	// }
-	
-	// Let's use engineHeightAt instead, it's much more efficient!
-	// rayHeightAt(coord :Vector3|YardCoord) :Vector3 { 
-	// 	let offset = new Vector3()
-	// 	if(coord instanceof YardCoord) {
-	// 		coord = coord.toEngineCoordCentered()
-	// 	}
+	engineNormalAt(coord: YardCoord): Vector3 {
+		// Fetch from actual ground mesh vertices
 
-	// 	const raycaster = new Raycaster(
-	// 		new Vector3(coord.x +offset.x, WorldSys.ZoneTerrainMax.y, coord.z +offset.z), // +2 makes it center of grid instead of corner
-	// 		new Vector3( 0, -1, 0 ), 
-	// 		0, WorldSys.ZoneTerrainMax.y *2
-	// 	)
+		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
+		const nCoordsComponents = 3 // x, y, z
 
-	// 	let [intersect] = raycaster.intersectObject(this.ground, true)
-	// 	if(!intersect) {
-	// 		console.debug('rayHeightAt: no ground intersect!', coord, raycaster)
-	// 		intersect = {
-	// 			point: new Vector3(0,0,0),
-	// 			distance: null,
-	// 			object: null,
-	// 		}
-	// 	}
-	// 	let result = intersect?.point
+		// Calculate the size of one grid cell in your terrain
+		const gridCellSize = WorldSys.ZONE_DATUM_SIZE / WorldSys.Yard
 
-	// 	return result
-	// }
+		// Calculate the grid indices
+		const xIndex = Math.floor(coord.x / gridCellSize)
+		const zIndex = Math.floor(coord.z / gridCellSize)
+
+		// Ensure indices are within bounds
+		const maxIndex = WorldSys.ZONE_ARR_SIDE_LEN - 1
+		const xClamped = Math.min(xIndex, maxIndex - 1)
+		const zClamped = Math.min(zIndex, maxIndex - 1)
+
+		// Helper function to get the height at a grid point
+		const getHeight = (xi: number, zi: number): number => {
+			const index = Utils.coordToIndex(xi, zi, WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
+			return verticesRef[index + 1] // +1 to get the y component
+		}
+
+		// Get the heights at the four corners of the cell
+		const height00 = getHeight(xClamped, zClamped)
+		const height10 = getHeight(xClamped + 1, zClamped)
+		const height01 = getHeight(xClamped, zClamped + 1)
+		const height11 = getHeight(xClamped + 1, zClamped + 1)
+
+		// Positions of the grid points
+		const x0 = xClamped * gridCellSize
+		const z0 = zClamped * gridCellSize
+		const x1 = (xClamped + 1) * gridCellSize
+		const z1 = (zClamped + 1) * gridCellSize
+
+		// Determine the point's position within the cell
+		const xLocal = coord.x - x0
+		const zLocal = coord.z - z0
+
+		// Determine which triangle the point is in
+		const isFirstTriangle = xLocal + zLocal < gridCellSize
+
+		// Define the vertices of the triangle
+		let vertexA: Vector3, vertexB: Vector3, vertexC: Vector3
+
+		if (isFirstTriangle) {
+			// Lower-left triangle
+			vertexA = new Vector3(x0, height00, z0)
+			vertexB = new Vector3(x1, height10, z0)
+			vertexC = new Vector3(x0, height01, z1)
+		} else {
+			// Upper-right triangle
+			vertexA = new Vector3(x1, height10, z0)
+			vertexB = new Vector3(x1, height11, z1)
+			vertexC = new Vector3(x0, height01, z1)
+		}
+
+		// **Adjust the vertex order to ensure the normal points upwards**
+		// Swap vertexB and vertexC
+		[vertexB, vertexC] = [vertexC, vertexB]
+
+		// Compute the normal of the triangle
+		const triangle = new Triangle(vertexA, vertexB, vertexC)
+		const normal = new Vector3()
+		triangle.getNormal(normal)
+
+		// Normalize the normal vector
+		normal.normalize()
+
+		// If necessary, flip the normal
+		if (normal.y < 0) {
+			// normal.negate();
+		}
+
+		return normal
+	}
 
 	static CalcZoningDiff(enterZone :Zone, exitZone :Zone|null) :[Zone[], Zone[], Zone[], Zone[]] {
 		// Calculate the zones we're exiting and the zones we're entering

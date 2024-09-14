@@ -1,4 +1,4 @@
-import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2, PositionalAudio } from 'three'
+import { Color, DoubleSide, Mesh, MeshPhongMaterial, FrontSide, Vector3, Matrix4, InstancedBufferAttribute, SphereGeometry, MeshLambertMaterial, StaticDrawUsage, DynamicDrawUsage, Object3D, BufferGeometry, InstancedBufferGeometry, MathUtils, Box3, Euler, SkinnedMesh, AnimationClip, Vector2, PositionalAudio, Quaternion } from 'three'
 import { UiSys } from '@/sys/UiSys'
 
 import { Fire } from '@/comp/Fire'
@@ -41,6 +41,7 @@ export class Wob extends SharedWob {
 	static FullColor = new Color(1,1,1)
 	static FarwobName = 'tree twotris'
 	static WobIsTallnessMinimum = 12
+	static WobIsFlatnessMaximum = 3
 
 	static totalArrivedWobs = 0
 
@@ -192,11 +193,25 @@ export class Wob extends SharedWob {
 
 				feim.instanceIndexToWob.set(existingIindex, wob)
 
-				// matrix = new Matrix4() // not needed I guess?
+				matrix.identity()
 				if(!asFarWobs) {
-					// console.log(wob.r)
-					matrix.makeRotationY(MathUtils.degToRad(wob.r *90))
+					const tiltFactor = feim.wobIsFlat ? 0.4 : 0.05 // Graduate the tilt because it's inaccurately steep by default :p // Taller things get less tilt
+					const normal = zone.engineNormalAt(yardCoord)
+
+					// Blend the normal with the up vector
+					const upVector = new Vector3(0, 1, 0)
+					const blendedNormal = new Vector3().lerpVectors(upVector, normal, tiltFactor).normalize()
+
+					// Create a quaternion that rotates the object's up vector (0, 1, 0) to the normal
+					const quaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), blendedNormal)
+					// object.quaternion.copy(quaternion);
+					// Reset then apply this to matrix
+					matrix.makeRotationFromQuaternion(quaternion)
 				}
+				// Apply the server-set Y rotation
+				const yRotationMatrix = new Matrix4().makeRotationY(MathUtils.degToRad(wob.r * 90))
+				matrix.multiply(yRotationMatrix)
+
 				matrix.setPosition(engPositionVector)
 				feim.instancedMesh.setMatrixAt(existingIindex, matrix)
 	
