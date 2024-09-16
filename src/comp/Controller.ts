@@ -23,16 +23,22 @@ class BasicCharacterControllerProxy {
 	}
 }
 
+export type MovestateNames = keyof typeof Controller.MovestateNameId
+
 export class Controller extends Comp {
-	static MOVESTATE = {
-		Idle: 0,
-		Run: 1,
-		Walk: 2,
-		Jump: 3,
-		Dodge: 4,
-		Rotate: 5,
-		Emote: 6,
+	static MovestateNameId = {
+		idle: 0,
+		run: 1,
+		walk: 2,
+		jump: 3,
+		dodge: 4,
+		rotate: 5,
+		emote: 6,
 	}
+	static MovestateIdName = Object.entries(Controller.MovestateNameId).reduce((acc, [name, id]) => {
+		acc[id] = name
+		return acc
+	})
 	static JUMP_HEIGHT = 3
 	static ROTATION_ANGLE_MAP = { // For controller, not wobs!
 		0: 45,
@@ -59,6 +65,7 @@ export class Controller extends Comp {
 	hover = 0
 	groundDistance = 0
 	isSelf :boolean = false
+	selfFollowTargetId :number
 
 	playerRig :FeObject3D
 
@@ -150,7 +157,7 @@ export class Controller extends Comp {
 	}
 
 	selfWaitZoningExitZone :Zone
-	setDestination(gDestVector3, movestate) {
+	setDestination(gDestVector3 :Vector3, movestateName :MovestateNames) {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
@@ -179,13 +186,11 @@ export class Controller extends Comp {
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
 		// console.debug('setDestination changing', this.gDestination, movestate, this.isSelf)
-		
+
 		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > WorldSys.ZONE_MOVEMENT_EXTENT || gDestVector3.z > WorldSys.ZONE_MOVEMENT_EXTENT
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
-			const movestateSend = Object.entries(Controller.MOVESTATE).find(([str, num]) => str.toLowerCase() === movestate)[1]
-
 			const targetYardCoord = YardCoord.Create({
 				...this.gDestination, 
 				zone: this.babs.worldSys.currentGround.zone,
@@ -282,9 +287,11 @@ export class Controller extends Comp {
 				exitZone.ground.updateMatrix()
 			}
 
+			const movestateId = Controller.MovestateNameId[movestateName] || 0
+			
 			this.babs.socketSys.send({
 				move: { // This counts as a 'zonein' on the server when enterzone_id is included
-					movestate: movestateSend,
+					movestate: movestateId,
 					a: this.gDestination.x,
 					b: this.gDestination.z,
 					enterzone_id,
@@ -295,8 +302,8 @@ export class Controller extends Comp {
 		}
 
 		
-		this.run = movestate === 'run'
-		this._stateMachine.setState(movestate)
+		this.run = movestateName === 'run'
+		this._stateMachine.setState(movestateName)
 	}
 
 	setRotation(_R) {
@@ -356,7 +363,7 @@ export class Controller extends Comp {
 			const rotationWord = parseInt(`${found[0]}`)
 			this.babs.socketSys.send({
 				move: {
-					movestate: Controller.MOVESTATE.Rotate,
+					movestate: Controller.MovestateNameId.rotate,
 					a: rotationWord,
 					b: 0,
 				}
@@ -379,7 +386,7 @@ export class Controller extends Comp {
 		if(this.isSelf) {
 			this.babs.socketSys.send({
 				move: {
-					movestate: Controller.MOVESTATE.Jump,
+					movestate: Controller.MovestateNameId.jump,
 					a: 0,
 					b: 0,
 				}

@@ -406,7 +406,7 @@ export class Zone extends SharedZone {
 		
 		// enterZone.babs.worldSys.currentGround = enterZone.ground // Now happens before network
 
-		// Removed; wob removal from exiting zones happens on setDestination(), before here.
+		// Removed; wob removal from exiting zones happens on setDestination, before here.
 		
 		// Pull detailed wobs for entered zones, so we can load them.  
 		// This could later be moved to preload on approaching zone border, rathern than during zonein.

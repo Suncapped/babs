@@ -274,7 +274,7 @@
 			<li style="margin-top:10px;">&bull; Two fingers on mouse to move.</li>
 			<li>&bull; Type to chat.  Capitalize?</li>
 			<li>&bull; Click someone to name them.</li>
-			<li>&bull; Double click to literally follow.</li>
+			<li>&bull; Double click to walk with them.</li>
 			<li>&bull; Ctrl + j to keep journal open.</li>
 			<li style="text-align:right; margin-top:10px;">
 					Speech color: <span role="presentation" id="speechColorEl" on:click={clickColor} on:keydown={null}>&block;&block;&block;</span>

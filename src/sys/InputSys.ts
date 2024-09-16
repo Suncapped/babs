@@ -739,7 +739,8 @@ export class InputSys {
 										this.chatboxSetContent('')
 									}
 									
-									// todo follow them
+									// Follow them
+									this.babs.inputSys.playerSelf.controller.selfFollowTargetId = pickedPlayer.id
 								} 
 								
 							}
@@ -1411,8 +1412,10 @@ export class InputSys {
 			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 
 			// Send to controller
-			// console.debug('InputSys: call controller.setDestination()', dest)
+			// console.debug('InputSys: call controller.setDestination', dest)
 			this.playerSelf.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
+			// Cancel follow
+			this.playerSelf.controller.selfFollowTargetId = null
 
 			// Let's show a square in front of the player?  Their destination target square :)
 			if (this.babs.debugMode) {

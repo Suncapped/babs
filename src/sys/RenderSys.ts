@@ -476,7 +476,7 @@ export class RenderSys {
 
 		let iNearby = 0
 		const gDestRef = this.babs.inputSys.playerSelf.controller.gDestination // Careful, it's a ref
-		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats // Replicated in setDestination()
+		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats // Replicated in setDestination
 			// Each instance is a 4x4 matrix; 16 floats
 			const x = instanceMatrix.array[i*16 +12]// +this.babs.worldSys.shiftiness.x // todo shiftiness
 			const z = instanceMatrix.array[i*16 +14]// +this.babs.worldSys.shiftiness.z

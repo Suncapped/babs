@@ -6,7 +6,7 @@ import { WorldSys } from './WorldSys'
 import { LoaderSys } from './LoaderSys'
 import { randIntInclusive, sleep } from './../Utils'
 import { AnimationMixer, Int8BufferAttribute, Loader, MathUtils, Matrix4, Quaternion, Vector3 } from 'three'
-import { Controller } from '@/comp/Controller'
+import { Controller, type MovestateNames } from '@/comp/Controller'
 import { Player } from '@/ent/Player'
 import { CameraSys } from './CameraSys'
 import { Raycaster } from 'three'
@@ -468,10 +468,10 @@ export class SocketSys {
 		else if('zonein' in payload) { // Handle self or others switching zones
 			const player = this.babs.ents.get(payload.zonein.idplayer) as Player
 			const enterZone = this.babs.ents.get(payload.zonein.idzone) as Zone
-			const exitZone = player.controller.selfWaitZoningExitZone || player.controller.playerRig.zone
-			// console.log('exitZone', player.controller.waitZoningExitZone, player.controller.playerRig.zone, exitZone.id)
 
 			if(player.id === this.babs.idSelf) {
+				const exitZone = player.controller.selfWaitZoningExitZone || player.controller.playerRig.zone
+				
 				await Zone.LoadZoneWobs(enterZone, exitZone) // Only for self
 				await Zone.LoadZoneFootsteps(enterZone, exitZone) // Only for self
 				player.controller.selfWaitZoningExitZone = null
@@ -697,20 +697,52 @@ export class SocketSys {
 		const idPlayer = this.babs.zips.get(idzip)
 		const player = this.babs.ents.get(idPlayer)	as Player
 		if(player) {
-			const movestateName = Object.entries(Controller.MOVESTATE).find(e => e[1] == movestate)[0].toLowerCase()
-			if(player.id !== this.babs.idSelf) { // Skip self movements
+			const movestateName = (Controller.MovestateIdName[movestate] || 'idle') as MovestateNames
+			const isSelf = player.id === this.babs.idSelf
+			if(!isSelf) { // Don't do self movements
 				// console.log('finally actually moving player after attept', attempts, idzip)
+				const isFollowTarget = player.id == this.babs.inputSys.playerSelf.controller.selfFollowTargetId
+
 				if(movestateName === 'run' || movestateName == 'walk') {
-					player.controller.setDestination(new Vector3(a, 0, b), movestateName)
+					const gDest = new Vector3(a, 0, b)
+
+					if(isFollowTarget) { // If we're following them...
+						// this.babs.inputSys.playerSelf.controller.setDestination(new Vector3(a, 0, b), movestateName)
+						// Rather than follow, we actually want to 'mirror' their movement.
+						// So we get their own relative movement to themselves, and apply it to ourself.
+						
+						const targetOldDest = player.controller.gDestination.clone()
+						const targetDestDelta = targetOldDest.sub(gDest)
+
+						// If there's a huge difference, they zoned.  Subtract that.
+						// OMG, this works amazingly!
+						if(Math.abs(targetDestDelta.x) > 100) {
+							targetDestDelta.x -= (WorldSys.ZONE_MOVEMENT_EXTENT +1) * Math.sign(targetDestDelta.x)
+						}
+						if(Math.abs(targetDestDelta.z) > 100) {
+							targetDestDelta.z -= (WorldSys.ZONE_MOVEMENT_EXTENT +1) * Math.sign(targetDestDelta.z)
+						}
+
+						const selfOldDest = this.babs.inputSys.playerSelf.controller.gDestination.clone()
+						const selfNewDest = selfOldDest.sub(targetDestDelta)
+
+						this.babs.inputSys.playerSelf.controller.setDestination(selfNewDest, movestateName)
+					}
+
+					player.controller.setDestination(gDest, movestateName)
 				}
 				else if(movestateName === 'jump') {
 					player.controller.jump(Controller.JUMP_HEIGHT)
+
+					// if(isFollowTarget) this.babs.inputSys.playerSelf.controller.jump(Controller.JUMP_HEIGHT) // Ideally, we'd jump when they did, not now
 				}
 				else if(movestateName === 'rotate') {
 					const degrees = Controller.ROTATION_ANGLE_MAP[a] -45 // Why?  Who knows! :p
 					const quat = new Quaternion()
 					quat.setFromAxisAngle(new Vector3(0,1,0), MathUtils.degToRad(degrees))
 					player.controller.setRotation(quat)
+
+					if(isFollowTarget) this.babs.inputSys.playerSelf.controller.setRotation(quat)
 				}
 			}
 
