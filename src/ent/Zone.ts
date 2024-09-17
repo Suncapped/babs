@@ -218,20 +218,20 @@ export class Zone extends SharedZone {
 		}
 
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
-		const nCoordsComponents = 3 // x,y,z
+		const nCoordsCount = 3 // x,y,z
 
 		const centerPointInPlot = WorldSys.ZONE_DATUM_SIZE /WorldSys.Yard
 
-		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
+		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height00 = verticesRef[index00 +1]  // +1 is to get y
 
-		const index10 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
+		const index10 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height10 = verticesRef[index10 +1]
 
-		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
+		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height01 = verticesRef[index01 +1]
 
-		const index11 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
+		const index11 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height11 = verticesRef[index11 +1]
 
 		/* 
@@ -307,7 +307,7 @@ export class Zone extends SharedZone {
 		// Fetch from actual ground mesh vertices
 
 		const verticesRef = (coord.zone.geometry.getAttribute('position') as BufferAttribute).array
-		const nCoordsComponents = 3 // x, y, z
+		const nCoordsCount = 3 // x, y, z
 
 		// Calculate the size of one grid cell in your terrain
 		const gridCellSize = WorldSys.ZONE_DATUM_SIZE / WorldSys.Yard
@@ -323,8 +323,8 @@ export class Zone extends SharedZone {
 
 		// Helper function to get the height at a grid point
 		const getHeight = (xi: number, zi: number): number => {
-			const index = Utils.coordToIndex(xi, zi, WorldSys.ZONE_ARR_SIDE_LEN, nCoordsComponents)
-			return verticesRef[index + 1] // +1 to get the y component
+			const index = Utils.coordToIndex(xi, zi, WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+			return verticesRef[index + 1] // +1 to get the y aspect
 		}
 
 		// Get the heights at the four corners of the cell

@@ -873,12 +873,12 @@ export class WorldSys {
 		// Save thigns onto zone for later
 		zone.geometry = geometry
 
-		const nCoordsComponents = 3 // x,y,z
+		const nCoordsCount = 3 // x,y,z
 		const verticesRef = geometry.getAttribute('position').array as Float32Array
 
 		// let lowestElevation = 1_000_000
-		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
-			// j + 1 because it is the y component that we modify
+		for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsCount ) {
+			// j + 1 because it is the y aspect that we modify
 			// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
 			// Set vertex height from elevations data
 			verticesRef[j +1] = zone.elevationData[i] * zone.yscale// +zone.y
@@ -891,7 +891,7 @@ export class WorldSys {
 	async stitchElevation(zones) {
 		this.zones = zones
 		for(let zone of zones) {
-			const nCoordsComponents = 3 // x,y,z
+			const nCoordsCount = 3 // x,y,z
 			const verticesRef = zone.geometry.getAttribute('position').array
 	
 			const zoneMinusZ = zones.find(z => z.x==zone.x && z.z==zone.z-1)
@@ -902,8 +902,8 @@ export class WorldSys {
 			const zoneMinusXVerts = zoneMinusX?.geometry.getAttribute('position').array
 			const zoneMinusBothVerts = zoneMinusBoth?.geometry.getAttribute('position').array
 	
-			for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsComponents ) {
-				// j + 1 because it is the y component that we modify
+			for (let i=0, j=0; i < zone.elevationData.length; i++, j += nCoordsCount ) {
+				// j + 1 because it is the y aspect that we modify
 				// Wow, 'vertices' is a reference that mutates passed-in 'geometry' in place.  That's counter-intuitive.
 	
 				// Set vertex height from elevations data
@@ -940,13 +940,13 @@ export class WorldSys {
         
 		// Vertex colors on BufferGeometry using a non-indexed array
 		const verticesRef = geometry.getAttribute('position').array
-		const nColorComponents = 3 // r,g,b
+		const nColorCount = 3 // r,g,b
 		// const nFaces = WorldSys.ZONE_DATUMS *WorldSys.ZONE_DATUMS *2; // e.g. 6 for a pyramid (?)
 		// const nVerticesPerFace = 3; // 3 for Triangle faces
 		
 		// Add color attribute to geometry, so that I can use vertex colors
 		const colorArr = new Float32Array(verticesRef.length) 
-		geometry.setAttribute('color', new Float32BufferAttribute(colorArr, nColorComponents))
+		geometry.setAttribute('color', new Float32BufferAttribute(colorArr, nColorCount))
 		const colorsRef = geometry.getAttribute('color').array as Float32Array
 	
 		// console.log(verticesRef.length, colorArr.length, colorsRef.length, geometry)
@@ -954,7 +954,7 @@ export class WorldSys {
 		// let waterNearbyIndex = new Array(WorldSys.ZONE_ARR_SIDE_LEN **2).fill(0)
 		let colorNotFound = ''
 
-		for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
+		for (let index=0, l=verticesRef.length /nColorCount; index < l; index++) {
 			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 			let color = this.colorFromLc[lcString]
 
@@ -1025,7 +1025,7 @@ export class WorldSys {
 
 			const entZone = this.babs.ents.get(zone.id) as Zone // zonetodo convert all zone refs to ents
 
-			for (let index=0, l=verticesRef.length /nColorComponents; index < l; index++) {
+			for (let index=0, l=verticesRef.length /nColorCount; index < l; index++) {
 				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
 				const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
 				// console.log('gridPointofVerticesIndex', coordOfVerticesIndex)

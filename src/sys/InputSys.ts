@@ -615,7 +615,7 @@ export class InputSys {
 				this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
 			}
 
-			// From threejs: calculate mouse position in normalized device coordinates.  (-1 to +1) for both components.  One use is during raycast.
+			// From threejs: calculate mouse position in normalized device coordinates.  (-1 to +1) for both coords.  One use is during raycast.
 			// Is all this really necessary?
 			this.mouse.xy.x = (this.mouse.x / parseInt(this.canvas.style.width)) * 2 - 1
 			this.mouse.xy.y = - (this.mouse.y / parseInt(this.canvas.style.height)) * 2 + 1
