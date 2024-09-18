@@ -15,7 +15,7 @@ export class SharedBlueprint {
 
 export type blueprint_id = string
 
-class SharedBluestClasses {
+export type SharedBluestClasses = {
 	edible? :SharedBluestEdible
 	// firestarter? :SharedBluestPlatform
 	generated? :SharedBluestGenerated
@@ -30,6 +30,7 @@ class SharedBluestClasses {
 	durable? :SharedBluestDurable
 	visible? :SharedBluestVisible
 }
+
 export type SharedBlueprintWithBluests = {
 	blueprint_id :string
 	locid :number

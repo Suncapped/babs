@@ -1,4 +1,4 @@
-import { type RotationCardinal, type PlayerRotation, type WobId } from './SharedWob'
+import { type RotationCardinal, type PlayerRotation, type WobId, type SharedBluestClasses } from './SharedWob'
 
 export const NLCD = {
 	// Water
@@ -154,7 +154,7 @@ export type SendLoad = {
 		},
 		farZones :Array<Zoneinfo>,
 		nearZones :Array<Zoneinfo>,
-		blueprints :{blueprint_id :string, locid :number, bluests :any},
+		blueprints :{blueprint_id :string, locid :number, bluests :SharedBluestClasses},
 		uis :Ui[],
 	},
 }
@@ -385,4 +385,9 @@ export function toHexString(byteArray) {
 		console.warn('toHexString has a negative:', byteArray, result, str)
 	}
 	return str
+}
+
+export function typedKeys<T>(obj: T): (keyof T)[] {
+	if(!obj) return []
+	return Object.keys(obj) as (keyof T)[]
 }

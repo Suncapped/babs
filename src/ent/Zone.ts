@@ -7,8 +7,8 @@ import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
 import { Fire } from '@/comp/Fire'
-import { SharedWob, SharedBlueprint, type blueprint_id, type SharedBlueprintWithBluests } from '@/shared/SharedWob'
-import { SharedZone } from '@/shared/SharedZone'
+import { SharedWob, SharedBlueprint, type blueprint_id, type SharedBlueprintWithBluests, type SharedBluestClasses } from '@/shared/SharedWob'
+import { SharedZone, type SharedBluestatic } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 import type { InstancedWobs } from './InstancedWobs'
 import { Audible } from '@/comp/Audible'
@@ -31,7 +31,7 @@ export class Zone extends SharedZone {
 		public elevations :Uint8Array,
 		public landcovers :Uint8Array,
 	) {
-		super(id, x, z, y, yscale, elevations, landcovers)
+		super(babs, id, x, z, y, yscale, elevations, landcovers)
 		this.babs.ents.set(id, this)
 	}
 
@@ -50,6 +50,7 @@ export class Zone extends SharedZone {
 	}
 
 	locidToBlueprint :Record<number, SharedBlueprint> = []
+	bluestatics :Map<keyof SharedBluestClasses, SharedBluestatic<keyof SharedBluestClasses>> = new Map()
 	
 	applyBlueprints(blueprints: Map<blueprint_id, SharedBlueprintWithBluests>) {
 		// console.log('applyBlueprints', blueprints)
@@ -62,11 +63,12 @@ export class Zone extends SharedZone {
 			this.locidToBlueprint[blueprint.locid] = blueprint
 			this.bpidToLocid[blueprint.blueprint_id] = blueprint.locid
 
-			for(const compKey in blueprint.bluests) {
-				if (blueprint.bluests.hasOwnProperty(compKey)) {
-					this.allBluestStrings.add(compKey)
-				}
-			}
+			// for(const compKey in blueprint.bluests) {
+			// 	if (blueprint.bluests.hasOwnProperty(compKey)) {
+			// 		this.allBluestaticsDataOnly.set(compKey, blueprint.bluests[compKey])
+			// 	}
+			// }
+			// Moved out to babs rather than per zone
 		}
 	}
 

@@ -16,8 +16,8 @@ import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
 import { SharedWob } from '@/shared/SharedWob'
-import type { SendCraftable, SendLoad, SendWobsUpdate, SendFeTime, Zoneinfo, SendPlayersArrive, SendZoneIn, SendAskTarget, SendNickList, SendReposition, BabsSendable, ProximaSendable, SendAuth, SendFirelink } from '@/shared/consts'
-import type { WobId } from '@/shared/SharedWob'
+import { type SendCraftable, type SendLoad, type SendWobsUpdate, type SendFeTime, type Zoneinfo, type SendPlayersArrive, type SendZoneIn, type SendAskTarget, type SendNickList, type SendReposition, type BabsSendable, type ProximaSendable, type SendAuth, type SendFirelink, typedKeys } from '@/shared/consts'
+import type { blueprint_id, SharedBlueprintWithBluests, SharedBluestClasses, WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
@@ -403,8 +403,18 @@ export class SocketSys {
 			// Set up UIs
 			this.babs.uiSys.loadUis(load.uis)
 
+
+			// Apply globally instead of to every zone, yay
+			const blueprints = new Map(Object.entries(load.blueprints)) as Map<blueprint_id, SharedBlueprintWithBluests>
+			for(const blueprintsWithBluests of blueprints.values()) {
+				typedKeys(blueprintsWithBluests.bluests).forEach((bluestKey) => {
+					if (blueprintsWithBluests.bluests.hasOwnProperty(bluestKey)) {
+						this.babs.allBluestaticsDataOnly.set(bluestKey, blueprintsWithBluests.bluests[bluestKey] as SharedBluestClasses) // TODO does this work correctly?
+					}
+				})
+			}
 			for(const zone of farZones) {
-				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible blust info
+				zone.applyBlueprints(blueprints) // LoadFarwobGraphics will need blueprints to get visible blust info
 			}
 
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity

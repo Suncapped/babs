@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import os from 'os'
-import util from 'util';
+import util from 'util'
 
 console.log('Platform:', os.platform())
 let glob

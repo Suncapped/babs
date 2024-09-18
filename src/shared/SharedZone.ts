@@ -1,4 +1,5 @@
-import { SharedBlueprint, SharedWob, type RotationCardinal, type blueprint_id, type SharedBlueprintWithBluests } from './SharedWob'
+import { typedKeys } from './consts'
+import { SharedBlueprint, SharedWob, type RotationCardinal, type blueprint_id, type SharedBlueprintWithBluests, type SharedBluestClasses } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
 /*
@@ -50,9 +51,10 @@ const z = locations[3] // 8 bits
 console.log(id, r, x, z)
 */
 
-interface Bluestatic {
-	gridIndices: Set<number> // Index into wobIdRotGrid for each wob with this bluestatic
-	// and blueprint static data for that specific blueprint
+export type SharedBluestatic<T extends keyof SharedBluestClasses> = {
+	entityIds: Set<number> // Index into wobIdRotGrid for each wob with this bluestatic
+	// and one of the SharedBluestClasses
+	data: SharedBluestClasses[T]
 }
 
 interface ApplyLocationsOptions {
@@ -63,6 +65,7 @@ interface ApplyLocationsOptions {
 type FarOrNear = 'far' | 'near'
 export abstract class SharedZone {	
 	constructor(
+		private base: { allBluestaticsDataOnly :Map<any, any> }, // Proxima or Babs, which contains .allBluestaticsDataOnly
 		public id :number,
 		public x :number,
 		public z :number,
@@ -76,9 +79,9 @@ export abstract class SharedZone {
 	wobIdRotGrid = new Uint16Array(250*250).fill(0)
 	farWobIdRotGrid = new Uint16Array(250*250).fill(0)
 	// ^ Storing 12-bit locid and 4-bit rotation in a grid.  (position is the x,z of the grid)
-	abstract locidToBlueprint :Record<number, any>
+	abstract locidToBlueprint :Record<number, SharedBlueprint>
 	bpidToLocid :Record<string, number> = {}
-	bluestaticWobs :Map<string, Bluestatic> = new Map() // string is bluest.  Note this is currently only used on the server
+	abstract bluestatics :Map<any, any>
 
 	getWob(x :number, z :number, farOrNear :FarOrNear = 'near') :SharedWob|null {
 		const index = x +(z *250)
@@ -110,10 +113,10 @@ export abstract class SharedZone {
 			this.removeWobGraphicAt(wobPrevious.x, wobPrevious.z, false) // no far support
 
 			// Update bluestaticWobs with removed wob
-			for(const compKey in wobPrevious.bluests) {
-				if(setwobLogging) console.log('setWob() removing compKey index: ', `this.bluestaticWobs.get(${compKey}).gridIndices.delete(${index})`)
-				this.bluestaticWobs.get(compKey).gridIndices.delete(index) // Remove this index
-			}
+			typedKeys(wobPrevious.bluests).forEach((compKey) => {
+				if(setwobLogging) console.log('setWob() removing compKey index: ', `this.bluestaticWobs.get(${compKey}).entityIds.delete(${index})`)
+				this.bluestatics.get(compKey).entityIds.delete(index) // Remove this index
+			})
 		}
 
 		if(isLocidBeingRemoved) {
@@ -152,10 +155,10 @@ export abstract class SharedZone {
 		this.wobIdRotGrid[index] = idAndRot // no far support
 
 		// Update bluestaticWobs with added wob
-		for(const compKey in bp.bluests) {
-			if(setwobLogging) console.log('setWob() adding compKey index: ', `this.bluestaticWobs.get(${compKey}).gridIndices.add(${index})`)
-			this.bluestaticWobs.get(compKey).gridIndices.add(index) // Add this index
-		}
+		typedKeys(bp.bluests).forEach((compKey) => {
+			if(setwobLogging) console.log('setWob() adding compKey index: ', `this.bluestaticWobs.get(${compKey}).entityIds.add(${index})`)
+			this.bluestatics.get(compKey).entityIds.add(index) // Add this index
+		})
 
 		// Return locations array of newly added wob
 		const byte1 = idAndRot >>> 8
@@ -172,9 +175,13 @@ export abstract class SharedZone {
 		// Initialize bluestaticWobs
 		// this.bluestaticWobs.clear() // No, because applyLocationsToGrid can be partial, not a full reinit
 		// console.log('this.allBluestStrings', this.allBluestStrings)
-		for(const bluest of this.allBluestStrings) {
-			if(!this.bluestaticWobs.has(bluest)) { // Init it if it doesn't have it already
-				this.bluestaticWobs.set(bluest, {gridIndices: new Set<number>()})
+		// Note that bluestatics only need to be set once, since they don't change.  Thus they are here but not in setWob.
+		for(const compKey of this.base.allBluestaticsDataOnly.keys()) {
+			if(!this.bluestatics.has(compKey)) { // Init it if it doesn't have it already
+				this.bluestatics.set(compKey, {
+					entityIds: new Set<number>(),
+					data: this.base.allBluestaticsDataOnly[compKey],
+				})
 			}
 		}
 
@@ -217,10 +224,10 @@ export abstract class SharedZone {
 					else this.wobIdRotGrid[index] = 0
 
 					// Update bluestaticWobs with removed wob
-					for(const compKey in oldbp.bluests) {
+					typedKeys(oldbp.bluests).forEach((compKey) => {
 						// console.log('applyLocationsToGrid() removing compKey', compKey, index)
-						this.bluestaticWobs.get(compKey).gridIndices.delete(index) // Remove this index
-					}
+						this.bluestatics.get(compKey).entityIds.delete(index) // Remove this index
+					})
 				}
 			}
 			else {
@@ -239,9 +246,9 @@ export abstract class SharedZone {
 
 					// Update bluestaticWobs with added wobs
 					const bp = this.locidToBlueprint[locid]
-					for(const compKey in bp.bluests) {
-						this.bluestaticWobs.get(compKey).gridIndices.add(index) // Add this index
-					}
+					typedKeys(bp.bluests).forEach((compKey) => {
+						this.bluestatics.get(compKey).entityIds.add(index) // Add this index
+					})
 				}
 				if(options.returnWobs) {
 					// Note, also used in 'getSharedWobsBasedOnLocations':
@@ -294,8 +301,6 @@ export abstract class SharedZone {
 		return fwobs
 	}
 
-	
-	allBluestStrings :Set<string> = new Set()
 	abstract applyBlueprints(blueprints :Map<blueprint_id, any>) :void
 	
 	getLocationsFromGrid(farOrNear :FarOrNear = 'near'){
