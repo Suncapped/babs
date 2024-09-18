@@ -1,11 +1,20 @@
 import { execSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import os from 'os'
+import util from 'util';
+import pkg from 'glob';
 
-// import { glob } from 'glob'
-import util from 'util'
-import pkg from 'glob'
-const glob = util.promisify(pkg.glob) // This creates a promisified version of glob
+let glob;
+
+if (os.platform() === 'win32') {
+  // Windows-specific import
+  const { glob: windowsGlob } = await import('glob');
+  glob = windowsGlob;
+} else {
+  // MacOS-specific import
+  glob = util.promisify(pkg.glob); // Promisified version of glob for MacOS
+}
+
 
 // This script was manually generated
 
