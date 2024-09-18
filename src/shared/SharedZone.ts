@@ -82,6 +82,9 @@ export abstract class SharedZone {
 	abstract locidToBlueprint :Record<number, SharedBlueprint>
 	bpidToLocid :Record<string, number> = {}
 	abstract bluestatics :Map<any, any>
+	// Should I replace locidToBlueprint and/or bpidToLocid with the new entity gets/sets?
+	// No, because those are not related.  Those are for translating eg 'brick oven'->115 and back.  They're not involved in positioning at all.
+	// In theory they could be moved out of zone to global, though in the future we might want zone-specific locids.
 
 	getWob(x :number, z :number, farOrNear :FarOrNear = 'near') :SharedWob|null {
 		const index = x +(z *250)
@@ -103,6 +106,7 @@ export abstract class SharedZone {
 		return new SharedWob(this.id, x, z, r, blueprint)
 	}
 	setWob(x :number, z :number, bpidBecoming :string|0, rotation :RotationCardinal = undefined) { // NOTE, currently not used on client, and doesn't support near vs far
+		// The backend does setWob updates but the frontend doesn't.  Ie the frontend doesn't handle updates, just create/delete.  Which makes sense because of how frontend instancing works.
 		const setwobLogging = false
 		const isLocidBeingRemoved = !bpidBecoming
 		const index = x +(z *250)
@@ -223,17 +227,6 @@ export abstract class SharedZone {
 			}
 		})
 		*/
-		/*
-		
-		And for components?
-		components.set('wayfind', {
-			componentEntities.set(1122, { // Unique per entity
-				waypoints[], 
-				...etc
-			})
-		})
-		*/
-		
 		for(const [bluestKey, bluestValue] of this.base.allBluestaticsBlueprintsData.entries()) {
 			if(!this.bluestatics.has(bluestKey)) { // Init it if it doesn't have it already
 				const data = {
@@ -248,6 +241,15 @@ export abstract class SharedZone {
 			}
 		}
 		// console.log('this.bluestatics', this.bluestatics)
+		/*
+		And for components?
+		components.set('wayfind', {
+			componentEntities.set(1122, { // Unique per entity
+				waypoints[], 
+				...etc
+			})
+		})
+		*/
 
 
 		if(!locations || !locations.length) {
