@@ -65,7 +65,7 @@ export class SoundSys {
 			// Find from compcats ones which are Audible and play them
 			const audibleComps = this.babs.compcats.get(Audible.name) as Audible[]
 			audibleComps?.forEach(async (audibleComp) => {
-				if(audibleComp.sharedCompAudible.soundContinuousLoop) {
+				if(audibleComp.sharedBluestAudible.soundContinuousLoop) {
 					audibleComp.playContinuous()
 				}
 			})
@@ -75,8 +75,8 @@ export class SoundSys {
 		//  and then play any loaded wobs that have continuous sounds!
 
 		// Wouldn't this be easiest by being able to get compcats with an audio component?
-		// Otherwise I have to check every single wob for the blueprint comp thing?
-		// Do I need to unite such blueprint comps with comps here?  Hmm.  I do like the idea of an audio comp.
+		// Otherwise I have to check every single wob for the blueprint blust thing?
+		// Do I need to unite such blueprint bluests with bluests here?  Hmm.  I do like the idea of an audio bluest.
 		// Done as said.
 	}
 

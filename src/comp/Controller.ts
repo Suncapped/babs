@@ -198,7 +198,7 @@ export class Controller extends Comp {
 
 			// Determine if player has the stamina to enter the wob if one is there
 			const wobAtDest = this.playerRig.zone.getWob(targetYardCoord.x, targetYardCoord.z)
-			const obstructive = wobAtDest?.comps?.obstructive
+			const obstructive = wobAtDest?.bluests?.obstructive
 			if(obstructive) {
 				const playerStamina = 10 // todo
 				const obstructiveForStamina = playerStamina < obstructive.staminaToPass
@@ -492,7 +492,7 @@ export class Controller extends Comp {
 		
 		this.hover = 0
 		const wobAtDest = this.playerRig.zone.getWob(this.gDestination.x, this.gDestination.z)
-		const platform = wobAtDest?.comps?.platform
+		const platform = wobAtDest?.bluests?.platform
 		if(platform) {
 			this.hover = platform.yOffsetFeet
 		}

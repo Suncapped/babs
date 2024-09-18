@@ -1,4 +1,4 @@
-abstract class SharedComp {
+abstract class SharedBluest {
 	blueprint_id :string
 
 	constructor(values = {}) {
@@ -18,21 +18,21 @@ abstract class SharedComp {
 }
 
 
-export class SharedCompEdible extends SharedComp {
+export class SharedBluestEdible extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
 	}
 }
 
-export class SharedCompGenerated extends SharedComp {
+export class SharedBluestGenerated extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
 	}
 }
 
-export class SharedCompPlatform extends SharedComp {
+export class SharedBluestPlatform extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -43,7 +43,7 @@ export class SharedCompPlatform extends SharedComp {
 	zOffsetFeet :number
 }
 
-export class SharedCompAudible extends SharedComp {
+export class SharedBluestAudible extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -55,7 +55,7 @@ export class SharedCompAudible extends SharedComp {
 	soundOnInteract :string
 }
 
-export class SharedCompVisible extends SharedComp {
+export class SharedBluestVisible extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -64,7 +64,7 @@ export class SharedCompVisible extends SharedComp {
 	farMesh :string
 }
 
-export class SharedCompObstructive extends SharedComp {
+export class SharedBluestObstructive extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -72,7 +72,7 @@ export class SharedCompObstructive extends SharedComp {
 	staminaToPass :number
 }
 
-export class SharedCompWeighty extends SharedComp {
+export class SharedBluestWeighty extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -80,7 +80,7 @@ export class SharedCompWeighty extends SharedComp {
 	strengthToLift :number
 }
 
-export class SharedCompDurable extends SharedComp {
+export class SharedBluestDurable extends SharedBluest {
 	constructor(values = {}) {
 		super(values)
 		Object.assign(this, values)
@@ -88,16 +88,16 @@ export class SharedCompDurable extends SharedComp {
 	destroyedOneTimeOutOf :number
 }
 
-// edible: SharedCompPlatform,
-// firestarter: SharedCompPlatform,
-// generated: SharedCompPlatform,
-// healing: SharedCompPlatform,
-// platform: SharedCompPlatform,
-// scented: SharedCompPlatform,
-// symbiote: SharedCompPlatform,
-// touched: SharedCompPlatform,
-// audible: SharedCompAudible,
-// obstructive: SharedCompObstructive,
-// weighty: SharedCompWeighty,
-// durable: SharedCompDurable,
+// edible: SharedBluestPlatform,
+// firestarter: SharedBluestPlatform,
+// generated: SharedBluestPlatform,
+// healing: SharedBluestPlatform,
+// platform: SharedBluestPlatform,
+// scented: SharedBluestPlatform,
+// symbiote: SharedBluestPlatform,
+// touched: SharedBluestPlatform,
+// audible: SharedBluestAudible,
+// obstructive: SharedBluestObstructive,
+// weighty: SharedBluestWeighty,
+// durable: SharedBluestDurable,
 

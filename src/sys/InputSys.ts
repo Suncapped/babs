@@ -1153,8 +1153,8 @@ export class InputSys {
 					this.mousedownPickedObject = null
 				} 
 				else {
-					// Get required weight from weighty comp, if any
-					const weightToLift = wob?.comps?.weighty?.strengthToLift || 0
+					// Get required weight from weighty bluest, if any
+					const weightToLift = wob?.bluests?.weighty?.strengthToLift || 0
 					const playerStrength = 10 // todo
 					if(weightToLift > playerStrength) {
 						console.debug(`${wob.blueprint_id} too weighty to lift: ${weightToLift} > ${playerStrength}`)

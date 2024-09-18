@@ -404,7 +404,7 @@ export class SocketSys {
 			this.babs.uiSys.loadUis(load.uis)
 
 			for(const zone of farZones) {
-				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible comp info
+				zone.applyBlueprints(new Map(Object.entries(load.blueprints))) // LoadFarwobGraphics will need blueprints to get visible blust info
 			}
 
 			const player = await Player.Arrive(load.self, true, this.babs) // Create player entity
@@ -548,7 +548,7 @@ export class SocketSys {
 
 			// We're going to update farwobs regardless.  If they're near, we also update that.
 			{ // Farwobs
-				// Although actually, we only want to update farwobs when the wobs have comps.visible?
+				// Although actually, we only want to update farwobs when the wobs have bluests.visible?
 				// Yeah normally, getting farlocations from server (.bin or zip) limits them by a DB query, so they're already filtered.
 				// But from proxima-wide updates like this, we're getting ones that shouldn't be shown.  Need to filter them.
 				// We do this in LoadInstancedWobs.

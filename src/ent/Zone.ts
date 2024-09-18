@@ -7,7 +7,7 @@ import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
 import { Fire } from '@/comp/Fire'
-import { SharedWob, SharedBlueprint, type blueprint_id, type SharedBlueprintWithComps } from '@/shared/SharedWob'
+import { SharedWob, SharedBlueprint, type blueprint_id, type SharedBlueprintWithBluests } from '@/shared/SharedWob'
 import { SharedZone } from '@/shared/SharedZone'
 import * as Utils from '@/Utils'
 import type { InstancedWobs } from './InstancedWobs'
@@ -51,20 +51,20 @@ export class Zone extends SharedZone {
 
 	locidToBlueprint :Record<number, SharedBlueprint> = []
 	
-	applyBlueprints(blueprints: Map<blueprint_id, SharedBlueprintWithComps>) {
+	applyBlueprints(blueprints: Map<blueprint_id, SharedBlueprintWithBluests>) {
 		// console.log('applyBlueprints', blueprints)
-		for(const blueprintsWithComps of blueprints.values()) {
+		for(const blueprintsWithBluests of blueprints.values()) {
 			const blueprint = new SharedBlueprint(
-				blueprintsWithComps.blueprint_id,
-				blueprintsWithComps.locid, 
-				blueprintsWithComps.comps,
+				blueprintsWithBluests.blueprint_id,
+				blueprintsWithBluests.locid, 
+				blueprintsWithBluests.bluests,
 			)
 			this.locidToBlueprint[blueprint.locid] = blueprint
 			this.bpidToLocid[blueprint.blueprint_id] = blueprint.locid
 
-			for(const compKey in blueprint.comps) {
-				if (blueprint.comps.hasOwnProperty(compKey)) {
-					this.allCompStrings.add(compKey)
+			for(const compKey in blueprint.bluests) {
+				if (blueprint.bluests.hasOwnProperty(compKey)) {
+					this.allBluestStrings.add(compKey)
 				}
 			}
 		}
@@ -84,7 +84,7 @@ export class Zone extends SharedZone {
 		}
 
 		// Get either the nearwobs feim or the farwobs feim
-		const feim = isFarWobs ? Wob.InstancedWobs.get(deletingWob.comps?.visible?.farMesh) : Wob.InstancedWobs.get(deletingWob.blueprint_id)
+		const feim = isFarWobs ? Wob.InstancedWobs.get(deletingWob.bluests?.visible?.farMesh) : Wob.InstancedWobs.get(deletingWob.blueprint_id)
 		if(!feim) {
 			if(!isFarWobs) console.warn('no matching instanced or farmesh to:', deletingWob.blueprint_id)
 			// So this is overkill, because it attempts to remove from farwobs even if it's not a farwob.  But it can't hurt?  So leaving it for now.

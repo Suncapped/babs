@@ -154,7 +154,7 @@ export type SendLoad = {
 		},
 		farZones :Array<Zoneinfo>,
 		nearZones :Array<Zoneinfo>,
-		blueprints :{blueprint_id :string, locid :number, comps :any},
+		blueprints :{blueprint_id :string, locid :number, bluests :any},
 		uis :Ui[],
 	},
 }

@@ -42,7 +42,7 @@ import { Zone } from '@/ent/Zone'
 import { YardCoord } from './Coord'
 import { type WobId, type SharedWob, isMatchingWobIds } from '@/shared/SharedWob'
 import { CameraSys } from '@/sys/CameraSys'
-import type { SharedCompAudible } from '@/shared/SharedComps'
+import type { SharedBluestAudible } from '@/shared/SharedBluests'
 import { Wob } from '@/ent/Wob'
 import { WorldSys } from '@/sys/WorldSys'
 
@@ -51,7 +51,7 @@ export class Audible extends Comp {
 		super(wob.id(), Audible, babs)
 	}
 
-	sharedCompAudible: SharedCompAudible
+	sharedBluestAudible: SharedBluestAudible
 	holderObject: Object3D
 	continuousSound: PositionalAudio
 	continuousBuffer: Promise<AudioBuffer>
@@ -60,7 +60,7 @@ export class Audible extends Comp {
 		// console.log('playContinuous', this.idEnt)
 
 		// Use a promised buffer to prefetch and load the file
-		this.continuousBuffer = this.babs.loaderSys.getLoadedAudioBuffer(this.sharedCompAudible.soundContinuousLoop)
+		this.continuousBuffer = this.babs.loaderSys.getLoadedAudioBuffer(this.sharedBluestAudible.soundContinuousLoop)
 
 		// Load sound player
 		this.continuousSound = new PositionalAudio(this.babs.soundSys.audioListener)
@@ -103,10 +103,10 @@ export class Audible extends Comp {
 
 	}
 	
-	static async Create(wob :SharedWob, babs :Babs, sharedCompAudible :SharedCompAudible) {
+	static async Create(wob :SharedWob, babs :Babs, sharedBluestAudible :SharedBluestAudible) {
 		// console.log('Fire.Create, right before FireLights.push', wob.name)
 		const com = new Audible(wob, babs)
-		com.sharedCompAudible = sharedCompAudible
+		com.sharedBluestAudible = sharedBluestAudible
 
 		return com
 	}

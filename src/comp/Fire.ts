@@ -167,10 +167,10 @@ export class Fire extends Comp {
 				const fireLightWobId = fireLight.wobId as WobId
 
 				let compareWobId = deletingWobId
-				if(isFarWobs) { // For farwobs, allow comparing on comp visible name (eg 'tree twotris') for removal
-					compareWobId.blueprint_id = deletingWob.comps?.visible?.farMesh
+				if(isFarWobs) { // For farwobs, allow comparing on bluest visible name (eg 'tree twotris') for removal
+					compareWobId.blueprint_id = deletingWob.bluests?.visible?.farMesh
 					if(!compareWobId.blueprint_id) {
-						console.warn('Farwob without visible comp, giving up on removing it!', deletingWob)
+						console.warn('Farwob without visible bluest, giving up on removing it!', deletingWob)
 						return true
 					}
 				}

@@ -53,8 +53,8 @@ export class Wob extends SharedWob {
 		const nameCounts = new Map<string, number>()
 
 		for(const wob of arrivalWobs) {
-			// Filter farwobs that do not have a comps.visible
-			if(asFarWobs && !wob.comps?.visible?.farMesh) {
+			// Filter farwobs that do not have a bluests.visible
+			if(asFarWobs && !wob.bluests?.visible?.farMesh) {
 				// console.log('skipping', wob.name, 'as', wob, 'arrivalWobs', arrivalWobs) // This is normal for wobs that aren't far, eg sneezeweed
 				continue
 			}
@@ -112,8 +112,8 @@ export class Wob extends SharedWob {
 		for(const fwob of arrivalWobs) {
 			// console.log('arrival of', fwob.name, fwob.blueprint_id)
 
-			// Filter farwobs that do not have a comps.visible
-			if(asFarWobs && (!fwob.comps?.visible?.farMesh)) {
+			// Filter farwobs that do not have a bluests.visible
+			if(asFarWobs && (!fwob.bluests?.visible?.farMesh)) {
 				// console.log('skipping', fwob.name, 'as', fwob, 'arrivalWobs', arrivalWobs) // This is normal for wobs that aren't far, eg sneezeweed
 				continue
 			}
@@ -140,7 +140,7 @@ export class Wob extends SharedWob {
 				let wob = new Wob(babs, fwob.idzone, fwob.x, fwob.z, fwob.r, {
 					blueprint_id: fwob.blueprint_id, 
 					locid: fwob.locid,
-					comps: fwob.comps,
+					bluests: fwob.bluests,
 				})
 				zone = babs.ents.get(wob.idzone) as Zone
 
@@ -247,10 +247,10 @@ export class Wob extends SharedWob {
 
 				if(!asFarWobs) {
 					// Add audio, if any
-					const sharedCompAudible = wob.comps?.audible
-					if(sharedCompAudible) {
-						// console.debug('serverAudible', sharedCompAudible)
-						const audible = Audible.Create(wob, babs, sharedCompAudible)
+					const sharedBluestAudible = wob.bluests?.audible
+					if(sharedBluestAudible) {
+						// console.debug('serverAudible', sharedBluestAudible)
+						const audible = Audible.Create(wob, babs, sharedBluestAudible)
 
 						if(babs.soundSys.hasContextStartedRunning) {
 							(await audible).playContinuous()

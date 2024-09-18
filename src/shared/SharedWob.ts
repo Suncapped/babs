@@ -1,11 +1,11 @@
 import { type UintRange } from './TypeUtils'
-import { SharedCompGenerated, type SharedCompPlatform, type SharedCompEdible, type SharedCompAudible, SharedCompObstructive, SharedCompDurable, SharedCompVisible, SharedCompWeighty } from './SharedComps'
+import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty } from './SharedBluests'
 
 export class SharedBlueprint {
 	constructor(
 		public blueprint_id :string,
 		public locid :number,
-		public comps :SharedCompClasses,
+		public bluests :SharedBluestClasses,
 		public name? :string,
 		public glb? :string,
 	){
@@ -15,25 +15,25 @@ export class SharedBlueprint {
 
 export type blueprint_id = string
 
-class SharedCompClasses {
-	edible? :SharedCompEdible
-	// firestarter? :SharedCompPlatform
-	generated? :SharedCompGenerated
-	// healing? :SharedCompPlatform
-	platform? :SharedCompPlatform
-	// scented? :SharedCompPlatform
-	// symbiote? :SharedCompPlatform
-	// touched? :SharedCompPlatform
-	audible? :SharedCompAudible
-	obstructive? :SharedCompObstructive
-	weighty? :SharedCompWeighty
-	durable? :SharedCompDurable
-	visible? :SharedCompVisible
+class SharedBluestClasses {
+	edible? :SharedBluestEdible
+	// firestarter? :SharedBluestPlatform
+	generated? :SharedBluestGenerated
+	// healing? :SharedBluestPlatform
+	platform? :SharedBluestPlatform
+	// scented? :SharedBluestPlatform
+	// symbiote? :SharedBluestPlatform
+	// touched? :SharedBluestPlatform
+	audible? :SharedBluestAudible
+	obstructive? :SharedBluestObstructive
+	weighty? :SharedBluestWeighty
+	durable? :SharedBluestDurable
+	visible? :SharedBluestVisible
 }
-export type SharedBlueprintWithComps = {
+export type SharedBlueprintWithBluests = {
 	blueprint_id :string
 	locid :number
-	comps :SharedCompClasses
+	bluests :SharedBluestClasses
 }
 
 export type WobId = {
@@ -93,7 +93,7 @@ export class SharedWob extends SharedBlueprint {
 		public r :RotationCardinal,
 		bp :SharedBlueprint,
 	){
-		super(bp.blueprint_id, bp.locid, bp.comps, bp.name, bp.glb)
+		super(bp.blueprint_id, bp.locid, bp.bluests, bp.name, bp.glb)
 	}
 	id() :WobId {
 		return {
