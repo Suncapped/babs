@@ -186,7 +186,7 @@ export class UiSys {
 		this.feWords({
 			content: content,
 			idZone: wob.idzone,
-			idTargetWob: wob.id(),
+			idTargetWob: wob.idObj(),
 		})
 	}
 	
@@ -248,7 +248,7 @@ export class UiSys {
 		// })	
 		
 		// const updateWOB = (opt :string) => {
-		// 	console.log('User selected: ' + opt + ' wobID: ' + wob.id())
+		// 	console.log('User selected: ' + opt + ' wobID: ' + wob.idObj())
 		// 	console.log('parent', chatLabel.parent)
 		// 	this.babs.group.remove(chatLabel)
 
@@ -256,7 +256,7 @@ export class UiSys {
 		// 	socketSend.set({
 		// 		'action': {
 		// 			verb: 'craft',
-		// 			noun: wob.id(),
+		// 			noun: wob.idObj(),
 		// 			data: {
 		// 				craftName: opt,
 		// 			},

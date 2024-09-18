@@ -265,9 +265,9 @@ export type SendAskTarget = {
 	/* This comes back like: (ie SendUsed)
 	action: {
 		verb: 'used',
-		noun: this.askTargetSourceWob?.id(),
+		noun: this.askTargetSourceWob?.idObj(),
 		data: {
-			target: wob.id(),
+			target: wob.idObj(),
 		},
 	} */
 }

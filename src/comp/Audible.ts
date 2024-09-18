@@ -48,7 +48,7 @@ import { WorldSys } from '@/sys/WorldSys'
 
 export class Audible extends Comp {
 	constructor(wob: SharedWob, babs: Babs) {
-		super(wob.id(), Audible, babs)
+		super(wob.idObj(), Audible, babs)
 	}
 
 	sharedBluestAudible: SharedBluestAudible
@@ -116,7 +116,7 @@ export class Audible extends Comp {
 		
 		const audibleComp = audibleComps?.find(fc => {
 			const compWobId = fc.idEnt as WobId
-			const deletingWobId = deletingWob.id()
+			const deletingWobId = deletingWob.idObj()
 
 			return isMatchingWobIds(compWobId, deletingWobId)
 		})

@@ -698,9 +698,9 @@ export class InputSys {
 											this.babs.socketSys.send({
 												action: {
 													verb: 'used',
-													noun: this.askTargetSourceWob?.id(),
+													noun: this.askTargetSourceWob?.idObj(),
 													data: {
-														target: wob.id(),
+														target: wob.idObj(),
 													},
 												}
 											})
@@ -882,7 +882,7 @@ export class InputSys {
 							this.babs.socketSys.send({  // Intention is to move it
 								action: {
 									verb: 'moved',
-									noun: wobSource.id(),
+									noun: wobSource.idObj(),
 									data: {
 										point: {x: coordDest.x, z: coordDest.z},
 										rotation: this.liftedObject.rotationCardinal,
@@ -903,7 +903,7 @@ export class InputSys {
 								this.babs.socketSys.send({
 									action: {
 										verb: 'moved',
-										noun: wobSource.id(),
+										noun: wobSource.idObj(),
 										data: {
 											point: {x: coordDest.x, z: coordDest.z},
 											rotation: this.liftedObject.rotationCardinal,
@@ -917,7 +917,7 @@ export class InputSys {
 								this.babs.socketSys.send({
 									action: {
 										verb: 'merged',
-										noun: wobSource.id(),
+										noun: wobSource.idObj(),
 										data: {
 											point: {x: coordDest.x, z: coordDest.z},
 											idzone:coordDest.zone.id,
@@ -985,7 +985,7 @@ export class InputSys {
 								this.babs.socketSys.send({
 									action: {
 										verb: 'used',
-										noun: wob.id(),
+										noun: wob.idObj(),
 									}
 								})
 							}
@@ -1701,7 +1701,7 @@ export class InputSys {
 					if(wob) { // False is like if it's been deleted from under the mouse
 						newPickedObject = { // wob
 							pickedType: 'wob',
-							poid: JSON.stringify(wob.id()),
+							poid: JSON.stringify(wob.idObj()),
 							feim: feim,
 							instancedBpid: name,
 							yardCoord: yardCoord,
@@ -1747,7 +1747,7 @@ export class InputSys {
 									// console.log('index', index, position)
 									newPickedObject = { // wob on tile
 										pickedType: 'wob',
-										poid: JSON.stringify(wobAtCoord.id()),
+										poid: JSON.stringify(wobAtCoord.idObj()),
 										feim: feim,
 										instancedBpid: wobAtCoord.blueprint_id,
 										yardCoord: yardCoord,

@@ -65,7 +65,7 @@ interface ApplyLocationsOptions {
 type FarOrNear = 'far' | 'near'
 export abstract class SharedZone {	
 	constructor(
-		private base: { allBluestaticsDataOnly :Map<any, any> }, // Proxima or Babs, which contains .allBluestaticsDataOnly
+		private base: { allBluestaticsBlueprintsData :Map<any, any> }, // Proxima or Babs, which contains .allBluestaticsBlueprintsData
 		public id :number,
 		public x :number,
 		public z :number,
@@ -174,16 +174,81 @@ export abstract class SharedZone {
 
 		// Initialize bluestaticWobs
 		// this.bluestaticWobs.clear() // No, because applyLocationsToGrid can be partial, not a full reinit
-		// console.log('this.allBluestStrings', this.allBluestStrings)
 		// Note that bluestatics only need to be set once, since they don't change.  Thus they are here but not in setWob.
-		for(const bluestKey of this.base.allBluestaticsDataOnly.keys()) {
+		/* allBluestaicsBlueprintsData is like:
+			'weighty': {
+				'map': {
+					strengthToLift: 1,
+				},
+				'water': {
+					strengthToLift: 200,
+				}
+			} 
+		*/
+
+		/*
+		bluestatics.set('weighty', {
+			componentBlueprints.set('map', {
+				data: {
+					strengthToLift: 1,
+				}
+				entityIds: [12,15],
+			})
+		}
+
+		*/
+		// for(const [bluestKey, bluestValue] of this.base.allBluestaticsBlueprintsData.entries()) {
+		// 	if(!this.bluestatics.has(bluestKey)) { // Init it if it doesn't have it already
+		// 		const componentBlueprints = new Map()
+		// 		for(const [blueprint_id, blueprintData] of bluestValue.entries()) {
+		// 			componentBlueprints.set(blueprint_id, {
+		// 				entityIds: new Set<number>(),
+		// 				data: blueprintData
+		// 			})
+		// 		}
+		// 		this.bluestatics.set(bluestKey, componentBlueprints)
+		// 	}
+		// }
+		// console.log('this.bluestatics', this.bluestatics)
+		
+		/*
+		Or what if we did:
+		bluestatics.set('weighty', {
+			entityIds: [12,15], // Are these ALL weighty, or just ones with same data?
+			'map': {
+				strengthToLift: 1,
+			},
+			'water': {
+				strengthToLift: 200,
+			}
+		})
+		*/
+		/*
+		
+		And for components?
+		components.set('wayfind', {
+			componentEntities.set(1122, { // Unique per entity
+				waypoints[], 
+				...etc
+			})
+		})
+		*/
+		
+		for(const [bluestKey, bluestValue] of this.base.allBluestaticsBlueprintsData.entries()) {
 			if(!this.bluestatics.has(bluestKey)) { // Init it if it doesn't have it already
-				this.bluestatics.set(bluestKey, {
+				const data = {
 					entityIds: new Set<number>(),
-					data: this.base.allBluestaticsDataOnly[bluestKey],
-				})
+				}
+				for(const [blueprint_id, blueprintData] of bluestValue.entries()) {
+					data[blueprint_id] = blueprintData
+				}
+				this.bluestatics.set(bluestKey, data)
+				
+				// if(bluestKey === 'weighty') console.log('bluestKey', bluestKey, data) // console shows 81 counts correctly
 			}
 		}
+		// console.log('this.bluestatics', this.bluestatics)
+
 
 		if(!locations || !locations.length) {
 			// console.log('applyLocations: no locations!') // This happens naturally when a zone is empty eg on dev

@@ -21,7 +21,7 @@ import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import type { SoundSys } from './sys/SoundSys'
 import { Fire } from './comp/Fire'
-import type { SharedBluestClasses } from './shared/SharedWob'
+import type { blueprint_id, SharedBluestClasses } from './shared/SharedWob'
 
 declare global {
 	interface Window {
@@ -34,6 +34,8 @@ declare global {
 		FeExistingSession :string
 	}
 }
+
+type SharedBluestClassKey<T extends keyof SharedBluestClasses> = Map<blueprint_id, SharedBluestClasses[T]>
   
 export class Babs {
 
@@ -65,7 +67,7 @@ export class Babs {
 	ents = new Map<number, Ent>() // id key, value ent
 	compcats = new Map() // comType key, value is an array of those coms
 
-	allBluestaticsDataOnly :Map<keyof SharedBluestClasses, SharedBluestClasses> = new Map()
+	allBluestaticsBlueprintsData = new Map<keyof SharedBluestClasses, SharedBluestClassKey<keyof SharedBluestClasses>>()
 
 	zips = new Map<number, number>() // idzip key, value idplayer
 

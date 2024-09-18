@@ -1,44 +1,66 @@
-import { SharedBlueprint, type SharedBluestClasses } from './SharedWob'
+import { SharedBlueprint, SharedWob, type SharedBluestClasses } from './SharedWob'
 import type { SharedZone } from './SharedZone'
 
-export class Fentity { // (grid eg wob, or integer eg player)
-	id :number
-	idzone :number
-	gridIndex :number
+type GridEntity = {
+	idzone: number
+	x: number
+	z: number
+	blueprint_id: string
+}
+type IntegerEntity = {
+	idzone: number
+	id: number
+	type: string
 }
 
-export class Fecs {
+export class Fentity { // (grid eg wob, or integer eg player)
+	// I have made ent ids (dbid) start at 1,000,000 (way over 62,500 so that I can use gridIndex as an integer entid for grid entities (250x250)!  Rather than zone/x/z/bpid.
+	id :number // Can be an integer id (dbid).  Or can be a gridindex (x,z) to be handled per-zone
+	idzone :number
+	type :string
+
+	constructor(source :(GridEntity | IntegerEntity)) {
+		this.id = 'id' in source ? source.id : source.x + source.z * 250
+		this.idzone = source.idzone
+		this.type = 'blueprint_id' in source ? source.blueprint_id : source.type
+	}
+}
+
+export class Fecs<Z extends SharedZone, BC extends SharedBluestClasses> {
 
 	constructor(
-		private base: { zones :Map<number, SharedZone> }, // Proxima or Babs, which contains .zones
+		private base: { zones: Map<number, Z> }, // Proxima or Babs, which contains .zones
 	) {
 	}
 
 	// Hmm well practically, we're going to want to get some comp info when they click or move a 'map'.
-	// TODO: I could make entids start at 1,000,000 so that I could use gridIndex() as an integer entid for grid entities!  Rather than zone/x/z/bpid.
 
-	// getEntityComponentData<K extends keyof SharedBluestClasses>(
-	// 	entity: Fentity, // (grid eg wob, or integer eg player)
-	// 	key: K, // eg 'wayfind' or 'visible'
-	// ): SharedBluestClasses[K] | null {
-	// 	const zone = this.base.zones.get(entity.idzone)
+	getEntityComponentData<K extends keyof BC>(
+		entity: Fentity, // (grid eg wob, or integer eg player)
+		key: K, // eg 'wayfind' or 'visible'
+	): BC[K] | null {
 
-	// 	// See if it's in bluestatics
-	// 	const blueStatic = zone.bluestatics.get(key)
-	// 	const doesEntityHaveBluestatic = blueStatic?.entityIds.has(entity.id)
-	// 	if (doesEntityHaveBluestatic) {
-	// 		return blueStatic.data as SharedBluestClasses[K]
-	// 	}
+		console.log('getEntityComponentData(', key, ',', entity, ')')
+		const zone = this.base.zones.get(entity.idzone)
 
-	// 	// No bluestatic data, so look for components with data
-	// 	const componentEntities = zone.components.get(key)
-	// 	const entityComponentData = componentEntities?.get(entity.id)
-	// 	if (entityComponentData) {
-	// 		return entityComponentData as SharedBluestClasses[K]
-	// 	}
+		// See if it's in bluestatics
+		const blueStatic = zone.bluestatics.get(key)
+		const doesEntityHaveBluestatic = blueStatic?.entityIds.has(entity.id)
+		// console.log('blueStatic', blueStatic)
+		// console.log('doesEntityHaveBluestatic', doesEntityHaveBluestatic)
+		if (doesEntityHaveBluestatic) {
+			return blueStatic[entity.type] as BC[K]
+		}
 
-	// 	return null
-	// }
+		// // No bluestatic data, so look for components with data TODO
+		// const componentEntities = zone.components.get(key)
+		// const entityComponentData = componentEntities?.get(entity.id)
+		// if (entityComponentData) {
+		// 	return entityComponentData as BC[K]
+		// }
+
+		return null
+	}
 	
 	// Why not just merge zone.bluestatics into zone.components?
 	// My choice is to either keep bluestatics separate and separate them here, or to merge them and then treat them the same here.

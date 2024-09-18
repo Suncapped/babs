@@ -406,13 +406,29 @@ export class SocketSys {
 
 			// Apply globally instead of to every zone, yay
 			const blueprints = new Map(Object.entries(load.blueprints)) as Map<blueprint_id, SharedBlueprintWithBluests>
+
+			// NOTE: See Proxima @"Babs SocketSys.ts"
 			for(const blueprintsWithBluests of blueprints.values()) {
-				typedKeys(blueprintsWithBluests.bluests).forEach((bluestKey) => {
-					if (blueprintsWithBluests.bluests.hasOwnProperty(bluestKey)) {
-						this.babs.allBluestaticsDataOnly.set(bluestKey, blueprintsWithBluests.bluests[bluestKey] as SharedBluestClasses) // TODO does this work correctly?
+				typedKeys(blueprintsWithBluests.bluests).forEach((bluestKey) => { // bluestKey is eg 'weighty'
+					const thisBlueprintId = blueprintsWithBluests.blueprint_id // eg 'map'
+					const dataForThisBluestBlueprint = blueprintsWithBluests.bluests[bluestKey] // eg { strengthToLift: 1 }
+					delete dataForThisBluestBlueprint['blueprint_id'] // unset if it exists; we don't need it in the data object
+	
+					const existingBluestaticMap = this.babs.allBluestaticsBlueprintsData.get(bluestKey)
+					if(!existingBluestaticMap) {
+						const bluestaticMap = new Map<blueprint_id, SharedBluestClasses[keyof SharedBluestClasses]>()
+						bluestaticMap.set(thisBlueprintId, dataForThisBluestBlueprint)
+						this.babs.allBluestaticsBlueprintsData.set(bluestKey, bluestaticMap)
+					}
+					else {
+						const existingBlueprintMap = existingBluestaticMap.get(thisBlueprintId)
+						if(!existingBlueprintMap) { // Not already set
+							existingBluestaticMap.set(thisBlueprintId, dataForThisBluestBlueprint)
+						}
 					}
 				})
 			}
+
 			for(const zone of farZones) {
 				zone.applyBlueprints(blueprints) // LoadFarwobGraphics will need blueprints to get visible blust info
 			}

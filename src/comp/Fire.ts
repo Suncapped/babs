@@ -86,7 +86,7 @@ export class Fire extends Comp {
 	}
 
 	constructor(wob :SharedWob, babs :Babs) {
-		super(wob.id(), Fire, babs)
+		super(wob.idObj(), Fire, babs)
 	}
 
 	static async Create(wob :SharedWob, zone :Zone, babs :Babs, scale, yup, asFarWobs :'asFarWobs' = null) {
@@ -121,7 +121,7 @@ export class Fire extends Comp {
 			fireComp.flame.position.setZ(engPositionVector.z)
 
 			// // Add light
-			fireComp.flame.wobId = wob.id()
+			fireComp.flame.wobId = wob.idObj()
 		}
 		else {
 			// console.log('Fire.Create asFarWobs (add light only)', asFarWobs)
@@ -134,7 +134,7 @@ export class Fire extends Comp {
 					engPositionVector.y +yup,
 					engPositionVector.z
 				),
-				wobId: wob.id(),
+				wobId: wob.idObj(),
 			}
 			Fire.FireLights.push(fireLight) // Must come before Fire.LightPool.push, since moveThingsToNearPlayer() shrinks one to the other.
 
@@ -157,7 +157,7 @@ export class Fire extends Comp {
 	static async Delete(deletingWob :SharedWob, babs :Babs, isFarWobs :boolean) {
 		// When a fire is removed asfarwobs, it should only remove light.  As near, only removes flame.
 
-		const deletingWobId = deletingWob.id()
+		const deletingWobId = deletingWob.idObj()
 		if(isFarWobs) {
 			// This means that it was a farwob, so only had a light.
 			// Remove light

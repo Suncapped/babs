@@ -185,9 +185,9 @@ export class Wob extends SharedWob {
 						feim.increaseLoadedCount()
 					}
 				}
-				const alreadyExistedAtSameSpot = isMatchingWobIds(wob, feim.instanceIndexToWob.get(existingIindex)?.id(), true)
+				const alreadyExistedAtSameSpot = isMatchingWobIds(wob, feim.instanceIndexToWob.get(existingIindex)?.idObj(), true)
 				if(alreadyExistedAtSameSpot) {
-					// console.log('alreadyExistedAtSameSpot', wob.id(), feim.instanceIndexToWob.get(existingIindex)?.id())
+					// console.log('alreadyExistedAtSameSpot', wob.idObj(), feim.instanceIndexToWob.get(existingIindex)?.idObj())
 					continue
 				}
 

@@ -51,7 +51,7 @@ export function isWobId(item :any): item is WobId {
 	&& (item as WobId).blueprint_id !== undefined
 }
 
-export function isMatchingWobIds(a: WobId, b: WobId, blueprint_too = false) {
+export function isMatchingWobIds(a: WobId, b: WobId, blueprint_too = false) { // Note you can just pass in a Wob here since it has the requisite fields!
 	if(!(a && b)) return false
 	return a.idzone === b.idzone
 	&& a.x === b.x
@@ -96,7 +96,7 @@ export class SharedWob extends SharedBlueprint {
 	){
 		super(bp.blueprint_id, bp.locid, bp.bluests, bp.name, bp.glb)
 	}
-	id() :WobId {
+	idObj() :WobId {
 		return {
 			idzone: this.idzone,
 			x: this.x,

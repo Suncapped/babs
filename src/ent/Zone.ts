@@ -65,7 +65,7 @@ export class Zone extends SharedZone {
 
 			// for(const bluestKey in blueprint.bluests) {
 			// 	if (blueprint.bluests.hasOwnProperty(bluestKey)) {
-			// 		this.allBluestaticsDataOnly.set(bluestKey, blueprint.bluests[bluestKey])
+			// 		this.allBluestaticsBlueprintsData.set(bluestKey, blueprint.bluests[bluestKey])
 			// 	}
 			// }
 			// Moved out to babs rather than per zone
