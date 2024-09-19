@@ -82,6 +82,7 @@ export abstract class SharedZone {
 	abstract locidToBlueprint :Record<number, SharedBlueprint>
 	bpidToLocid :Record<string, number> = {}
 	abstract bluestatics :Map<any, any>
+	// abstract components :Map<any, any>
 	// Should I replace locidToBlueprint and/or bpidToLocid with the new entity gets/sets?
 	// No, because those are not related.  Those are for translating eg 'brick oven'->115 and back.  They're not involved in positioning at all.
 	// In theory they could be moved out of zone to global, though in the future we might want zone-specific locids.

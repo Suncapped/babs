@@ -26,7 +26,7 @@ export class Fentity { // (grid eg wob, or integer eg player)
 	}
 }
 
-export class Fecs<Z extends SharedZone, BC extends SharedBluestClasses> {
+export class SharedFecs<Z extends SharedZone, BC extends SharedBluestClasses> {
 
 	constructor(
 		private base: { zones: Map<number, Z> }, // Proxima or Babs, which contains .zones
@@ -61,13 +61,32 @@ export class Fecs<Z extends SharedZone, BC extends SharedBluestClasses> {
 
 		return null
 	}
-	
 	// Why not just merge zone.bluestatics into zone.components?
 	// My choice is to either keep bluestatics separate and separate them here, or to merge them and then treat them the same here.
 	// In zone.components, a component is a map of entity.id -> componentData.
 	// In zone.bluestatics, the bluestatic has a list of ids (entityIds) as well as a data object they all share.
 	// So they need to be separated somewhere, because their access is deliberately different for efficiency of bluestatics.  Might as well be here in Fecs!
 	// The abstraction will exist at Fentity.
+
+	setEntityComponent(entity: Fentity, componentKey :string, extraData :any) {
+
+		const isIndex = entity.id <= 1_000_000
+		if(!isIndex) console.error('setEntityComponent() called with a non index!  We are not ready!')
+
+		const fullData = { 
+			idzone: entity.idzone, 
+			x: entity.id % 250,
+			z: Math.floor(entity.id / 250),
+			blueprint_id: entity.type,
+			...extraData, // Component data beyond identifying data
+		}
+
+		return fullData
+
+		// TODO Update local components
+
+
+	}
 
 
 }
