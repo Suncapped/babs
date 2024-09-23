@@ -621,7 +621,7 @@ export class SocketSys {
 			}
 			setTimeout(() => {
 				window.location.reload()
-			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 300)
+			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 1200)
 		}
 		else if('energy' in payload) {
 			// console.debug('energy', payload.energy)
