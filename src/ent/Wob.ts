@@ -76,8 +76,12 @@ export class Wob extends SharedWob {
 		// console.debug('LoadedGltfs', Wob.LoadedGltfs)
 		// Create InstancedMeshes from loaded gltfs
 		for(const [blueprint_id, gltfMaybe] of Wob.LoadedGltfs) {
+			if(!nameCounts.has(blueprint_id)) {
+				// Skip if not needed
+				continue // omg this was going through all of them for loading a single one!
+			}
 			const gltfResolved = await gltfMaybe
-			// console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
+			console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
 			if(!gltfResolved.hasOwnProperty('scene')) {
 				// Skip if failed to load
 				console.warn('gltfResolved does not have scene:', blueprint_id, gltfResolved)
@@ -94,6 +98,7 @@ export class Wob extends SharedWob {
 				// instanced.instancedMesh.geometry.computeBoundsTree() // bvh
 			}
 			else {
+				// console.log('Checking if reallocate needed for blueprint_id', blueprint_id, newWobsCount)
 				if(instanced.getLoadedCount() +newWobsCount > instanced.maxCount) {
 					instanced.reallocateLargerBuffer(instanced.getLoadedCount() +newWobsCount)
 					// One reason it's better to do it like this rather than *2, is to prevent two simultaneous reallocations (in case of a rapidly larger number of an item)
