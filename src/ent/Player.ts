@@ -34,6 +34,8 @@ export class Player extends Ent {
 
 	colorHex :string
 
+	selfWayfinding = false
+
 	// References:
 
 	

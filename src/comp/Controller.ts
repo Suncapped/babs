@@ -161,6 +161,12 @@ export class Controller extends Comp {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
+		if(this.babs.inputSys.playerSelf.selfWayfinding) {
+			this.babs.socketSys.send({
+				wayfound: false,
+			})
+		}
+
 		// Update color based on footsteps
 		const player = this.babs.ents.get(this.idEnt as number) as Player
 		const zone = player.controller.playerRig.zone
@@ -448,17 +454,18 @@ export class Controller extends Comp {
 
 		// Move velocity toward the distance delta.  
 		const isFar = (zDeltaFar || xDeltaFar) && !this.selfWaitZoningExitZone
-		if(isFar) {
-			if(zDeltaFar) {
-				this.velocity.z = 0
-				this.playerRig.position.setZ(eDest.z)
-			}
-			if(xDeltaFar) {
-				this.velocity.x = 0
-				this.playerRig.position.setX(eDest.x)
-			}
-		}
-		else { // Not far
+		// if(isFar) { // Doesnt work with wayfind
+		// 	if(zDeltaFar) {
+		// 		this.velocity.z = 0
+		// 		this.playerRig.position.setZ(eDest.z)
+		// 	}
+		// 	if(xDeltaFar) {
+		// 		this.velocity.x = 0
+		// 		this.playerRig.position.setX(eDest.x)
+		// 	}
+		// }
+		// else 
+		{ // Not far
 			const zNearCenter = Math.abs(eDistance.z) < 1
 			const zPositiveDistance = eDistance.z > 0
 			const zNegativeDistance = eDistance.z < 0
@@ -498,10 +505,16 @@ export class Controller extends Comp {
 		}
 
 		const isNoVelocity = Math.round(this.velocity.z) == 0 && Math.round(this.velocity.x) == 0
-		// console.log('isNoVelocity', isNoVelocity)
-		if(isNoVelocity) {
+		if(isNoVelocity) { // You're standing still (eg you've arrived)
+			// console.log('isNoVelocity', isNoVelocity)
 			if(this._stateMachine._currentState.name != 'idle') {
 				this._stateMachine.setState('idle')
+			}
+			if(this.babs.inputSys.playerSelf.selfWayfinding) {
+				this.babs.socketSys.send({
+					wayfound: true,
+				})
+				this.babs.inputSys.playerSelf.selfWayfinding = false
 			}
 		}
 

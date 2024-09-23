@@ -712,6 +712,43 @@ export class SocketSys {
 			const firelinkWithScheme = `${window.location.origin}${firelink}`
 			navigator.clipboard.writeText(firelinkWithScheme)
 		}
+		else if('wayfind' in payload) {
+			const wayfind = payload.wayfind
+			console.warn('wayfind', wayfind)
+
+			if(wayfind) {
+				// Go to the wayfind location
+				const coord = YardCoord.Create({...wayfind, babs: this.babs})
+				console.log('coord', coord)
+				// const wob = coord.zone.getWob(coord.x, coord.z)
+
+				// const vector = new Vector3(coord.x, 0, coord.z)
+				// let gCurrentPos = this.babs.inputSys.playerSelf.controller.playerRig.position.clone()
+				// const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
+				// const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
+				// gCurrentPos = gCurrentPosFloored
+				// const dest = vector.clone().sub(gCurrentPos)
+
+				// No, don't make the position relative to current position.  Just go to the position.
+				// But do make the position zone-relative.
+				const dest = new Vector3(coord.x, 0, coord.z)
+
+				const engineTarget = coord.toEngineCoordCentered()
+				const gridTarget = engineTarget.clone().multiplyScalar(1 / 4).floor()
+				
+
+				// this.babs.inputSys.playerSelf.controller.setDestination(dest, 'run')
+				// this.babs.inputSys.playerSelf.controller.setDestination(new Vector3(coord.x, 0, coord.z), 'run')
+				this.babs.inputSys.playerSelf.controller.setDestination(gridTarget, 'run')
+
+				this.babs.inputSys.playerSelf.selfWayfinding = true
+			}
+			else {
+				console.debug('Ending wayfind')
+				this.babs.inputSys.playerSelf.selfWayfinding = false
+				return
+			}
+		}
 		else {
 			console.log('unknown command: ', payload)
 		}

@@ -81,7 +81,7 @@ export class Wob extends SharedWob {
 				continue // omg this was going through all of them for loading a single one!
 			}
 			const gltfResolved = await gltfMaybe
-			console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
+			// console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
 			if(!gltfResolved.hasOwnProperty('scene')) {
 				// Skip if failed to load
 				console.warn('gltfResolved does not have scene:', blueprint_id, gltfResolved)

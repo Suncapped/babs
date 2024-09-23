@@ -98,6 +98,8 @@ export interface Ui {
 	other ?:Record<string, unknown>
 }
 
+export type MappingPosition = {idzone: number, x: number, z: number}
+
 // Proxima sendables
 
 export type BlueprintList = Array<number|string>
@@ -238,6 +240,10 @@ export type SendFirelink = {
 	firelink :string
 }
 
+export type SendWayfind = {
+	wayfind :MappingPosition
+}
+
 export class FeWords {
 	content :string
 	idZone :number // Zone it's about
@@ -292,6 +298,7 @@ export type ProximaSendable = SendLoad|SendVisitor|SendSession
 	|SendZoneIn|SendReposition|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 	|SendFirelink
+	|SendWayfind
 
 
 // Babs Sendables
@@ -367,7 +374,11 @@ export type SendUsed = {
 	}
 }
 
-export type BabsSendable = SendMoved|SendMerged|SendMove|SendPing|SendEnter|SendAuth|SendChat|SendSaveNick|SendSaveMouseDevice|SendUsed
+export type SendWayfound = {
+	wayfound :boolean,
+}
+
+export type BabsSendable = SendMoved|SendMerged|SendMove|SendPing|SendEnter|SendAuth|SendChat|SendSaveNick|SendSaveMouseDevice|SendUsed|SendWayfound
 
 
 export function toHexString(byteArray) {

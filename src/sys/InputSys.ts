@@ -1403,13 +1403,8 @@ export class InputSys {
 			let gCurrentPos = this.playerSelf.controller.playerRig.position.clone()
 			const gCurrentPosDivided = gCurrentPos.clone().multiplyScalar(1 / 4)
 			const gCurrentPosFloored = gCurrentPosDivided.clone().floor()
-			// console.debug('InputSys: update, gCurrentPos', `(${gCurrentPos.x.toFixed(2)}, ${gCurrentPos.z.toFixed(2)}) ~ (${gCurrentPosDivided.x.toFixed(2)}, ${gCurrentPosDivided.z.toFixed(2)}) ~ (${gCurrentPosFloored.x.toFixed(2)}, ${gCurrentPosFloored.z.toFixed(2)})`)
-
 			gCurrentPos = gCurrentPosFloored
-			gCurrentPos.setY(0) // Y needs a lot of work in this area...(8 months later: or does it? :D)
-
 			const dest = gCurrentPos.clone().add(vector)
-			// dest.clamp(WorldSys.ZoneTerrainMin, WorldSys.ZoneTerrainMax)
 
 			// Send to controller
 			// console.debug('InputSys: call controller.setDestination', dest)
