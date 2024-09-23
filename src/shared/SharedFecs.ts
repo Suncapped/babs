@@ -15,7 +15,7 @@ export type IntegerEntity = {
 	type: string
 }
 
-type ComponentGenericKeys = 'id' | 'idzone' | 'x' | 'z' | 'type' | 'blueprint_id'
+type ComponentGenericKeys = 'idzone' | 'id' | 'type'
 type NoComponentGenericKeys = {
   [K in ComponentGenericKeys]?: never
 }
@@ -39,11 +39,14 @@ export class SharedFentity { // (grid eg wob, or integer eg player)
 		if(!this.idIsIndex()) return
 
 		const fullData = {
-			idzone: this.idzone, 
-			x: this.id % 250,
-			z: Math.floor(this.id / 250),
-			blueprint_id: this.type,
 			...customData, // Component data beyond identifying data
+			// Entity data always overrides any passed in component generic data
+			idzone: this.idzone, 
+			// x: this.id % 250,
+			// z: Math.floor(this.id / 250),
+			// blueprint_id: this.type,
+			id: this.id,
+			type: this.type,
 		}
 
 		// Update local components
@@ -62,6 +65,16 @@ export class SharedFentity { // (grid eg wob, or integer eg player)
 		const componentData = zone.components.get(key).get(this.id)
 		return componentData || null
 	}
+	getAllComponents() {
+		if(!this.idIsIndex()) return
+		const zone = SharedFentity.base.zones.get(this.idzone)
+		const allComponents = new Map<string, any>()
+		for (const [componentKey, component] of zone.components) {
+			const componentData = component.get(this.id)
+			if (componentData) allComponents.set(componentKey, componentData)
+		}
+		return allComponents
+	}
 	updateComponent(componentKey :string, customDataOverride :ComponentCustomKeys) {
 		if(!this.idIsIndex()) return
 		const zone = SharedFentity.base.zones.get(this.idzone)
@@ -70,6 +83,10 @@ export class SharedFentity { // (grid eg wob, or integer eg player)
 		const updatedCustomData = {
 			...oldData,
 			...customDataOverride,
+			// Entity data always overrides any passed in component generic data
+			idzone: this.idzone,
+			id: this.id,
+			type: this.type,
 		}
 
 		// Also need to handle update of key (ie x,z) if it's a grid entity

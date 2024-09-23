@@ -1,4 +1,5 @@
 import { typedKeys } from './consts'
+import { SharedFentity, type ComponentCustomKeys } from './SharedFecs'
 import { SharedBlueprint, SharedWob, type RotationCardinal, type blueprint_id, type SharedBlueprintWithBluests, type SharedBluestClasses } from './SharedWob'
 import { type UintRange } from './TypeUtils'
 
@@ -107,75 +108,11 @@ export abstract class SharedZone {
 		}
 		return new SharedWob(this.id, x, z, r, blueprint)
 	}
-	setWob(x :number, z :number, bpidBecoming :string|0, rotation :RotationCardinal = undefined) { // NOTE, currently not used on client, and doesn't support near vs far
-		// The backend does setWob updates but the frontend doesn't.  Ie the frontend doesn't handle updates, just create/delete.  Which makes sense because of how frontend instancing works.
-		const setwobLogging = false
-		const isLocidBeingRemoved = !bpidBecoming
-		const index = x +(z *250)
-		const wobPrevious = this.getWob(x, z, 'near')
-
-		// We remove graphics, and bluestaticWobs bluests, either way.  We will re-add them later.
-		if(wobPrevious) { 
-			this.removeWobGraphicAt(wobPrevious.x, wobPrevious.z, false) // no far support
-
-			// Update bluestaticWobs with removed wob
-			typedKeys(wobPrevious.bluests).forEach((bluestKey) => {
-				if(setwobLogging) console.log('setWob() removing bluestKey index: ', `this.bluestaticWobs.get(${bluestKey}).entityIds.delete(${index})`)
-				this.bluestatics.get(bluestKey).entityIds.delete(index) // Remove this index
-			})
-		}
-
-		if(isLocidBeingRemoved) {
-			// This is a simple deletion, not a create or update
-			if(setwobLogging) console.log(`setWob() isLocidBeingRemoved===true, setting wobIdRotGrid[${index}] = 0.  Change: ${this.wobIdRotGrid[index]} -> ${0}`)
-			this.wobIdRotGrid[index] = 0 // no far support
-			return [0, 0, wobPrevious?.x | x, wobPrevious?.z | z]
-		}
-
-		// Otherwise, we are creating or updating the locid in grid
-		const locid = this.bpidToLocid[bpidBecoming]
-		const bp = this.locidToBlueprint[locid]
-		if(!bp) {
-			console.warn('No blueprint found @3! For:', locid)
-			return null
-		}
-
-		// (!wobPrevious) would mean: Unset spot && we are setting
-		const wobNew = new SharedWob(this.id, x, z, 0, bp)
-
-		wobNew.blueprint_id = bpidBecoming
-		wobNew.locid = this.bpidToLocid[bpidBecoming]
-
-		const isRotationBeingSet = rotation !== undefined
-		if(isRotationBeingSet) {
-			wobNew.r = rotation
-		}
-
-		// Recombine them
-		const idShifted = wobNew.locid << 4
-		const rotShifted = wobNew.r << 0
-		const idAndRot = idShifted +rotShifted
-		// console.log('idAndRot', idShifted, rotShifted, idAndRot)
-
-		if(setwobLogging) console.log(`setWob() setting wobIdRotGrid[${index}] = ${idAndRot}.  Change: ${this.wobIdRotGrid[index]} -> ${idAndRot}`)
-		this.wobIdRotGrid[index] = idAndRot // no far support
-
-		// Update bluestaticWobs with added wob
-		typedKeys(bp.bluests).forEach((bluestKey) => {
-			if(setwobLogging) console.log('setWob() adding bluestKey index: ', `this.bluestaticWobs.get(${bluestKey}).entityIds.add(${index})`)
-			this.bluestatics.get(bluestKey).entityIds.add(index) // Add this index
-		})
-
-		// Return locations array of newly added wob
-		const byte1 = idAndRot >>> 8
-		const byte2 = (idAndRot << 24) >>> 24
-		return [byte1, byte2, wobNew.x, wobNew.z]
-
-	}
+	
 	abstract removeWobGraphicAt(x :number, z :number, isFarWobs :boolean) :void
 
 	applyLocationsToGrid(locations :Uint8Array, options :ApplyLocationsOptions) :Array<SharedWob> {
-		// console.log('----------------- applyLocationsToGrid()')
+		// console.log('----------------- applyLocationsToGrid')
 		if(!options.isFarWobs) options.isFarWobs = false // Default to near for the sake of server use
 
 		// Initialize bluestaticWobs
@@ -294,7 +231,7 @@ export abstract class SharedZone {
 
 					// Update bluestaticWobs with removed wob
 					typedKeys(oldbp.bluests).forEach((bluestKey) => {
-						// console.log('applyLocationsToGrid() removing bluestKey', bluestKey, index)
+						// console.log('applyLocationsToGrid removing bluestKey', bluestKey, index)
 						this.bluestatics.get(bluestKey).entityIds.delete(index) // Remove this index
 					})
 				}

@@ -51,6 +51,7 @@ export class Zone extends SharedZone {
 
 	locidToBlueprint :Record<number, SharedBlueprint> = []
 	bluestatics :Map<keyof SharedBluestClasses, SharedBluestatic<keyof SharedBluestClasses>> = new Map()
+	components :Map<string, Map<number, any>> = new Map()
 	
 	applyBlueprints(blueprints: Map<blueprint_id, SharedBlueprintWithBluests>) {
 		// console.log('applyBlueprints', blueprints)
