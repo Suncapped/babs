@@ -15,6 +15,12 @@ export type IntegerEntity = {
 	type: string
 }
 
+type ComponentGenericKeys = 'id' | 'idzone' | 'x' | 'z' | 'type' | 'blueprint_id'
+type NoComponentGenericKeys = {
+  [K in ComponentGenericKeys]?: never
+}
+export type ComponentCustomKeys = NoComponentGenericKeys & Record<string, any>
+
 export class SharedFentity { // (grid eg wob, or integer eg player)
 	static base: { zones: Map<number, SharedZone> }
 
@@ -29,41 +35,72 @@ export class SharedFentity { // (grid eg wob, or integer eg player)
 		this.type = 'blueprint_id' in source ? source.blueprint_id : source.type
 	}
 
-	addComponent(componentKey :string, specificData :any) {
-		const isIndex = this.id <= 1_000_000
-		if(!isIndex) console.error('SharedFentity.addComponent called with a non index!  We are not ready!')
+	addComponent(componentKey :string, customData :ComponentCustomKeys) {
+		if(!this.idIsIndex()) return
 
 		const fullData = {
 			idzone: this.idzone, 
 			x: this.id % 250,
 			z: Math.floor(this.id / 250),
 			blueprint_id: this.type,
-			...specificData, // Component data beyond identifying data
+			...customData, // Component data beyond identifying data
 		}
 
 		// Update local components
 		const zone = SharedFentity.base.zones.get(this.idzone)
-		const component = zone.components.get(componentKey) || new Map()
+		let component = zone.components.get(componentKey)
+		if (!component) { // Doesn't exist yet, so create it
+			component = new Map()
+			zone.components.set(componentKey, component)
+		}
 		component.set(this.id, fullData)
-		zone.components.set(componentKey, component)
+		// No top Map set necessary because it's a reference
 	}
 	getComponent(key :string) {
+		if(!this.idIsIndex()) return
 		const zone = SharedFentity.base.zones.get(this.idzone)
 		const componentData = zone.components.get(key).get(this.id)
 		return componentData || null
 	}
-	updateComponent() {
-		// TODO
+	updateComponent(componentKey :string, customDataOverride :ComponentCustomKeys) {
+		if(!this.idIsIndex()) return
+		const zone = SharedFentity.base.zones.get(this.idzone)
+		const component = zone.components.get(componentKey)
+		const oldData = component.get(this.id)
+		const updatedCustomData = {
+			...oldData,
+			...customDataOverride,
+		}
+
+		// Also need to handle update of key (ie x,z) if it's a grid entity
+		// Actually, no.  This function doesn't handle the moving of the entity itself.  That will be something else.
+		// Note that generic component data shouldn't be being set here.
+
+		component.set(this.id, updatedCustomData)
+		// No top Map set necessary because it's a reference
 	}
-	removeComponent() {
-		// TODO
+	removeComponent(componentKey :string) {
+		if(!this.idIsIndex()) return
+		const zone = SharedFentity.base.zones.get(this.idzone)
+		const component = zone.components.get(componentKey)
+		component.delete(this.id)
+		// No top Map set necessary because it's a reference
 	}
 
 	getBluestatic(key :string) {
+		if(!this.idIsIndex()) return
 		const zone = SharedFentity.base.zones.get(this.idzone)
 		const blueStatic = zone.bluestatics.get(key)
 		const doesEntityHaveBluestatic = blueStatic?.entityIds.has(this.id)
 		return doesEntityHaveBluestatic ? blueStatic[this.type] : null
+	}
+
+	private idIsIndex() {
+		if(this.id > 1_000_000) {
+			console.error('SharedFecs called with an id that is not an index!  We are not ready!')
+			return false
+		}
+		else return true
 	}
 }
 
