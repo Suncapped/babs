@@ -88,10 +88,8 @@ export class SharedFentity { // (grid eg wob, or integer eg player)
 			id: this.id,
 			type: this.type,
 		}
-
 		// Also need to handle update of key (ie x,z) if it's a grid entity
 		// Actually, no.  This function doesn't handle the moving of the entity itself.  That will be something else.
-		// Note that generic component data shouldn't be being set here.
 
 		component.set(this.id, updatedCustomData)
 		// No top Map set necessary because it's a reference

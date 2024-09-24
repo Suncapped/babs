@@ -379,7 +379,7 @@ export class UiSys {
 		// ttext.strokeColor = 'red'
 
 		// Alignment
-		ttext.maxWidth = 18.75 // 300px
+		ttext.maxWidth = 24.375 // 18.75 was 300px, 24.375 is ~400px
 		ttext.textAlign = 'center'
 		ttext.anchorX = 'center'
 		ttext.anchorY = 'bottom'
