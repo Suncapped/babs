@@ -82,6 +82,7 @@ export class InstancedWobs {
 			// this.instancedMesh.isMesh = true // Not necessary, seems to already be true
 
 			this.animMixer = new AnimationMixer(this.gltf.scene)
+			// console.log('gltf.animations:', this.gltf.name, this.gltf.animations)
 			this.animMixer.clipAction(this.gltf.animations[0]).play()
 		}
 		else {

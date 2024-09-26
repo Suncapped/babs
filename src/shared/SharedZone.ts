@@ -230,7 +230,7 @@ export abstract class SharedZone {
 					else this.wobIdRotGrid[index] = 0
 
 					// Update bluestaticWobs with removed wob
-					typedKeys(oldbp.bluests).forEach((bluestKey) => {
+					typedKeys(oldbp?.bluests).forEach((bluestKey) => {
 						// console.log('applyLocationsToGrid removing bluestKey', bluestKey, index)
 						this.bluestatics.get(bluestKey).entityIds.delete(index) // Remove this index
 					})
@@ -252,7 +252,7 @@ export abstract class SharedZone {
 
 					// Update bluestaticWobs with added wobs
 					const bp = this.locidToBlueprint[locid]
-					typedKeys(bp.bluests).forEach((bluestKey) => {
+					typedKeys(bp?.bluests).forEach((bluestKey) => {
 						this.bluestatics.get(bluestKey).entityIds.add(index) // Add this index
 					})
 				}

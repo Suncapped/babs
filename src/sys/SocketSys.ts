@@ -409,7 +409,7 @@ export class SocketSys {
 
 			// NOTE: See Proxima @"Babs SocketSys.ts"
 			for(const blueprintsWithBluests of blueprints.values()) {
-				typedKeys(blueprintsWithBluests.bluests).forEach((bluestKey) => { // bluestKey is eg 'weighty'
+				typedKeys(blueprintsWithBluests?.bluests).forEach((bluestKey) => { // bluestKey is eg 'weighty'
 					const thisBlueprintId = blueprintsWithBluests.blueprint_id // eg 'map'
 					const dataForThisBluestBlueprint = blueprintsWithBluests.bluests[bluestKey] // eg { strengthToLift: 1 }
 					delete dataForThisBluestBlueprint['blueprint_id'] // unset if it exists; we don't need it in the data object

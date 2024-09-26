@@ -179,7 +179,9 @@ export class YardCoord extends Coord {
 	}
 
 	toString(){
-		return `yard: zone ${this.zone.id}(${this.zone.x},${this.zone.z}) @${this.x}, ${this.zone.engineHeightAt(this)} ${this.z}`
+		const height = this.zone.engineHeightAt(this)
+		const heightOneDecimal = Math.round(height *10) /10
+		return `${this.zone.id}(${this.zone.x},${this.zone.z}) @${this.x}, ${heightOneDecimal}, ${this.z}`
 	}
 
 }

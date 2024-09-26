@@ -82,7 +82,7 @@ export class Wob extends SharedWob {
 			}
 			const gltfResolved = await gltfMaybe
 			// console.log('blueprint_id, gltf', blueprint_id, gltfResolved)
-			if(!gltfResolved.hasOwnProperty('scene')) {
+			if(!gltfResolved || !gltfResolved.hasOwnProperty('scene')) {
 				// Skip if failed to load
 				console.warn('gltfResolved does not have scene:', blueprint_id, gltfResolved)
 				continue
@@ -332,15 +332,24 @@ export class Wob extends SharedWob {
 				// wobMesh.updateMatrix()
 				// wobMesh.geometry.applyMatrix4(wobMesh.matrix)
 
+				const isSkinnedMesh = wobMesh instanceof SkinnedMesh
+				if(isSkinnedMesh) console.log(wobMesh.name, 'scale.x:', wobMesh.scale.x)
+
 				// Bake original scale (before rotating)
-				let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
-				scaling = scaling.multiplyScalar(FEET_IN_A_METER)
-				wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
-				wobMesh.scale.set(1, 1, 1)
+				if(isSkinnedMesh) {
+					// For skinned meshes, don't take original scale into account?
+				}
+				else {
+					// let scaling = new Vector3(wobMesh.scale.x, wobMesh.scale.y, wobMesh.scale.z)
+					// scaling = scaling.multiplyScalar(FEET_IN_A_METER)
+					// wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
+				}
+				wobMesh.geometry.scale(FEET_IN_A_METER, FEET_IN_A_METER, FEET_IN_A_METER) // Scale things into feet
+				// wobMesh.scale.set(1, 1, 1) // Wow this was super messing up everything
 
 				// Bake original rotation
 				wobMesh.updateMatrix()
-				if(!(wobMesh instanceof SkinnedMesh)) wobMesh.geometry.applyMatrix4(wobMesh.matrix) // hax // todo anim
+				if(!isSkinnedMesh) wobMesh.geometry.applyMatrix4(wobMesh.matrix) // hax // todo anim
 				wobMesh.rotation.set(0,0,0)
 
 				// let rotation = wobMesh.rotation.clone()
@@ -362,7 +371,8 @@ export class Wob extends SharedWob {
 
 			}
 			catch(e :any) {
-				console.warn('Error loading gltf:', gltf.name, e.message)
+				console.warn('Error loading gltf:', gltf?.name, e.message)
+				continue
 			}
 			
 			// console.log('finished, reassigning:', gltf.name)

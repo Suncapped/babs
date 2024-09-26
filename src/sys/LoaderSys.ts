@@ -222,7 +222,10 @@ export class LoaderSys {
 
 			const success = (gltf) => {
 
-				// console.log('Loaded GLTF:', gltf)
+				// gltf.name is string.  See if it contains 'butterfly'
+				// if(name.includes('butterfly')) {
+				// 	console.log('Loaded GLTF:', gltf)
+				// }
 
 				gltf.scene.traverse(child => {
 					if (child instanceof Mesh || child instanceof SkinnedMesh) {
@@ -244,7 +247,7 @@ export class LoaderSys {
 					console.warn('Arrival wob has no scene: ', name)
 				}
 				
-				// if(gltf.animations.length > 0) console.log(`${name} is animated!`, gltf.animations)
+				if(gltf.animations.length > 0 && name != 'noname') console.log(`${name} has animations:`, gltf.animations) // noname must be fbx char
 	
 				gltf.name = name
 				gltf.glbUpdatedAt = glbUpdatedAt
