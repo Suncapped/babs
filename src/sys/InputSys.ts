@@ -1423,14 +1423,19 @@ export class InputSys {
 					this.babs.group.add(this.displayDestinationMesh)
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
-				const easyRaiseAbove = 0.1
-				this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.playerRig.position.y - 2 + easyRaiseAbove, 0))
+				const yardCoord = YardCoord.Create({
+					...dest,
+					zone: this.playerSelf.controller.playerRig.zone,
+				})
+				const engineHeight = this.playerSelf.controller.playerRig.zone.engineHeightAt(yardCoord)
+				console.log('engineHeight', dest, yardCoord, engineHeight)
+				this.displayDestinationMesh.position.setY(engineHeight +0.1)
+				// const easyRaiseAbove = 0.1 -6
+				// this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.playerRig.position.y - 2 + easyRaiseAbove, 0))
 			}
 			else {
 				this.displayDestinationMesh?.position.setY(-1000)
 			}
-
-
 
 		}
 

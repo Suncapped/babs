@@ -244,7 +244,7 @@ export class SocketSys {
 		}
 		else if('alreadyin' in payload) {
 			// Just have them repeat the auth if this was their second login device
-			this.babs.uiSys.offerReconnect('Disconnected from other tab; try a refresh.')
+			this.babs.uiSys.offerReconnect('Disconnected due to other tab; refresh to reconnect.')
 		}
 		else if('load' in payload) {
 			this.babs.loaderSys = new LoaderSys(this.babs)
@@ -385,6 +385,7 @@ export class SocketSys {
 			for(const zone of farZones) {
 				zone.geometry.translate(0, zone.y -enterZone.y, 0)
 			}
+			// this.babs.loadEnterZoneY = enterZone.y
 
 			// console.time('stitch')
 			try {

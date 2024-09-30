@@ -104,6 +104,10 @@ export class InstancedWobs {
 			this.sink += 1.5
 		}
 
+		// if(blueprint_id === 'butterfly walk' || blueprint_id === 'alpaca walk' || blueprint_id === 'alpaca') {
+		// 	this.lift += 5
+		// }
+
 		// Set to not modify color; used later for highlight by pickedObject in InputSys
 		const fullColors = new Float32Array(this.maxCount *3)
 		for(let i=0; i<this.maxCount *3; i+=3) {

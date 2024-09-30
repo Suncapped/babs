@@ -758,16 +758,6 @@ export class WorldSys {
 			this.currentGround = newGround
 		}
 
-		const groundGrid = new LineSegments(new WireframeGeometry(geometry))
-		groundGrid.name = 'groundgrid'
-		;(groundGrid.material as any).color.setHex(0x333333).convertSRGBToLinear()
-		groundGrid.position.setX(WorldSys.ZONE_LENGTH_FEET *zone.x)
-		groundGrid.position.setZ(WorldSys.ZONE_LENGTH_FEET *zone.z)
-		this.babs.group.add(groundGrid)
-		debugMode.subscribe(on => {
-			groundGrid.visible = on
-		})
-
 	}
 	createSmokePuffs(dt :number) {
 		const currentLimitBasedOnNumStacks = Fire.LightPool.length *Fire.SMOKE_PUFFS_PER_LIGHT
@@ -1097,7 +1087,8 @@ export class WorldSys {
 		const shiftVector = new Vector3(xShift, 0, zShift)
 
 		const excludeFromShift = [
-			// 'ground', 'groundgrid', 
+			// 'ground',
+			'groundgrid',
 			'camerahelper', 
 			'three-helper', 'dirlight', 'hemilight',
 			'nightsky', 'daysky',
@@ -1107,7 +1098,7 @@ export class WorldSys {
 
 		let shiftingLog = []
 		this.babs.group.children.forEach(child => {
-			// if(child.name !== 'ground' && child.name !== 'groundgrid') console.log('will shift?', child.name)
+			// console.log('will shift?', child.name)
 			if(excludeFromShift.includes(child.name)) return
 
 			// @ts-ignore
@@ -1115,11 +1106,11 @@ export class WorldSys {
 				// console.log('noShiftiness', child.name) // todo shiftiness
 				return // Having done this, now the shift is just: ground, fire, firelight, and self (sometimes).
 			}
-			// if(child.name !== 'ground' && child.name !== 'groundgrid') console.log('gonna shift', child.name)
+			// console.log('gonna shift', child.name)
 
 			child.position.setX(child.position.x +shiftVector.x)
 			child.position.setZ(child.position.z +shiftVector.z)
-			if(child.name != 'ground' && child.name != 'groundgrid' ) {
+			if(child.name != 'ground') {
 				shiftingLog.push(child.name || child)
 			}
 			if(child.name == 'player') {

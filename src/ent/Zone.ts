@@ -2,7 +2,7 @@
 import { YardCoord } from '@/comp/Coord'
 import { WorldSys } from '@/sys/WorldSys'
 
-import { BufferAttribute, Color, InstancedMesh, MathUtils, Matrix4, Mesh, Object3D, PlaneGeometry, PositionalAudio, Raycaster, Triangle, Vector2, Vector3 } from 'three'
+import { BufferAttribute, Color, InstancedMesh, LineSegments, MathUtils, Matrix4, Mesh, Object3D, PlaneGeometry, PositionalAudio, Raycaster, Triangle, Vector2, Vector3, WireframeGeometry } from 'three'
 import { Ent } from './Ent'
 import { Babs } from '@/Babs'
 import { Wob } from './Wob'
@@ -15,6 +15,7 @@ import { Audible } from '@/comp/Audible'
 import type { Player } from './Player'
 import { LoaderSys } from '@/sys/LoaderSys'
 import type { SendFootstepsCounts } from '@/shared/consts'
+import { debugMode } from '@/stores'
 
 
 export class Zone extends SharedZone {
@@ -469,6 +470,28 @@ export class Zone extends SharedZone {
 		// const [detailedWobsToAdd, farWobsToAdd] = await pullWobsData()
 		await pullWobsData()
 
+		// Also create and/or reshape groundgrid
+		// Get existing groundgrid from scene, if it exists by name
+		let groundGrid = (enterZone.babs.group.getObjectByName('groundgrid') as LineSegments)
+		if(!groundGrid) {
+			groundGrid = new LineSegments()
+			groundGrid.name = 'groundgrid'
+			;(groundGrid.material as any).color.setHex(0x333333).convertSRGBToLinear()
+			enterZone.babs.group.add(groundGrid)
+			groundGrid.visible = true
+			debugMode.subscribe(on => {
+				groundGrid.visible = on
+			})
+		}
+		// console.log('---------yyyyyyyyyyyy???', enterZone.babs.loadEnterZoneY, enterZone.y, enterZone.y -enterZone.babs.loadEnterZoneY)
+		// groundGrid.position.setY(-(enterZone.y -enterZone.babs.loadEnterZoneY))
+		// No need lol!  Just needed to have it not shift
+
+		const newGeometry = new WireframeGeometry(enterZone.geometry)
+		// Set the groundgrid attributes to the new geometry
+		groundGrid.geometry = newGeometry
+		groundGrid.matrixWorldNeedsUpdate = true
+		groundGrid.geometry.attributes.position.needsUpdate = true
 	}
 
 	plotcountsSaved :Record<string, number> = {} // For saving incoming data

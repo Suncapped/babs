@@ -345,6 +345,14 @@ export class Wob extends SharedWob {
 					// wobMesh.geometry.scale(scaling.x, scaling.y, scaling.z)
 				}
 				wobMesh.geometry.scale(FEET_IN_A_METER, FEET_IN_A_METER, FEET_IN_A_METER) // Scale things into feet
+
+				// if(gltf.name === 'butterfly walk') {
+				// 	const temp = 1.7
+				// 	// wobMesh.geometry.scale(temp, temp, temp) // Scale things into feet
+				// 	wobMesh.scale.setScalar(temp) // Scale things into feet
+				// 	console.log('wobMesh alpaca', gltf.scene)
+				// }
+
 				// wobMesh.scale.set(1, 1, 1) // Wow this was super messing up everything
 
 				// Bake original rotation
