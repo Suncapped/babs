@@ -739,8 +739,10 @@ export class InputSys {
 										this.chatboxSetContent('')
 									}
 									
-									// Follow them
+									// Start following
 									this.babs.inputSys.playerSelf.controller.selfFollowTargetId = pickedPlayer.id
+									// Say above head that we're following them
+									this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~you are following ${pickedPlayer.nick}~`)
 								} 
 								
 							}
@@ -1409,8 +1411,11 @@ export class InputSys {
 			// Send to controller
 			// console.debug('InputSys: call controller.setDestination', dest)
 			this.playerSelf.controller.setDestination(dest, this.runmode ? 'run' : 'walk') // Must round floats
-			// Cancel follow
-			this.playerSelf.controller.selfFollowTargetId = null
+			// Stop following
+			if(this.playerSelf.controller.selfFollowTargetId) {
+				this.playerSelf.controller.selfFollowTargetId = null
+				this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~you stopped following~`)
+			}
 
 			// Let's show a square in front of the player?  Their destination target square :)
 			if (this.babs.debugMode) {
@@ -1428,7 +1433,7 @@ export class InputSys {
 					zone: this.playerSelf.controller.playerRig.zone,
 				})
 				const engineHeight = this.playerSelf.controller.playerRig.zone.engineHeightAt(yardCoord)
-				console.log('engineHeight', dest, yardCoord, engineHeight)
+				// console.log('engineHeight', dest, yardCoord, engineHeight)
 				this.displayDestinationMesh.position.setY(engineHeight +0.1)
 				// const easyRaiseAbove = 0.1 -6
 				// this.displayDestinationMesh.position.add(new Vector3(0, this.playerSelf.controller.playerRig.position.y - 2 + easyRaiseAbove, 0))
