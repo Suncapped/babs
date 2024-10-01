@@ -472,10 +472,16 @@ export class RenderSys {
 			// console.log(this.calcDistanceModifier)
 		}*/
 
-
+		// Get the target point for the player, to measure distance from
+		// const gDestRef = this.babs.inputSys.playerSelf.controller.gDestination // Careful, it's a ref
+		// const targetYardCoord = YardCoord.Create({ // From Controller
+		// 	...gDestRef, // Use this so that calcFrameMod doesn't change as often as movement momentum
+		// 	zone: this.babs.worldSys.currentGround.zone, // Hmm will this work cross zone?
+		// })
+		// const engPos = targetYardCoord.toEngineCoordCentered()
+		// ^ Instead of using the destination, we'll just use the player's current position 'playerpos'; so that far away destinations don't unload wobs near us!
 
 		let iNearby = 0
-		const gDestRef = this.babs.inputSys.playerSelf.controller.gDestination // Careful, it's a ref
 		for(let i=0, lc=feim.getLoadedCount(); i<lc; i++) { // Each instance is a 4x4 matrix; 16 floats // Replicated in setDestination
 			// Each instance is a 4x4 matrix; 16 floats
 			const x = instanceMatrix.array[i*16 +12]// +this.babs.worldSys.shiftiness.x // todo shiftiness
@@ -483,12 +489,7 @@ export class RenderSys {
 			if(!(x && z)) continue
 
 			// Get distance from playerpos in 2 dimensions
-			const targetYardCoord = YardCoord.Create({ // From Controller
-				...gDestRef, // Use this so that calcFrameMod doesn't change as often as movement momentum
-				zone: this.babs.worldSys.currentGround.zone, // Hmm will this work cross zone?
-			})
-			const engPos = targetYardCoord.toEngineCoordCentered()
-			const dist = Math.sqrt(Math.pow(engPos.x -x, 2) +Math.pow(engPos.z -z, 2))
+			const dist = Math.sqrt(Math.pow(playerpos.x -x, 2) +Math.pow(playerpos.z -z, 2))
 			
 			// iNearby finds how many wobs total are nearby, for setting .count.
 			// Swap anything nearby into incrementing iNearby, then set .count to that.

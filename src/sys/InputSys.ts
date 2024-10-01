@@ -742,7 +742,7 @@ export class InputSys {
 									// Start following
 									this.babs.inputSys.playerSelf.controller.selfFollowTargetId = pickedPlayer.id
 									// Say above head that we're following them
-									this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~you are following ${pickedPlayer.nick}~`)
+									this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you are following ${pickedPlayer.nick} ~`)
 								} 
 								
 							}
@@ -1414,7 +1414,7 @@ export class InputSys {
 			// Stop following
 			if(this.playerSelf.controller.selfFollowTargetId) {
 				this.playerSelf.controller.selfFollowTargetId = null
-				this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~you stopped following~`)
+				this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you stopped following ~`)
 			}
 
 			// Let's show a square in front of the player?  Their destination target square :)
