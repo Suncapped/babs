@@ -525,19 +525,19 @@ export class Zone extends SharedZone {
 
 			const maxBrownFootsteps = 100
 			count =  Math.min(100, count) // Cap at 100
-			const brownPercentage = count / maxBrownFootsteps
+			const brownRatio = count / maxBrownFootsteps
 
 			const colorsRef = this.ground.geometry.getAttribute('color').array as Float32Array
 			// Because vertex colors don't color the center but the zeropoint, we expand this to the full square.
-			// Nevermind; instead of coloring the ones around it, I will up the count on the ones around it.
-			for (let i = 0; i <= 0; i++) {
-				for (let j = 0; j <= 0; j++) {
+			const expandOut = 1
+			for (let i = 0; i <= expandOut; i++) {
+				for (let j = 0; j <= expandOut; j++) {
 					const xPos = xPlot +i
 					const zPos = zPlot +j
 					const colorsIndexOfGridPoint = Utils.coordToIndex(xPos, zPos, WorldSys.ZONE_ARR_SIDE_LEN, 3)
-					colorsRef[colorsIndexOfGridPoint + 0] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 0], brownColor.r, brownPercentage)
-					colorsRef[colorsIndexOfGridPoint + 1] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 1], brownColor.g, brownPercentage)
-					colorsRef[colorsIndexOfGridPoint + 2] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 2], brownColor.b, brownPercentage)
+					colorsRef[colorsIndexOfGridPoint + 0] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 0], brownColor.r, brownRatio)
+					colorsRef[colorsIndexOfGridPoint + 1] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 1], brownColor.g, brownRatio)
+					colorsRef[colorsIndexOfGridPoint + 2] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 2], brownColor.b, brownRatio)
 
 					// todo: If the range is outside of this zone's edges, apply it to the next zone up or down?
 				}

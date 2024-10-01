@@ -168,6 +168,7 @@ export class Controller extends Comp {
 		}
 
 		// Update color based on footsteps
+		// Note; this actually fails at zone border, something about it setting before zoning happens; it sets on old zone, not new one.  But it doesn't really matter, as long as the incoming server footsteps data is set correct (no idea hehe)
 		const player = this.babs.ents.get(this.idEnt as number) as Player
 		const zone = player.controller.playerRig.zone
 		// Get existing plot count for this point and add to it
@@ -185,6 +186,7 @@ export class Controller extends Comp {
 
 			}
 			zone.colorFootsteps(plotcounts)
+			// console.log('controller coloring footsteps', plotcounts)
 		}
 
 		this.babs.renderSys.calcPositionChanged = true
