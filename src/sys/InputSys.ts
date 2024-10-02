@@ -44,6 +44,8 @@ const ON = true
 const MOUSE_LEFT_CODE = 0
 const MOUSE_RIGHT_CODE = 2
 
+const DEBUG_LOGGING = false
+
 type PickedType = 'wob' | 'player' | 'land'
 type PickedObject = { // Note that um sometimes a SkinnedMesh gets forced onto this :-P
 	poid :string|object|number,
@@ -171,17 +173,17 @@ export class InputSys {
 
 		document.addEventListener('pointerlockchange', (ev) => {
 			this.recheckMouseIntersects = true
-			console.debug('pointerlockchange', ev)
+			if(DEBUG_LOGGING) console.debug('pointerlockchange', ev)
 			if (document.pointerLockElement) {
 				this.isPointerLocked = true
-				console.debug('The pointer lock status is now locked')
+				if(DEBUG_LOGGING) console.debug('PointerLock: locked')
 				if(this.usePermanentPointerLock) {
 					this.customcursor.style.display = 'block'
 					this.customcursor.style.transform = `translate(${this.mouse.x}px, ${this.mouse.y}px)`
 				}
 			} else {
 				this.isPointerLocked = false
-				console.debug('The pointer lock status is now unlocked')
+				if(DEBUG_LOGGING) console.debug('PointerLock: unlocked')
 				if(this.usePermanentPointerLock) {
 					this.customcursor.style.display = 'none'
 					this.babs.uiSys.awayGame() // We might not get esc key event?  Also makes it clearer they're out.
@@ -189,7 +191,7 @@ export class InputSys {
 			}
 		}, false)
 		document.documentElement.addEventListener('mouseleave', (ev) => {
-			console.debug('mouseleave')
+			if(DEBUG_LOGGING) console.debug('mouseleave')
 			this.mouse.insidewindow = false
 			this.raycastSetPickedObject(false, 'forceUnpick') // Force to unpick object, so it doesn't stay highlighted and tag
 			if(this.pickedObject) {
@@ -197,7 +199,7 @@ export class InputSys {
 			}
 		})
 		document.documentElement.addEventListener('mouseenter', (ev) => {
-			console.debug('mouseenter')
+			if(DEBUG_LOGGING) console.debug('mouseenter')
 			this.mouse.insidewindow = true
 		})
 
@@ -637,7 +639,7 @@ export class InputSys {
 
 		const buttonDownHandler = (e) => {
 			const ev = e as FePointerEvent
-			console.debug('buttonDownHandler')
+			if(DEBUG_LOGGING) console.debug('buttonDownHandler')
 			// this.babs.uiSys.aboveHeadChat(this.playerSelf.id, 'bdown ' + ev.button + ', '+ev.target?.id)
 
 			if(ev.webkitForce > 1) { // Safari only
@@ -826,10 +828,9 @@ export class InputSys {
 		document.addEventListener('mousedown', buttonDownHandler)
 
 		const buttonUpHandler = (ev) => {
-			console.debug('buttonUpHandler')
+			if(DEBUG_LOGGING) console.debug('buttonUpHandler')
 			// this.recheckMouseIntersects = true // Especially needed for fingers.  Here too on up?
 			
-			// console.debug('mouseOnUp', ev.button, ev.target.id)
 			if (ev.button === MOUSE_LEFT_CODE) {
 				this.mouse.left = LIFT
 
@@ -859,50 +860,28 @@ export class InputSys {
 					// }
 					// else 
 
-					// todo catch if source has moved since pickup
+					const coordSource = this.liftedObject.yardCoord
+					const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
+					
+					if(wobSource) { // In case source has changed since pickup // Todo check that it's the same by id?
+						if (this.pickedObject?.pickedType === 'land'
+							|| this.pickedObject?.pickedType === 'wob'
+						) {
+							if(this.pickedObject?.pickedType === 'land') {
+								console.debug('dropped onto empty land', this.pickedObject, this.liftedObject.rotationCardinal)
+								
+								// Todo put distance limits, here and server
+								// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
+								// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
+								// const wob = wobContained || wobInstanced
 
-					if (this.pickedObject?.pickedType === 'land'
-						|| this.pickedObject?.pickedType === 'wob'
-					) {
-						const coordSource = this.liftedObject.yardCoord
-						const wobSource = coordSource.zone.getWob(coordSource.x, coordSource.z)
-
-						if(this.pickedObject?.pickedType === 'land') {
-							console.debug('dropped onto empty land', this.pickedObject, this.liftedObject.rotationCardinal)
-							
-							// Todo put distance limits, here and server
-							// const wobContained = this.babs.ents.get(this.liftedObject.id) // bagtodo
-							// const wobInstanced = Utils.findWobByInstance(this.babs.ents, this.liftedObject.instancedIndex, this.liftedObject.instancedName)
-							// const wob = wobContained || wobInstanced
-
-							// const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
-							const coordDest = YardCoord.Create({
-								position: this.pickedObject.landPoint,
-								babs: this.babs,
-							})
-							
-							this.babs.socketSys.send({  // Intention is to move it
-								action: {
-									verb: 'moved',
-									noun: wobSource.idObj(),
-									data: {
-										point: {x: coordDest.x, z: coordDest.z},
-										rotation: this.liftedObject.rotationCardinal,
-										idzone: coordDest.zone.id,
-									},
-								}
-							})
-
-						}
-						else if(this.pickedObject?.pickedType === 'wob') {
-							console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject, this.liftedObject.rotationCardinal)
-
-							const coordDest = this.pickedObject.yardCoord
-
-							if(this.pickedObject.poid === this.liftedObject.poid) {
-								console.log('dropped where it was lifted from')
-								// Nothing happens...except wait!  It might need to be rotated!
-								this.babs.socketSys.send({
+								// const wobDest = coordDest.zone.getWob(coordDest.x, coordDest.z)
+								const coordDest = YardCoord.Create({
+									position: this.pickedObject.landPoint,
+									babs: this.babs,
+								})
+								
+								this.babs.socketSys.send({  // Intention is to move it
 									action: {
 										verb: 'moved',
 										noun: wobSource.idObj(),
@@ -913,49 +892,77 @@ export class InputSys {
 										},
 									}
 								})
+
 							}
-							else { // Intention is to merge it
-								console.log('dropped onto a merge')
-								this.babs.socketSys.send({
-									action: {
-										verb: 'merged',
-										noun: wobSource.idObj(),
-										data: {
-											point: {x: coordDest.x, z: coordDest.z},
-											idzone:coordDest.zone.id,
-										},
-									}
-								})
+							else if(this.pickedObject?.pickedType === 'wob') {
+								console.debug('dropped onto another wob (aka a place with a wob, picked)', this.pickedObject, this.liftedObject, this.liftedObject.rotationCardinal)
+
+								const coordDest = this.pickedObject.yardCoord
+
+								if(this.pickedObject.poid === this.liftedObject.poid) {
+									console.log('dropped where it was lifted from')
+									// Nothing happens...except wait!  It might need to be rotated!
+									this.babs.socketSys.send({
+										action: {
+											verb: 'moved',
+											noun: wobSource.idObj(),
+											data: {
+												point: {x: coordDest.x, z: coordDest.z},
+												rotation: this.liftedObject.rotationCardinal,
+												idzone: coordDest.zone.id,
+											},
+										}
+									})
+								}
+								else { // Intention is to merge it
+									console.log('dropped onto a merge')
+									this.babs.socketSys.send({
+										action: {
+											verb: 'merged',
+											noun: wobSource.idObj(),
+											data: {
+												point: {x: coordDest.x, z: coordDest.z},
+												idzone:coordDest.zone.id,
+											},
+										}
+									})
+								}
 							}
 						}
-					}
-					else if(this.pickedObject?.pickedType === 'player') {
-						console.log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
-						if(this.pickedObject.poid === this.babs.idSelf) {
-							console.debug('dropped onto self player', this.pickedObject, this.liftedObject)
+						else if(this.pickedObject?.pickedType === 'player') {
+							console.log(this.pickedObject.poid, 'vs', this.liftedObject.poid)
+							if(this.pickedObject.poid === this.babs.idSelf) {
+								console.debug('dropped onto self player', this.pickedObject, this.liftedObject)
+							}
+							else {
+								console.debug('dropped onto other player', this.pickedObject, this.liftedObject)
+							}
 						}
-						else {
-							console.debug('dropped onto other player', this.pickedObject, this.liftedObject)
+						else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
+							// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
+							console.debug('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
+							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
 						}
+
+
+						// Revert it to its original position; successful drop will have the server update it soon, and failed drop needs it reverted anyway.
+						const liftedYardCoord = this.liftedObject.yardCoord
+						const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
+						let liftedEngPos = liftedYardCoord.toEngineCoordCentered('withCalcY')
+						liftedEngPos = this.liftedObject.feim.heightTweak(liftedEngPos)
+						// liftedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
+						const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
+
+						this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
+						// console.log('setMatrixAt buttonup', liftedIndex)
+						this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
+
 					}
-					else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
-						// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
-						console.debug('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
-						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
+					else {
+						console.warn('No source wob found for drop', this.liftedObject)
 					}
 
-					// Revert it to its original position; successful drop will have the server update it soon, and failed drop needs it reverted anyway.
-					const liftedYardCoord = this.liftedObject.yardCoord
-					const liftedIndex = liftedYardCoord.zone.coordToInstanceIndex[liftedYardCoord.x+','+liftedYardCoord.z]
-					let liftedEngPos = liftedYardCoord.toEngineCoordCentered('withCalcY')
-					liftedEngPos = this.liftedObject.feim.heightTweak(liftedEngPos)
-					// liftedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
-					const matrixLiftedEngPos = new Matrix4().setPosition(liftedEngPos)
-
-					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, matrixLiftedEngPos)
-					// console.log('setMatrixAt buttonup', liftedIndex)
-					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
-
+					// Either way, on fail or success, it's no longer lifted
 					this.liftedObject = null
 					document.body.style.cursor = 'auto'
 				}
@@ -1902,46 +1909,53 @@ export class InputSys {
 					// pickedEngPos.add(new Vector3(-this.babs.worldSys.shiftiness.x, 0, -this.babs.worldSys.shiftiness.z)) // todo shiftiness
 
 					// Get the original / data-based Y rotation
-					const wobrCardinal = this.liftedObject.feim.instanceIndexToWob.get(liftedIndex).r
-					const wobrDegreesCardinal = SharedWob.ROTATION_CARDINAL_TO_DEGREES[wobrCardinal]
-					
-					// Get the current rotation and direction from getMatrixAt()
-					const currentTransform = new Matrix4()
-					this.liftedObject.feim.instancedMesh.getMatrixAt(liftedIndex, currentTransform)
-					const lastRotation = new Quaternion()
-					const lastPosition = new Vector3()
-					currentTransform.decompose(lastPosition, lastRotation, new Vector3())
+					const wobOriginal = this.liftedObject.feim.instanceIndexToWob.get(liftedIndex)
+					if(wobOriginal) {
 
-					// Compare pickedEngPos with lastPosition, and determine rotation direction based on direction the avatar is moving it
-					const deltaPosition = pickedEngPos.clone().sub(lastPosition)
-					// console.log('deltaPosition', pickedEngPos.x+','+pickedEngPos.z, '-', lastPosition.x+','+lastPosition.z, '=', deltaPosition.x+','+deltaPosition.z)
+						const wobrCardinal = wobOriginal.r
+						const wobrDegreesCardinal = SharedWob.ROTATION_CARDINAL_TO_DEGREES[wobrCardinal]
+						
+						// Get the current rotation and direction from getMatrixAt()
+						const currentTransform = new Matrix4()
+						this.liftedObject.feim.instancedMesh.getMatrixAt(liftedIndex, currentTransform)
+						const lastRotation = new Quaternion()
+						const lastPosition = new Vector3()
+						currentTransform.decompose(lastPosition, lastRotation, new Vector3())
 
-					// Use the old rotation unless the position has changed
-					let newRotationDegrees = wobrDegreesCardinal
-					const hasPositionChanged = deltaPosition.length() > 0.01
-					if(hasPositionChanged) {
-						// Calculate the angle in radians
-						let angleRadians = Math.atan2(deltaPosition.z, deltaPosition.x)
-						// Flip angle 180 degrees so you're dragging north-facing things from behind
-						angleRadians += Math.PI
+						// Compare pickedEngPos with lastPosition, and determine rotation direction based on direction the avatar is moving it
+						const deltaPosition = pickedEngPos.clone().sub(lastPosition)
+						// console.log('deltaPosition', pickedEngPos.x+','+pickedEngPos.z, '-', lastPosition.x+','+lastPosition.z, '=', deltaPosition.x+','+deltaPosition.z)
 
-						// Convert to degrees, normalize and snap to cardinals
-						newRotationDegrees = SharedWob.DegreesToCardinalDegrees(radToDeg(angleRadians))
+						// Use the old rotation unless the position has changed
+						let newRotationDegrees = wobrDegreesCardinal
+						const hasPositionChanged = deltaPosition.length() > 0.01
+						if(hasPositionChanged) {
+							// Calculate the angle in radians
+							let angleRadians = Math.atan2(deltaPosition.z, deltaPosition.x)
+							// Flip angle 180 degrees so you're dragging north-facing things from behind
+							angleRadians += Math.PI
 
-						// console.log('degreesToRotate', newRotationDegrees)
+							// Convert to degrees, normalize and snap to cardinals
+							newRotationDegrees = SharedWob.DegreesToCardinalDegrees(radToDeg(angleRadians))
+
+							// console.log('degreesToRotate', newRotationDegrees)
+						}
+						this.liftedObject.rotationCardinal = SharedWob.ROTATION_ROUNDDEGREES_TO_CARDINAL[newRotationDegrees]
+
+						// Set transform
+						let pickedTransform = new Matrix4()
+						pickedTransform.makeRotationY(degToRad(newRotationDegrees))
+						pickedTransform.setPosition(pickedEngPos)
+						// console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name, wobrCardinal, 'to', wobrDegrees, 'to', degToRad(wobrDegrees))
+						
+						// Set matrix
+						this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, pickedTransform)
+						this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
+						// console.log('setMatrixAt down/update', liftedIndex)
 					}
-					this.liftedObject.rotationCardinal = SharedWob.ROTATION_ROUNDDEGREES_TO_CARDINAL[newRotationDegrees]
-
-					// Set transform
-					let pickedTransform = new Matrix4()
-					pickedTransform.makeRotationY(degToRad(newRotationDegrees))
-					pickedTransform.setPosition(pickedEngPos)
-					// console.debug('liftedObject visual update', liftedIndex, pickedEngPos, 'on', this.liftedObject.feim.instancedMesh.name, wobrCardinal, 'to', wobrDegrees, 'to', degToRad(wobrDegrees))
-					
-					// Set matrix
-					this.liftedObject.feim.instancedMesh.setMatrixAt(liftedIndex, pickedTransform)
-					this.liftedObject.feim.instancedMesh.instanceMatrix.needsUpdate = true
-					// console.log('setMatrixAt down/update', liftedIndex)
+					else {
+						console.warn('wobOriginal not found', this.liftedObject, liftedIndex)
+					}
 				}
 
 			}

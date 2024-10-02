@@ -34,7 +34,7 @@ export class SoundSys {
 		const userGestureEvents = ['click', 'change', 'contextmenu', 'mouseup', 'mousedown', 'keydown', 'touchstart', 'pointerup', 'reset', 'submit', 'touchend']
 		userGestureEvents.forEach(event => {
 			document.addEventListener(event, () => {
-				console.debug('user gesture event', event)
+				// console.debug('user gesture event', event)
 				if(!this.audioListener) {
 					this.audioListener = new AudioListener()
 					this.camera.add(this.audioListener) // Todo does this work positionally for WebXR?

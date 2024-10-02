@@ -21,6 +21,9 @@ interface TroikaText extends Mesh {
 	material :Material // NOTE: This assumes a single material (which is currently true)
 }
 
+
+const DEBUG_LOGGING = false
+
 export class UiSys {
 	babs :Babs
 	toprightTextDefault = 'Welcome to First Earth!  <a target="_new" href="https://discord.gg/YSzu2eYVpK">Discord</a>'
@@ -79,7 +82,7 @@ export class UiSys {
 	
 
 	async gotWindowFocus(ev? :FocusEvent) { // If the player clicks, this comes before the click event
-		console.debug('gotWindowFocus', ev)
+		if(DEBUG_LOGGING) console.debug('gotWindowFocus', ev)
 
 		// // if(ev && !this.babs.renderSys.isVrActive && this.babs.inputSys.mouse.device == 'mouse') {
 		// // 	document.body.requestPointerLock() // Doesn't work on first page load, so just use regular click for this
@@ -101,7 +104,7 @@ export class UiSys {
 	}
 
 	lostFocus() {
-		console.debug('lostFocus')
+		if(DEBUG_LOGGING) console.debug('lostFocus')
 		if(!this.babs.renderSys.isVrActive) {
 			this.awayGame()
 		}
@@ -110,32 +113,32 @@ export class UiSys {
 
 	isGameAway = false
 	awayGame() {
-		console.debug('awayGame')
+		if(DEBUG_LOGGING) console.debug('awayGame')
 		this.isGameAway = true
 		isAwayUiDisplayed.set(true)
 	}
 
 	resumeGame() {
-		console.debug('resumeGame')
+		if(DEBUG_LOGGING) console.debug('resumeGame')
 		this.isGameAway = false
 		isAwayUiDisplayed.set(false)
 	}
 
 	async leftClickCanvas(ev :MouseEvent) {
-		console.debug('leftClickCanvas', ev)
+		if(DEBUG_LOGGING) console.debug('leftClickCanvas', ev)
 		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
 		}
 	}
 	leftClickHtml(ev :MouseEvent) {
-		console.debug('leftClickHtml', ev)
+		if(DEBUG_LOGGING) console.debug('leftClickHtml', ev)
 		// If this event is occurring, then it's the menu and not the "pointer-events:none;" ResumeButton.
 		// So don't do a resume; just interact with whatever HTML normally.
 		// Canvas (above) does a resume.
 	}
 	async rightClickCanvas(ev :MouseEvent) {
-		console.debug('rightClickCanvas', ev)
+		if(DEBUG_LOGGING) console.debug('rightClickCanvas', ev)
 		const gotLock = await this.tryPermanentPointerLock()
 		if((gotLock === true || gotLock === null) && this.isGameAway) {
 			this.resumeGame()
@@ -164,7 +167,7 @@ export class UiSys {
 	
 
 	landSaid(landtarget :{text :string, idzone: number, point: Vector3}) {
-		console.debug('landSaid', landtarget)
+		if(DEBUG_LOGGING) console.debug('landSaid', landtarget)
 		const yardCoord = YardCoord.Create({
 			position: landtarget.point,
 			babs: this.babs,
@@ -182,7 +185,7 @@ export class UiSys {
 		})
 	}
 	wobSaid(content :string, wob :SharedWob) {
-		console.debug('wobSaid', content, wob)
+		if(DEBUG_LOGGING) console.debug('wobSaid', content, wob)
 		this.feWords({
 			content: content,
 			idZone: wob.idzone,
@@ -195,7 +198,7 @@ export class UiSys {
 		const player = this.babs.ents.get(idPlayer) as Player
 
 		if(player) {
-			console.debug('aboveHeadChat', idPlayer, content, colorHex, player)
+			if(DEBUG_LOGGING) console.debug('aboveHeadChat', idPlayer, content, colorHex, player)
 			
 			const ttext = this.feWords({
 				content: content,
@@ -318,7 +321,7 @@ export class UiSys {
 			this.makeTextAt('feWords', words.content, pointCentered, 1.375, colorHex)
 		}
 		else if(words.idTargetPlayer) {
-			console.debug('words.idTargetPlayer', words.idTargetPlayer, words.content)
+			if(DEBUG_LOGGING) console.debug('words.idTargetPlayer', words.idTargetPlayer, words.content)
 			const player = this.babs.ents.get(words.idTargetPlayer) as Player
 			const yardCoord = YardCoord.Create(player.controller.playerRig)
 
@@ -357,7 +360,7 @@ export class UiSys {
 	}
 
 	makeTextAt(name :string, content :string, worldPos :Vector3, sizeEm :number, colorHex :string = '#ffffff') :TroikaText {
-		console.debug('makeTextAt', name, content)
+		if(DEBUG_LOGGING) console.debug('makeTextAt', name, content)
 			
 		// Setup
 		const ttext = new TroikaText() as TroikaText
