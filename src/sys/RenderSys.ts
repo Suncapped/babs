@@ -21,6 +21,9 @@ import Cookies from 'js-cookie'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js'
 import type { Player } from '@/ent/Player'
+import type { SharedBluestLocomoted } from '@/shared/SharedBluests'
+import { MIN_INTEGER_ID } from '@/shared/consts'
+import { instanceIndex } from 'three/webgpu'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -319,6 +322,7 @@ export class RenderSys {
 
 	maxFrameRate = 30
 	framedropSeconds = 0
+	shown = false
 	update(dt) {
 		this.maxFrameRate = Math.max(this.maxFrameRate, this.fpsDetected) // calcNearbyWobs will start with a short distance so framerate should start out high.
 
@@ -345,6 +349,103 @@ export class RenderSys {
 			}
 		}
 		// console.log('this.framedropSeconds', this.fpsDetected, this.maxFrameRate, this.framedropSeconds)
+
+		// Look at anything with locomotion, and move it toward its matrix position
+		// const hasLocomotion = ['butterfly'] // todo use comps or look for skinned
+		// for (let [name, instancedWobs] of Wob.InstancedWobs) {
+		// 	const isAnimated = instancedWobs.isAnimated
+		// 	if(isAnimated){// && hasLocomotion.includes(name)) { // eg butterfly
+		// 		for(let i=0, lc=instancedWobs.getLoadedCount(); i<lc; i++) {
+		// 			const matrixCurrent = new Matrix4()
+		// 			instancedWobs.instancedMesh.getMatrixAt(i, matrixCurrent)
+		// 			const currentPosition = new Vector3().setFromMatrixPosition(matrixCurrent)
+
+		// 			// Get targetPosition from wob data
+		// 			const wob = instancedWobs.instanceIndexToWob.get(i)
+		// 			const yardCoord = YardCoord.Create(wob)
+		// 			const targetEngineCoord = instancedWobs.heightTweak(yardCoord.toEngineCoordCentered('withCalcY'))
+
+		// 			const baseSpeed = 0.1
+		// 			const minSpeed = 0.02
+		// 			const dist = currentPosition.distanceTo(targetEngineCoord)
+		// 			if(dist > 0.1) {
+		// 				const speed = Math.max(baseSpeed, minSpeed)
+		// 				currentPosition.lerp(targetEngineCoord, speed)
+		// 				matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)
+		// 				instancedWobs.instancedMesh.setMatrixAt(i, matrixCurrent)
+		// 			}
+		// 			else { // Snap there
+		// 				matrixCurrent.makeTranslation(targetEngineCoord.x, targetEngineCoord.y, targetEngineCoord.z)
+		// 				instancedWobs.instancedMesh.setMatrixAt(i, matrixCurrent)
+		// 			}
+
+		// 		}
+		// 		instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true
+		// 		instancedWobs.instancedMesh.matrixWorldNeedsUpdate = true
+		// 	}
+		// }
+		// Instead, let's do it from the bluests angle; get all bluests that are locomoted
+		if(!this.shown) {
+			// this.shown = true
+			const doLogging = false
+			const locomotedValues = this.babs.allBluestaticsBlueprintsData.get('locomoted') as Map<string, SharedBluestLocomoted>
+			locomotedValues.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
+				const mphSpeed = value.mphSpeed
+				if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
+				if(doLogging) console.log('locomotedValues', locomotedValues)
+				if(doLogging) console.log('butterfly', locomotedValues.get('butterfly'))
+				// Now get the associated wobs
+			})
+
+			// For every nearby zone, get all bluests of type 'locomoted'
+			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+			const zonesNearby = currentZone.getZonesAround(Zone.loadedZones)
+			for(const zone of zonesNearby) {
+				// get all bluests of type 'locomoted'
+				const entityIds = zone.bluestatics.get('locomoted').entityIds // Get all bluests of type 'decadent' in this zone
+				if(doLogging) console.log('potentialTargetIndices', entityIds)
+
+				const tempEntityId = entityIds.values().next().value
+				if(tempEntityId < MIN_INTEGER_ID) {
+					// It's a grid item, so let's move it on the grid
+					const x = tempEntityId % 250
+					const z = Math.floor(tempEntityId / 250)
+					const instanceIndex = zone.coordToInstanceIndex[x +','+ z]
+					// if(!instanceIndex) continue // Skip nulls // Shouldn't ever be pulling nulls
+					if(doLogging) console.log(zone.coordToInstanceIndex)
+
+					const butterflyIW = Wob.InstancedWobs.get('butterfly')
+					if(!butterflyIW) continue // Skip nulls; can happen when something is added before its IW is finished loading
+
+					const matrixCurrent = new Matrix4()
+					butterflyIW.instancedMesh.getMatrixAt(instanceIndex, matrixCurrent)
+
+					const currentPosition = new Vector3().setFromMatrixPosition(matrixCurrent)
+
+					// Get targetPosition from wob data
+					// const wob = butterflyIW.instanceIndexToWob.get(instanceIndex) // todo could skip maybe?
+					// if(doLogging) console.log('wob', tempEntityId, instanceIndex, x, z, wob)
+					const yardCoord = YardCoord.Create({x, z, zone})
+					const targetEngineCoord = butterflyIW.heightTweak(yardCoord.toEngineCoordCentered('withCalcY'))
+
+					const baseSpeed = 0.1
+					const minSpeed = 0.02
+					const dist = currentPosition.distanceTo(targetEngineCoord)
+					if(dist > 0.1) {
+						const speed = Math.max(baseSpeed, minSpeed)
+						currentPosition.lerp(targetEngineCoord, speed)
+						matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)
+						butterflyIW.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
+					}
+					else { // Snap there
+						matrixCurrent.makeTranslation(targetEngineCoord.x, targetEngineCoord.y, targetEngineCoord.z)
+						butterflyIW.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
+					}
+				}
+
+			}
+
+		}
 
 		// Calc one wob type each update
 		if(this.recalcImmediatelyBpids.size > 0) {

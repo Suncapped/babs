@@ -98,7 +98,7 @@ export interface Ui {
 	other ?:Record<string, unknown>
 }
 
-export type MappingPosition = {idzone: number, x: number, z: number}
+export type PositionIdzoneXZ = {idzone: number, x: number, z: number}
 
 // Proxima sendables
 
@@ -110,6 +110,13 @@ export type SendWobsUpdate = {
 		locationData :Array<number>,
 		// blueprints? :BlueprintList, // todo optimize rather than sending them all
 		shownames? :boolean,
+	},
+}
+export type SendWobMove = {
+	wobmove :{ // This is kinda in place of wobsupdate deletion
+		origin :WobId,
+		dest :WobId,
+		locomote?: boolean,
 	},
 }
 export type SendFootstepsCounts = {
@@ -241,7 +248,7 @@ export type SendFirelink = {
 }
 
 export type SendWayfind = {
-	wayfind :MappingPosition
+	wayfind :PositionIdzoneXZ
 }
 
 export class FeWords {
@@ -295,7 +302,7 @@ export type SendFeTime = {
 export type ProximaSendable = SendLoad|SendVisitor|SendSession
 	|SendAuth
 	|SendPlayerDepart|SendPlayersArrive|SendNickList|SendAlreadyIn
-	|SendZoneIn|SendReposition|SendWobsUpdate|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
+	|SendZoneIn|SendReposition|SendWobsUpdate|SendWobMove|SendSaid|SendEnergy|SendFeWords|SendCraftable|SendAskTarget|SendServerRestart
 	|SendFeTime
 	|SendFirelink
 	|SendWayfind
@@ -402,3 +409,5 @@ export function typedKeys<T>(obj: T): (keyof T)[] {
 	if(!obj) return []
 	return Object.keys(obj) as (keyof T)[]
 }
+
+export const MIN_INTEGER_ID = 1_000_000 // Setting this so I can use 250*250=62500 for grid ids (or up to 1000^2)

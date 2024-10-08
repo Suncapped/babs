@@ -15,12 +15,13 @@ import { Wob } from '@/ent/Wob'
 import { Zone } from '@/ent/Zone'
 import { Babs } from '@/Babs'
 import { YardCoord } from '@/comp/Coord'
-import { SharedWob } from '@/shared/SharedWob'
+import { SharedBlueprint, SharedWob } from '@/shared/SharedWob'
 import { type SendCraftable, type SendLoad, type SendWobsUpdate, type SendFeTime, type Zoneinfo, type SendPlayersArrive, type SendZoneIn, type SendAskTarget, type SendNickList, type SendReposition, type BabsSendable, type ProximaSendable, type SendAuth, type SendFirelink, typedKeys } from '@/shared/consts'
 import type { blueprint_id, SharedBlueprintWithBluests, SharedBluestClasses, WobId } from '@/shared/SharedWob'
 import { DateTime } from 'luxon'
 import { get as svelteGet } from 'svelte/store'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
+import { SharedFentity } from '@/shared/SharedFecs'
 
 export class SocketSys {
 	static pingSeconds = 30
@@ -583,6 +584,90 @@ export class SocketSys {
 				if(sharedFarWobs.length) await Wob.LoadInstancedWobs(sharedFarWobs, this.babs, false, 'asFarWobs')
 			}
 
+		}
+		else if('wobmove' in payload) {
+			console.debug('wobmove', payload.wobmove)
+			const wobMove = payload.wobmove
+			// It's a single wob.
+			// Goal here vs wobsupdate is to:
+			// Not set matrix to destination; don't update matrix at all
+
+			// Not remove graphic at origin, nor create graphic at dest
+			// Do update anything that would be related to graphic state though (member vars?)
+
+			// Do remove grid/etc from origin
+			// Do set grid/etc to destination
+			// Do update any reference tracking vars on the zone
+			// Do update any global babs state
+			// Do update any components!  And Fire, Audible, etc?  // todo for movable components
+
+			/* swapWobsAtIndexes seems relevant here?:
+				const sourceWobAnyZone = feim.instanceIndexToWob.get(sourceIndex)
+				sourceWobAnyZone.zone.coordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
+				sourceWobAnyZone.zone.farCoordToInstanceIndex[sourceWobAnyZone.x+','+sourceWobAnyZone.z] = targetIndex
+				feim.instanceIndexToWob.set(sourceIndex, targetWobAnyZone)
+				if(doDeleteSource) {
+					feim.instanceIndexToWob.delete(sourceIndex)
+					targetWobAnyZone.zone.coordToInstanceIndex[targetWobAnyZone.x+','+targetWobAnyZone.z] = null
+				feim.babs.ents.set(sourceWobAnyZone.zone.id, sourceWobAnyZone.zone) // necessary?
+			*/
+
+
+			// First get current wob stuff
+			const originZone = this.babs.ents.get(wobMove.origin.idzone) as Zone
+			const destZone = this.babs.ents.get(wobMove.dest.idzone) as Zone
+			// const wob = originZone.getWob(wobMove.origin.x, wobMove.origin.z) // No, let's fetch Wob instead of SharedWob, below
+			const feim = Wob.InstancedWobs.get(wobMove.origin.blueprint_id)
+			const wobIndex = originZone.coordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z]
+			const wob = feim.instanceIndexToWob.get(wobIndex)
+
+			// Update based on new coords
+			originZone.coordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z] = null
+			destZone.coordToInstanceIndex[wobMove.dest.x+','+wobMove.dest.z] = wobIndex
+			originZone.farCoordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z] = null
+			destZone.farCoordToInstanceIndex[wobMove.dest.x+','+wobMove.dest.z] = wobIndex
+			// We do not need to update feim.instanceIndexToWob, since the index doesn't change; IMs are global across zones
+			// feim.instanceIndexToWob.set(wobIndex, new Wob(this.babs, wob.idzone, wob.x, wob.z, wob.r, new SharedBlueprint(wob.blueprint_id
+			feim.instanceIndexToWob.set(wobIndex, wob)
+
+			// Update grids of zones
+			// Let's assume there's nothing at the destination point.  // todo catch this
+			const originGridIndex = wob.x + wob.z * 250
+			const destGridIndex = wobMove.dest.x + wobMove.dest.z * 250
+			// Copy over
+			destZone.wobIdRotGrid[destGridIndex] = originZone.wobIdRotGrid[originGridIndex]
+			destZone.farWobIdRotGrid[destGridIndex] = originZone.farWobIdRotGrid[originGridIndex]
+			// Unset
+			originZone.wobIdRotGrid[originGridIndex] = 0
+			originZone.farWobIdRotGrid[originGridIndex] = 0
+			
+			{ // Update wob's bluestatics (update ids by deleting and adding) 
+				// Update bluestatics (delete)
+				// console.log('wob.bluests', wob.bluests)
+				const oldEntity = new SharedFentity(wob)
+				for(let bluestKey in wob.bluests) {
+					const bluestatic = originZone.bluestatics.get(bluestKey as keyof SharedBluestClasses)
+					bluestatic.entityIds.delete(oldEntity.id)
+				}
+
+				// Update wob itself
+				wob.x = wobMove.dest.x
+				wob.z = wobMove.dest.z
+				wob.idzone = wobMove.dest.idzone
+
+				// Update bluestatics (add)
+				const newEntity = new SharedFentity(wob)
+				for(let bluestKey in wob.bluests) {
+					const bluestatic = destZone.bluestatics.get(bluestKey as keyof SharedBluestClasses)
+					bluestatic.entityIds.add(newEntity.id)
+				}
+			}
+
+			// todo for when it's coming in fresh, ie it doesn't previously exist in the zone, we WILL need to load the graphic.
+			// And if it's going out, we'll need to actually remove the graphic etc.
+
+			// We currently get a wobMove.locomote bool, but we're going to ignore that since currently wobmove is by definition locomoted.
+			// const isLocomoted = !!wob.bluests?.locomoted?.mphSpeedn // Anyway it's on here too
 		}
 		else if('contains' in payload) {
 			// console.debug('contains', payload.contains)

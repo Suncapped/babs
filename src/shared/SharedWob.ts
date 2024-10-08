@@ -1,5 +1,5 @@
 import { type UintRange } from './TypeUtils'
-import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty } from './SharedBluests'
+import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty, SharedBluestLocomoted } from './SharedBluests'
 
 export class SharedBlueprint {
 	constructor(
@@ -17,18 +17,19 @@ export type blueprint_id = string
 
 export type SharedBluestClasses = {
 	edible? :SharedBluestEdible
-	// firestarter? :SharedBluestPlatform
+	// firestarter? :SharedBluestFirestarter
 	generated? :SharedBluestGenerated
-	// healing? :SharedBluestPlatform
+	// healing? :SharedBluesthHealing
 	platform? :SharedBluestPlatform
-	// scented? :SharedBluestPlatform
-	// symbiote? :SharedBluestPlatform
-	// touched? :SharedBluestPlatform
+	// scented? :SharedBluestScented
+	// symbiote? :SharedBluestSymbiote
+	// touched? :SharedBluestTouched
 	audible? :SharedBluestAudible
 	obstructive? :SharedBluestObstructive
 	weighty? :SharedBluestWeighty
 	durable? :SharedBluestDurable
 	visible? :SharedBluestVisible
+	locomoted? :SharedBluestLocomoted
 }
 
 export type SharedBlueprintWithBluests = {

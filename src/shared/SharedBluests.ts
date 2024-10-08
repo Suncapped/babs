@@ -88,6 +88,15 @@ export class SharedBluestDurable extends SharedBluest {
 	destroyedOneTimeOutOf :number
 }
 
+export class SharedBluestLocomoted extends SharedBluest {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+
+	mphSpeed :string
+}
+
 // edible: SharedBluestPlatform,
 // firestarter: SharedBluestPlatform,
 // generated: SharedBluestPlatform,
