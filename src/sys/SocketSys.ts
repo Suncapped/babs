@@ -621,6 +621,13 @@ export class SocketSys {
 			const wobIndex = originZone.coordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z]
 			const wob = feim.instanceIndexToWob.get(wobIndex)
 
+			if(!wob) {
+				// Can happen on first load when server is quickly sending events before client has loaded the wob
+				// If this is happening, may be a significant situation; index out of sync means it can't find the wob anymore!  Fragile.
+				console.warn('Warning: wobmove: No wob found for move', wobMove, wobIndex, wob)
+				return
+			}
+
 			// Update based on new coords
 			originZone.coordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z] = null
 			destZone.coordToInstanceIndex[wobMove.dest.x+','+wobMove.dest.z] = wobIndex

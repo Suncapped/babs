@@ -116,6 +116,7 @@ export type SendWobMove = {
 	wobmove :{ // This is kinda in place of wobsupdate deletion
 		origin :WobId,
 		dest :WobId,
+		rotation? :RotationCardinal,
 		locomote?: boolean,
 	},
 }
