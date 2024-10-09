@@ -586,7 +586,7 @@ export class SocketSys {
 
 		}
 		else if('wobmove' in payload) {
-			console.debug('wobmove', payload.wobmove)
+			// console.debug('wobmove', payload.wobmove)
 			const wobMove = payload.wobmove
 			// It's a single wob.
 			// Goal here vs wobsupdate is to:
@@ -624,7 +624,7 @@ export class SocketSys {
 			if(!wob) {
 				// Can happen on first load when server is quickly sending events before client has loaded the wob
 				// If this is happening, may be a significant situation; index out of sync means it can't find the wob anymore!  Fragile.
-				console.warn('Warning: wobmove: No wob found for move', wobMove, wobIndex, wob)
+				console.debug('Hmm: wobmove: No wob found for move', wobMove, wobIndex, wob)
 				return
 			}
 
@@ -670,11 +670,26 @@ export class SocketSys {
 				}
 			}
 
-			// todo for when it's coming in fresh, ie it doesn't previously exist in the zone, we WILL need to load the graphic.
+			// Update pickedObject
+			const yc = YardCoord.Create({x: wobMove.dest.x, z: wobMove.dest.z, zone: destZone})
+			const poid = JSON.stringify(wob.idObj())
+			if(this.babs.inputSys.pickedObject?.poid === poid) {
+				this.babs.inputSys.pickedObject.yardCoord = yc
+				this.babs.inputSys.pickedObject.poid = poid
+			}
+			if(this.babs.inputSys.liftedObject?.poid === poid) {
+				this.babs.inputSys.liftedObject.yardCoord = yc
+				this.babs.inputSys.liftedObject.poid = poid
+			}
+			if(this.babs.inputSys.mousedownPickedObject?.poid === poid) {
+				this.babs.inputSys.mousedownPickedObject.yardCoord = yc
+				this.babs.inputSys.mousedownPickedObject.poid = poid
+			}
+
+			// todo for zones, for when it's coming in fresh, ie it doesn't previously exist in the zone, we WILL need to load the graphic.
 			// And if it's going out, we'll need to actually remove the graphic etc.
 
-			// We currently get a wobMove.locomote bool, but we're going to ignore that since currently wobmove is by definition locomoted.
-			// const isLocomoted = !!wob.bluests?.locomoted?.mphSpeedn // Anyway it's on here too
+			// We currently get a wobMove.locomote speed number, but we're going to ignore that since currently wobmove is by definition locomoted, and speed is in the bluests
 		}
 		else if('contains' in payload) {
 			// console.debug('contains', payload.contains)

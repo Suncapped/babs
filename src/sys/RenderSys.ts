@@ -1,6 +1,6 @@
 import { UiSys } from './UiSys'
 
-import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion, MeshBasicMaterial, SphereGeometry, DoubleSide, BufferGeometry, Line } from 'three'
+import { Euler, MathUtils, ACESFilmicToneMapping, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer, SRGBColorSpace, InstancedMesh, Mesh, LineSegments, SkinnedMesh, Quaternion, MeshBasicMaterial, SphereGeometry, DoubleSide, BufferGeometry, Line, Color } from 'three'
 import { WorldSys } from './WorldSys'
 import { Fire } from '@/comp/Fire'
 import type { Babs } from '@/Babs'
@@ -23,7 +23,6 @@ import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js'
 import type { Player } from '@/ent/Player'
 import type { SharedBluestLocomoted } from '@/shared/SharedBluests'
 import { MIN_INTEGER_ID } from '@/shared/consts'
-import { instanceIndex } from 'three/webgpu'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -37,7 +36,7 @@ export class RenderSys {
 	public isVrActive = false
 
 	// Custom FPS counter
-	public frames = 0
+	public frames = 0 // Note: Babs updates this
 	public prevTime = performance.now()
 	public fpsDetected = 0
 
@@ -322,7 +321,6 @@ export class RenderSys {
 
 	maxFrameRate = 30
 	framedropSeconds = 0
-	shown = false
 	update(dt) {
 		this.maxFrameRate = Math.max(this.maxFrameRate, this.fpsDetected) // calcNearbyWobs will start with a short distance so framerate should start out high.
 
@@ -385,83 +383,86 @@ export class RenderSys {
 		// 	}
 		// }
 		// Instead, let's do it from the bluests angle; get all bluests that are locomoted
-		if(!this.shown) {
-			// this.shown = true
-			const doLogging = false
-			const locomotedValues = this.babs.allBluestaticsBlueprintsData.get('locomoted') as Map<string, SharedBluestLocomoted>
-			locomotedValues.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
-				const mphSpeed = value.mphSpeed
-				if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
-				if(doLogging) console.log('locomotedValues', locomotedValues)
-				if(doLogging) console.log('butterfly', locomotedValues.get('butterfly'))
-				// Now get the associated wobs
-			})
+		const doLogging = false
+		const locomotedValues = this.babs.allBluestaticsBlueprintsData.get('locomoted') as Map<string, SharedBluestLocomoted>
+		locomotedValues.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
+			const mphSpeed = value.mphSpeed
+			if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
+			if(doLogging) console.log('locomotedValues', locomotedValues)
+			if(doLogging) console.log('butterfly', locomotedValues.get('butterfly'))
+			// Now get the associated wobs
+		})
 
-			// console.log('locomotedValues', locomotedValues)
-			// todo: actually account for speed
+		// console.log('locomotedValues', locomotedValues)
+		// todo: actually account for speed
 
-			// For every nearby zone, get all bluests of type 'locomoted'
-			const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
-			const zonesNearby = currentZone.getZonesAround(Zone.loadedZones)
-			for(const zone of zonesNearby) {
-				// get all bluests of type 'locomoted'
-				const entityIds = zone.bluestatics.get('locomoted').entityIds // Get all bluests of type 'decadent' in this zone
-				if(entityIds.size) console.log('potentialTargetIndices', entityIds.size)
+		let areThingsMoving = false
+		// For every nearby zone, get all bluests of type 'locomoted'
+		const currentZone = this.babs.inputSys.playerSelf.controller.playerRig.zone
+		const zonesNearby = currentZone.getZonesAround(Zone.loadedZones)
+		for(const zone of zonesNearby) {
+			// get all bluests of type 'locomoted'
+			const entityIds = zone.bluestatics.get('locomoted').entityIds // Get all bluests of type 'decadent' in this zone
+			// if(entityIds.size) console.log('potentialTargetIndices', entityIds.size)
 
-				for(const tempEntityId of entityIds) {
-					if(tempEntityId < MIN_INTEGER_ID) {
-						// It's a grid item, so let's move it on the grid
-						const x = tempEntityId % 250
-						const z = Math.floor(tempEntityId / 250)
-						const instanceIndex = zone.coordToInstanceIndex[x +','+ z]
-						// if(!instanceIndex) continue // Skip nulls // Shouldn't ever be pulling nulls
-						if(doLogging) console.log(zone.coordToInstanceIndex)
+			for(const tempEntityId of entityIds) {
+				const isGridIndex = tempEntityId < MIN_INTEGER_ID
+				if(!isGridIndex) continue // Shouldn't happen, but would be non-grid items
+					
+				// It's a grid item, so let's move it on the grid
+				const x = tempEntityId % 250
+				const z = Math.floor(tempEntityId / 250)
+				const instanceIndex = zone.coordToInstanceIndex[x +','+ z]
+				// if(!instanceIndex) continue // Skip nulls // Shouldn't ever be pulling nulls
+				if(doLogging) console.log(zone.coordToInstanceIndex)
 
-						// Lookup the blueprint_id of this index
-						// See also Proxma for this.
-						const idAndRot = zone.wobIdRotGrid[tempEntityId]
-						const locid = idAndRot >>> 4
-						if(!zone.locidToBlueprint[locid]) {
-							console.warn('RenderSys: no blueprint for locid', locid, idAndRot) 
-							continue
-						}
-						const blueprint_id = zone.locidToBlueprint[locid].blueprint_id
+				// Lookup the blueprint_id of this index
+				// See also Proxma for this.
+				const idAndRot = zone.wobIdRotGrid[tempEntityId]
+				const locid = idAndRot >>> 4
+				if(!zone.locidToBlueprint[locid]) {
+					console.warn('RenderSys: no blueprint for locid', locid, idAndRot) 
+					continue
+				}
+				const blueprint_id = zone.locidToBlueprint[locid].blueprint_id
 
-						const instancedWobs = Wob.InstancedWobs.get(blueprint_id)
-						if(!instancedWobs) continue // Skip nulls; can happen when something is added before its IW is finished loading
+				const instancedWobs = Wob.InstancedWobs.get(blueprint_id)
+				if(!instancedWobs) continue // Skip nulls; can happen when something is added before its IW is finished loading
 
-						const matrixCurrent = new Matrix4()
-						instancedWobs.instancedMesh.getMatrixAt(instanceIndex, matrixCurrent)
+				const matrixCurrent = new Matrix4()
+				instancedWobs.instancedMesh.getMatrixAt(instanceIndex, matrixCurrent)
 
-						const currentPosition = new Vector3().setFromMatrixPosition(matrixCurrent)
+				const currentPosition = new Vector3().setFromMatrixPosition(matrixCurrent)
 
-						// Get targetPosition from wob data
-						// const wob = butterflyIW.instanceIndexToWob.get(instanceIndex) // todo could skip maybe?
-						// if(doLogging) console.log('wob', tempEntityId, instanceIndex, x, z, wob)
-						const yardCoord = YardCoord.Create({x, z, zone})
-						const targetEngineCoord = instancedWobs.heightTweak(yardCoord.toEngineCoordCentered('withCalcY'))
+				// Get targetPosition from wob data
+				// const wob = butterflyIW.instanceIndexToWob.get(instanceIndex) // todo could skip maybe?
+				// if(doLogging) console.log('wob', tempEntityId, instanceIndex, x, z, wob)
+				const yardCoord = YardCoord.Create({x, z, zone})
+				const targetEngineCoord = instancedWobs.heightTweak(yardCoord.toEngineCoordCentered('withCalcY'))
 
-						// const baseSpeed = 0.05
-						const minSpeed = 0.05
-						const maxSpeed = 0.1
-						const referenceDistance = 2
-						const dist = currentPosition.distanceTo(targetEngineCoord)
-						if(dist > 0.1) {
-							// const speed = Math.max(baseSpeed, minSpeed)
-							const t = Math.min(1, 1 - dist / referenceDistance) 
-							// Ease-in-out function using a cosine curve.
-							const speedFactor = 0.5 * (1 - Math.cos(Math.PI * t));
-							const speed = Math.max(minSpeed, speedFactor * maxSpeed);
-							
-							currentPosition.lerp(targetEngineCoord, speed)
-							matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)
-							instancedWobs.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
-						}
-						else { // Snap there
-							matrixCurrent.makeTranslation(targetEngineCoord.x, targetEngineCoord.y, targetEngineCoord.z)
-							instancedWobs.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
-						}
+				// const baseSpeed = 0.05
+				const minSpeed = 0.01
+				const maxSpeed = 0.02
+				const referenceDistance = 2
+				const dist = currentPosition.distanceTo(targetEngineCoord)
+				if(dist > 0.1) {
+					// const speed = Math.max(baseSpeed, minSpeed)
+					const t = Math.min(1, 1 - dist / referenceDistance) 
+					// Ease-in-out function using a cosine curve.
+					const speedFactor = 0.5 * (1 - Math.cos(Math.PI * t));
+					const speed = Math.max(minSpeed, speedFactor * maxSpeed);
+					
+					currentPosition.lerp(targetEngineCoord, speed)
+					matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)
+					instancedWobs.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
+
+					if(this.babs.inputSys.pickedObject) {
+						this.babs.inputSys.recheckMouseIntersects = true // Recalc intersects every 60 frames if things are picked.  This keeps highlights updated if butterfly moves out from under you.
 					}
+				}
+				else { // No need to snap to dest; just do nothing / skip!
+					// matrixCurrent.makeTranslation(targetEngineCoord.x, targetEngineCoord.y, targetEngineCoord.z)
+					// instancedWobs.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
 				}
 			}
 		}

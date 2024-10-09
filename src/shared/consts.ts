@@ -117,7 +117,7 @@ export type SendWobMove = {
 		origin :WobId,
 		dest :WobId,
 		rotation? :RotationCardinal,
-		locomote?: boolean,
+		speed?: number,
 	},
 }
 export type SendFootstepsCounts = {

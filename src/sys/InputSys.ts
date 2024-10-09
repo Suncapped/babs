@@ -1861,6 +1861,8 @@ export class InputSys {
 			// console.log('newPickedChangedFromOld', newPickedChangedFromOld, 'oldPickedAndNoLonger', oldPickedAndNoLonger)
 
 			const movedOutFromExistingPick = newPickedChangedFromOld || oldPickedAndNoLonger
+			// There's another situation here now: The locomoted eg butterfly moves out from under you!  
+			// We can have it recheckMouseIntersects=true, but I suppose we also need to update pickedObject to the new data?
 			if(movedOutFromExistingPick) {
 
 				// Reset colors on old pickedObject
