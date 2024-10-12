@@ -385,7 +385,7 @@ export class RenderSys {
 		// Instead, let's do it from the bluests angle; get all bluests that are locomoted
 		const doLogging = false
 		const locomotedValues = this.babs.allBluestaticsBlueprintsData.get('locomoted') as Map<string, SharedBluestLocomoted>
-		locomotedValues.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
+		locomotedValues?.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
 			const mphSpeed = value.mphSpeed
 			if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
 			if(doLogging) console.log('locomotedValues', locomotedValues)
@@ -402,8 +402,9 @@ export class RenderSys {
 		const zonesNearby = currentZone.getZonesAround(Zone.loadedZones)
 		for(const zone of zonesNearby) {
 			// get all bluests of type 'locomoted'
-			const entityIds = zone.bluestatics.get('locomoted').entityIds // Get all bluests of type 'decadent' in this zone
+			const entityIds = zone.bluestatics.get('locomoted')?.entityIds // Get all bluests of type 'decadent' in this zone
 			// if(entityIds.size) console.log('potentialTargetIndices', entityIds.size)
+			if(!entityIds) continue // None in zone perhaps
 
 			for(const tempEntityId of entityIds) {
 				const isGridIndex = tempEntityId < MIN_INTEGER_ID
