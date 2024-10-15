@@ -109,6 +109,7 @@ export class Controller extends Comp {
 		const animList = LoaderSys.KidAnimList
 		await Promise.all(animList.map(async animName => {
 			const anim = await this.babs.loaderSys.loadAnim(this.arrival.char.gender, animName)
+			// console.log('controller init anim', animName, anim.animations)
 			const clip = anim.animations[0]
 			const action = this._mixer.clipAction(clip)
 
@@ -571,7 +572,9 @@ export class Controller extends Comp {
 		if(this.headRotationX) {
 			// this.modelHead ||= this.playerRig.getObjectByName( 'Head_M' )
 			// this.modelHead.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX/2) // Broken with gltf for some reason?
-			this.modelNeck ||= this.playerRig.getObjectByName( 'Neck_M' )
+			
+			// console.log(this.playerRig)
+			this.modelNeck ||= this.playerRig.getObjectByName( 'spine006' ) // vashria note that '.' was removed by export/import; gun lady was 'Head_M'
 			this.modelNeck.setRotationFromAxisAngle(new Vector3(0,-1,0), this.headRotationX*0.75)
 		}
 

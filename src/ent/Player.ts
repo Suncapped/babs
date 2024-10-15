@@ -55,7 +55,7 @@ export class Player extends Ent {
 		console.debug('New Player:', plr)
 
 		const [playerRig] = await Promise.all([ 
-			babs.loaderSys.loadRig(plr.char.gender), 
+			babs.loaderSys.loadRig(plr.char.gender, arrival.id), 
 			// babs.loaderSys.loadAnim(plr.char.gender, 'idle') 
 		]) as [FeObject3D]
 		playerRig.name = plr.self ? 'self' : 'player'

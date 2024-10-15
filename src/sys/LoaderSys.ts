@@ -29,6 +29,7 @@ export class LoaderSys {
 	static CachedFlametex :Promise<Texture>
 	static MegaColorAtlas :Promise<void>
 	static ColorAtlasNew2 :Promise<Texture>
+	static VashriaTextures :Array<Promise<Texture>>
 	static CachedKidRig :Promise<GLTF>
 	static KidAnimList = ['idle', 'run', 'walk']
 	static KidAnimPaths = {}
@@ -138,13 +139,19 @@ export class LoaderSys {
 			// return texture // Currently this is not used anywhere.  this.megaMaterial gets set above.
 		})
 		LoaderSys.ColorAtlasNew2 = this.loadTexture(`/texture/color-atlas-new2.png`)
+		LoaderSys.VashriaTextures = [
+			this.loadTexture(`/char/vashria/mats/jpeg/vashria-purple.jpg`),
+			this.loadTexture(`/char/vashria/mats/jpeg/vashria-pink.jpg`),
+			this.loadTexture(`/char/vashria/mats/jpeg/vashria-green.jpg`),
+			this.loadTexture(`/char/vashria/mats/jpeg/vashria-yellow.jpg`),
+		]
 
 		// Prefetch Kid Rig
-		LoaderSys.CachedKidRig = this.loadGltf(`/char/female/female-rig.glb`)
+		LoaderSys.CachedKidRig = this.loadGltf(`/char/vashria/vashria-rig.glb`)
 		
 		// Prefetch Kid Anims
 		LoaderSys.KidAnimList.forEach(anim => {
-			LoaderSys.KidAnimPaths[anim] = `/char/female/female-anim-${anim}.glb`
+			LoaderSys.KidAnimPaths[anim] = `/char/vashria/vashria-anim-${anim}.glb`
 		})
 		Object.entries(LoaderSys.KidAnimPaths).forEach(([anim, path] :[string, string|unknown]) => {
 			LoaderSys.CachedKidAnims[anim] = this.loadGltf(path as string)
@@ -278,9 +285,13 @@ export class LoaderSys {
 	}
 
 	mapPathRigCache = new Map()
-	async loadRig(gender) {
+	async loadRig(gender :string, idPlayer :number) {
 		// Todo when we switch to mega atlas, use global material (this.megaMaterial)
-		const texture = await LoaderSys.ColorAtlasNew2
+		// const texture = await LoaderSys.ColorAtlasNew2
+		const textures = await Promise.all(LoaderSys.VashriaTextures)
+		const deterministicIndex = Math.abs(idPlayer % textures.length) // Associate a texture with their player id
+		const texture = textures[deterministicIndex]
+
 		texture.flipY = false // gltf flipped boolean
 		// const material = new MeshToonMaterial({ // todo hmm
 		const material = new MeshPhongMaterial({
@@ -297,7 +308,7 @@ export class LoaderSys {
 		})
 		
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
-		const path = `/char/female/female-rig.glb`
+		const path = `/char/vashria/vashria-rig.glb`
 		const cached = this.mapPathRigCache.get(path)
 		let rigGroupScene :Object3D
 		if(cached) {
@@ -321,7 +332,8 @@ export class LoaderSys {
 		// scene.children.traverse(c => c.receiveShadow = true)
 		// scene.children.traverse(c => c.traverse(d => d.receiveShadow = true))
 
-		rigGroupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
+		// rigGroupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
+		rigGroupScene.scale.multiplyScalar(3.5) // hax for temp character
 		
 		// Put in a box for raycast bounding // must adjust with scale
 		const cube :FeObject3D = new Mesh(new BoxGeometry(0.75, 2.5, 0.75), new MeshBasicMaterial())

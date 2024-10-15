@@ -450,8 +450,8 @@ export class RenderSys {
 					// const speed = Math.max(baseSpeed, minSpeed)
 					const t = Math.min(1, 1 - dist / referenceDistance) 
 					// Ease-in-out function using a cosine curve.
-					const speedFactor = 0.5 * (1 - Math.cos(Math.PI * t));
-					const speed = Math.max(minSpeed, speedFactor * maxSpeed);
+					const speedFactor = 0.5 * (1 - Math.cos(Math.PI * t))
+					const speed = Math.max(minSpeed, speedFactor * maxSpeed)
 					
 					currentPosition.lerp(targetEngineCoord, speed)
 					matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)

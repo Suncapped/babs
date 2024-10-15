@@ -559,7 +559,7 @@ export class SocketSys {
 			So the purpose of LoadInstancedWobs is to load the graphics, pretty much.
 			*/
 			const wobsZone = this.babs.ents.get(payload.wobsupdate.idzone) as Zone
-			console.debug('wobsupdate locationdata ', payload.wobsupdate.locationData.length)
+			console.debug('wobsupdate locationdata ', payload.wobsupdate.locationData?.length)
 			
 			
 			{ // Nearwobs
