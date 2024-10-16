@@ -1,4 +1,4 @@
-import { typedKeys } from './consts'
+import { isActualWater, StringifyLandcover, typedKeys, coordToIndex } from './consts'
 import { SharedFentity, type ComponentCustomKeys } from './SharedFecs'
 import { SharedBlueprint, SharedWob, type RotationCardinal, type blueprint_id, type SharedBlueprintWithBluests, type SharedBluestClasses } from './SharedWob'
 import { type UintRange } from './TypeUtils'
@@ -51,6 +51,20 @@ const x = locations[2] // 8 bits
 const z = locations[3] // 8 bits
 console.log(id, r, x, z)
 */
+
+export class ZONE {
+    public static ZONE_LENGTH_FEET = 1000
+    public static ZONE_DATUM_SIZE = 20//40
+    public static ZONE_DATUMS = ZONE.ZONE_LENGTH_FEET/ZONE.ZONE_DATUM_SIZE // 50
+    public static ZONE_ARR_SIDE_LEN = ZONE.ZONE_DATUMS +1 // For 40ft was 26; now for 20ft it's 51.
+	public static ZONE_MOVEMENT_EXTENT = 249
+    
+	static Yard = 4
+	static Plot = ZONE.Yard *5 // 20 ft; 5 tiles
+	static Acre = ZONE.Plot *10 // 200 ft; 50 tiles, 10 plots
+
+    static YardsPerPlot = ZONE.Plot / ZONE.Yard // 5
+}
 
 export type SharedBluestatic<T extends keyof SharedBluestClasses> = {
 	entityIds: Set<number> // Index into wobIdRotGrid for each wob with this bluestatic
@@ -351,6 +365,17 @@ export abstract class SharedZone {
 		}
 
 		return zonesAround
+	}
+
+	getLandcoverAt(x :number, z :number) {
+		const xPlot = Math.floor(x / (ZONE.Plot/ZONE.Yard))
+		const zPlot = Math.floor(z / (ZONE.Plot/ZONE.Yard))
+		const plotIndex = coordToIndex(xPlot, zPlot, ZONE.ZONE_ARR_SIDE_LEN)
+		const landcoverCode = this.landcovers[plotIndex]
+
+		const isLandcoverWater = isActualWater(landcoverCode) // It's a water spot (not a shore etc)
+
+		return {landcoverCode: landcoverCode, landcoverString: StringifyLandcover[landcoverCode], isLandcoverWater: isLandcoverWater}
 	}
 
 }

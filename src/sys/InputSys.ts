@@ -26,6 +26,7 @@ import * as KeyCode from 'keycode-js'
 import { CameraSys } from './CameraSys'
 import { InstancedSkinnedMesh } from '@/ent/InstancedSkinnedMesh'
 import { degToRad, radToDeg } from 'three/src/math/MathUtils.js'
+import { coordToIndex } from '@/shared/consts'
 
 
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh' // bvh
@@ -1008,17 +1009,17 @@ export class InputSys {
 								position: this.pickedObject.landPoint,
 								babs: this.babs,
 							})
-							// Disabled for now
-							// this.babs.socketSys.send({
-							// 	action: {
-							// 		verb: 'used',
-							// 		noun: 'ground',
-							// 		data: {
-							// 			point: {x: yardCoord.x, z: yardCoord.z},
-							// 			idzone: zone.id,
-							// 		},
-							// 	}
-							// })
+							// Currently has no action on server, but nice to have for debugging:
+							this.babs.socketSys.send({
+								action: {
+									verb: 'used',
+									noun: 'ground',
+									data: {
+										point: {x: yardCoord.x, z: yardCoord.z},
+										idzone: zone.id,
+									},
+								}
+							})
 
 							if(this.babs.debugMode) { // In debug, show details of land
 								this.babs.uiSys.landSaid({text: this.pickedObject.landcoverString, idzone: zone.id, point: this.pickedObject.landPoint})
@@ -1778,7 +1779,7 @@ export class InputSys {
 							// Land target
 							const landcoverData = yardCoord.zone.landcoverData
 							const plotCoord = new Vector3(Math.floor(yardCoord.x /centerPointInPlot), this.mouseRayTargets[i].point.y, Math.floor(yardCoord.z /centerPointInPlot))
-							const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, WorldSys.ZONE_ARR_SIDE_LEN)
+							const index = coordToIndex(plotCoord.x, plotCoord.z, WorldSys.ZONE_ARR_SIDE_LEN)
 							const lcString = WorldSys.StringifyLandcover[landcoverData[index]]
 							// this.mouse.landtarget = {
 							// 	text: lcString,

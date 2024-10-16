@@ -1,4 +1,3 @@
-import { coordToIndex, indexToCoord, clamp } from './../Utils'
 import { 
 	PlaneGeometry, 
 	MeshBasicMaterial, 
@@ -56,6 +55,7 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 
 import { GUI } from 'lil-gui'
 import { Fire } from '@/comp/Fire'
+import { coordToIndex, indexToCoord } from '@/shared/consts'
 
 export class WorldSys {
 

@@ -1,4 +1,5 @@
 import { type RotationCardinal, type PlayerRotation, type WobId, type SharedBluestClasses } from './SharedWob'
+import { ZONE } from './SharedZone'
 
 export const NLCD = {
 	// Water
@@ -412,3 +413,15 @@ export function typedKeys<T>(obj: T): (keyof T)[] {
 }
 
 export const MIN_INTEGER_ID = 1_000_000 // Setting this so I can use 250*250=62500 for grid ids (or up to 1000^2)
+
+export function coordToIndex(x, z, sideLength, dataLength = 1) {
+	return x*dataLength +(z *sideLength *dataLength)
+}
+export function indexToCoord(i :number, sideLength :number = ZONE.ZONE_ARR_SIDE_LEN) { // Don't currently have a need to remove dataLength
+	return {
+		x: i %sideLength, 
+		z: Math.floor(i /sideLength),
+	}
+}
+
+

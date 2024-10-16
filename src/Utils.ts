@@ -101,17 +101,6 @@ export function degrees(radians) {
 	return radians * RATIO_DEGREES
 }
 
-
-export function coordToIndex(x :number, z :number, sideLength :number, dataLength = 1) {
-	return x*dataLength +(z *sideLength *dataLength)
-}
-export function indexToCoord(i :number, sideLength :number = WorldSys.ZONE_ARR_SIDE_LEN) { // Don't currently have a need to remove dataLength
-	return {
-		x: i %sideLength, 
-		z: Math.floor(i /sideLength),
-	}
-}
-
 export function storageSet(key, value, ms) {
 	const now = new Date()
 	const item = {

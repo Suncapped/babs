@@ -16,6 +16,7 @@ import type { Player } from './Player'
 import { LoaderSys } from '@/sys/LoaderSys'
 import type { SendFootstepsCounts } from '@/shared/consts'
 import { debugMode } from '@/stores'
+import { coordToIndex } from '@/shared/consts'
 
 
 export class Zone extends SharedZone {
@@ -226,16 +227,16 @@ export class Zone extends SharedZone {
 
 		const centerPointInPlot = WorldSys.ZONE_DATUM_SIZE /WorldSys.Yard
 
-		const index00 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+		const index00 = coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height00 = verticesRef[index00 +1]  // +1 is to get y
 
-		const index10 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+		const index10 = coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +0) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height10 = verticesRef[index10 +1]
 
-		const index01 = Utils.coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+		const index01 = coordToIndex(Math.floor((coord.x +0) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height01 = verticesRef[index01 +1]
 
-		const index11 = Utils.coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+		const index11 = coordToIndex(Math.floor((coord.x +centerPointInPlot) /centerPointInPlot), Math.floor((coord.z +centerPointInPlot) /centerPointInPlot), WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 		const height11 = verticesRef[index11 +1]
 
 		/* 
@@ -327,7 +328,7 @@ export class Zone extends SharedZone {
 
 		// Helper function to get the height at a grid point
 		const getHeight = (xi: number, zi: number): number => {
-			const index = Utils.coordToIndex(xi, zi, WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
+			const index = coordToIndex(xi, zi, WorldSys.ZONE_ARR_SIDE_LEN, nCoordsCount)
 			return verticesRef[index + 1] // +1 to get the y aspect
 		}
 
@@ -534,7 +535,7 @@ export class Zone extends SharedZone {
 				for (let j = 0; j <= expandOut; j++) {
 					const xPos = xPlot +i
 					const zPos = zPlot +j
-					const colorsIndexOfGridPoint = Utils.coordToIndex(xPos, zPos, WorldSys.ZONE_ARR_SIDE_LEN, 3)
+					const colorsIndexOfGridPoint = coordToIndex(xPos, zPos, WorldSys.ZONE_ARR_SIDE_LEN, 3)
 					colorsRef[colorsIndexOfGridPoint + 0] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 0], brownColor.r, brownRatio)
 					colorsRef[colorsIndexOfGridPoint + 1] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 1], brownColor.g, brownRatio)
 					colorsRef[colorsIndexOfGridPoint + 2] = MathUtils.lerp(this.colorsCopy[colorsIndexOfGridPoint + 2], brownColor.b, brownRatio)
