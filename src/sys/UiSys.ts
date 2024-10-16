@@ -195,6 +195,17 @@ export class UiSys {
 	
 	// aboveHeadStack = Array<TroikaText>()
 	aboveHeadChat(idPlayer :number, content :string, journalContent :null|'copy'|string = null, colorHex = '#eeeeee') {
+		/*
+		Well there are types of messages:
+		System OOC message; server error
+		Roleplay message; you light the fire
+		Speech; you say something.
+
+		Speech is in your chosen color. 
+		Roleplay is in ...gray I guess..  "you..." and ~
+		OOC (avoid) is gray with <<>>. "Bad connection" "Can't carry that"
+		*/
+
 		const player = this.babs.ents.get(idPlayer) as Player
 
 		if(player) {

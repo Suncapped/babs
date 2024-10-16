@@ -469,7 +469,7 @@ export class SocketSys {
 					const player = await Player.Arrive(arrival, bSelf, this.babs)
 
 					if(player.nick) {
-						this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${player.nick} is around>`, 'copy', player.colorHex)
+						this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `~ ${player.nick} is around ~`, 'copy', player.colorHex)
 					}
 					else {
 						strangerColors.push(player.colorHex)
@@ -480,7 +480,7 @@ export class SocketSys {
 			
 			if(strangerColors.length) {
 				const strangersText = strangerColors.length === 1 ? 'a stranger is around' : `${strangerColors.length} strangers are around`
-				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${strangersText}>`, 'copy', strangerColors[0])
+				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `~ ${strangersText} ~`, 'copy', strangerColors[0])
 			}
 
 		}
@@ -489,7 +489,7 @@ export class SocketSys {
 			console.debug('departPlayer', payload.playerdepart, departPlayer, this.babs.scene)
 
 			if(departPlayer && departPlayer.id !== this.babs.idSelf) {
-				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<'+(departPlayer.nick || 'a stranger')+' departs>', 'copy', departPlayer.colorHex)
+				this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '~ '+(departPlayer.nick || 'a stranger')+' departs ~', 'copy', departPlayer.colorHex)
 				departPlayer.remove()
 			}
 		}

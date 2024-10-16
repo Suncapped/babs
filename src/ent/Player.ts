@@ -112,7 +112,7 @@ export class Player extends Ent {
 	}
 
 	nickWrapped() {
-		return `< ${this.nick || 'Stranger'}${this.tribe?` *${this.tribe}`:''} >`
+		return `~ ${this.nick || 'Stranger'}${this.tribe?` *${this.tribe}`:''} ~`
 	}
 
 	remove() {

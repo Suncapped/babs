@@ -1,6 +1,9 @@
 import { type UintRange } from './TypeUtils'
 import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty, SharedBluestLocomoted } from './SharedBluests'
 
+
+export const ImpossibleWeight = 200
+
 export class SharedBlueprint {
 	constructor(
 		public blueprint_id :string,

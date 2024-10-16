@@ -330,7 +330,7 @@ export class RenderSys {
 				if(this.framedropSeconds > 10 && !this.isVrActive && this.documentHasFocus) { // 5 seconds of framedrop, and not VR, and not because they tabbed away
 					this.babs.graphicsQuality = false // Stop coming into this loop
 					// Switch to performance mode
-					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<low framerate, switching graphics to performance>')
+					this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<<low framerate, switching graphics to performance>>')
 					Cookies.set('graphics', 'performance', { 
 						domain: this.babs.baseDomain,
 						secure: this.babs.isProd,

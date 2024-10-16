@@ -19,7 +19,7 @@ import { YardCoord } from '@/comp/Coord'
 import { Babs } from '@/Babs'
 import { Player } from '@/ent/Player'
 import { Zone } from '@/ent/Zone'
-import { type WobId, SharedWob, type RotationCardinal } from '@/shared/SharedWob'
+import { type WobId, SharedWob, type RotationCardinal, ImpossibleWeight } from '@/shared/SharedWob'
 import type { InstancedWobs } from '@/ent/InstancedWobs'
 import { Text as TroikaText } from 'troika-three-text'
 import * as KeyCode from 'keycode-js'
@@ -690,12 +690,12 @@ export class InputSys {
 									// todo make work for non-instanced things, and ground, players, etc.
 									const coord = this.pickedObject?.yardCoord
 									if(!coord) {
-										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no effect>')
+										this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<<no effect>')
 									}
 									else {
 										const wob = coord.zone.getWob(coord.x, coord.z)
 										if(!wob) {
-											this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<no such target>')
+											this.babs.uiSys.aboveHeadChat(this.babs.idSelf, '<<no such target>>')
 										}
 										else {
 											this.babs.socketSys.send({
@@ -942,7 +942,7 @@ export class InputSys {
 						else { // Something else - cancel drop // Will be partly replaced with stacking and piling in the future. 
 							// Seems to handle mouse leaving window and letting go there, because windows still gets mouse up, cool.
 							console.debug('dropped onto somewhere unknown', this.pickedObject, this.liftedObject)
-							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<cannot place ${this.liftedObject.instancedBpid} there>`)
+							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you aren't able to place ${this.liftedObject.instancedBpid} there ~`)
 						}
 
 
@@ -1172,7 +1172,15 @@ export class InputSys {
 					const playerStrength = 10 // todo
 					if(weightToLift > playerStrength) {
 						console.debug(`${wob.blueprint_id} too weighty to lift: ${weightToLift} > ${playerStrength}`)
-						this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `<<you have trouble carrying ${wob.blueprint_id}>>`)
+						if(weightToLift >= ImpossibleWeight) {
+							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ ${wob.blueprint_id} is impossible to move ~`)
+						}
+						else if(Math.abs(playerStrength -weightToLift) < 20) { // Almost can lift
+							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you can't quite lift ${wob.blueprint_id} ~`)
+						}
+						else {
+							this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ ${wob.blueprint_id} is too heavy for you ~`)
+						}
 						this.mousedownPickedObject = null
 					}
 					else {
@@ -2023,7 +2031,7 @@ export class InputSys {
 		this.askTargetSourceWob = fwob
 		this.isAskingTarget = true
 		document.body.style.cursor = `url(${this.babs.urlFiles}/cursors/cursor-aim.png) ${32/2} ${32/2}, auto`
-		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<${fwob?.name || 'action'}'s target?>`)
+		this.babs.uiSys.aboveHeadChat(this.babs.idSelf, `<<${fwob?.name || 'action'}'s target?>>`)
 	}
 
 
