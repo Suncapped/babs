@@ -1008,20 +1008,24 @@ export class InputSys {
 								position: this.pickedObject.landPoint,
 								babs: this.babs,
 							})
-	
-							this.babs.socketSys.send({
-								action: {
-									verb: 'used',
-									noun: 'ground',
-									data: {
-										point: {x: yardCoord.x, z: yardCoord.z},
-										idzone: zone.id,
-									},
-								}
-							})
+							// Disabled for now
+							// this.babs.socketSys.send({
+							// 	action: {
+							// 		verb: 'used',
+							// 		noun: 'ground',
+							// 		data: {
+							// 			point: {x: yardCoord.x, z: yardCoord.z},
+							// 			idzone: zone.id,
+							// 		},
+							// 	}
+							// })
 
 							if(this.babs.debugMode) { // In debug, show details of land
 								this.babs.uiSys.landSaid({text: this.pickedObject.landcoverString, idzone: zone.id, point: this.pickedObject.landPoint})
+							}
+							else {
+								// Show type only
+								this.babs.uiSys.landSaid({text: WorldSys.LandcoverStringToEnglish[this.pickedObject.landcoverString], idzone: zone.id, point: this.pickedObject.landPoint})
 							}
 						}
 						else {
@@ -1775,7 +1779,7 @@ export class InputSys {
 							const landcoverData = yardCoord.zone.landcoverData
 							const plotCoord = new Vector3(Math.floor(yardCoord.x /centerPointInPlot), this.mouseRayTargets[i].point.y, Math.floor(yardCoord.z /centerPointInPlot))
 							const index = Utils.coordToIndex(plotCoord.x, plotCoord.z, WorldSys.ZONE_ARR_SIDE_LEN)
-							const lcString = this.babs.worldSys.StringifyLandcover[landcoverData[index]]
+							const lcString = WorldSys.StringifyLandcover[landcoverData[index]]
 							// this.mouse.landtarget = {
 							// 	text: lcString,
 							// 	idzone: zone.id,

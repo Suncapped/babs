@@ -115,7 +115,7 @@ export class WorldSys {
 
 	cameraHelper :CameraHelper
 
-	StringifyLandcover = {
+	static StringifyLandcover = {
 		12: 'SnowIceTundra',
 		31: 'BarrenRockSandClay',
 		
@@ -133,12 +133,39 @@ export class WorldSys {
 		112: 'LakeShore',
 		116: 'River',
 		120: 'RiverShore',
+
 		124: 'StreamSmall',
 		128: 'StreamMedium',
 		132: 'StreamLarge',
 		136: 'StreamShore',
 
 		200: 'Cliff',
+	}
+	static LandcoverStringToEnglish = {
+		'SnowIceTundra': 'Tundra',
+		'BarrenRockSandClay': 'Barren',
+
+		'ForestDeciduous': 'Deciduous',
+		'ForestEvergreen': 'Evergreen',
+		'ForestMixed': 'Forest',
+
+		'ShrubAndScrub': 'Shrubland',
+		'Grassland': 'Grassland',
+
+		'WetlandWoody': 'Swamp',
+		'WetlandHerbacious': 'Marsh',
+
+		'Lake': 'Lake',
+		'LakeShore': 'Lakeshore',
+		'River': 'River',
+		'RiverShore': 'Riverbank',
+
+		'StreamSmall': 'Brook',
+		'StreamMedium': 'Creek',
+		'StreamLarge': 'Stream',
+
+		'StreamShore': 'Shoreline',
+		'Cliff': 'Cliffside',
 	}
 
 	libo = 0 // ground nighttime lightness boost
@@ -945,7 +972,7 @@ export class WorldSys {
 		let colorNotFound = ''
 
 		for (let index=0, l=verticesRef.length /nColorCount; index < l; index++) {
-			const lcString = this.StringifyLandcover[zone.landcoverData[index]]
+			const lcString = WorldSys.StringifyLandcover[zone.landcoverData[index]]
 			let color = this.colorFromLc[lcString]
 
 			const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
@@ -956,11 +983,11 @@ export class WorldSys {
 				for(let x=-1; x<=1; x++) {
 					const offsetIndex = coordToIndex(coordOfVerticesIndex.x +x, coordOfVerticesIndex.z +z, WorldSys.ZONE_ARR_SIDE_LEN)
 					if(
-						this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'River'
-						|| this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Lake'
-						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamsmall'
-						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streammedium'
-						// || this.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamlarge'
+						WorldSys.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'River'
+						|| WorldSys.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Lake'
+						// || WorldSys.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamsmall'
+						// || WorldSys.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streammedium'
+						// || WorldSys.StringifyLandcover[zone.landcoverData[offsetIndex]] === 'Streamlarge'
 					) {
 						waterNearbyIndex[index]++ // Save for later
 					}
@@ -1016,7 +1043,7 @@ export class WorldSys {
 			const entZone = this.babs.ents.get(zone.id) as Zone // zonetodo convert all zone refs to ents
 
 			for (let index=0, l=verticesRef.length /nColorCount; index < l; index++) {
-				const lcString = this.StringifyLandcover[zone.landcoverData[index]]
+				const lcString = WorldSys.StringifyLandcover[zone.landcoverData[index]]
 				const coordOfVerticesIndex = indexToCoord(index, WorldSys.ZONE_ARR_SIDE_LEN) // i abstracts away color index
 				// console.log('gridPointofVerticesIndex', coordOfVerticesIndex)
 				// Create cubes on all spots in between
