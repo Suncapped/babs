@@ -240,7 +240,7 @@ export class InputSys {
 
 		document.addEventListener('keydown', async ev => {
 			this.activityTimestamp = Date.now()
-			console.debug('keydown:', ev.key, ev.code, ev.repeat)
+			if(DEBUG_LOGGING) console.debug('keydown:', ev.key, ev.code, ev.repeat)
 			// OS-level key repeat keeps sending down events; 
 			if (!this.chatboxOpen && !ev.repeat) { // stop that from turning into presses
 				this.keyboard[inputCodeMap[ev.code]] = PRESS
@@ -1438,7 +1438,8 @@ export class InputSys {
 			}
 
 			// Let's show a square in front of the player?  Their destination target square :)
-			if (this.babs.debugMode) {
+			const isZoning = this.playerSelf.controller.selfWaitZoningExitZone
+			if (this.babs.debugMode && !isZoning) {
 				if (!this.displayDestinationMesh) {
 					const geometry = new PlaneGeometry(4, 4)
 					const material = new MeshBasicMaterial({ color: 0xffaaaa, side: DoubleSide })
@@ -1449,7 +1450,7 @@ export class InputSys {
 				}
 				this.displayDestinationMesh.position.copy(dest).multiplyScalar(4).addScalar(2)
 				const yardCoord = YardCoord.Create({
-					...dest,
+					...dest, // Ahh, this is failing because dest can be for a +zone that doesn't exist.  Hmm.  Bit of a hack: used isZoning here to avoid the race condition, but this could pop up again when creating yardCoords in update() loops, especially using engine coords I guess.
 					zone: this.playerSelf.controller.playerRig.zone,
 				})
 				const engineHeight = this.playerSelf.controller.playerRig.zone.engineHeightAt(yardCoord)

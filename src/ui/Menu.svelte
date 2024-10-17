@@ -258,7 +258,7 @@
 
 <svelte:window on:resize={updateDimensions}/>
 
-<button class:hide="{!$isAwayUiDisplayed}" bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary" style="pointer-events:none; text-align:center;">- Away -<br/>Click to Resume First Earth</button>
+<button class:hide="{!$isAwayUiDisplayed}" bind:this={ResumeButton} id="ResumeButton" class="card border border-5 border-primary" style="pointer-events:none; text-align:center;">~ Away ~<br/>Click to Resume First Earth</button>
 
 <div class:hide="{!$isAwayUiDisplayed}" use:draggable={{...options, position: {x: ui.virtx, y:ui.virty}}} on:neodrag:start={dragStart} on:neodrag={onDrag} on:neodrag:end={dragEnd} on:resize={updateDimensions} bind:this={Menu} id="Menu" class="card border border-5 border-primary" style="cursor:default;">
 

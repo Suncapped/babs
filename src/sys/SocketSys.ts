@@ -619,11 +619,12 @@ export class SocketSys {
 			// const wob = originZone.getWob(wobMove.origin.x, wobMove.origin.z) // No, let's fetch Wob instead of SharedWob, below
 			const feim = Wob.InstancedWobs.get(wobMove.origin.blueprint_id)
 			const wobIndex = originZone.coordToInstanceIndex[wobMove.origin.x+','+wobMove.origin.z]
-			const wob = feim.instanceIndexToWob.get(wobIndex)
+			const wob = feim?.instanceIndexToWob.get(wobIndex)
 
-			if(!wob) {
+			if(!wob) { // Can also be due to !feim
 				// Can happen on first load when server is quickly sending events before client has loaded the wob
 				// If this is happening, may be a significant situation; index out of sync means it can't find the wob anymore!  Fragile.
+				// Later: But also, this (sensibly) happens when receiving data for not nearby zones.  So really we want server to not send such.
 				console.debug('Hmm: wobmove: No wob found for move', wobMove, wobIndex, wob)
 				return
 			}

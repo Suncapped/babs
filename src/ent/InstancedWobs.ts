@@ -154,7 +154,7 @@ export class InstancedWobs {
 		// this.imGroup.position.setX(babs.worldSys.shiftiness.x)
 		// this.imGroup.position.setZ(babs.worldSys.shiftiness.z)
 		
-		if(isWater) this.imGroup.position.setY(-7)
+		if(isWater) this.imGroup.position.setY(-7.75)
 
 		this.imGroup.updateMatrix()
 		this.imGroup.updateMatrixWorld()

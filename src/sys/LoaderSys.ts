@@ -1,4 +1,4 @@
-import { AnimationClip, AnimationMixer, AudioLoader, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
+import { AnimationClip, AnimationMixer, AudioLoader, BackSide, BoxGeometry, Color, DoubleSide, FrontSide, Loader, Material, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, MeshToonMaterial, Object3D, Scene, SkinnedMesh, SRGBColorSpace, Texture } from 'three'
 import { Vector3 } from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { TextureLoader } from 'three'
@@ -179,7 +179,7 @@ export class LoaderSys {
 					resolve(group)
 				},
 				(xhr) => { // onProgress callback
-					console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
+					// console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
 				},
 				(err) => { // onError callback
 					console.error( 'An error happened', err )
@@ -262,7 +262,7 @@ export class LoaderSys {
 				resolve(gltf)
 			}
 			const progress = (xhr) => { // onProgress callback
-				console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
+				// console.debug( (xhr.loaded / xhr.total * 100) + '% loaded' )
 			}
 			const error = (err) => { // onError callback
 				console.error(`loadGltf error for '${name}':`, err.message) // info because can just be missing model
@@ -299,12 +299,12 @@ export class LoaderSys {
 			// bumpMap: texture,
 			// bumpScale: bumpScale,
 			// color: diffuseColor,
-			specular: 0.16,
-			shininess: 0.2,
+			// specular: 0.16,
+			// shininess: 0.2,
 			// reflectivity: 0.5,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 			side: FrontSide,
-			shadowSide: FrontSide,
+			// shadowSide: DoubleSide,
 		})
 		
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
