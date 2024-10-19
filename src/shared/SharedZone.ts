@@ -91,8 +91,8 @@ export abstract class SharedZone {
 	) {
 
 	}
-	wobIdRotGrid = new Uint16Array(250*250).fill(0)
-	farWobIdRotGrid = new Uint16Array(250*250).fill(0)
+	wobIdRotGrid = new Uint16Array(250*250).fill(0) // NOTE!  When setting this, also call this.setLocationsAreDirty()
+	farWobIdRotGrid = new Uint16Array(250*250).fill(0) // NOTE!  When setting this, also call this.setLocationsAreDirty()
 	// ^ Storing 12-bit locid and 4-bit rotation in a grid.  (position is the x,z of the grid)
 	abstract locidToBlueprint :Record<number, SharedBlueprint>
 	bpidToLocid :Record<string, number> = {}
@@ -242,6 +242,7 @@ export abstract class SharedZone {
 				if(options.doApply) {
 					if(options.isFarWobs) this.farWobIdRotGrid[index] = 0
 					else this.wobIdRotGrid[index] = 0
+					this.setLocationsAreDirty()
 
 					// Update bluestaticWobs with removed wob
 					typedKeys(oldbp?.bluests).forEach((bluestKey) => {
@@ -263,6 +264,7 @@ export abstract class SharedZone {
 				if(options.doApply) {
 					if(options.isFarWobs) this.farWobIdRotGrid[index] = locidrot
 					else this.wobIdRotGrid[index] = locidrot
+					this.setLocationsAreDirty()
 
 					// Update bluestaticWobs with added wobs
 					const bp = this.locidToBlueprint[locid]
@@ -323,6 +325,7 @@ export abstract class SharedZone {
 
 	abstract applyBlueprints(blueprints :Map<blueprint_id, any>) :void
 	
+	/*
 	getLocationsFromGrid(farOrNear :FarOrNear = 'near'){
 		let countValid = 0
 		const locs = []
@@ -339,6 +342,42 @@ export abstract class SharedZone {
 			}
 		}
 		return new Uint8Array(locs.flat())
+	}
+	*/
+	cachedLocations :Uint8Array = new Uint8Array(250 * 250 * 4) // Preallocate a flat array (4 bytes per valid entry)
+	cachedLocationsLength = 0
+	isCachedLocationsDirty = true
+	isCachedLocationsPersisted = true
+	setLocationsAreDirty() {
+		this.isCachedLocationsDirty = true
+		this.isCachedLocationsPersisted = false  // So we know to persist it later
+	}
+	getLocationsFromGrid(farOrNear: FarOrNear = 'near') {
+		if(this.isCachedLocationsDirty) {
+			// console.log('recalcing locations for', this.id)
+			const locs = new Uint8Array(250 * 250 * 4)
+			let locIndex = 0
+			const wobGrid = farOrNear === 'near' ? this.wobIdRotGrid : this.farWobIdRotGrid
+			
+			let index = 0;  // This will track x + (z * 250)
+			for (let z = 0; z < 250; z++) {
+				for (let x = 0; x < 250; x++, index++) {
+					const idAndRot = wobGrid[index]
+					if (idAndRot) {
+						locs[locIndex++] = idAndRot >>> 8         // byte1 (ID part)
+						locs[locIndex++] = (idAndRot & 0xFF)      // byte2 (Rot part)
+						locs[locIndex++] = x                      // x position
+						locs[locIndex++] = z                      // z position
+					}
+				}
+			}
+
+			this.cachedLocations = locs
+			this.cachedLocationsLength = locIndex
+			this.isCachedLocationsDirty = false
+		}
+		
+		return this.cachedLocations.subarray(0, this.cachedLocationsLength)
 	}
 
 	calcElevationAtIndex(index :number) { // todo move to proxima exclusive?
