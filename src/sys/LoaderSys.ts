@@ -293,7 +293,7 @@ export class LoaderSys {
 		const texture = textures[deterministicIndex]
 
 		texture.flipY = false // gltf flipped boolean
-		// const material = new MeshToonMaterial({ // todo hmm
+		// const material = new MeshToonMaterial({ // hmm.  .flatShading is more appropriate!
 		const material = new MeshPhongMaterial({
 			map: texture,
 			// bumpMap: texture,
@@ -304,7 +304,8 @@ export class LoaderSys {
 			// reflectivity: 0.5,
 			// envMap: alphaIndex % 2 === 0 ? null : reflectionCube
 			side: FrontSide,
-			// shadowSide: DoubleSide,
+			shadowSide: FrontSide, // More even looking flatShading shadows
+			// flatShading: true,
 		})
 		
 		// Either get from previous load (cache), or download for the first time.  Clone either way.
@@ -327,10 +328,8 @@ export class LoaderSys {
 
 		skinnedMesh.castShadow = true
 		skinnedMesh.receiveShadow = true
-		// scene.receiveShadow = true
-		// scene.traverse(c => c.receiveShadow = true)
-		// scene.children.traverse(c => c.receiveShadow = true)
-		// scene.children.traverse(c => c.traverse(d => d.receiveShadow = true))
+		// skinnedMesh.traverse(c => c.receiveShadow = false)
+		// skinnedMesh.traverse(c => c.castShadow = false)
 
 		// rigGroupScene.scale.multiplyScalar(0.1 * 3.28 *Controller.sizeScaleDown) // hax for temp character
 		rigGroupScene.scale.multiplyScalar(3.5) // hax for temp character
