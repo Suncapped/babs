@@ -94,11 +94,11 @@ export const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
 const RATIO_DEGREES = 180 / Math.PI
 const RATIO_RADIANS = Math.PI / 180
-export function radians (degrees) {
-	return degrees * RATIO_RADIANS
+export function radians (degreesIn :number) {
+	return degreesIn * RATIO_RADIANS
 }
-export function degrees(radians) {
-	return radians * RATIO_DEGREES
+export function degrees(radiansIn :number) {
+	return radiansIn * RATIO_DEGREES
 }
 
 export function storageSet(key, value, ms) {

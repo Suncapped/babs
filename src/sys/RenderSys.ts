@@ -23,6 +23,7 @@ import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js'
 import type { Player } from '@/ent/Player'
 import type { SharedBluestLocomoted } from '@/shared/SharedBluests'
 import { MIN_INTEGER_ID } from '@/shared/consts'
+import { clamp } from '@/Utils'
 // import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js'
 
 export class RenderSys {
@@ -385,16 +386,15 @@ export class RenderSys {
 		// Instead, let's do it from the bluests angle; get all bluests that are locomoted
 		const doLogging = false
 		const locomotedValues = this.babs.allBluestaticsBlueprintsData.get('locomoted') as Map<string, SharedBluestLocomoted>
-		locomotedValues?.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
-			const mphSpeed = value.mphSpeed
-			if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
-			if(doLogging) console.log('locomotedValues', locomotedValues)
-			if(doLogging) console.log('butterfly', locomotedValues.get('butterfly'))
-			// Now get the associated wobs
-		})
+		// locomotedValues?.forEach((value, blueprint_id) => { // Key is eg butterfly, value contains mphSpeed
+		// 	const mphSpeed = value.mphSpeed
+		// 	if(doLogging) console.log('blueprint_id:', blueprint_id, 'value:', value, 'mphSpeed:', mphSpeed)
+		// 	if(doLogging) console.log('locomotedValues', locomotedValues)
+		// 	if(doLogging) console.log('butterfly', locomotedValues.get('butterfly'))
+		// 	// Now get the associated wobs
+		// })
 
 		// console.log('locomotedValues', locomotedValues)
-		// todo: actually account for speed
 
 		let areThingsMoving = false
 		// For every nearby zone, get all bluests of type 'locomoted'
@@ -441,21 +441,40 @@ export class RenderSys {
 				const yardCoord = YardCoord.Create({x, z, zone})
 				const targetEngineCoord = instancedWobs.heightTweak(yardCoord.toEngineCoordCentered('withCalcY'))
 
-				// const baseSpeed = 0.05
-				const minSpeed = 0.01
-				const maxSpeed = 0.02
-				const referenceDistance = 2
+				const mphSpeed = Number(locomotedValues.get(blueprint_id)?.mphSpeed)
 				const dist = currentPosition.distanceTo(targetEngineCoord)
 				if(dist > 0.1) {
-					// const speed = Math.max(baseSpeed, minSpeed)
-					const t = Math.min(1, 1 - dist / referenceDistance) 
-					// Ease-in-out function using a cosine curve.
-					const speedFactor = 0.5 * (1 - Math.cos(Math.PI * t))
-					const speed = Math.max(minSpeed, speedFactor * maxSpeed)
-					
-					currentPosition.lerp(targetEngineCoord, speed)
+					const direction = new Vector3().subVectors(targetEngineCoord, currentPosition).normalize()
+
+					const exaggeratedSpeedFeel = ((mphSpeed +1) ** 2) *0.05 *dt // Exaggerates the difference between eg 8 and 12mph so that it sort of feels right
+					// console.log('exaggeratedSpeedFeel', blueprint_id, exaggeratedSpeedFeel)
+
+					// Calculate lerp movement
+					const lerpMovement = targetEngineCoord.clone().lerp(currentPosition, 1 - exaggeratedSpeedFeel) // 1 - factor since we need the movement
+				
+					// Calculate linear movement
+					const linearMovement = direction.clone().multiplyScalar(exaggeratedSpeedFeel)
+				
+					// Compare the distances moved by both methods
+					const lerpDist = currentPosition.distanceTo(lerpMovement)
+					const linearDist = linearMovement.length() // The magnitude of movement
+				
+					if (lerpDist > linearDist) {
+						currentPosition.copy(lerpMovement) // Use lerp if it moves more
+					} else {
+						// Check if linear movement overshoots the target
+						if (linearMovement.length() > dist) {
+							currentPosition.copy(targetEngineCoord) // Set directly to the target to avoid overshoot
+						} else {
+							currentPosition.add(linearMovement) // Use linear if it doesn't overshoot
+						}
+					}
+				
 					matrixCurrent.makeTranslation(currentPosition.x, currentPosition.y, currentPosition.z)
+
 					instancedWobs.instancedMesh.setMatrixAt(instanceIndex, matrixCurrent)
+
+					instancedWobs.instancedMesh.instanceMatrix.needsUpdate = true // Not needded for skinned which do their thing, but is needed for other wobs 
 
 					if(this.babs.inputSys.pickedObject) {
 						this.babs.inputSys.recheckMouseIntersects = true // Recalc intersects every 60 frames if things are picked.  This keeps highlights updated if butterfly moves out from under you.
