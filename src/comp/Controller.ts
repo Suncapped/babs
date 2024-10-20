@@ -473,6 +473,14 @@ export class Controller extends Comp {
 		// 	}
 		// }
 		// else 
+
+		let speedBoost = 1
+		const boostAtDist = 20
+		if(!this.isSelf && (eDistance.x > boostAtDist || eDistance.z > boostAtDist || eDistance.x < -boostAtDist || eDistance.z < -boostAtDist)) {
+			// Other player looks far away; speed them up?  todo test with wayfind
+			speedBoost = 4
+		}
+
 		{ // Not far
 			const zNearCenter = Math.abs(eDistance.z) < 1
 			const zPositiveDistance = eDistance.z > 0
@@ -483,10 +491,10 @@ export class Controller extends Comp {
 				this.playerRig.position.setZ(eDest.z)
 			}
 			else if (zPositiveDistance) {
-				this.velocity.z += acc.z * dt
+				this.velocity.z += acc.z * dt *speedBoost
 			}
 			else if (zNegativeDistance) {
-				this.velocity.z -= acc.z * dt
+				this.velocity.z -= acc.z * dt *speedBoost
 			}
 
 			const xNearCenter = Math.abs(eDistance.x) < 1
@@ -498,10 +506,10 @@ export class Controller extends Comp {
 				this.playerRig.position.setX(eDest.x)
 			}
 			else if (xPositiveDistance) {
-				this.velocity.x += acc.x * dt
+				this.velocity.x += acc.x * dt *speedBoost
 			}
 			else if (xNegativeDistance) {
-				this.velocity.x -= acc.x * dt
+				this.velocity.x -= acc.x * dt *speedBoost
 			}
 		}
 		
