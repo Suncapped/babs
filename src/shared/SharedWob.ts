@@ -1,5 +1,5 @@
 import { type UintRange } from './TypeUtils'
-import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty, SharedBluestLocomoted } from './SharedBluests'
+import { SharedBluestGenerated, type SharedBluestPlatform, type SharedBluestEdible, type SharedBluestAudible, SharedBluestObstructive, SharedBluestDurable, SharedBluestVisible, SharedBluestWeighty, SharedBluestLocomoted, SharedBluestSymbiote } from './SharedBluests'
 
 
 export const ImpossibleWeight = 200
@@ -33,6 +33,7 @@ export type SharedBluestClasses = {
 	durable? :SharedBluestDurable
 	visible? :SharedBluestVisible
 	locomoted? :SharedBluestLocomoted
+	symbiote? :SharedBluestSymbiote
 }
 
 export type SharedBlueprintWithBluests = {

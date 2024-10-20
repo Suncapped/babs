@@ -97,6 +97,13 @@ export class SharedBluestLocomoted extends SharedBluest {
 	mphSpeed :string
 }
 
+export class SharedBluestSymbiote extends SharedBluest {
+	constructor(values = {}) {
+		super(values)
+		Object.assign(this, values)
+	}
+}
+
 // edible: SharedBluestPlatform,
 // firestarter: SharedBluestPlatform,
 // generated: SharedBluestPlatform,
