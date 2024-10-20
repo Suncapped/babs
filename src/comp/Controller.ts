@@ -162,41 +162,39 @@ export class Controller extends Comp {
 		// This takes a grid destination, which we'll be moved toward in update()
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
+		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > WorldSys.ZONE_MOVEMENT_EXTENT || gDestVector3.z > WorldSys.ZONE_MOVEMENT_EXTENT
+
 		if(this.babs.inputSys.playerSelf.selfWayfinding) {
 			this.babs.socketSys.send({
 				wayfound: false,
 			})
 		}
 
-		// Update color based on footsteps
-		// Note; this actually fails at zone border, something about it setting before zoning happens; it sets on old zone, not new one.  But it doesn't really matter, as long as the incoming server footsteps data is set correct (no idea hehe)
-		const player = this.babs.ents.get(this.idEnt as number) as Player
-		const zone = player.controller.playerRig.zone
-		// Get existing plot count for this point and add to it
-		const xPlotOld = Math.floor((player.controller.gDestination.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
-		const zPlotOld = Math.floor((player.controller.gDestination.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
-		const xPlotNew = Math.floor((gDestVector3.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
-		const zPlotNew = Math.floor((gDestVector3.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
-		if(xPlotOld !== xPlotNew || zPlotOld !== zPlotNew) {
-			// console.log('plot updating', xPlotOld, zPlotOld, xPlotNew, zPlotNew)
-			const plotcounts :Record<string, number> = {
-				[`${xPlotNew},${zPlotNew}`]: (zone.plotcountsSaved[`${xPlotNew},${zPlotNew}`] || 0) +1,
-				[`${xPlotOld +1},${zPlotOld}`]: (zone.plotcountsSaved[`${xPlotOld +1},${zPlotOld}`] || 0) +1,
-				[`${xPlotNew},${zPlotNew +1}`]: (zone.plotcountsSaved[`${xPlotNew},${zPlotNew +1}`] || 0) +1,
-				[`${xPlotOld +1},${zPlotOld +1}`]: (zone.plotcountsSaved[`${xPlotOld +1},${zPlotOld +1}`] || 0) +1,
-
+		// if(!isOutsideOfZone) {
+			// Update color based on footsteps
+			// Note; this actually fails at zone border, something about it setting before zoning happens; it sets on old zone, not new one.  But it doesn't really matter, as long as the incoming server footsteps data is set correct (no idea hehe)
+			const player = this.babs.ents.get(this.idEnt as number) as Player
+			const zone = player.controller.playerRig.zone
+			// Get existing plot count for this point and add to it
+			const xPlotOld = Math.floor((this.gDestination.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+			const zPlotOld = Math.floor((this.gDestination.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+			const xPlotNew = Math.floor((gDestVector3.x *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+			const zPlotNew = Math.floor((gDestVector3.z *WorldSys.Yard) /WorldSys.ZONE_DATUM_SIZE)
+			if(xPlotOld !== xPlotNew || zPlotOld !== zPlotNew) {
+				// console.log('plot updating', xPlotOld, zPlotOld, xPlotNew, zPlotNew)
+				const plotcounts :Record<string, number> = {
+					[`${xPlotNew},${zPlotNew}`]: (zone.plotcountsSaved[`${xPlotNew},${zPlotNew}`] || 0) +1,
+				}
+				zone.colorFootsteps(plotcounts)
+				// console.log('controller coloring footsteps', plotcounts)
 			}
-			zone.colorFootsteps(plotcounts)
-			// console.log('controller coloring footsteps', plotcounts)
-		}
+		// }
 
 		this.babs.renderSys.calcPositionChanged = true
 
 		const gDestOld = this.gDestination.clone()
 		this.gDestination = gDestVector3.clone()
 		// console.debug('setDestination changing', this.gDestination, movestate, this.isSelf)
-
-		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > WorldSys.ZONE_MOVEMENT_EXTENT || gDestVector3.z > WorldSys.ZONE_MOVEMENT_EXTENT
 
 		// const player = this.babs.ents.get(this.idEnt)
 		if(this.isSelf) {
@@ -207,15 +205,22 @@ export class Controller extends Comp {
 
 			// Determine if player has the stamina to enter the wob if one is there
 			const wobAtDest = this.playerRig.zone.getWob(targetYardCoord.x, targetYardCoord.z)
-			const obstructive = wobAtDest?.bluests?.obstructive
-			if(obstructive) {
+			
+			const obstructiveStamRequired = wobAtDest?.bluests?.obstructive?.staminaToPass
+			if(obstructiveStamRequired) {
+				// console.log(obstructiveStamRequired)
 				const playerStamina = 10 // todo
-				const obstructiveForStamina = playerStamina < obstructive.staminaToPass
-				if(obstructiveForStamina) {
-					// Stop movement, similar to zoning below
-					this.gDestination = gDestOld
-					this._stateMachine.setState('idle')
-					return 
+				const hasEnoughStamina = playerStamina >= obstructiveStamRequired
+				if(!hasEnoughStamina) {
+					// // Stop movement, similar to zoning below
+					// this.gDestination = gDestOld
+					// this._stateMachine.setState('idle')
+					// return 
+
+					// Instead, let's just slow them down
+					// const slowDown = 0.1
+					this.velocity.x = 0
+					this.velocity.z = 0
 				}
 			}
 

@@ -515,6 +515,7 @@ export class Zone extends SharedZone {
 		}
 	}
 	colorFootsteps(plotcountsUpdates :SendFootstepsCounts['footstepscounts']['plotcounts']) {
+		// console.log('coloring', plotcountsUpdates)
 		// Make the vertex colors more brown the higher the number is per plotcount
 		const brownColor = new Color(0.5, 0.3, 0.1)
 
@@ -530,7 +531,7 @@ export class Zone extends SharedZone {
 
 			const colorsRef = this.ground.geometry.getAttribute('color').array as Float32Array
 			// Because vertex colors don't color the center but the zeropoint, we expand this to the full square.
-			const expandOut = 1
+			const expandOut = 0//1 Something is buggy about colorFootsteps(); the expanding it out?  Oh yes, expanding it out is buggy because you'd have to resolve or interpolate between vertices, I guess.  Either that or maybe just calculate the borders at the middle so that as the vertices get colored it's at least actually a little closer to where people walk.
 			for (let i = 0; i <= expandOut; i++) {
 				for (let j = 0; j <= expandOut; j++) {
 					const xPos = xPlot +i
