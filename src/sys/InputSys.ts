@@ -1437,8 +1437,8 @@ export class InputSys {
 				this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you stopped following ~`)
 			}
 			// Stop wayfinding
-			console.log('STOPPING WAYFINDING')
 			if(this.babs.inputSys.playerSelf.selfWayfinding) {
+				console.debug('Input stopping wayfinding')
 				this.babs.socketSys.send({
 					wayfound: false,
 				})

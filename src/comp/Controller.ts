@@ -219,6 +219,19 @@ export class Controller extends Comp {
 				}
 			}
 
+			// Determine if it's edible, and if so, 'use' it automatically
+			const edible = wobAtDest?.bluests?.edible
+			if(edible) {
+				// console.log('edible', edible)
+				this.babs.uiSys.aboveHeadChat(player.id, `~ you ate ${wobAtDest.blueprint_id} ~`)
+				this.babs.socketSys.send({
+					action: {
+						verb: 'used',
+						noun: wobAtDest.idObj(),
+					}
+				})
+			}
+
 			let enterzone_id :number = undefined
 			if(isOutsideOfZone){
 				// console.log('targetYardCoord.zone', targetYardCoord.zone)

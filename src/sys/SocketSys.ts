@@ -733,7 +733,15 @@ export class SocketSys {
 			}, babs.isProd ? randIntInclusive(5_000, 10_000) : 1200)
 		}
 		else if('energy' in payload) {
-			// console.debug('energy', payload.energy)
+			// console.log('energy', payload.energy)
+			// Speed up movement speed
+			const cancelToken = Math.random()
+			this.babs.inputSys.runmult = 2 +cancelToken
+			setTimeout(() => {
+				if(this.babs.inputSys.runmult === 2 +cancelToken) { // Only cancel if this was the most recent...cute!
+					this.babs.inputSys.runmult = 1
+				}
+			}, 10_000)
 
 		}
 		else if('craftable' in payload) {
