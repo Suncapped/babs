@@ -11,6 +11,7 @@ import type { PlayerArrive } from '@/shared/consts'
 import { Wob, type FeObject3D } from '@/ent/Wob'
 import type { SharedWob } from '@/shared/SharedWob'
 import { LoaderSys } from '@/sys/LoaderSys'
+import { ZONE } from '@/shared/SharedZone'
 
 class BasicCharacterControllerProxy {
 	_animations
@@ -163,12 +164,6 @@ export class Controller extends Comp {
 		if(gDestVector3.equals(this.gDestination)) return // Do not process if unchanged
 
 		const isOutsideOfZone = gDestVector3.x < 0 || gDestVector3.z < 0 || gDestVector3.x > WorldSys.ZONE_MOVEMENT_EXTENT || gDestVector3.z > WorldSys.ZONE_MOVEMENT_EXTENT
-
-		if(this.babs.inputSys.playerSelf.selfWayfinding) {
-			this.babs.socketSys.send({
-				wayfound: false,
-			})
-		}
 
 		// if(!isOutsideOfZone) {
 			// Update color based on footsteps
@@ -474,11 +469,25 @@ export class Controller extends Comp {
 		// }
 		// else 
 
+		// Speed up if far away; so when other moves fast or are behind, they can catch up to their real dest
 		let speedBoost = 1
 		const boostAtDist = 20
 		if(!this.isSelf && (eDistance.x > boostAtDist || eDistance.z > boostAtDist || eDistance.x < -boostAtDist || eDistance.z < -boostAtDist)) {
 			// Other player looks far away; speed them up?  todo test with wayfind
 			speedBoost = 4
+		}
+
+		// Find if getting close to wayfinding destination
+		if(this.babs.inputSys.playerSelf.selfWayfinding) {
+			const linearDistance = Math.sqrt(eDistance.x**2 + eDistance.z**2)
+			// console.log('linearDistance', linearDistance)
+			if(linearDistance < ZONE.Yard *2) {
+				// Get the next point so we can smoothly head that way
+				// console.log('Sending wayfound')
+				this.babs.socketSys.send({
+					wayfound: true,
+				})
+			}
 		}
 
 		{ // Not far
@@ -511,6 +520,7 @@ export class Controller extends Comp {
 			else if (xNegativeDistance) {
 				this.velocity.x -= acc.x * dt *speedBoost
 			}
+
 		}
 		
 		this.hover = 0
@@ -525,12 +535,6 @@ export class Controller extends Comp {
 			// console.log('isNoVelocity', isNoVelocity)
 			if(this._stateMachine._currentState.name != 'idle') {
 				this._stateMachine.setState('idle')
-			}
-			if(this.babs.inputSys.playerSelf.selfWayfinding) {
-				this.babs.socketSys.send({
-					wayfound: true,
-				})
-				this.babs.inputSys.playerSelf.selfWayfinding = false
 			}
 		}
 

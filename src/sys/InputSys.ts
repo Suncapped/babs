@@ -1436,6 +1436,13 @@ export class InputSys {
 				this.playerSelf.controller.selfFollowTargetId = null
 				this.babs.uiSys.aboveHeadChat(this.playerSelf.id, `~ you stopped following ~`)
 			}
+			// Stop wayfinding
+			console.log('STOPPING WAYFINDING')
+			if(this.babs.inputSys.playerSelf.selfWayfinding) {
+				this.babs.socketSys.send({
+					wayfound: false,
+				})
+			}
 
 			// Let's show a square in front of the player?  Their destination target square :)
 			const isZoning = this.playerSelf.controller.selfWaitZoningExitZone

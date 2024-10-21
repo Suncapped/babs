@@ -823,12 +823,12 @@ export class SocketSys {
 		}
 		else if('wayfind' in payload) {
 			const wayfind = payload.wayfind
-			console.warn('wayfind', wayfind)
+			console.debug('wayfind', wayfind)
 
 			if(wayfind) {
 				// Go to the wayfind location
 				const coord = YardCoord.Create({...wayfind, babs: this.babs})
-				console.log('coord', coord)
+				// console.debug('coord', coord)
 				// const wob = coord.zone.getWob(coord.x, coord.z)
 
 				// const vector = new Vector3(coord.x, 0, coord.z)
@@ -853,7 +853,7 @@ export class SocketSys {
 				this.babs.inputSys.playerSelf.selfWayfinding = true
 			}
 			else {
-				console.debug('Ending wayfind')
+				console.debug('Server ending wayfind')
 				this.babs.inputSys.playerSelf.selfWayfinding = false
 				return
 			}
