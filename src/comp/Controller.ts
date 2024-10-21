@@ -221,9 +221,10 @@ export class Controller extends Comp {
 
 			// Determine if it's edible, and if so, 'use' it automatically
 			const edible = wobAtDest?.bluests?.edible
-			if(edible) {
+			const isMovingFast = this.babs.inputSys.runmult > 1 // Only eat if not already boosted
+			if(edible && !isMovingFast) {
 				// console.log('edible', edible)
-				this.babs.uiSys.aboveHeadChat(player.id, `~ you ate ${wobAtDest.blueprint_id} ~`)
+				// this.babs.uiSys.aboveHeadChat(player.id, `~ you ate ${wobAtDest.blueprint_id} ~`)
 				this.babs.socketSys.send({
 					action: {
 						verb: 'used',
